@@ -1,0 +1,374 @@
+{
+  "playwrightVersion": "1.65.1",
+  "node": "v24.2.0",
+  "platform": "darwin-arm64",
+  "V-01+V-02": [
+    {
+      "project": "esm-ts",
+      "config": "playwright.plain.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "esm-ts/plain",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30873,
+      "workerPids": [
+        30876
+      ],
+      "error": null
+    },
+    {
+      "project": "esm-ts",
+      "config": "playwright.plain.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30900,
+      "workerPids": [
+        30901
+      ],
+      "error": null
+    },
+    {
+      "project": "esm-ts",
+      "config": "playwright.noext.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "esm-ts/noext",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30906,
+      "workerPids": [
+        30907
+      ],
+      "error": null
+    },
+    {
+      "project": "esm-ts",
+      "config": "playwright.noext.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30920,
+      "workerPids": [
+        30921
+      ],
+      "error": null
+    },
+    {
+      "project": "esm-ts",
+      "config": "playwright.alias.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "esm-ts/alias",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30926,
+      "workerPids": [
+        30927
+      ],
+      "error": null
+    },
+    {
+      "project": "esm-ts",
+      "config": "playwright.alias.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30934,
+      "workerPids": [
+        30935
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.plain.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "cjs-js/plain",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30948,
+      "workerPids": [
+        30949
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.plain.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30955,
+      "workerPids": [
+        30956
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.noext.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "cjs-js/noext",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30963,
+      "workerPids": [
+        30964
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.noext.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30977,
+      "workerPids": [
+        30978
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.alias.config.ts",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "cjs-js/alias",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30983,
+      "workerPids": [
+        30984
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.alias.config.ts",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 30989,
+      "workerPids": [
+        30990
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.js-noext.config.js",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "cjs-js/plain",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 31005,
+      "workerPids": [
+        31006
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.js-noext.config.js",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 31011,
+      "workerPids": [
+        31012
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.js-ext.config.js",
+      "perfMode": true,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": {
+        "mode": "test",
+        "config": {
+          "run": {
+            "repeat": 3
+          },
+          "marker": "cjs-js/plain",
+          "tag": "helper-ok"
+        }
+      },
+      "workerRegistriesEqualMain": true,
+      "mainPid": 31017,
+      "workerPids": [
+        31019
+      ],
+      "error": null
+    },
+    {
+      "project": "cjs-js",
+      "config": "playwright.js-ext.config.js",
+      "perfMode": false,
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "mainRegistry": null,
+      "workerRegistriesEqualMain": true,
+      "mainPid": 31024,
+      "workerPids": [
+        31033
+      ],
+      "error": null
+    }
+  ],
+  "V-01+V-02:ranAt": "2026-11-18T20:38:18.952Z",
+  "V-03": {
+    "resolve": {
+      "fromProjectRoot": {
+        "pkgPath": "<prototype>/versions/latest/node_modules/@playwright/test/package.json",
+        "version": "1.65.1",
+        "bin": {
+          "playwright": "cli.js"
+        },
+        "cliPath": "<prototype>/versions/latest/node_modules/@playwright/test/cli.js"
+      },
+      "fromSubdirectory": true,
+      "notInstalled": {
+        "code": "MODULE_NOT_FOUND",
+        "message": "Cannot find module '@playwright/test/package.json'"
+      }
+    },
+    "spawnWithSpaceInPath": {
+      "exitCode": 0,
+      "passed": 2
+    }
+  },
+  "V-03:ranAt": "2026-11-18T20:38:19.822Z"
+}

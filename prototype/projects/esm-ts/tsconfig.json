@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@cfg/*": ["./cfg/*"] },
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
