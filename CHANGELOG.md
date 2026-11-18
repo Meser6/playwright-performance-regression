@@ -26,13 +26,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `measure.exclude: [...perfDefaults.measure.exclude, 'intercom.io']`.
 - Package config resolution: defaults from the `default` keywords of
   `schemas/config.schema.json`, objects merged and arrays replaced, `RegExp` or
-  `{ regex, flags }` URL patterns, environment overrides of `run.env` and `run.repeat`, and a
+  `{ regex, flags }` URL patterns (compiled without the `g` and `y` flags, so a pattern matches
+  the same way on every call), environment overrides of `run.env` and `run.repeat`, and a
   JSON snapshot of the effective config for the run report.
 - Config validation that reports all problems at once, with the option path, the value received,
   the expected format and, for a mistyped option, the closest known name: error codes
   `CONFIG_UNKNOWN_OPTION`, `CONFIG_INVALID_TYPE`, `CONFIG_INVALID_VALUE` and
   `CONFIG_INVALID_REGEX`; warnings `CONFIG_DUPLICATE_ORIGIN_LABEL`,
   `CONFIG_RESOURCE_TYPE_LONG_LIVED` and `CONFIG_PERCENTILE_IS_P99`.
+- Endpoint keys from request URLs: origin labels, id patterns for numbers, UUIDs, hex strings,
+  tokens, mixed-case ids and e-mail addresses (`:id`, `:email`), sorted query parameter names
+  with optional kept values, deterministic truncation of long keys and a custom `keyBuilder`
+  with fallback warnings `NORMALIZE_KEY_BUILDER_INVALID` and `NORMALIZE_KEY_BUILDER_THREW`.
+- Normalization fingerprint of the key rules and warnings `NORMALIZE_HIGH_CARDINALITY` and
+  `NORMALIZE_TOO_MANY_KEYS` for key explosion.
 
 ### Changed
 
