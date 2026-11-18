@@ -7,6 +7,42 @@ import tseslint from 'typescript-eslint';
 // src/core is pure: no Node built-ins and no Playwright (01-REQ-02, ADR-0005).
 const nodeBuiltins = [...builtinModules, ...builtinModules.map((m) => `node:${m}`)];
 
+/**
+ * Lets the files of `dir` import only the given path prefixes; `typeOnly` prefixes only with
+ * `import type` (01, chapter 5).
+ * @param {string} dir
+ * @param {string[]} allowed
+ * @param {string[]} [typeOnly]
+ * @returns {import('eslint').Linter.Config[]}
+ */
+function moduleBoundaries(dir, allowed, typeOnly = []) {
+  const escape = (/** @type {string} */ text) => text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const any = [...allowed, ...typeOnly].map(escape).join('|');
+  return [
+    {
+      files: [`${dir}/**/*.ts`],
+      rules: {
+        '@typescript-eslint/no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                regex: `^(?!${any})`,
+                message: `${dir} may import only ${allowed.join(', ')} (01, chapter 5).`,
+              },
+              ...typeOnly.map((prefix) => ({
+                regex: `^${escape(prefix)}`,
+                allowTypeImports: true,
+                message: `${dir} may import ${prefix} only with "import type" (01, chapter 5).`,
+              })),
+            ],
+          },
+        ],
+      },
+    },
+  ];
+}
+
 export default tseslint.config(
   {
     ignores: [
@@ -68,4 +104,13 @@ export default tseslint.config(
       ],
     },
   },
+
+  // Module dependency rules (01, chapter 5; 01-REQ-25) for the modules outside src/core.
+  ...moduleBoundaries('src/mode', ['./', '../core/types/']),
+  ...moduleBoundaries('src/registry', ['./', '../core/types/', '../mode/'], ['../core/config/']),
+  ...moduleBoundaries(
+    'src/config',
+    ['./', '../core/', '../mode/', '../registry/', '../../package.json'],
+    ['@playwright/test'],
+  ),
 );
