@@ -33,19 +33,31 @@ export interface RegisteredState {
   warnings: Issue[];
 }
 
+/** The collector of the test running in this worker, as trackContext() sees it (05-REQ-23). */
+export interface ActiveCollector {
+  track(context: object): unknown;
+}
+
 interface RegistrySlot {
   state: RegisteredState | undefined;
   /** test objects returned by withPerfFixtures() (05-REQ-22). */
   wrappedTests: WeakSet<object>;
   /** Contexts registered with trackContext() in this worker (05-REQ-23). */
   trackedContexts: Set<object>;
+  /** Collector of the running test, so trackContext() during a test applies at once. */
+  activeCollector: ActiveCollector | undefined;
 }
 
 function slot(): RegistrySlot {
   const global = globalThis as Record<symbol, unknown>;
   let current = global[REGISTRY_KEY] as RegistrySlot | undefined;
   if (current === undefined) {
-    current = { state: undefined, wrappedTests: new WeakSet(), trackedContexts: new Set() };
+    current = {
+      state: undefined,
+      wrappedTests: new WeakSet(),
+      trackedContexts: new Set(),
+      activeCollector: undefined,
+    };
     global[REGISTRY_KEY] = current;
   }
   return current;
@@ -103,4 +115,13 @@ export function wrappedTests(): WeakSet<object> {
 
 export function trackedContexts(): Set<object> {
   return slot().trackedContexts;
+}
+
+export function activeCollector(): ActiveCollector | undefined {
+  return slot().activeCollector;
+}
+
+/** Set by the collector for the duration of a test in a measured project; undefined after. */
+export function setActiveCollector(collector: ActiveCollector | undefined): void {
+  slot().activeCollector = collector;
 }

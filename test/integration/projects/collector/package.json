@@ -1,0 +1,5 @@
+{
+  "name": "integration-collector",
+  "private": true,
+  "type": "module"
+}
