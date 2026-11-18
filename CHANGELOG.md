@@ -66,6 +66,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `THRESHOLDS_ENTRIES_NOT_EVALUATED`, `EVAL_PERCENTILE_MISMATCH`, `THRESHOLDS_ENV_MISMATCH`,
   `THRESHOLDS_SOURCE_MISMATCH` (other browser, Playwright minor version, machine or
   normalization) and `EVAL_NO_SAMPLES`.
+- Exit code of a perf-mode run in the outcome file: 3 for tool errors, 2 for blocking
+  violations in `test` mode, otherwise 0 (also with warnings and in `thresholds` mode). Failed
+  tests are a warning `TESTS_FAILED` up to `gate.maxFailedTestShare` and a tool error
+  `TESTS_FAILED_TOO_MANY` above it; a timed-out, interrupted or `maxFailures`-stopped run is
+  `RUN_INCOMPLETE`, a sharded run `RUN_SHARDED`.
 
 ### Changed
 
