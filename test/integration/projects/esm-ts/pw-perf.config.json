@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../../schemas/config.schema.json",
+  "run": { "repeat": { "test": 2 }, "keepReporters": ["./record-reporter.mjs"] },
+  "keys": { "origins": { "https://api.example.com": "json" } }
+}
