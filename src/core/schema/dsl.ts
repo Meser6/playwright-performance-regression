@@ -3,10 +3,20 @@
 // verdict. Semantics follow JSON Schema draft 2020-12 as implemented by Ajv: string lengths count
 // code points, patterns use the `u` flag, numbers must be finite.
 
+/**
+ * What kind of rule a problem breaks: the JSON type of the value, its value (range, pattern,
+ * enum, required property), an unknown property name (`additionalProperties: false`) or an
+ * invalid name in a map (`propertyNames`). Config resolution maps kinds to CONFIG_* codes (03).
+ */
+export type ProblemKind = 'type' | 'value' | 'unknown' | 'name';
+
 export interface Problem {
   /** JSON Pointer to the offending value ("" is the document root). */
   pointer: string;
   message: string;
+  kind: ProblemKind;
+  /** The unknown property (kind 'unknown') or the invalid map key (kind 'name'). */
+  property?: string;
 }
 
 /** Collects problems; stops collecting after `limit` (validation can stop early). */
@@ -22,8 +32,11 @@ export class Sink {
     return this.problems.length >= this.limit;
   }
 
-  add(pointer: string, message: string): void {
-    if (!this.full) this.problems.push({ pointer, message });
+  add(pointer: string, message: string, kind: ProblemKind = 'value', property?: string): void {
+    if (this.full) return;
+    this.problems.push(
+      property === undefined ? { pointer, message, kind } : { pointer, message, kind, property },
+    );
   }
 }
 
@@ -34,6 +47,8 @@ export interface Schema {
   accepts(value: unknown): boolean;
   /** Short description of the expected value, e.g. "integer" or "null". */
   readonly expected: string;
+  /** Human-readable format of a string pattern, when the schema has one. */
+  readonly format?: string;
 }
 
 export function child(pointer: string, key: string | number): string {
@@ -79,15 +94,18 @@ export interface StringOptions {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
+  /** Human-readable description of `pattern` used in messages, e.g. 'a percentage like "5%"'. */
+  format?: string;
 }
 
 export function str(options: StringOptions = {}): Schema {
-  const { minLength, maxLength, pattern } = options;
+  const { minLength, maxLength, pattern, format } = options;
   return {
     expected: 'string',
+    ...(format === undefined ? {} : { format }),
     accepts: (value) => typeof value === 'string',
     check(value, pointer, sink) {
-      if (typeof value !== 'string') return sink.add(pointer, 'must be string');
+      if (typeof value !== 'string') return sink.add(pointer, 'must be string', 'type');
       if (minLength !== undefined || maxLength !== undefined) {
         const length = codePoints(value);
         if (minLength !== undefined && length < minLength) {
@@ -98,7 +116,10 @@ export function str(options: StringOptions = {}): Schema {
         }
       }
       if (pattern !== undefined && !pattern.test(value)) {
-        sink.add(pointer, `must match pattern "${pattern.source}"`);
+        sink.add(
+          pointer,
+          format === undefined ? `must match pattern "${pattern.source}"` : `must be ${format}`,
+        );
       }
     },
   };
@@ -117,9 +138,9 @@ function numeric(integer: boolean, options: NumberOptions): Schema {
     accepts: (value) => typeof value === 'number',
     check(value, pointer, sink) {
       if (typeof value !== 'number' || !Number.isFinite(value)) {
-        return sink.add(pointer, `must be ${type}`);
+        return sink.add(pointer, `must be ${type}`, 'type');
       }
-      if (integer && !Number.isInteger(value)) return sink.add(pointer, 'must be integer');
+      if (integer && !Number.isInteger(value)) return sink.add(pointer, 'must be integer', 'type');
       if (minimum !== undefined && value < minimum) sink.add(pointer, `must be >= ${minimum}`);
       if (maximum !== undefined && value > maximum) sink.add(pointer, `must be <= ${maximum}`);
     },
@@ -133,7 +154,7 @@ export const bool: Schema = {
   expected: 'boolean',
   accepts: (value) => typeof value === 'boolean',
   check(value, pointer, sink) {
-    if (typeof value !== 'boolean') sink.add(pointer, 'must be boolean');
+    if (typeof value !== 'boolean') sink.add(pointer, 'must be boolean', 'type');
   },
 };
 
@@ -141,7 +162,7 @@ export const nul: Schema = {
   expected: 'null',
   accepts: (value) => value === null,
   check(value, pointer, sink) {
-    if (value !== null) sink.add(pointer, 'must be null');
+    if (value !== null) sink.add(pointer, 'must be null', 'type');
   },
 };
 
@@ -150,7 +171,7 @@ export const anyObject: Schema = {
   expected: 'object',
   accepts: isRecord,
   check(value, pointer, sink) {
-    if (!isRecord(value)) sink.add(pointer, 'must be object');
+    if (!isRecord(value)) sink.add(pointer, 'must be object', 'type');
   },
 };
 
@@ -170,7 +191,8 @@ export function enumOf(values: readonly (string | number)[]): Schema {
     accepts: (value) => typeof value === 'string' || typeof value === 'number',
     check(value, pointer, sink) {
       if (!values.includes(value as string | number)) {
-        sink.add(pointer, `must be one of ${values.map(quote).join(', ')}`);
+        const kind = typeof value === 'string' || typeof value === 'number' ? 'value' : 'type';
+        sink.add(pointer, `must be one of ${values.map(quote).join(', ')}`, kind);
       }
     },
   };
@@ -191,7 +213,7 @@ export function oneOf(...alternatives: Schema[]): Schema {
       if (candidates.length === 1 && candidates[0] !== undefined) {
         return candidates[0].check(value, pointer, sink);
       }
-      sink.add(pointer, `must be ${expected}`);
+      sink.add(pointer, `must be ${expected}`, 'type');
     },
   };
 }
@@ -210,7 +232,7 @@ export function arr(items: Schema, options: ArrayOptions = {}): Schema {
     expected: 'array',
     accepts: Array.isArray,
     check(value, pointer, sink) {
-      if (!Array.isArray(value)) return sink.add(pointer, 'must be array');
+      if (!Array.isArray(value)) return sink.add(pointer, 'must be array', 'type');
       if (minItems !== undefined && value.length < minItems) {
         sink.add(pointer, `must NOT have fewer than ${minItems} items`);
       }
@@ -243,7 +265,7 @@ export function obj(properties: Record<string, Schema>, options: ObjectOptions =
     expected: 'object',
     accepts: isRecord,
     check(value, pointer, sink) {
-      if (!isRecord(value)) return sink.add(pointer, 'must be object');
+      if (!isRecord(value)) return sink.add(pointer, 'must be object', 'type');
       for (const name of required) {
         if (!Object.hasOwn(value, name)) sink.add(pointer, `must have required property '${name}'`);
       }
@@ -251,7 +273,7 @@ export function obj(properties: Record<string, Schema>, options: ObjectOptions =
         if (sink.full) return;
         const schema = Object.hasOwn(properties, name) ? properties[name] : undefined;
         if (schema === undefined) {
-          sink.add(pointer, `must NOT have additional property '${name}'`);
+          sink.add(pointer, `must NOT have additional property '${name}'`, 'unknown', name);
         } else {
           schema.check(item, child(pointer, name), sink);
         }
@@ -273,13 +295,16 @@ export function record(names: Schema, values: Schema, options: RecordOptions = {
     expected: 'object',
     accepts: isRecord,
     check(value, pointer, sink) {
-      if (!isRecord(value)) return sink.add(pointer, 'must be object');
+      if (!isRecord(value)) return sink.add(pointer, 'must be object', 'type');
       for (const name of required) {
         if (!Object.hasOwn(value, name)) sink.add(pointer, `must have required property '${name}'`);
       }
       for (const [name, item] of Object.entries(value)) {
         if (sink.full) return;
-        if (!matches(names, name)) sink.add(child(pointer, name), 'property name is invalid');
+        if (!matches(names, name)) {
+          const detail = names.format === undefined ? 'is invalid' : `must be ${names.format}`;
+          sink.add(child(pointer, name), `property name ${detail}`, 'name', name);
+        }
         values.check(item, child(pointer, name), sink);
       }
     },

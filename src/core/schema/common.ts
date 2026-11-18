@@ -10,10 +10,17 @@ export const timestamp = str({ pattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\
 export const epochMs = int({ minimum: 0 });
 export const runId = str({ minLength: 1, maxLength: 128 });
 export const mode = enumOf(['test', 'thresholds']);
-export const envLabel = str({ pattern: /^[a-z0-9-]+$/u, maxLength: 32 });
+export const envLabel = str({
+  pattern: /^[a-z0-9-]+$/u,
+  maxLength: 32,
+  format: 'a label of lowercase letters, digits and "-", like "staging"',
+});
 export const envLabelOrNull = nullable(envLabel);
 export const kind = enumOf(['api', 'custom']);
-export const percentileName = str({ pattern: /^p(?:[1-9][0-9]?)(?:\.[0-9])?$/u });
+export const percentileName = str({
+  pattern: /^p(?:[1-9][0-9]?)(?:\.[0-9])?$/u,
+  format: 'a percentile name like "p95" or "p99.9"',
+});
 export const key = str({ minLength: 1, maxLength: 2000 });
 export const tool = obj(
   { name: str({ minLength: 1 }), version: str({ minLength: 1 }) },

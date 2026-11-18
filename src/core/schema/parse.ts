@@ -74,7 +74,7 @@ const HINTS: Record<SchemaIssueCode, string> = {
     'Each kind has its own file (perf-thresholds.api… and perf-thresholds.custom…); move the entries to the right file or fix "kind".',
 };
 
-function describeProblems(problems: Problem[], more: boolean): string {
+function describeProblems(problems: Pick<Problem, 'pointer' | 'message'>[], more: boolean): string {
   const list = problems
     .map((p) => `${p.pointer === '' ? '(root)' : p.pointer} ${p.message}`)
     .join('; ');
@@ -85,9 +85,11 @@ function issueOf(
   code: SchemaIssueCode,
   source: string,
   summary: string,
-  problems: Problem[] = [],
+  problems: Pick<Problem, 'pointer' | 'message'>[] = [],
 ): SchemaIssue {
-  const shown = problems.slice(0, MAX_PROBLEMS);
+  const shown = problems
+    .slice(0, MAX_PROBLEMS)
+    .map(({ pointer, message }) => ({ pointer, message }));
   const details =
     shown.length === 0 ? '' : `: ${describeProblems(shown, problems.length > shown.length)}`;
   return { code, source, message: `${source}: ${summary}${details}`, problems: shown };
