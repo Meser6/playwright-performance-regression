@@ -1,0 +1,505 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkg.invalid/schemas/run-report.schema.json",
+  "title": "Run report",
+  "description": "Result of one perf-mode run. Written by the reporter in onEnd; read by the CLI (thresholds --from, report) and rendered to HTML (11). Everything the HTML report shows must be here (01-REQ-22).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "tool",
+    "runId",
+    "mode",
+    "startedAt",
+    "finishedAt",
+    "env",
+    "configDir",
+    "config",
+    "normalization",
+    "ci",
+    "host",
+    "playwright",
+    "runConditions",
+    "tests",
+    "evaluation",
+    "thresholdFiles",
+    "warnings",
+    "toolErrors",
+    "origins",
+    "endpoints",
+    "custom"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "tool": {"$ref": "common.schema.json#/$defs/tool"},
+    "runId": {"$ref": "common.schema.json#/$defs/runId"},
+    "mode": {"$ref": "common.schema.json#/$defs/mode"},
+    "startedAt": {"description": "Reporter onBegin.", "$ref": "common.schema.json#/$defs/timestamp"},
+    "finishedAt": {"description": "Reporter onEnd, before writing files.", "$ref": "common.schema.json#/$defs/timestamp"},
+    "env": {"$ref": "common.schema.json#/$defs/envLabelOrNull"},
+    "configDir": {
+      "description": "Absolute directory of the Playwright config file; base for relative paths (01-REQ-21).",
+      "type": "string",
+      "minLength": 1
+    },
+    "config": {
+      "description": "Effective package config after merging with defaults (00, 4.4), in JSON form (02-REQ-17, 03).",
+      "$ref": "config.schema.json"
+    },
+    "normalization": {
+      "description": "Normalization fingerprint of this run (07-REQ-21); copied to generated.normalization of derived thresholds files and compared with it (09-REQ-04).",
+      "$ref": "common.schema.json#/$defs/fingerprint"
+    },
+    "ci": {
+      "description": "CI metadata read from well-known environment variables (02-REQ-28); null outside CI or when no known provider is detected and CI is unset.",
+      "oneOf": [{"$ref": "#/$defs/ciInfo"}, {"type": "null"}]
+    },
+    "host": {
+      "description": "Machine that ran the tests (02-REQ-28).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "arch", "nodeVersion", "ci", "cpuCount", "cpuModel"],
+      "properties": {
+        "platform": {"description": "process.platform", "type": "string"},
+        "arch": {"description": "process.arch", "type": "string"},
+        "nodeVersion": {"description": "process.version", "type": "string"},
+        "ci": {"description": "True when the CI environment variable is set.", "type": "boolean"},
+        "cpuCount": {"description": "os.availableParallelism()", "type": "integer", "minimum": 1},
+        "cpuModel": {"description": "os.cpus()[0].model, trimmed; empty string when unknown.", "type": "string"}
+      }
+    },
+    "playwright": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version"],
+      "properties": {"version": {"description": "FullConfig.version", "type": "string"}}
+    },
+    "runConditions": {
+      "description": "Effective run conditions read from FullConfig in onBegin (ADR-0006).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workers", "projects", "overriddenSettings"],
+      "properties": {
+        "workers": {"type": "integer", "minimum": 1},
+        "projects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "role", "browserName", "repeatEach", "retries"],
+            "properties": {
+              "name": {"description": "Project name; empty string for the default project.", "type": "string"},
+              "role": {
+                "description": "measured: repeated and measured; dependency / teardown: referenced by another project, not repeated (D-04).",
+                "enum": ["measured", "dependency", "teardown"]
+              },
+              "browserName": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+              "repeatEach": {"type": "integer", "minimum": 1},
+              "retries": {"type": "integer", "minimum": 0}
+            }
+          }
+        },
+        "overriddenSettings": {
+          "description": "Playwright settings changed by withPerf(), e.g. 'use.video', 'retries' (01-REQ-37).",
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "tests": {
+      "description": "Functional test results, independent of the evaluation (P-08). Counters follow TestCase.outcome().",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "expected", "unexpected", "flaky", "skipped"],
+      "properties": {
+        "status": {"$ref": "common.schema.json#/$defs/testsStatus"},
+        "expected": {"$ref": "common.schema.json#/$defs/count"},
+        "unexpected": {"$ref": "common.schema.json#/$defs/count"},
+        "flaky": {"$ref": "common.schema.json#/$defs/count"},
+        "skipped": {"$ref": "common.schema.json#/$defs/count"}
+      }
+    },
+    "evaluation": {
+      "description": "Run-level evaluation summary. Per-key details live in endpoints/custom (02-REQ-15).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "gateEnabled", "counts"],
+      "properties": {
+        "status": {"$ref": "common.schema.json#/$defs/evaluationStatus"},
+        "gateEnabled": {"description": "False in thresholds mode.", "type": "boolean"},
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["api", "custom"],
+          "properties": {"api": {"$ref": "#/$defs/evaluationCounts"}, "custom": {"$ref": "#/$defs/evaluationCounts"}}
+        }
+      }
+    },
+    "thresholdFiles": {
+      "description": "Thresholds files the reporter tried to load.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/thresholdFileInfo"}
+    },
+    "warnings": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/issue"}},
+    "toolErrors": {
+      "description": "Problems that make the run result incomplete or untrustworthy; non-empty means exit code 3 (09-REQ-23). Collector and custom measurement diagnostics go to warnings.",
+      "type": "array",
+      "items": {"$ref": "common.schema.json#/$defs/issue"}
+    },
+    "origins": {
+      "description": "Origins of measured requests and their labels (07-REQ-03), sorted by origin. Shows which backend the run measured.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["origin", "label", "requestCount"],
+        "properties": {
+          "origin": {"description": "Canonical origin (scheme, host, port).", "type": "string", "minLength": 1},
+          "label": {"description": "Label used in keys; empty string for the base origin.", "type": "string"},
+          "requestCount": {"$ref": "common.schema.json#/$defs/count"}
+        }
+      }
+    },
+    "endpoints": {
+      "description": "Aggregates of backend endpoints by normalized key.",
+      "type": "object",
+      "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
+      "additionalProperties": {"$ref": "#/$defs/aggregate"}
+    },
+    "custom": {
+      "description": "Aggregates of custom measurements by name.",
+      "type": "object",
+      "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
+      "additionalProperties": {"$ref": "#/$defs/aggregate"}
+    }
+  },
+  "$defs": {
+    "evaluationCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keys",
+        "fromFile",
+        "fromDefaults",
+        "notEvaluated",
+        "tooFewSamples",
+        "fileEntriesNotEvaluated",
+        "medianOnly",
+        "unseenThresholdEntries",
+        "violations",
+        "blockingViolations",
+        "muted"
+      ],
+      "properties": {
+        "keys": {"description": "Keys seen in the run.", "$ref": "common.schema.json#/$defs/count"},
+        "fromFile": {"description": "Keys evaluated with thresholds from the file.", "$ref": "common.schema.json#/$defs/count"},
+        "fromDefaults": {"description": "Keys evaluated with default thresholds.", "$ref": "common.schema.json#/$defs/count"},
+        "notEvaluated": {"description": "Keys not evaluated, for any reason.", "$ref": "common.schema.json#/$defs/count"},
+        "tooFewSamples": {
+          "description": "Keys not evaluated because no rule had enough samples (part of notEvaluated).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "fileEntriesNotEvaluated": {
+          "description": "Keys with an entry in the thresholds file that were seen but not evaluated: too few samples (part of tooFewSamples, 09-REQ-17).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "medianOnly": {
+          "description": "Evaluated keys for which median was the only time rule run (too few samples for the percentile rule).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "unseenThresholdEntries": {
+          "description": "Entries in the thresholds file whose key did not occur in the run.",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "violations": {"description": "Keys with at least one failed check.", "$ref": "common.schema.json#/$defs/count"},
+        "blockingViolations": {"description": "Keys with at least one blocking failed check.", "$ref": "common.schema.json#/$defs/count"},
+        "muted": {"description": "Keys with active (not expired) muting.", "$ref": "common.schema.json#/$defs/count"}
+      }
+    },
+    "thresholdFileInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "status", "generated", "unseenKeys"],
+      "properties": {
+        "kind": {"$ref": "common.schema.json#/$defs/kind"},
+        "path": {"description": "Path relative to configDir, with forward slashes.", "type": "string", "minLength": 1},
+        "status": {
+          "description": "loaded; missing (not an error, 00 4.5); invalid (tool error, exit code 3).",
+          "enum": ["loaded", "missing", "invalid"]
+        },
+        "generated": {
+          "description": "Copy of the file's 'generated' block; null when missing, invalid or hand-written.",
+          "oneOf": [{"type": "object"}, {"type": "null"}]
+        },
+        "unseenKeys": {
+          "description": "Keys present in the file but not seen in the run, sorted.",
+          "type": "array",
+          "items": {"$ref": "common.schema.json#/$defs/key"}
+        }
+      }
+    },
+    "aggregate": {
+      "description": "Statistics of all samples of one key (08).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "successCount",
+        "errorCount",
+        "fromFailedTests",
+        "testCount",
+        "statuses",
+        "timeSources",
+        "stats",
+        "ttfb",
+        "slowest",
+        "topTests",
+        "samples",
+        "evaluation"
+      ],
+      "properties": {
+        "count": {"description": "All samples, successful or not.", "$ref": "common.schema.json#/$defs/count"},
+        "successCount": {
+          "description": "Successful samples with browser timing (endpoints) or outcome ok (custom); only these enter time statistics (08-REQ-02).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "errorCount": {
+          "description": "Samples counted as errors: endpoints with a status in checks.errors.statuses, custom measurements with outcome error or unfinished (08-REQ-05).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "fromFailedTests": {
+          "description": "Samples that came from tests that did not pass (D-05).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "testCount": {
+          "description": "Distinct tests in which the key occurred; repetitions of the same test count once (08-REQ-06).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "statuses": {
+          "description": "Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). Custom: ok, error, unfinished (08-REQ-05).",
+          "type": "object",
+          "propertyNames": {"pattern": "^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING|ok|error|unfinished)$"},
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "timeSources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["browser", "node"],
+          "properties": {"browser": {"$ref": "common.schema.json#/$defs/count"}, "node": {"$ref": "common.schema.json#/$defs/count"}}
+        },
+        "stats": {
+          "description": "Time statistics of successful samples; null when successCount is 0.",
+          "oneOf": [{"$ref": "#/$defs/stats"}, {"type": "null"}]
+        },
+        "ttfb": {
+          "description": "TTFB of successful samples that have it. Null for custom measurements and when no sample has TTFB.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["p50", "p95"],
+              "properties": {"p50": {"$ref": "common.schema.json#/$defs/ms"}, "p95": {"$ref": "common.schema.json#/$defs/ms"}}
+            },
+            {"type": "null"}
+          ]
+        },
+        "slowest": {
+          "description": "Up to 3 slowest successful samples, slowest first.",
+          "type": "array",
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/slowSample"}
+        },
+        "topTests": {
+          "description": "Up to 5 tests with the most samples of this key (08-REQ-33), most samples first.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "project", "file", "line", "sampleCount"],
+            "properties": {
+              "title": {"type": "string"},
+              "project": {"type": "string"},
+              "file": {"type": "string"},
+              "line": {"type": "integer", "minimum": 1},
+              "sampleCount": {"description": "Samples of this key from all repetitions of the test.", "type": "integer", "minimum": 1}
+            }
+          }
+        },
+        "samples": {
+          "description": "Retained successful durations, used to derive thresholds without rerunning tests (thresholds --from).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["durations", "sampled"],
+          "properties": {
+            "durations": {
+              "description": "Sorted ascending. At most advanced.maxSamplesPerKey values (08).",
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/ms"}
+            },
+            "sampled": {
+              "description": "True when successCount exceeded the limit and durations is a seeded uniform sample (P-06).",
+              "type": "boolean"
+            }
+          }
+        },
+        "evaluation": {"$ref": "#/$defs/keyEvaluation"}
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "avg", "max", "percentiles"],
+      "properties": {
+        "min": {"$ref": "common.schema.json#/$defs/ms"},
+        "avg": {"$ref": "common.schema.json#/$defs/ms"},
+        "max": {"$ref": "common.schema.json#/$defs/ms"},
+        "percentiles": {
+          "description": "Always p50, p90, p95, p99, plus the evaluated percentile when it is another one (08).",
+          "type": "object",
+          "required": ["p50", "p90", "p95", "p99"],
+          "propertyNames": {"$ref": "common.schema.json#/$defs/percentileName"},
+          "additionalProperties": {"$ref": "common.schema.json#/$defs/ms"}
+        }
+      }
+    },
+    "slowSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration", "startedAt", "test"],
+      "properties": {
+        "duration": {"$ref": "common.schema.json#/$defs/ms"},
+        "startedAt": {
+          "description": "Start of the request (startTime) or of the custom measurement (endTime - duration), UTC.",
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "test": {"$ref": "#/$defs/testRef"},
+        "url": {
+          "description": "Raw URL. Present only when raw URLs are enabled in config (D-11, 02-REQ-16).",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "testRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "project", "file", "line", "repeatEachIndex"],
+      "properties": {
+        "title": {"description": "Titles from the outermost describe to the test, joined with ' › '.", "type": "string"},
+        "project": {"type": "string"},
+        "file": {"description": "Relative to configDir, with forward slashes.", "type": "string"},
+        "line": {"type": "integer", "minimum": 1},
+        "repeatEachIndex": {"type": "integer", "minimum": 0}
+      }
+    },
+    "keyEvaluation": {
+      "description": "Evaluation of one key (rules: 09).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "reason", "thresholdSource", "limits", "checks", "muted"],
+      "properties": {
+        "result": {"enum": ["pass", "fail", "not-evaluated"]},
+        "reason": {
+          "description": "Why the key was not evaluated (P-10): too-few-samples (no enabled rule had enough samples), no-rules (all applicable rules disabled), thresholds-error (the thresholds file of this kind is invalid, 09-REQ-12). Null otherwise.",
+          "oneOf": [{"enum": ["too-few-samples", "no-rules", "thresholds-error"]}, {"type": "null"}]
+        },
+        "thresholdSource": {"description": "Where the applicable limits come from.", "enum": ["file", "default"]},
+        "limits": {
+          "description": "Limits applied to this key after filling missing ones from the rule limits in the config (02-REQ-21, 09-REQ-06). t, minApdex and maxWilson are null when the apdex and wilson rules do not apply (default thresholds, or a file entry without t); with t set, a missing minApdex or maxWilson comes from checks.slowShare.apdex.limit / wilson.limit.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["t", "median", "percentile", "p99", "minApdex", "maxWilson", "maxErrorRate"],
+          "properties": {
+            "t": {"oneOf": [{"$ref": "common.schema.json#/$defs/msLimit"}, {"type": "null"}]},
+            "median": {"$ref": "common.schema.json#/$defs/msLimit"},
+            "percentile": {"$ref": "common.schema.json#/$defs/msLimit"},
+            "p99": {"$ref": "common.schema.json#/$defs/msLimit"},
+            "minApdex": {"oneOf": [{"$ref": "common.schema.json#/$defs/ratio"}, {"type": "null"}]},
+            "maxWilson": {"oneOf": [{"$ref": "common.schema.json#/$defs/ratio"}, {"type": "null"}]},
+            "maxErrorRate": {"$ref": "common.schema.json#/$defs/ratio"}
+          }
+        },
+        "checks": {
+          "description": "Checks that were run (which ones depends on the sample count, 09). Empty when not evaluated.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/check"}
+        },
+        "muted": {
+          "description": "Muting from the thresholds file entry (gate: warn, 09-REQ-26), or null when the entry is not muted or the key has no entry.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["until", "note", "expired"],
+              "properties": {
+                "until": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"},
+                "note": {"type": "string", "minLength": 1},
+                "expired": {"description": "True when the run started after 'until': muting no longer applies.", "type": "boolean"}
+              }
+            },
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "n", "actual", "observed", "limit", "passed", "hardLimitExceeded", "blocking"],
+      "properties": {
+        "rule": {
+          "description": "Rule name (09, 5.2). apdex, wilson and errors compare a bound of a 95% interval (09-REQ-09).",
+          "enum": ["median", "percentile", "p99", "apdex", "wilson", "errors"]
+        },
+        "n": {
+          "description": "Samples the rule used: retained timing samples for time, apdex and wilson rules, all samples of the key for errors.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "actual": {
+          "description": "Value compared with the limit: ms for median/percentile/p99; for apdex the upper bound, for wilson and errors the lower bound of the 95% interval.",
+          "type": "number",
+          "minimum": 0
+        },
+        "observed": {
+          "description": "Point estimate behind a bound: Apdex score, share of samples slower than T, error rate. Null for time rules.",
+          "oneOf": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "null"}]
+        },
+        "limit": {"type": "number", "minimum": 0},
+        "passed": {"type": "boolean"},
+        "hardLimitExceeded": {
+          "description": "Time rules only (median, percentile, p99): the value exceeds limit x gate.hardLimitFactor (09-REQ-11). Always false for apdex, wilson and errors.",
+          "type": "boolean"
+        },
+        "blocking": {
+          "description": "This failed check fails the run under the gate policy (D-16, D-17). False for passed checks.",
+          "type": "boolean"
+        }
+      }
+    },
+    "ciInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "commit", "branch", "buildUrl"],
+      "properties": {
+        "provider": {
+          "description": "github, gitlab, jenkins, azure, or other (CI set, provider unknown).",
+          "enum": ["github", "gitlab", "jenkins", "azure", "other"]
+        },
+        "commit": {
+          "description": "Commit SHA, or null when unknown.",
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+        },
+        "branch": {
+          "description": "Branch name, or null when unknown.",
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+        },
+        "buildUrl": {
+          "description": "URL of the CI job or build, or null when unknown.",
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+        }
+      }
+    }
+  }
+}

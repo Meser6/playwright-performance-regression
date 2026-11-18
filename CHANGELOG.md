@@ -12,3 +12,4 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Package manifest with the entry points `playwright-performance-regression`, `/config`,
   `/fixture`, `/test`, `/reporter` and the `playwright-performance-regression` and `pw-perf`
   commands (placeholders, no functionality yet).
+- JSON Schemas for the configuration and all file formats, published under `schemas/`.

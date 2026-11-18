@@ -78,6 +78,7 @@
         "default": "./dist/reporter.cjs"
       }
     },
+    "./schemas/*": "./schemas/*",
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
@@ -89,6 +90,7 @@
   },
   "files": [
     "dist",
+    "schemas",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
