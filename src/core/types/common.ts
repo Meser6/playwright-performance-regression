@@ -1,4 +1,5 @@
 // Shared core types (01, chapter 4.1). Every other module uses these definitions.
+import { DOCS_CONFIG_URL, PACKAGE_NAME } from './constants.ts';
 import type { Issue } from './generated/formats.ts';
 
 export type { Issue };
@@ -15,19 +16,24 @@ export type CliIssue = Issue;
 /** Issue about a file; path is the file the problem concerns. */
 export type IoIssue = Issue & { path: string };
 
-/** Thrown by withPerf() for an invalid package config or mode environment; lists all issues. */
+/**
+ * Thrown by withPerf() for an invalid package config or mode environment; lists all issues.
+ * Each issue message already starts with the option path (03-REQ-12), so the path is not
+ * repeated; the hint follows on its own line.
+ */
 export class ConfigError extends Error {
   readonly issues: ConfigIssue[];
 
   constructor(issues: ConfigIssue[]) {
+    const count = `${issues.length} ${issues.length === 1 ? 'problem' : 'problems'}`;
     super(
       [
-        'Invalid playwright-performance-regression configuration:',
-        ...issues.map((issue) => {
-          const where = issue.path === undefined ? '' : ` (${issue.path})`;
-          const hint = issue.hint === undefined ? '' : ` ${issue.hint}`;
-          return `- ${issue.code}${where}: ${issue.message}${hint}`;
-        }),
+        `${PACKAGE_NAME}: invalid configuration (${count})`,
+        ...issues.flatMap((issue) => [
+          `  - ${issue.message}`,
+          ...(issue.hint === undefined ? [] : [`    ${issue.hint}`]),
+        ]),
+        `See ${DOCS_CONFIG_URL} for all options.`,
       ].join('\n'),
     );
     this.name = 'ConfigError';

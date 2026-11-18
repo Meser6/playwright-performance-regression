@@ -12,3 +12,7 @@ export const PACKAGE_NAME = 'playwright-performance-regression';
 
 /** Command used in hints of issues, e.g. "npx pw-perf thresholds" (04). */
 export const CLI_COMMAND = 'npx pw-perf';
+
+/** Documentation of every config option, linked from config errors (03-REQ-12, 13-REQ-15). */
+export const DOCS_CONFIG_URL =
+  'https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md';
