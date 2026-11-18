@@ -1,0 +1,159 @@
+// withPerfFixtures() and trackContext() (01, chapter 4.5; 05, chapters 3 and 4).
+import type { BrowserContext, Page, TestInfo, TestType } from '@playwright/test';
+import { perfDefaults } from '../core/config/index.ts';
+import { ConfigError } from '../core/types/index.ts';
+import { readModeState } from '../mode/index.ts';
+import {
+  activeCollector,
+  getRegistered,
+  setActiveCollector,
+  trackedContexts,
+  wrappedTests,
+} from '../registry/index.ts';
+import { CustomTimer } from './custom-timer.ts';
+import { createDiagnostics } from './diagnostics.ts';
+import { createPerfApi } from './perf-api.ts';
+import type { PerfApi, PerfFixtures } from './perf-api.ts';
+import { TestCollector } from './test-collector.ts';
+import { version } from '../../package.json';
+
+/** `base` with the `perf` fixture added; other fixtures and options keep their types. */
+export type PerfTestType<T> =
+  T extends TestType<infer TestArgs, infer WorkerArgs>
+    ? TestType<TestArgs & PerfFixtures, WorkerArgs>
+    : never;
+
+/** Value of the internal `_perfBuffer` fixture: the collector of a measured test, or none. */
+interface PerfBuffer {
+  collector: TestCollector | null;
+  api: PerfApi;
+}
+
+const now = (): number => performance.now();
+const wallNow = (): number => Date.now();
+
+/** Perf mode from the environment; it is fixed for the life of the worker (05-REQ-01). */
+function perfModeOn(): boolean {
+  const mode = readModeState(process.env);
+  if (!mode.ok) throw new ConfigError(mode.issues);
+  return mode.value !== null;
+}
+
+/** A perf API that measures but records nothing (06-REQ-10). */
+function passiveApi(): PerfApi {
+  return createPerfApi(
+    new CustomTimer({ now, wallNow, record: false }, createDiagnostics()),
+    () => {
+      // Nothing is tracked outside perf mode or in projects that are not measured.
+    },
+  );
+}
+
+/**
+ * The buffer of one test (05-REQ-21): a collector in measured projects, otherwise only the
+ * passive perf API. Without withPerf() in this process the default config is used and every
+ * project is measured (01-REQ-07; the reporter reports the missing withPerf()).
+ */
+function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer {
+  const state = getRegistered();
+  if (state !== undefined && !state.measuredProjects.includes(testInfo.project.name)) {
+    return { collector: null, api: passiveApi() };
+  }
+  const collector = new TestCollector({
+    measure: (state?.config ?? perfDefaults).measure,
+    version,
+    browserName,
+    testTimeout: () => testInfo.timeout,
+    now,
+    wallNow,
+  });
+  // Worker-scoped contexts registered with trackContext() (05-REQ-23).
+  for (const context of trackedContexts()) collector.track(context as BrowserContext);
+  return { collector, api: collector.api };
+}
+
+/* eslint-disable no-empty-pattern -- Playwright reads fixture dependencies from the pattern. */
+const passiveFixtures = {
+  perf: async ({}, use: (api: PerfApi) => Promise<void>): Promise<void> => {
+    await use(passiveApi());
+  },
+};
+/* eslint-enable no-empty-pattern */
+
+const perfFixtures = {
+  _perfBuffer: [
+    async (
+      { browserName }: { browserName: string },
+      use: (buffer: PerfBuffer) => Promise<void>,
+      testInfo: TestInfo,
+    ): Promise<void> => {
+      const buffer = openBuffer(browserName ?? null, testInfo);
+      const { collector } = buffer;
+      if (collector !== null) setActiveCollector(collector);
+      await use(buffer);
+      if (collector === null) return;
+      if (activeCollector() === collector) setActiveCollector(undefined);
+      collector.markTeardownStart();
+      // Drains here only when no page or context override did (05-REQ-13), then attaches the
+      // batch, also an empty one (05-REQ-15).
+      await collector.attach(testInfo);
+    },
+    { auto: true, box: true },
+  ],
+  context: async (
+    { context, _perfBuffer }: { context: BrowserContext; _perfBuffer: PerfBuffer },
+    use: (context: BrowserContext) => Promise<void>,
+  ): Promise<void> => {
+    _perfBuffer.collector?.track(context);
+    await use(context);
+    // First teardown of the collector: drain before the base context closes (05-REQ-02, V-09).
+    await _perfBuffer.collector?.drain();
+  },
+  page: async (
+    { page, _perfBuffer }: { page: Page; _perfBuffer: PerfBuffer },
+    use: (page: Page) => Promise<void>,
+  ): Promise<void> => {
+    _perfBuffer.collector?.coverPage(page);
+    await use(page);
+    await _perfBuffer.collector?.drain();
+  },
+  perf: async (
+    { _perfBuffer }: { _perfBuffer: PerfBuffer },
+    use: (api: PerfApi) => Promise<void>,
+  ): Promise<void> => {
+    await use(_perfBuffer.api);
+    _perfBuffer.collector?.markTeardownStart();
+  },
+};
+
+/**
+ * Adds the collector fixtures to `base` (05, chapter 3). Outside perf mode only the `perf`
+ * fixture is added and nothing else changes (05-REQ-01). Wrapping a test object this function
+ * returned gives it back unchanged (05-REQ-22). Never imports @playwright/test at runtime: it
+ * works with the `base` it gets (01-REQ-15).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withPerfFixtures<T extends TestType<any, any>>(base: T): PerfTestType<T> {
+  const wrapped = wrappedTests();
+  if (wrapped.has(base)) return base as unknown as PerfTestType<T>;
+  const extend = base.extend as (fixtures: object) => PerfTestType<T>;
+  const result = extend.call(base, perfModeOn() ? perfFixtures : passiveFixtures);
+  wrapped.add(result as object);
+  return result;
+}
+
+/**
+ * Registers a worker-scoped browser context: every test of a measured project tracks it with
+ * its own tracker (05-REQ-23). Call it once, right after creating the context. Does nothing
+ * outside perf mode.
+ */
+export function trackContext(context: BrowserContext): void {
+  if (!perfModeOn()) return;
+  const contexts = trackedContexts();
+  if (!contexts.has(context)) {
+    contexts.add(context);
+    context.once('close', () => contexts.delete(context));
+  }
+  // Registered during a test (e.g. a worker fixture set up by this test): track it now.
+  activeCollector()?.track(context);
+}
