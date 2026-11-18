@@ -370,5 +370,7 @@
       "passed": 2
     }
   },
-  "V-03:ranAt": "2026-11-18T20:38:19.822Z"
+  "V-03:ranAt": "2026-11-18T20:38:19.822Z",
+  "V-07": "see 1.57.0.json (Node only, no Playwright involved)",
+  "V-07:ranAt": "2026-11-18T20:39:33.580Z"
 }
