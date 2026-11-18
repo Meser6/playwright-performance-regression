@@ -115,4 +115,38 @@ export default tseslint.config(
     ['./', '../core/', '../mode/', '../registry/', '../../package.json'],
     ['@playwright/test'],
   ),
+  ...moduleBoundaries(
+    'src/collector',
+    [
+      './',
+      '../core/types/',
+      '../core/schema/',
+      // perfDefaults: the default config when withPerf() was not applied (01-REQ-07).
+      '../core/config/',
+      '../mode/',
+      '../registry/',
+      '../../package.json',
+    ],
+    ['@playwright/test'],
+  ),
+  // @playwright/test at runtime only in the "./test" entry point (01-REQ-26).
+  {
+    files: ['src/entries/**/*.ts'],
+    ignores: ['src/entries/test.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^@playwright/test$',
+              allowTypeImports: true,
+              message:
+                'Only src/entries/test.ts may import @playwright/test at runtime (01-REQ-26).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

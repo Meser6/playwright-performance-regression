@@ -60,4 +60,42 @@ describe('module import boundaries', () => {
       expect(await violations('src/config', code), code).toContain(RULE);
     }
   });
+
+  test('collector imports core/types, core/schema, core/config, mode, registry and Playwright types', async () => {
+    for (const code of [
+      "export type * from '../core/types/index.ts';\n",
+      "export { parseSampleBatch } from '../core/schema/index.ts';\n",
+      "export { perfDefaults } from '../core/config/index.ts';\n",
+      "export { readModeState } from '../mode/index.ts';\n",
+      "export { trackedContexts } from '../registry/index.ts';\n",
+      "import type { BrowserContext } from '@playwright/test';\nexport type C = BrowserContext;\n",
+    ]) {
+      expect(await violations('src/collector', code), code).toEqual([]);
+    }
+    for (const code of [
+      "import { test } from '@playwright/test';\nexport const a = test;\n",
+      "export { buildKey } from '../core/normalize/index.ts';\n",
+      "export { aggregate } from '../core/stats/index.ts';\n",
+      "export { withPerf } from '../config/index.ts';\n",
+      "export { writeJson } from '../io/json.ts';\n",
+      "import { join } from 'node:path';\nexport const a = join;\n",
+    ]) {
+      expect(await violations('src/collector', code), code).toContain(RULE);
+    }
+  });
+
+  test('only the ./test entry point imports @playwright/test at runtime (01-REQ-26)', async () => {
+    const runtime = "import { test } from '@playwright/test';\nexport const a = test;\n";
+    expect(await violations('src/entries', runtime)).toContain(RULE);
+    const [result] = await eslint.lintText(runtime, {
+      filePath: join(root, 'src/entries/test.ts'),
+    });
+    expect(result?.messages ?? []).toEqual([]);
+    expect(
+      await violations(
+        'src/entries',
+        "import type { TestType } from '@playwright/test';\nexport type T = TestType<object, object>;\n",
+      ),
+    ).toEqual([]);
+  });
 });
