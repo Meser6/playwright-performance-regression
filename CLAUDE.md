@@ -68,6 +68,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
     `evaluate`, `thresholds`, `reporter`, `html`, `cli`, `init`, `create`, `schemas`, `deps`,
     `release`
   - breaking changes: `!` after type/scope and a `BREAKING CHANGE:` footer with migration steps
+
 - Each commit on a branch is a logical step that builds. Tidy the branch (no "wip"/"fix typo"
   commits) before opening the PR; never force-push a branch someone else has pulled.
 - PR title follows Conventional Commits (it becomes the squash commit subject). Fill in

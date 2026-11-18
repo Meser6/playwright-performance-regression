@@ -1,0 +1,130 @@
+{
+  "name": "playwright-performance-regression",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Catch backend performance regressions from the Playwright tests you already have.",
+  "keywords": [
+    "playwright",
+    "performance",
+    "regression",
+    "benchmark",
+    "response-time",
+    "latency",
+    "api",
+    "e2e",
+    "thresholds",
+    "performance-budget",
+    "ci"
+  ],
+  "homepage": "https://github.com/Meser6/playwright-performance-regression#readme",
+  "bugs": {
+    "url": "https://github.com/Meser6/playwright-performance-regression/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Meser6/playwright-performance-regression.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./config": {
+      "import": {
+        "types": "./dist/config.d.ts",
+        "default": "./dist/config.js"
+      },
+      "require": {
+        "types": "./dist/config.d.cts",
+        "default": "./dist/config.cjs"
+      }
+    },
+    "./fixture": {
+      "import": {
+        "types": "./dist/fixture.d.ts",
+        "default": "./dist/fixture.js"
+      },
+      "require": {
+        "types": "./dist/fixture.d.cts",
+        "default": "./dist/fixture.cjs"
+      }
+    },
+    "./test": {
+      "import": {
+        "types": "./dist/test.d.ts",
+        "default": "./dist/test.js"
+      },
+      "require": {
+        "types": "./dist/test.d.cts",
+        "default": "./dist/test.cjs"
+      }
+    },
+    "./reporter": {
+      "import": {
+        "types": "./dist/reporter.d.ts",
+        "default": "./dist/reporter.js"
+      },
+      "require": {
+        "types": "./dist/reporter.d.cts",
+        "default": "./dist/reporter.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "bin": {
+    "playwright-performance-regression": "./dist/cli.js",
+    "pw-perf": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "publint": "publint --strict",
+    "attw": "attw --pack . --profile node16"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.57.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "packageManager": "pnpm@10.16.1",
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.57.0",
+    "@types/node": "^22.20.5",
+    "ajv": "8.20.0",
+    "eslint": "10.15.0",
+    "globals": "^17.14.0",
+    "json-schema-to-typescript": "16.0.0",
+    "prettier": "3.10.1",
+    "publint": "0.3.25",
+    "tsup": "9.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "8.73.0",
+    "vitest": "5.1.1"
+  }
+}
