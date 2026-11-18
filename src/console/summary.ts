@@ -2,6 +2,9 @@
 // report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
 // terminal width, the color decision and the current directory, and prints the text.
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
+import { compareText, padEnd, padStart, plural, textWidth, truncateMiddle } from './text.ts';
+
+export { truncateMiddle };
 
 export interface SummaryOptions {
   /** Terminal columns; 120 without a terminal (09-REQ-22). */
@@ -40,36 +43,6 @@ const ANSI = { red: '\u001b[31m', yellow: '\u001b[33m', green: '\u001b[32m', bol
 const RESET = '\u001b[0m';
 
 type Paint = (text: string, style: keyof typeof ANSI) => string;
-
-function compareText(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function plural(n: number, word: string, many = `${word}s`): string {
-  return `${n} ${n === 1 ? word : many}`;
-}
-
-/** Shortens text to `width` code points with "…" in the middle (01, chapter 4.9). */
-export function truncateMiddle(text: string, width: number): string {
-  const chars = Array.from(text);
-  if (chars.length <= width) return text;
-  if (width <= 1) return '…'.slice(0, width);
-  const head = Math.ceil((width - 1) / 2);
-  const tail = width - 1 - head;
-  return `${chars.slice(0, head).join('')}…${tail === 0 ? '' : chars.slice(-tail).join('')}`;
-}
-
-function textWidth(text: string): number {
-  return Array.from(text).length;
-}
-
-function padEnd(text: string, width: number): string {
-  return text + ' '.repeat(Math.max(0, width - textWidth(text)));
-}
-
-function padStart(text: string, width: number): string {
-  return ' '.repeat(Math.max(0, width - textWidth(text))) + text;
-}
 
 /**
  * Relative exceedance r of a failed check (09-REQ-19, 09-REQ-20): actual / limit for rules
