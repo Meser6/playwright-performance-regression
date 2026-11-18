@@ -24,6 +24,8 @@ import type {
 /** Names used by the spec for generated format types. */
 export type Outcome = OutcomeFile;
 export type RunReportAggregate = Aggregate;
+/** Aggregate as in the run report, without 'evaluation' (added by the evaluation, 09). */
+export type AggregateStats = Omit<Aggregate, 'evaluation'>;
 export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
 export type RawCustomSample = CustomSample;
