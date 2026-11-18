@@ -6,3 +6,5 @@ spec-ids.json
 # Moved unchanged from the spec repository.
 schemas/
 test/golden/
+# Throw-away spike (WP-02), never part of the package.
+prototype/

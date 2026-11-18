@@ -1,0 +1,10 @@
+{
+  "name": "pw-perf-prototype",
+  "private": true,
+  "description": "Throw-away spike answering the V-01..V-12 assumptions. Not part of the package.",
+  "type": "module",
+  "scripts": {
+    "setup": "cd versions/1.57.0 && npm install && npx playwright install chromium firefox webkit && cd ../latest && npm install && npx playwright install chromium firefox webkit",
+    "verify": "node verify.mjs"
+  }
+}

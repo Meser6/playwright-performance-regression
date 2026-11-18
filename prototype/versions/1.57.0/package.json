@@ -1,0 +1,8 @@
+{
+  "name": "pw-perf-prototype-pw-1-57",
+  "private": true,
+  "description": "Playwright 1.57.0 install used by the prototype runner.",
+  "devDependencies": {
+    "@playwright/test": "1.57.0"
+  }
+}

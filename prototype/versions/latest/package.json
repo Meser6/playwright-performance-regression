@@ -1,0 +1,8 @@
+{
+  "name": "pw-perf-prototype-pw-latest",
+  "private": true,
+  "description": "Latest Playwright install used by the prototype runner (checked with npm view on 2026-11-18).",
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

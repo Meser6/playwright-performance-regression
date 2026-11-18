@@ -9,7 +9,14 @@ const nodeBuiltins = [...builtinModules, ...builtinModules.map((m) => `node:${m}
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'coverage/', 'node_modules/', 'src/core/types/generated/'],
+    ignores: [
+      'dist/',
+      'coverage/',
+      'node_modules/',
+      'src/core/types/generated/',
+      // Throw-away spike (WP-02), never part of the package.
+      'prototype/',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.strict,

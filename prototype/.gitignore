@@ -1,0 +1,5 @@
+versions/*/node_modules/
+versions/*/package-lock.json
+versions/*/work/
+test-results/
+playwright-report/
