@@ -1,0 +1,5 @@
+{
+  "name": "proto-browsers",
+  "private": true,
+  "type": "module"
+}

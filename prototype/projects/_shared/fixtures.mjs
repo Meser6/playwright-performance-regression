@@ -26,9 +26,11 @@ export function createTracker(context, label = 'context') {
     if (!/^https?:/.test(req.url())) return;
     inflight.set(req, { t0: performance.now() });
   };
+  let closed = false;
   const finish = async (req, failed) => {
     const st = inflight.get(req);
-    if (!st) return;
+    if (!st || st.finishing) return;
+    st.finishing = true;
     const nodeMs = performance.now() - st.t0;
     const timing = req.timing();
     let status = 'FAILED';
@@ -38,6 +40,7 @@ export function createTracker(context, label = 'context') {
       status = resp ? resp.status() : 'NO_RESPONSE';
       fromServiceWorker = resp ? resp.fromServiceWorker() : false;
     }
+    if (closed) return; // drained before the computation settled: already counted as PENDING
     samples.push({
       label,
       method: req.method(),
@@ -71,12 +74,16 @@ export function createTracker(context, label = 'context') {
   return {
     samples,
     inflight,
+    drained: false,
     async drain(budgetMs) {
+      if (this.drained) return;
+      this.drained = true;
       accepting = false;
       const deadline = performance.now() + Math.max(0, budgetMs);
       while ((inflight.size || work.size) && performance.now() < deadline) await sleep(5);
+      closed = true;
       for (const [req] of inflight) {
-        samples.push({ label, method: req.method(), url: req.url(), status: 'PENDING' });
+        samples.push({ label, method: req.method(), url: req.url(), status: 'PENDING', failureText: null });
       }
       inflight.clear();
       context.off('request', onRequest);
@@ -123,6 +130,8 @@ export const test = base.extend({
         for (const t of buffer.trackers) await t.drain(budget);
         buffer.events.push({ drainedIn: 'buffer', budget, waitedMs: +(performance.now() - d0).toFixed(1) });
       }
+      // Trackers not drained yet (own contexts in the "context" variant) are closed now.
+      for (const t of buffer.trackers) await t.drain(0);
       const sleepMs = Number(env('PROTO_TEARDOWN_SLEEP_MS', '0'));
       if (sleepMs) await sleep(sleepMs);
       const samples = buffer.trackers.flatMap((t) => t.samples);
