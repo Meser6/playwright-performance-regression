@@ -372,5 +372,207 @@
   },
   "V-03:ranAt": "2026-11-18T20:38:19.822Z",
   "V-07": "see 1.57.0.json (Node only, no Playwright involved)",
-  "V-07:ranAt": "2026-11-18T20:39:33.580Z"
+  "V-07:ranAt": "2026-11-18T20:39:33.580Z",
+  "V-05": {
+    "no flag (config: list + recording reporter)": {
+      "exitCode": 0,
+      "recordingReporterEvents": [
+        "construct",
+        "begin",
+        "testEnd",
+        "end"
+      ],
+      "recordingReporterOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "test",
+        "_commandHash": ""
+      },
+      "listOutput": true,
+      "dotOutput": false,
+      "stdoutHead": " | Running 4 tests using 1 worker | "
+    },
+    "--reporter=dot (config reporters replaced?)": {
+      "exitCode": 0,
+      "recordingReporterEvents": [],
+      "recordingReporterOptions": null,
+      "listOutput": false,
+      "dotOutput": true,
+      "stdoutHead": " | Running 4 tests using 1 worker | ··°°"
+    },
+    "--reporter=list,<abs path with space>": {
+      "exitCode": 0,
+      "recordingReporterEvents": [
+        "construct",
+        "begin",
+        "testEnd",
+        "end"
+      ],
+      "recordingReporterOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "test",
+        "_commandHash": ""
+      },
+      "listOutput": true,
+      "dotOutput": false,
+      "stdoutHead": " | Running 4 tests using 1 worker | "
+    },
+    "--reporter list,<abs path with space> (two args)": {
+      "exitCode": 0,
+      "recordingReporterEvents": [
+        "construct",
+        "begin",
+        "testEnd",
+        "end"
+      ],
+      "recordingReporterOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "test",
+        "_commandHash": ""
+      },
+      "listOutput": true,
+      "dotOutput": false,
+      "stdoutHead": " | Running 4 tests using 1 worker | "
+    },
+    "--reporter=dot --reporter=line,<abs> (repeated flag, path in last)": {
+      "exitCode": 0,
+      "recordingReporterEvents": [
+        "construct",
+        "begin",
+        "testEnd",
+        "end"
+      ],
+      "recordingReporterOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "test",
+        "_commandHash": ""
+      },
+      "listOutput": false,
+      "dotOutput": false,
+      "stdoutHead": " | Running 4 tests using 1 worker | "
+    },
+    "--reporter=line,<abs> --reporter=dot (repeated flag, path in first)": {
+      "exitCode": 0,
+      "recordingReporterEvents": [],
+      "recordingReporterOptions": null,
+      "listOutput": false,
+      "dotOutput": true,
+      "stdoutHead": " | Running 4 tests using 1 worker | ··°°"
+    }
+  },
+  "V-05:ranAt": "2026-11-18T20:41:01.469Z",
+  "V-06": {
+    "tests pass, onEnd returns failed": {
+      "exitCode": 1,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "statusSeenInOnEnd": "passed"
+    },
+    "tests pass, onEnd returns nothing": {
+      "exitCode": 0,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "statusSeenInOnEnd": "passed"
+    },
+    "test fails, onEnd returns passed": {
+      "exitCode": 0,
+      "tests": [
+        "failed"
+      ],
+      "statusSeenInOnEnd": "failed"
+    },
+    "test fails, onEnd returns nothing": {
+      "exitCode": 1,
+      "tests": [
+        "failed"
+      ],
+      "statusSeenInOnEnd": "failed"
+    },
+    "tests pass, onEnd returns interrupted": {
+      "exitCode": 130,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "statusSeenInOnEnd": "passed"
+    },
+    "tests pass, onEnd returns timedout": {
+      "exitCode": 1,
+      "tests": [
+        "passed",
+        "passed"
+      ],
+      "statusSeenInOnEnd": "passed"
+    }
+  },
+  "V-06:ranAt": "2026-11-18T20:40:24.706Z",
+  "V-10": [
+    {
+      "title": "uses page",
+      "status": "passed",
+      "attachmentInOnTestEnd": true,
+      "sampleCount": 2,
+      "bodyBytes": 1251
+    },
+    {
+      "title": "no browser",
+      "status": "passed",
+      "attachmentInOnTestEnd": true,
+      "sampleCount": 0,
+      "bodyBytes": 234
+    },
+    {
+      "title": "fails on purpose",
+      "status": "failed",
+      "attachmentInOnTestEnd": true,
+      "sampleCount": 1,
+      "bodyBytes": 768
+    },
+    {
+      "title": "times out on purpose",
+      "status": "timedOut",
+      "attachmentInOnTestEnd": true,
+      "sampleCount": 1,
+      "bodyBytes": 765
+    }
+  ],
+  "V-10:ranAt": "2026-11-18T20:40:26.968Z",
+  "V-11": {
+    "--list": {
+      "exitCode": 0,
+      "events": [
+        "construct",
+        "begin",
+        "end"
+      ],
+      "reporterConstructorOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "list",
+        "_commandHash": "",
+        "onlyFailures": false
+      },
+      "testCountInOnBegin": 4,
+      "statusInOnEnd": "passed"
+    },
+    "--list, onEnd returns failed": {
+      "exitCode": 1,
+      "events": [
+        "construct",
+        "begin",
+        "end"
+      ],
+      "reporterConstructorOptions": {
+        "configDir": "<prototype>/versions/latest/work/esm-ts",
+        "_mode": "list",
+        "_commandHash": "",
+        "onlyFailures": false
+      },
+      "testCountInOnBegin": 4,
+      "statusInOnEnd": "passed"
+    }
+  },
+  "V-11:ranAt": "2026-11-18T20:41:02.078Z"
 }

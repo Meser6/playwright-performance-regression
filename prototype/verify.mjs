@@ -6,10 +6,15 @@ import { ROOT, VERSIONS, resolvePlaywrightCli } from './lib.mjs';
 import { startServer } from './server.mjs';
 import { v01v02, v03, v03Spawn } from './checks/config-loading.mjs';
 import { v07 } from './checks/native-ts.mjs';
+import { v05, v06, v10, v11 } from './checks/reporter.mjs';
 
 const CHECKS = {
   'V-01+V-02': v01v02,
   'V-03': async (v, srv) => ({ resolve: v03(v), spawnWithSpaceInPath: await v03Spawn(v, srv) }),
+  'V-05': v05,
+  'V-06': v06,
+  'V-10': v10,
+  'V-11': v11,
   // Independent of the Playwright version; run once.
   'V-07': (v) => (v === VERSIONS[0] ? v07(v) : 'see 1.57.0.json (Node only, no Playwright involved)'),
 };
