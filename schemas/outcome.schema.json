@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkg.invalid/schemas/outcome.schema.json",
+  "title": "Outcome file",
+  "description": "Small file the reporter writes at the end of onEnd to the path from <PKG>_OUTCOME_FILE (ADR-0009). Read and deleted by the CLI. Not written when the run was started without the CLI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "mode", "exitCode", "tests", "evaluation", "toolErrors", "paths"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "$ref": "common.schema.json#/$defs/runId" },
+    "mode": { "$ref": "common.schema.json#/$defs/mode" },
+    "exitCode": {
+      "description": "Exit code the CLI must use, computed by buildOutcome() in core (00, chapter 11; 02-REQ-26): 0 ok, 2 performance violations block the run, 3 tool error or untrustworthy result. Precedence 3 > 2 > 0. Failed tests alone never give a non-zero code in perf mode (gate.maxFailedTestShare, 09-REQ-24); code 1 is reserved and never written. An interrupted or timed-out run without a signal has RUN_INCOMPLETE in toolErrors, so 3; the CLI itself uses 130/143 after a signal it received, regardless of this file (04).",
+      "enum": [0, 2, 3]
+    },
+    "tests": { "type": "object", "additionalProperties": false, "required": ["status"], "properties": { "status": { "$ref": "common.schema.json#/$defs/testsStatus" } } },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "gateEnabled"],
+      "properties": {
+        "status": { "$ref": "common.schema.json#/$defs/evaluationStatus" },
+        "gateEnabled": { "description": "False in thresholds mode.", "type": "boolean" }
+      }
+    },
+    "toolErrors": { "description": "Same entries as toolErrors in the run report.", "type": "array", "items": { "$ref": "common.schema.json#/$defs/issue" } },
+    "paths": {
+      "description": "Absolute paths of files written in this run, for the CLI summary.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reportJson", "reportHtml", "thresholds", "thresholdsDiff"],
+      "properties": {
+        "reportJson": { "description": "Null when the report could not be written.", "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "reportHtml": { "description": "Null when the HTML report could not be written.", "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "thresholds": { "description": "Thresholds files written (thresholds mode only).", "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "thresholdsDiff": {
+          "description": "Thresholds diff in Markdown (10-REQ-19); null outside thresholds mode or when not written.",
+          "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        }
+      }
+    }
+  }
+}

@@ -68,6 +68,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
     `evaluate`, `thresholds`, `reporter`, `html`, `cli`, `init`, `create`, `schemas`, `deps`,
     `release`
   - breaking changes: `!` after type/scope and a `BREAKING CHANGE:` footer with migration steps
+
 - Each commit on a branch is a logical step that builds. Tidy the branch (no "wip"/"fix typo"
   commits) before opening the PR; never force-push a branch someone else has pulled.
 - PR title follows Conventional Commits (it becomes the squash commit subject). Fill in
@@ -76,4 +77,24 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 
 ## Commands
 
-Set up in work package 01 (toolchain). Until then there is nothing to build or test.
+Requires Node >= 22.18.0 and pnpm (version pinned in `packageManager`; `corepack enable`).
+
+```sh
+pnpm install                 # install dev dependencies (frozen lockfile in CI)
+pnpm build                   # tsup: ESM + CJS + declarations per entry point into dist/
+pnpm typecheck               # tsc --noEmit (src, test, scripts)
+pnpm lint                    # ESLint, including the src/core import boundary rule
+pnpm format                  # Prettier --write; `pnpm format:check` in CI
+pnpm test                    # Vitest: unit, contract and script tests
+pnpm gen:types               # regenerate src/core/types/generated/ from schemas/
+pnpm check:types-generated   # fail when the generated types are out of date
+pnpm check:ac                # AC coverage for the criteria in scripts/ac-scope.json (--all: every AC)
+pnpm check:pr-title "<title>"   # validate a PR title (Conventional Commits rules above)
+pnpm publint && pnpm attw    # package exports check (run after `pnpm build`)
+```
+
+- Never edit `src/core/types/generated/` by hand: change the schema and run `pnpm gen:types`.
+- `spec-ids.json` is regenerated, never edited: run
+  `node ../pw-benchmark/scripts/export-spec-ids.mjs --out spec-ids.json` from this repository.
+- When a work package implements acceptance criteria, add them (or the whole spec file prefix) to
+  `scripts/ac-scope.json`; manual or out-of-CI criteria go to `scripts/ac-manual.json`.

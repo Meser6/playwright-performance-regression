@@ -1,0 +1,875 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkg.invalid/schemas/config.schema.json",
+  "title": "Package config",
+  "description": "JSON form of the package config: a '<pkg>.config.json' file and the effective config snapshot in the run report. The 'default' keywords are the single source of default values (03-REQ-05). The TypeScript input type additionally accepts RegExp in url patterns and a keyBuilder function (03, chapter 5).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"description": "Optional, for editor support in JSON config files.", "type": "string"},
+    "run": {
+      "description": "How the measurement run is executed (01, 04).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "env": {
+          "description": "Environment label (D-18). Overridden by <PKG>_ENV / --env. Null: no label, one set of thresholds files.",
+          "$ref": "common.schema.json#/$defs/envLabelOrNull",
+          "default": null
+        },
+        "repeat": {
+          "description": "Repetitions of each measured test (D-03). Overridden by <PKG>_REPEAT / --repeat for the current mode.",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "test": {
+              "description": "Repetitions in a measurement run.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 5
+            },
+            "thresholds": {
+              "description": "Repetitions in a thresholds derivation run.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 10
+            }
+          }
+        },
+        "projects": {
+          "description": "Which Playwright projects are measured and repeated in perf mode (D-04, D-13, D-22; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured and repeated too.",
+          "oneOf": [{"const": "auto"}, {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true}],
+          "default": "auto"
+        },
+        "keepReporters": {
+          "description": "Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters (list, line, dot, github) and the package reporter (D-23, 04-REQ-32).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "default": []
+        }
+      }
+    },
+    "measure": {
+      "description": "What the collector measures (05).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "resourceTypes": {
+          "description": "Playwright resource types that are measured. WebSocket traffic is not available as Request events in Playwright and cannot be measured (05).",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "document",
+              "stylesheet",
+              "image",
+              "media",
+              "font",
+              "script",
+              "texttrack",
+              "xhr",
+              "fetch",
+              "eventsource",
+              "manifest",
+              "other"
+            ]
+          },
+          "default": ["document", "xhr", "fetch"]
+        },
+        "ignoreExtensions": {
+          "description": "Requests whose URL path ends with one of these extensions are skipped, except resource type 'document' (05).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^\\.[a-z0-9]+$"},
+          "default": [
+            ".js",
+            ".mjs",
+            ".css",
+            ".map",
+            ".html",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".svg",
+            ".webp",
+            ".avif",
+            ".ico",
+            ".woff",
+            ".woff2",
+            ".ttf",
+            ".otf",
+            ".eot"
+          ]
+        },
+        "include": {
+          "description": "When not empty, only requests whose URL matches at least one pattern are measured.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/urlPattern"},
+          "default": []
+        },
+        "exclude": {
+          "description": "Requests whose URL matches any pattern are skipped. Applied after include.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/urlPattern"},
+          "default": ["/socket.io/"]
+        },
+        "excludeKnownThirdParty": {
+          "description": "Skip requests to the built-in list of analytics, tag manager, monitoring and chat hosts (05).",
+          "type": "boolean",
+          "default": true
+        },
+        "successStatuses": {
+          "description": "HTTP statuses counted as successful samples: a class like '2xx' or an exact code like '404'.",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^(?:[1-5]xx|[1-5][0-9]{2})$"},
+          "default": ["2xx", "3xx"]
+        },
+        "pendingTimeoutMs": {
+          "description": "How long the collector waits at test end for requests still in flight (05).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000,
+          "default": 2000
+        }
+      }
+    },
+    "keys": {
+      "description": "How raw URLs become endpoint keys (07).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "origins": {
+          "description": "Origin to label mapping, e.g. {\"https://api.example.com\": \"api\"}. The origin of Playwright use.baseURL gets the empty label unless mapped here. Other origins are labeled with their host.",
+          "type": "object",
+          "propertyNames": {"pattern": "^https?://[^/?#]+$"},
+          "additionalProperties": {"type": "string", "pattern": "^[a-z0-9.-]*$", "maxLength": 64},
+          "default": {}
+        },
+        "idPatterns": {
+          "description": "Built-in path segment patterns replaced with ':id' (07).",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "number": {"type": "boolean", "default": true},
+            "uuid": {"type": "boolean", "default": true},
+            "hex": {"description": "Hex strings of at least 16 characters.", "type": "boolean", "default": true},
+            "token": {
+              "description": "Tokens of at least 24 characters containing a digit, without separators or with mixed case (07-REQ-08).",
+              "type": "boolean",
+              "default": true
+            },
+            "mixed": {
+              "description": "Random-looking ids of at least 16 characters with a digit, a lowercase and an uppercase letter, e.g. nanoid (07-REQ-08).",
+              "type": "boolean",
+              "default": true
+            },
+            "email": {"description": "E-mail addresses, replaced with ':email' (07-REQ-08).", "type": "boolean", "default": true}
+          }
+        },
+        "extraIdPatterns": {
+          "description": "Additional path segment patterns replaced with ':id'. A string matches a whole segment literally; a regex is tested against the segment.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/urlPattern"},
+          "default": []
+        },
+        "query": {
+          "description": "'names': keep sorted parameter names; 'ignore': drop the query string entirely.",
+          "enum": ["names", "ignore"],
+          "default": "names"
+        },
+        "keepQueryValues": {
+          "description": "Query parameters whose values are kept in the key, e.g. ['type'] gives '?type=open'.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "default": []
+        },
+        "dropQueryParams": {
+          "description": "Query parameter names always removed from the key (e.g. cache busters with fixed names).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "default": []
+        },
+        "keyBuilder": {
+          "description": "Snapshot only: \"[function]\" when a custom keyBuilder function was configured (TypeScript/JavaScript config).",
+          "const": "[function]"
+        }
+      }
+    },
+    "checks": {
+      "description": "What is checked for every key (09) and how thresholds are derived for it (10). Each rule: enabled, minSamples, limit (for keys without an entry in the thresholds file) and margin (headroom added when deriving thresholds).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "time": {
+          "description": "Response-time rules.",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "median": {
+              "description": "Median (p50) must not exceed the limit.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+                "minSamples": {
+                  "description": "Minimum samples for the rule to run (09-REQ-07).",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 5
+                },
+                "margin": {
+                  "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "relative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Relative headroom, e.g. 0.4 = +40%.",
+                      "default": 0.4
+                    },
+                    "minMs": {"type": "integer", "minimum": 0, "description": "Minimum absolute headroom in ms.", "default": 100},
+                    "smallSampleRelative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Relative headroom when the key has fewer than thresholds.smallSampleN samples.",
+                      "default": 0.8
+                    }
+                  }
+                },
+                "limit": {
+                  "description": "Limit in ms for keys without an entry in the thresholds file (00, 4.5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
+                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 5000}
+                  }
+                }
+              }
+            },
+            "percentile": {
+              "description": "The percentile chosen in level must not exceed the limit.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+                "minSamples": {
+                  "description": "Minimum samples for the rule to run (09-REQ-07).",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 20
+                },
+                "level": {
+                  "description": "Which percentile this rule evaluates, e.g. p95 (the thresholds file records it as evaluatedPercentile).",
+                  "$ref": "common.schema.json#/$defs/percentileName",
+                  "default": "p95"
+                },
+                "limit": {
+                  "description": "Limit in ms for keys without an entry in the thresholds file.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
+                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 5000}
+                  }
+                },
+                "margin": {
+                  "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "relative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Relative headroom, e.g. 0.4 = +40%.",
+                      "default": 0.4
+                    },
+                    "minMs": {"type": "integer", "minimum": 0, "description": "Minimum absolute headroom in ms.", "default": 100},
+                    "smallSampleRelative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Relative headroom when the key has fewer than thresholds.smallSampleN samples.",
+                      "default": 0.8
+                    }
+                  }
+                }
+              }
+            },
+            "p99": {
+              "description": "p99 must not exceed the limit.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+                "minSamples": {
+                  "description": "Minimum samples for the rule to run (09-REQ-07).",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 100
+                },
+                "margin": {
+                  "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "relative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Relative headroom over the source p99.",
+                      "default": 0.2
+                    },
+                    "minGapMs": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "The p99 limit is at least this many ms above the percentile limit.",
+                      "default": 50
+                    },
+                    "minGapRelative": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "The p99 limit is at least this share above the percentile limit.",
+                      "default": 0.1
+                    }
+                  }
+                },
+                "limit": {
+                  "description": "Limit in ms for keys without an entry in the thresholds file.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 4000},
+                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 10000}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "slowShare": {
+          "description": "Rules on the share of slow responses, relative to the Apdex threshold T. Run only for keys with a key-specific T from the thresholds file (09-REQ-07).",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "t": {
+              "description": "Apdex threshold T: satisfied below T, tolerated up to 4T (08). Used by the apdex and wilson rules, which run only for keys whose thresholds file entry has a key-specific t (09-D-12). These settings bound the derived T (10).",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "min": {"$ref": "common.schema.json#/$defs/msLimit", "description": "Lower clamp of derived T."},
+                    "max": {
+                      "$ref": "common.schema.json#/$defs/msLimit",
+                      "description": "Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13)."
+                    },
+                    "medianFactor": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "description": "Derived T is at most medianFactor × p50."
+                    }
+                  },
+                  "default": {"min": 500, "max": 2000, "medianFactor": 2}
+                },
+                "custom": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "min": {"$ref": "common.schema.json#/$defs/msLimit", "description": "Lower clamp of derived T."},
+                    "max": {
+                      "$ref": "common.schema.json#/$defs/msLimit",
+                      "description": "Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13)."
+                    },
+                    "medianFactor": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "description": "Derived T is at most medianFactor × p50."
+                    }
+                  },
+                  "default": {"min": 1000, "max": 10000, "medianFactor": 2}
+                }
+              }
+            },
+            "apdex": {
+              "description": "Apdex(T) must not fall below the limit (upper confidence bound compared, ADR-0010). Runs only for keys with a key-specific T from the thresholds file.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+                "minSamples": {
+                  "description": "Minimum samples for the rule to run (09-REQ-07).",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 20
+                },
+                "margin": {
+                  "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "absolute": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Subtracted from the source Apdex.",
+                      "default": 0.05
+                    },
+                    "smallSampleAbsolute": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Subtracted when the key has fewer than thresholds.smallSampleN samples.",
+                      "default": 0.1
+                    }
+                  }
+                },
+                "limit": {
+                  "description": "minApdex for hand-written thresholds file entries that set t but omit minApdex (02-REQ-21). Keys without an entry never run this rule (09-D-12).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85},
+                    "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85}
+                  }
+                }
+              }
+            },
+            "wilson": {
+              "description": "Share of samples slower than T must not exceed the limit (lower Wilson bound compared, ADR-0010). Runs only for keys with a key-specific T.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+                "minSamples": {
+                  "description": "Minimum samples for the rule to run (09-REQ-07).",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 20
+                },
+                "margin": {
+                  "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "factor": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Multiplier of the source share of slow samples.",
+                      "default": 1.5
+                    },
+                    "add": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Added after multiplying.",
+                      "default": 0.02
+                    },
+                    "min": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Lower clamp of the derived limit.",
+                      "default": 0.03
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Upper clamp of the derived limit (self-consistency may exceed it, 10-REQ-05).",
+                      "default": 0.15
+                    },
+                    "smallSampleMin": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Minimum limit when the key has fewer than thresholds.smallSampleN samples.",
+                      "default": 0.1
+                    }
+                  }
+                },
+                "limit": {
+                  "description": "maxWilson for hand-written thresholds file entries that set t but omit maxWilson (02-REQ-21). Keys without an entry never run this rule (09-D-12).",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "default": {},
+                  "properties": {
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
+                    "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "errors": {
+          "description": "Error rate must not exceed the limit (lower Wilson bound compared, ADR-0010).",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "enabled": {"description": "Run this rule.", "type": "boolean", "default": true},
+            "minSamples": {
+              "description": "Minimum samples for the rule to run (09-REQ-07).",
+              "type": "integer",
+              "minimum": 1,
+              "default": 5
+            },
+            "statuses": {
+              "description": "Request statuses counted as errors by the 'errors' rule (08, 09): a class like '5xx', an exact code like '429', FAILED (request failed without a response, not aborted), ABORTED (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end). Custom measurements: outcomes error and unfinished are always errors.",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"type": "string", "pattern": "^(?:[1-5]xx|[1-5][0-9]{2}|FAILED|ABORTED|PENDING)$"},
+              "default": ["5xx", "FAILED", "PENDING"]
+            },
+            "limit": {
+              "description": "Limit for keys without an entry in the thresholds file.",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
+                "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+              }
+            },
+            "margin": {
+              "description": "Headroom added to the source run value when deriving this limit (10, chapter 5).",
+              "type": "object",
+              "additionalProperties": false,
+              "default": {},
+              "properties": {
+                "factor": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "Multiplier of the source error rate.",
+                  "default": 1.5
+                },
+                "add": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Added after multiplying.",
+                  "default": 0.02
+                },
+                "min": {"type": "number", "minimum": 0, "maximum": 1, "description": "Minimum derived limit.", "default": 0.05}
+              }
+            }
+          }
+        }
+      }
+    },
+    "gate": {
+      "description": "Gate policy: when violations fail the run (09, D-16, D-17).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "tolerance": {
+          "description": "Number of keys with violations that is still tolerated: an integer, or a percentage of evaluated keys like '5%'. 0: every violation blocks.",
+          "oneOf": [{"type": "integer", "minimum": 0}, {"type": "string", "pattern": "^(?:100|[0-9]{1,2}(?:\\.[0-9]+)?)%$"}],
+          "default": 0
+        },
+        "hardLimitFactor": {
+          "description": "A time check exceeding limit x factor always blocks, regardless of tolerance. Null disables hard limits.",
+          "oneOf": [{"type": "number", "minimum": 1}, {"type": "null"}],
+          "default": 2
+        },
+        "defaultThresholds": {
+          "description": "'block': violations on keys evaluated with default thresholds can fail the run; 'warn': they only warn.",
+          "enum": ["block", "warn"],
+          "default": "block"
+        },
+        "warnOnly": {"description": "Report violations but never fail the run.", "type": "boolean", "default": false},
+        "maxFailedTestShare": {
+          "description": "Highest share of failed test executions (unexpected / executed, skipped excluded) for which the run result is still trustworthy. Above it the run ends with tool error TESTS_FAILED_TOO_MANY (exit code 3, 09). Failed tests below it are a warning only: in perf mode the performance result decides (00, chapter 11).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1
+        }
+      }
+    },
+    "thresholds": {
+      "description": "Thresholds files and derivation (10).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "dir": {
+          "description": "Directory of thresholds files, relative to the Playwright config directory.",
+          "type": "string",
+          "minLength": 1,
+          "default": "."
+        },
+        "filePrefix": {
+          "description": "File name prefix; files are <prefix>.<kind>[.<env>].json.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "default": "perf-thresholds"
+        },
+        "update": {
+          "description": "'all': recompute every unlocked complete entry (with hysteresis, 10); 'new-only': add entries for new keys, keep existing ones.",
+          "enum": ["all", "new-only"],
+          "default": "all"
+        },
+        "smallSampleN": {
+          "description": "Keys with fewer samples get the small-sample headroom (checks.*.margin.smallSample*) when deriving thresholds (10).",
+          "type": "integer",
+          "minimum": 1,
+          "default": 20
+        },
+        "hysteresis": {
+          "description": "When re-deriving, an existing unlocked entry keeps its limit if the new value differs by less than this (10-REQ-18). Avoids noise-only diffs.",
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "relative": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.1,
+              "description": "For ms limits: relative difference, e.g. 0.1 = 10%."
+            },
+            "ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.01,
+              "default": 0.01,
+              "description": "For ratio limits: absolute difference. At most 0.01 so a kept entry stays self-consistent (10-REQ-05)."
+            }
+          }
+        },
+        "loosenWarnRelative": {
+          "description": "Warn (THRESHOLDS_LOOSENED_MUCH) when a derived time limit grows by more than this share (10-REQ-20).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 0.5
+        }
+      }
+    },
+    "report": {
+      "description": "Run outputs (02, 11).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "dir": {
+          "description": "Directory of report.json and report.html, relative to the Playwright config directory.",
+          "type": "string",
+          "minLength": 1,
+          "default": "perf-results"
+        },
+        "html": {"description": "Write the HTML report.", "type": "boolean", "default": true},
+        "rawUrls": {
+          "description": "Include raw URLs of the slowest samples in the run report (D-11).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "advanced": {
+      "description": "Rarely changed settings (08).",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "maxSamplesPerKey": {
+          "description": "Successful durations retained per key (NF-02).",
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 100000,
+          "default": 5000
+        },
+        "seed": {
+          "description": "Seed of the sampling random generator (P-06).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "default": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "urlPattern": {
+      "description": "A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.",
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["regex"],
+          "properties": {"regex": {"type": "string", "minLength": 1}, "flags": {"type": "string", "pattern": "^[dgimsuyv]*$"}}
+        }
+      ]
+    },
+    "derivationSettings": {
+      "description": "Effective settings used to derive a thresholds file of one kind: T settings of that kind (checks.slowShare.t.<kind>), thresholds.smallSampleN and the margin of each rule (snapshot, 10).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "smallSampleN", "margins"],
+      "properties": {
+        "t": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {"$ref": "common.schema.json#/$defs/msLimit", "description": "Lower clamp of derived T."},
+            "max": {
+              "$ref": "common.schema.json#/$defs/msLimit",
+              "description": "Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13)."
+            },
+            "medianFactor": {"type": "number", "minimum": 1, "maximum": 10, "description": "Derived T is at most medianFactor × p50."}
+          },
+          "required": ["min", "max", "medianFactor"]
+        },
+        "smallSampleN": {"type": "integer", "minimum": 1},
+        "margins": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["median", "percentile", "p99", "apdex", "wilson", "errors"],
+          "properties": {
+            "median": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "relative": {"type": "number", "minimum": 0, "maximum": 10, "description": "Relative headroom, e.g. 0.4 = +40%."},
+                "minMs": {"type": "integer", "minimum": 0, "description": "Minimum absolute headroom in ms."},
+                "smallSampleRelative": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "Relative headroom when the key has fewer than thresholds.smallSampleN samples."
+                }
+              }
+            },
+            "percentile": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "relative": {"type": "number", "minimum": 0, "maximum": 10, "description": "Relative headroom, e.g. 0.4 = +40%."},
+                "minMs": {"type": "integer", "minimum": 0, "description": "Minimum absolute headroom in ms."},
+                "smallSampleRelative": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "Relative headroom when the key has fewer than thresholds.smallSampleN samples."
+                }
+              }
+            },
+            "p99": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "relative": {"type": "number", "minimum": 0, "maximum": 10, "description": "Relative headroom over the source p99."},
+                "minGapMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The p99 limit is at least this many ms above the percentile limit."
+                },
+                "minGapRelative": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "The p99 limit is at least this share above the percentile limit."
+                }
+              }
+            },
+            "apdex": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "absolute": {"type": "number", "minimum": 0, "maximum": 1, "description": "Subtracted from the source Apdex."},
+                "smallSampleAbsolute": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Subtracted when the key has fewer than thresholds.smallSampleN samples."
+                }
+              }
+            },
+            "wilson": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "factor": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "Multiplier of the source share of slow samples."
+                },
+                "add": {"type": "number", "minimum": 0, "maximum": 1, "description": "Added after multiplying."},
+                "min": {"type": "number", "minimum": 0, "maximum": 1, "description": "Lower clamp of the derived limit."},
+                "max": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Upper clamp of the derived limit (self-consistency may exceed it, 10-REQ-05)."
+                },
+                "smallSampleMin": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Minimum limit when the key has fewer than thresholds.smallSampleN samples."
+                }
+              }
+            },
+            "errors": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "factor": {"type": "number", "minimum": 0, "maximum": 10, "description": "Multiplier of the source error rate."},
+                "add": {"type": "number", "minimum": 0, "maximum": 1, "description": "Added after multiplying."},
+                "min": {"type": "number", "minimum": 0, "maximum": 1, "description": "Minimum derived limit."}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

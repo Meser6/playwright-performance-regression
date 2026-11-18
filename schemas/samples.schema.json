@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkg.invalid/schemas/samples.schema.json",
+  "title": "Sample batch",
+  "description": "Raw samples collected during one test execution, attached to the test result as the '<pkg>-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "collector", "requests", "custom", "diagnostics"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "collector": {
+      "description": "Collector that produced the batch.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "browserName"],
+      "properties": {
+        "name": {
+          "description": "Collector identifier. 'playwright-js' in MVP; other ecosystems use their own (14).",
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "version": {"description": "Package version of the collector.", "type": "string", "minLength": 1},
+        "browserName": {
+          "description": "Browser engine (chromium, firefox, webkit), or null when the test used no browser.",
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+        }
+      }
+    },
+    "requests": {
+      "description": "Request samples in the order they finished; requests still in flight when the end-of-test wait ran out come last, with status PENDING (05).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/requestSample"}
+    },
+    "custom": {
+      "description": "Custom measurement samples in the order they finished.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/customSample"}
+    },
+    "diagnostics": {
+      "description": "Collector and custom-measurement diagnostics caught during the test (01-REQ-13, 05 §9, 06 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.",
+      "type": "array",
+      "items": {"$ref": "common.schema.json#/$defs/issue"}
+    }
+  },
+  "$defs": {
+    "requestSample": {
+      "description": "One backend request observed in a tracked browser context, after collector filters (05).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "url",
+        "resourceType",
+        "status",
+        "startTime",
+        "duration",
+        "requestStart",
+        "ttfb",
+        "timeSource",
+        "fromServiceWorker"
+      ],
+      "properties": {
+        "method": {"description": "HTTP method, uppercase.", "type": "string", "pattern": "^[A-Z]+$"},
+        "url": {
+          "description": "Full raw URL as reported by the browser. Never written to thresholds files (P-07).",
+          "type": "string",
+          "minLength": 1
+        },
+        "resourceType": {
+          "description": "Playwright Request.resourceType(), e.g. document, xhr, fetch.",
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "description": "HTTP status code; FAILED when the request failed without a response; PENDING when it was still in flight after the end-of-test wait (05-REQ-13).",
+          "oneOf": [{"type": "integer", "minimum": 100, "maximum": 599}, {"const": "FAILED"}, {"const": "PENDING"}]
+        },
+        "failureText": {
+          "description": "Request.failure().errorText; an empty text is recorded as 'unknown' (05-REQ-11). Present only when status is FAILED. 08-REQ-30 relabels abort texts (e.g. net::ERR_ABORTED) as ABORTED.",
+          "type": "string",
+          "minLength": 1
+        },
+        "startTime": {
+          "description": "Request start (Request.timing().startTime), rounded to whole ms.",
+          "$ref": "common.schema.json#/$defs/epochMs"
+        },
+        "duration": {
+          "description": "From request start to the last response byte (timing.responseEnd). Includes browser queueing, DNS, connection setup and TLS (see requestStart). Null when unknown (FAILED, PENDING).",
+          "$ref": "common.schema.json#/$defs/msOrNull"
+        },
+        "requestStart": {
+          "description": "timing.requestStart: time from request start until the browser began sending the request, i.e. queueing, DNS, connection and TLS (05-REQ-26). Informational; not evaluated. Null when the browser did not report it or for FAILED/PENDING.",
+          "$ref": "common.schema.json#/$defs/msOrNull"
+        },
+        "ttfb": {
+          "description": "timing.responseStart - timing.requestStart. Null when the browser did not report both values.",
+          "$ref": "common.schema.json#/$defs/msOrNull"
+        },
+        "timeSource": {
+          "description": "browser: timings from Request.timing(); node: fallback measured in the worker when browser timing was unavailable (05).",
+          "enum": ["browser", "node"]
+        },
+        "fromServiceWorker": {
+          "description": "True when Response.fromServiceWorker() reported that a service worker produced the response; such samples are excluded from time statistics (05-REQ-05). False for FAILED and PENDING.",
+          "type": "boolean"
+        }
+      },
+      "if": {"properties": {"status": {"const": "FAILED"}}},
+      "then": {"required": ["failureText"]},
+      "else": {"not": {"required": ["failureText"]}},
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "PENDING"}}},
+          "then": {
+            "properties": {
+              "duration": {"type": "null"},
+              "requestStart": {"type": "null"},
+              "ttfb": {"type": "null"},
+              "timeSource": {"const": "browser"},
+              "fromServiceWorker": {"const": false}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "FAILED"}}},
+          "then": {
+            "properties": {
+              "duration": {"type": "null"},
+              "requestStart": {"type": "null"},
+              "ttfb": {"type": "null"},
+              "timeSource": {"const": "browser"},
+              "fromServiceWorker": {"const": false}
+            }
+          }
+        }
+      ]
+    },
+    "customSample": {
+      "description": "One custom measurement (06).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "outcome", "duration", "endTime"],
+      "properties": {
+        "name": {
+          "description": "Measurement name given by the user (06-REQ-03): 1–200 characters, no leading or trailing whitespace, no control characters.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\\s\\u0000-\\u001F\\u007F](?:[^\\u0000-\\u001F\\u007F]*[^\\s\\u0000-\\u001F\\u007F])?$"
+        },
+        "outcome": {
+          "description": "ok: finished normally; error: the measured function threw; unfinished: started but never ended before test end. Meaning of each outcome for statistics: 06, 08.",
+          "enum": ["ok", "error", "unfinished"]
+        },
+        "duration": {
+          "description": "Measured duration (performance.now()). Null for unfinished.",
+          "$ref": "common.schema.json#/$defs/msOrNull"
+        },
+        "endTime": {
+          "description": "Wall-clock end time. Null for unfinished.",
+          "oneOf": [{"$ref": "common.schema.json#/$defs/epochMs"}, {"type": "null"}]
+        }
+      },
+      "if": {"properties": {"outcome": {"const": "unfinished"}}},
+      "then": {"properties": {"duration": {"type": "null"}, "endTime": {"type": "null"}}},
+      "else": {"properties": {"duration": {"type": "number"}, "endTime": {"type": "integer"}}}
+    }
+  }
+}
