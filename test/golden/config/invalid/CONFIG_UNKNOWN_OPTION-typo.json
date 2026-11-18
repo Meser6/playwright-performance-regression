@@ -1,0 +1,5 @@
+{
+  "name": "unknown option with a typo",
+  "input": { "measure": { "exclud": ["intercom.io"] } },
+  "expected": { "code": "CONFIG_UNKNOWN_OPTION", "paths": ["measure.exclud"] }
+}

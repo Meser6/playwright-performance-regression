@@ -1,0 +1,6 @@
+{
+  "name": "percentile level below p50",
+  "input": { "checks": { "time": { "percentile": { "level": "p40" } } } },
+  "schemaVerdict": "valid",
+  "expected": { "code": "CONFIG_INVALID_VALUE", "paths": ["checks.time.percentile.level"] }
+}

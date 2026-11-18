@@ -1,0 +1,6 @@
+{
+  "name": "T lower bound above the upper bound",
+  "input": { "checks": { "slowShare": { "t": { "custom": { "min": 20000 } } } } },
+  "schemaVerdict": "valid",
+  "expected": { "code": "CONFIG_INVALID_VALUE", "paths": ["checks.slowShare.t.custom.min"] }
+}

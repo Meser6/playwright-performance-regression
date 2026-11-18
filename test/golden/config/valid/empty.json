@@ -1,0 +1,1 @@
+{ "name": "empty config: all defaults", "input": {}, "expected": { "ok": true } }

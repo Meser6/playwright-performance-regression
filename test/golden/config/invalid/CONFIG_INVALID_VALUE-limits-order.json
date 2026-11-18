@@ -1,0 +1,6 @@
+{
+  "name": "p99 limit below the percentile limit",
+  "input": { "checks": { "time": { "p99": { "limit": { "api": 1000 } } } } },
+  "schemaVerdict": "valid",
+  "expected": { "code": "CONFIG_INVALID_VALUE", "paths": ["checks.time.p99.limit.api"] }
+}
