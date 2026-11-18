@@ -48,8 +48,8 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 
 ## Git workflow
 
-- Never commit to `main` directly and never rewrite `main` history. The owner merges PRs; Claude
-  does not merge.
+- Never commit to `main` directly and never rewrite `main` history. Claude squash-merges its own
+  PRs once CI is green (`gh pr merge --squash`); the owner delegated review and merge (13-D-17).
 - Branch per work package: `<type>/<short-name>` (e.g. `feat/collector`, `fix/cli-exit-codes`).
 - Conventional Commits, English, imperative mood, subject ≤ 72 characters, no trailing period:
 
