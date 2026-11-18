@@ -1,0 +1,29 @@
+{
+  "$comment": "Acceptance criteria verified by hand or outside the regular CI (12-REQ-03). scripts/check-ac-coverage.mjs counts them as covered.",
+  "criteria": [
+    {
+      "id": "S-01",
+      "how": "Manual: a person outside the project installs the package in a fresh Playwright project following the README; timed before 0.1.0 and 1.0.0."
+    },
+    {
+      "id": "13-AC-01",
+      "how": "Release workflow: provenance attestation is checked on the npm package page after publishing."
+    },
+    {
+      "id": "13-AC-05",
+      "how": "Manual: the README installation (create package) is done in a fresh Playwright project and timed; recorded in the release PR."
+    },
+    {
+      "id": "13-AC-09",
+      "how": "Manual: the reserved name is checked on npm (npm view) before publishing 0.1.0."
+    },
+    {
+      "id": "13-AC-10",
+      "how": "Release workflow: the create package is run in fresh projects with npm, pnpm and yarn against the next version."
+    },
+    {
+      "id": "13-AC-14",
+      "how": "Manual: repository settings (main protection, squash merge only, branch deletion) are reviewed after the repository is created."
+    }
+  ]
+}

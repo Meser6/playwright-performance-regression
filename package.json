@@ -103,6 +103,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:ac": "node scripts/check-ac-coverage.mjs",
+    "check:pr-title": "node scripts/check-pr-title.mjs",
     "gen:types": "node scripts/generate-types.mjs",
     "check:types-generated": "node scripts/generate-types.mjs --check",
     "publint": "publint --strict",
