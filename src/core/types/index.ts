@@ -58,4 +58,5 @@ export {
   CONTEXT_CLOSED_FAILURE_TEXT,
   DOCS_CONFIG_URL,
   PACKAGE_NAME,
+  SAMPLES_ATTACHMENT_NAME,
 } from './constants.ts';

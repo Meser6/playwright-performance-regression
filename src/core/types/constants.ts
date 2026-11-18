@@ -10,6 +10,12 @@ export const CONTEXT_CLOSED_FAILURE_TEXT = 'pw-perf: context closed';
 /** Name of the npm package (00). */
 export const PACKAGE_NAME = 'playwright-performance-regression';
 
+/**
+ * Name of the test attachment that carries the sample batch of one test (02-REQ-14,
+ * 05-REQ-15); written by the collector, read by the reporter.
+ */
+export const SAMPLES_ATTACHMENT_NAME = `${PACKAGE_NAME}-samples`;
+
 /** Command used in hints of issues, e.g. "npx pw-perf thresholds" (04). */
 export const CLI_COMMAND = 'npx pw-perf';
 
