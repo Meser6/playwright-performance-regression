@@ -138,6 +138,13 @@ function mutations(root: Json): [string, Json][] {
   return result;
 }
 
+/**
+ * A large report has thousands of mutants, each validated twice; on a busy CI runner this takes
+ * several seconds, more than the default 5 s timeout. The work is fixed, so a slow run is not a
+ * flaky result.
+ */
+const MUTATION_TIMEOUT_MS = 60_000;
+
 describe('02-AC-01 core/schema and Ajv agree on mutated documents', () => {
   describe.each(Object.keys(FORMATS) as Format[])('02-AC-01 mutation agreement: %s', (format) => {
     const validate = validator(ajv, FORMATS[format]);
@@ -161,6 +168,7 @@ describe('02-AC-01 core/schema and Ajv agree on mutated documents', () => {
         expect(disagreements).toEqual([]);
         expect(verdicts.invalid).toBeGreaterThan(20);
       },
+      MUTATION_TIMEOUT_MS,
     );
 
     test('mutations also produce valid documents, so agreement is checked in both directions', () => {
