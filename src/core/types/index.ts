@@ -53,4 +53,9 @@ export type {
   LimitName,
   ThresholdsDiff,
 } from './thresholds.ts';
-export { CLI_COMMAND, CONTEXT_CLOSED_FAILURE_TEXT, PACKAGE_NAME } from './constants.ts';
+export {
+  CLI_COMMAND,
+  CONTEXT_CLOSED_FAILURE_TEXT,
+  DOCS_CONFIG_URL,
+  PACKAGE_NAME,
+} from './constants.ts';

@@ -102,6 +102,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   large loosenings are marked `!` and expired mutings are listed on their own line. Console
   output (at most 30 rows per file, keys shortened to the terminal width) and Markdown for
   `thresholds-diff.md` (every change, for a PR description).
+- `withPerf()` and `definePerfConfig()` in `playwright-performance-regression/config`. Outside
+  perf mode `withPerf()` returns the Playwright config object as it is and does nothing else. In
+  perf mode (`PW_PERF_MODE=test` or `thresholds`, with `PW_PERF_REPEAT`, `PW_PERF_ENV`,
+  `PW_PERF_RUN_ID`, `PW_PERF_OUTCOME_FILE` and `PW_PERF_PRUNE`) it resolves the package config
+  and returns a copy of the Playwright config with one worker, no retries, `maxFailures` and
+  `globalTimeout` 0, trace, video and screenshots off, and `repeatEach` set to the number of
+  repetitions for measured projects only (their dependencies and teardowns run once). Measured
+  projects follow `run.projects` (`"auto"`: Chromium projects that are not a dependency or
+  teardown of another project); other projects are removed from the run. Only the console
+  reporters (`list`, `line`, `dot`, `github`), `run.keepReporters` (a kept `html` reporter never
+  opens) and the package reporter stay; a console reporter is added when none is left.
+- Errors that stop a perf-mode run before any test: `MODE_INVALID_VALUE` (an invalid `PW_PERF_*`
+  value never turns perf mode off silently), `CONFIG_UNKNOWN_PROJECT` and
+  `CONFIG_NO_MEASURED_PROJECT`; warnings `CONFIG_MULTIPLE_ENGINES`, `CONFIG_SLOW_MO`,
+  `CONFIG_CHANGED_IN_PROCESS` and `NOT_WRAPPED_WITH_PERF`, kept for the reporter.
 
 ### Changed
 

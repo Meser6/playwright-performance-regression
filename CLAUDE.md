@@ -85,7 +85,8 @@ pnpm build                   # tsup: ESM + CJS + declarations per entry point in
 pnpm typecheck               # tsc --noEmit (src, test, scripts)
 pnpm lint                    # ESLint, including the src/core import boundary rule
 pnpm format                  # Prettier --write; `pnpm format:check` in CI
-pnpm test                    # Vitest: unit, contract and script tests
+pnpm test                    # Vitest: unit, contract, script and integration tests
+                             # (integration runs Playwright on dist/: `pnpm build` first)
 pnpm gen:types               # regenerate src/core/types/generated/ from schemas/
 pnpm check:types-generated   # fail when the generated types are out of date
 pnpm check:ac                # AC coverage for the criteria in scripts/ac-scope.json (--all: every AC)
