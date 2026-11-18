@@ -71,6 +71,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tests are a warning `TESTS_FAILED` up to `gate.maxFailedTestShare` and a tool error
   `TESTS_FAILED_TOO_MANY` above it; a timed-out, interrupted or `maxFailures`-stopped run is
   `RUN_INCOMPLETE`, a sharded run `RUN_SHARDED`.
+- Console summary of a run report: header with mode, environment, tests and CI commit; tool
+  errors and up to 10 warnings with hints; counters per kind and muted keys; a table of
+  violations (blocking first, by relative exceedance, at most 20 rows, keys shortened in the
+  middle to fit the terminal width) with the `over` percentage and `HARD` and `MUTED` flags;
+  the slowest sample of the first blocking keys; the result line and the report paths.
 
 ### Changed
 

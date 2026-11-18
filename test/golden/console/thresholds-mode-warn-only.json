@@ -1,0 +1,2560 @@
+{
+  "description": "Thresholds mode with gate.warnOnly: 22 non-blocking violations (table limited to 20 rows) and more than 10 warnings.",
+  "input": {
+    "ci": null,
+    "config": {
+      "advanced": {
+        "maxSamplesPerKey": 5000,
+        "seed": 1
+      },
+      "checks": {
+        "errors": {
+          "enabled": true,
+          "limit": {
+            "api": 0.05,
+            "custom": 0.05
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5,
+          "statuses": [
+            "5xx",
+            "FAILED",
+            "PENDING"
+          ]
+        },
+        "slowShare": {
+          "apdex": {
+            "enabled": true,
+            "limit": {
+              "api": 0.85,
+              "custom": 0.85
+            },
+            "margin": {
+              "absolute": 0.05,
+              "smallSampleAbsolute": 0.1
+            },
+            "minSamples": 20
+          },
+          "t": {
+            "api": {
+              "max": 2000,
+              "medianFactor": 2,
+              "min": 500
+            },
+            "custom": {
+              "max": 10000,
+              "medianFactor": 2,
+              "min": 1000
+            }
+          },
+          "wilson": {
+            "enabled": true,
+            "limit": {
+              "api": 0.05,
+              "custom": 0.05
+            },
+            "margin": {
+              "add": 0.02,
+              "factor": 1.5,
+              "max": 0.15,
+              "min": 0.03,
+              "smallSampleMin": 0.1
+            },
+            "minSamples": 20
+          }
+        },
+        "time": {
+          "median": {
+            "enabled": true,
+            "limit": {
+              "api": 2000,
+              "custom": 5000
+            },
+            "margin": {
+              "minMs": 100,
+              "relative": 0.4,
+              "smallSampleRelative": 0.8
+            },
+            "minSamples": 5
+          },
+          "p99": {
+            "enabled": true,
+            "limit": {
+              "api": 4000,
+              "custom": 10000
+            },
+            "margin": {
+              "minGapMs": 50,
+              "minGapRelative": 0.1,
+              "relative": 0.2
+            },
+            "minSamples": 100
+          },
+          "percentile": {
+            "enabled": true,
+            "level": "p95",
+            "limit": {
+              "api": 2000,
+              "custom": 5000
+            },
+            "margin": {
+              "minMs": 100,
+              "relative": 0.4,
+              "smallSampleRelative": 0.8
+            },
+            "minSamples": 20
+          }
+        }
+      },
+      "gate": {
+        "defaultThresholds": "block",
+        "hardLimitFactor": 2,
+        "maxFailedTestShare": 0.1,
+        "tolerance": 0,
+        "warnOnly": true
+      },
+      "keys": {
+        "dropQueryParams": [],
+        "extraIdPatterns": [],
+        "idPatterns": {
+          "email": true,
+          "hex": true,
+          "mixed": true,
+          "number": true,
+          "token": true,
+          "uuid": true
+        },
+        "keepQueryValues": [],
+        "origins": {},
+        "query": "names"
+      },
+      "measure": {
+        "exclude": [
+          "/socket.io/"
+        ],
+        "excludeKnownThirdParty": true,
+        "ignoreExtensions": [
+          ".js",
+          ".mjs",
+          ".css",
+          ".map",
+          ".html",
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".gif",
+          ".svg",
+          ".webp",
+          ".avif",
+          ".ico",
+          ".woff",
+          ".woff2",
+          ".ttf",
+          ".otf",
+          ".eot"
+        ],
+        "include": [],
+        "pendingTimeoutMs": 2000,
+        "resourceTypes": [
+          "document",
+          "xhr",
+          "fetch"
+        ],
+        "successStatuses": [
+          "2xx",
+          "3xx"
+        ]
+      },
+      "report": {
+        "dir": "perf-results",
+        "html": true,
+        "rawUrls": false
+      },
+      "run": {
+        "env": null,
+        "keepReporters": [],
+        "projects": "auto",
+        "repeat": {
+          "test": 5,
+          "thresholds": 10
+        }
+      },
+      "thresholds": {
+        "dir": ".",
+        "filePrefix": "perf-thresholds",
+        "hysteresis": {
+          "ratio": 0.01,
+          "relative": 0.1
+        },
+        "loosenWarnRelative": 0.5,
+        "smallSampleN": 20,
+        "update": "all"
+      }
+    },
+    "configDir": "/work/app",
+    "custom": {},
+    "endpoints": {
+      "GET /api/items/01": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1010,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1010,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010,
+            1010
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1010,
+          "max": 1010,
+          "min": 1010,
+          "percentiles": {
+            "p50": 1010,
+            "p90": 1010,
+            "p95": 1010,
+            "p99": 1010
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/02": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1020,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1020,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020,
+            1020
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1020,
+          "max": 1020,
+          "min": 1020,
+          "percentiles": {
+            "p50": 1020,
+            "p90": 1020,
+            "p95": 1020,
+            "p99": 1020
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/03": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1030,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1030,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030,
+            1030
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1030,
+          "max": 1030,
+          "min": 1030,
+          "percentiles": {
+            "p50": 1030,
+            "p90": 1030,
+            "p95": 1030,
+            "p99": 1030
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/04": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1040,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1040,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040,
+            1040
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1040,
+          "max": 1040,
+          "min": 1040,
+          "percentiles": {
+            "p50": 1040,
+            "p90": 1040,
+            "p95": 1040,
+            "p99": 1040
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/05": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1050,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1050,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050,
+            1050
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1050,
+          "max": 1050,
+          "min": 1050,
+          "percentiles": {
+            "p50": 1050,
+            "p90": 1050,
+            "p95": 1050,
+            "p99": 1050
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/06": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1060,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1060,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060,
+            1060
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1060,
+          "max": 1060,
+          "min": 1060,
+          "percentiles": {
+            "p50": 1060,
+            "p90": 1060,
+            "p95": 1060,
+            "p99": 1060
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/07": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1070,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1070,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070,
+            1070
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1070,
+          "max": 1070,
+          "min": 1070,
+          "percentiles": {
+            "p50": 1070,
+            "p90": 1070,
+            "p95": 1070,
+            "p99": 1070
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/08": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1080,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1080,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080,
+            1080
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1080,
+          "max": 1080,
+          "min": 1080,
+          "percentiles": {
+            "p50": 1080,
+            "p90": 1080,
+            "p95": 1080,
+            "p99": 1080
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/09": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1090,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1090,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090,
+            1090
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1090,
+          "max": 1090,
+          "min": 1090,
+          "percentiles": {
+            "p50": 1090,
+            "p90": 1090,
+            "p95": 1090,
+            "p99": 1090
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/10": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1100,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1100,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100,
+            1100
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1100,
+          "max": 1100,
+          "min": 1100,
+          "percentiles": {
+            "p50": 1100,
+            "p90": 1100,
+            "p95": 1100,
+            "p99": 1100
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/11": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1110,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1110,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110,
+            1110
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1110,
+          "max": 1110,
+          "min": 1110,
+          "percentiles": {
+            "p50": 1110,
+            "p90": 1110,
+            "p95": 1110,
+            "p99": 1110
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/12": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1120,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1120,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120,
+            1120
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1120,
+          "max": 1120,
+          "min": 1120,
+          "percentiles": {
+            "p50": 1120,
+            "p90": 1120,
+            "p95": 1120,
+            "p99": 1120
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/13": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1130,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1130,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130,
+            1130
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1130,
+          "max": 1130,
+          "min": 1130,
+          "percentiles": {
+            "p50": 1130,
+            "p90": 1130,
+            "p95": 1130,
+            "p99": 1130
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/14": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1140,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1140,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140,
+            1140
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1140,
+          "max": 1140,
+          "min": 1140,
+          "percentiles": {
+            "p50": 1140,
+            "p90": 1140,
+            "p95": 1140,
+            "p99": 1140
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/15": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1150,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1150,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150,
+            1150
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1150,
+          "max": 1150,
+          "min": 1150,
+          "percentiles": {
+            "p50": 1150,
+            "p90": 1150,
+            "p95": 1150,
+            "p99": 1150
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/16": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1160,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1160,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160,
+            1160
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1160,
+          "max": 1160,
+          "min": 1160,
+          "percentiles": {
+            "p50": 1160,
+            "p90": 1160,
+            "p95": 1160,
+            "p99": 1160
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/17": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1170,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1170,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170,
+            1170
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1170,
+          "max": 1170,
+          "min": 1170,
+          "percentiles": {
+            "p50": 1170,
+            "p90": 1170,
+            "p95": 1170,
+            "p99": 1170
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/18": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1180,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1180,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180,
+            1180
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1180,
+          "max": 1180,
+          "min": 1180,
+          "percentiles": {
+            "p50": 1180,
+            "p90": 1180,
+            "p95": 1180,
+            "p99": 1180
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/19": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1190,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1190,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190,
+            1190
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1190,
+          "max": 1190,
+          "min": 1190,
+          "percentiles": {
+            "p50": 1190,
+            "p90": 1190,
+            "p95": 1190,
+            "p99": 1190
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/20": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1200,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1200,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200,
+            1200
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1200,
+          "max": 1200,
+          "min": 1200,
+          "percentiles": {
+            "p50": 1200,
+            "p90": 1200,
+            "p95": 1200,
+            "p99": 1200
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/21": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1210,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1210,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210,
+            1210
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1210,
+          "max": 1210,
+          "min": 1210,
+          "percentiles": {
+            "p50": 1210,
+            "p90": 1210,
+            "p95": 1210,
+            "p99": 1210
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      },
+      "GET /api/items/22": {
+        "count": 20,
+        "errorCount": 0,
+        "evaluation": {
+          "checks": [
+            {
+              "actual": 1220,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 2000,
+              "n": 20,
+              "observed": null,
+              "passed": true,
+              "rule": "median"
+            },
+            {
+              "actual": 1220,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 1000,
+              "n": 20,
+              "observed": null,
+              "passed": false,
+              "rule": "percentile"
+            },
+            {
+              "actual": 0,
+              "blocking": false,
+              "hardLimitExceeded": false,
+              "limit": 0.05,
+              "n": 20,
+              "observed": 0,
+              "passed": true,
+              "rule": "errors"
+            }
+          ],
+          "limits": {
+            "maxErrorRate": 0.05,
+            "maxWilson": null,
+            "median": 2000,
+            "minApdex": null,
+            "p99": 4000,
+            "percentile": 1000,
+            "t": null
+          },
+          "muted": null,
+          "reason": null,
+          "result": "fail",
+          "thresholdSource": "file"
+        },
+        "fromFailedTests": 0,
+        "samples": {
+          "durations": [
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220,
+            1220
+          ],
+          "sampled": false
+        },
+        "slowest": [],
+        "stats": {
+          "avg": 1220,
+          "max": 1220,
+          "min": 1220,
+          "percentiles": {
+            "p50": 1220,
+            "p90": 1220,
+            "p95": 1220,
+            "p99": 1220
+          }
+        },
+        "statuses": {
+          "200": 20
+        },
+        "successCount": 20,
+        "testCount": 1,
+        "timeSources": {
+          "browser": 20,
+          "node": 0
+        },
+        "topTests": [],
+        "ttfb": null
+      }
+    },
+    "env": null,
+    "evaluation": {
+      "counts": {
+        "api": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 22,
+          "keys": 22,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 22
+        },
+        "custom": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 0,
+          "keys": 0,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0
+        }
+      },
+      "gateEnabled": false,
+      "status": "warned"
+    },
+    "finishedAt": "2026-11-18T10:05:00.000Z",
+    "host": {
+      "arch": "x64",
+      "ci": false,
+      "cpuCount": 4,
+      "cpuModel": "AMD EPYC 7763",
+      "nodeVersion": "v22.18.0",
+      "platform": "linux"
+    },
+    "mode": "thresholds",
+    "normalization": "0a3f9c21d47b6e",
+    "origins": [],
+    "playwright": {
+      "version": "1.57.0"
+    },
+    "runConditions": {
+      "overriddenSettings": [
+        "retries"
+      ],
+      "projects": [
+        {
+          "browserName": "chromium",
+          "name": "chromium",
+          "repeatEach": 5,
+          "retries": 0,
+          "role": "measured"
+        }
+      ],
+      "workers": 1
+    },
+    "runId": "2026-11-18T10-00-00-a1b2",
+    "schemaVersion": 1,
+    "startedAt": "2026-11-18T10:00:00.000Z",
+    "tests": {
+      "expected": 40,
+      "flaky": 1,
+      "skipped": 0,
+      "status": "passed",
+      "unexpected": 0
+    },
+    "thresholdFiles": [
+      {
+        "generated": null,
+        "kind": "api",
+        "path": "perf-thresholds.api.json",
+        "status": "loaded",
+        "unseenKeys": []
+      },
+      {
+        "generated": null,
+        "kind": "custom",
+        "path": "perf-thresholds.custom.json",
+        "status": "missing",
+        "unseenKeys": []
+      }
+    ],
+    "tool": {
+      "name": "playwright-performance-regression",
+      "version": "0.1.0"
+    },
+    "toolErrors": [],
+    "warnings": [
+      {
+        "code": "THRESHOLDS_FILE_MISSING",
+        "hint": "Derive thresholds with `npx pw-perf thresholds`.",
+        "message": "Thresholds file perf-thresholds.custom.json not found; custom measurement keys are evaluated with default thresholds."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 1."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 2."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 3."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 4."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 5."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 6."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 7."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 8."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 9."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 10."
+      },
+      {
+        "code": "COLLECTOR_REQUESTS_PENDING",
+        "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
+        "message": "Requests still pending at the end of test 11."
+      }
+    ]
+  },
+  "name": "thresholds-mode-warn-only"
+}
