@@ -30,4 +30,27 @@ export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
 export type RawCustomSample = CustomSample;
 export type Kind = 'api' | 'custom';
+export {
+  DIFF_CATEGORIES,
+  LIMIT_NAMES,
+  LISTED_CATEGORIES,
+  diffChangeText,
+  diffCountsText,
+  diffMarker,
+  diffValuesText,
+  limitLabel,
+  limitValueText,
+} from './thresholds.ts';
+export type {
+  CompleteEntry,
+  DeriveOptions,
+  DerivedFile,
+  DerivedThresholds,
+  DiffCategory,
+  EntryLimits,
+  KeyDiff,
+  LimitChange,
+  LimitName,
+  ThresholdsDiff,
+} from './thresholds.ts';
 export { CLI_COMMAND, CONTEXT_CLOSED_FAILURE_TEXT, PACKAGE_NAME } from './constants.ts';

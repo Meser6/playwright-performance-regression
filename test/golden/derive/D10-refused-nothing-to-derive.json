@@ -1,0 +1,19 @@
+{
+  "name": "D10-refused-nothing-to-derive",
+  "description": "No key has enough successful samples: THRESHOLDS_NOTHING_TO_DERIVE.",
+  "input": {
+    "config": {},
+    "options": {},
+    "report": {"endpoints":{"GET /api/a":{"durations":[[4,100]]},"GET /api/b":{"errors":30}},"custom":{"flow":{"durations":[[1,1000]]}}},
+    "existing": {"api":null,"custom":null}
+  },
+  "expected": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "THRESHOLDS_NOTHING_TO_DERIVE",
+        "message": "No key has at least 5 successful samples (checks.time.median.minSamples); no thresholds file was written."
+      }
+    ]
+  }
+}
