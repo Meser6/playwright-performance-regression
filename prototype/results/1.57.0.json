@@ -10,7 +10,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -23,9 +25,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30665,
+      "mainPid": 41116,
       "workerPids": [
-        30667
+        41125
       ],
       "error": null
     },
@@ -35,14 +37,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
         "passed",
+        "skipped",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30690,
+      "mainPid": 41135,
       "workerPids": [
-        30694
+        41137,
+        41136
       ],
       "error": null
     },
@@ -53,7 +58,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -66,9 +73,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30700,
+      "mainPid": 41158,
       "workerPids": [
-        30701
+        41159
       ],
       "error": null
     },
@@ -78,14 +85,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
+        "skipped",
         "passed",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30709,
+      "mainPid": 41184,
       "workerPids": [
-        30718
+        41185,
+        41186
       ],
       "error": null
     },
@@ -96,7 +106,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -109,9 +121,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30724,
+      "mainPid": 41206,
       "workerPids": [
-        30725
+        41207
       ],
       "error": null
     },
@@ -121,14 +133,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
+        "skipped",
         "passed",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30731,
+      "mainPid": 41229,
       "workerPids": [
-        30732
+        41231,
+        41230
       ],
       "error": null
     },
@@ -152,9 +167,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30748,
+      "mainPid": 41251,
       "workerPids": [
-        30750
+        41252
       ],
       "error": null
     },
@@ -169,9 +184,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30756,
+      "mainPid": 41258,
       "workerPids": [
-        30757
+        41260
       ],
       "error": null
     },
@@ -195,9 +210,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30771,
+      "mainPid": 41268,
       "workerPids": [
-        30772
+        41277
       ],
       "error": null
     },
@@ -212,9 +227,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30779,
+      "mainPid": 41284,
       "workerPids": [
-        30781
+        41286
       ],
       "error": null
     },
@@ -238,9 +253,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30795,
+      "mainPid": 41292,
       "workerPids": [
-        30796
+        41301
       ],
       "error": null
     },
@@ -255,9 +270,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30802,
+      "mainPid": 41307,
       "workerPids": [
-        30803
+        41308
       ],
       "error": null
     },
@@ -281,9 +296,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30811,
+      "mainPid": 41314,
       "workerPids": [
-        30820
+        41315
       ],
       "error": null
     },
@@ -298,9 +313,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30826,
+      "mainPid": 41333,
       "workerPids": [
-        30827
+        41336
       ],
       "error": null
     },
@@ -324,9 +339,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30833,
+      "mainPid": 41342,
       "workerPids": [
-        30836
+        41343
       ],
       "error": null
     },
@@ -341,14 +356,14 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30850,
+      "mainPid": 41357,
       "workerPids": [
-        30851
+        41358
       ],
       "error": null
     }
   ],
-  "V-01+V-02:ranAt": "2026-11-18T20:38:05.303Z",
+  "V-01+V-02:ranAt": "2026-11-18T21:03:24.368Z",
   "V-03": {
     "resolve": {
       "fromProjectRoot": {
@@ -370,189 +385,108 @@
       "passed": 2
     }
   },
-  "V-03:ranAt": "2026-11-18T20:38:06.304Z",
-  "V-07": [
-    {
-      "project": "esm-ts",
-      "node": "v24.2.0",
-      "variant": "plain (relative import with .ts)",
-      "ok": true,
-      "value": {
-        "run": {
-          "repeat": 3
-        },
-        "marker": "esm-ts/plain",
-        "tag": "helper-ok"
-      },
-      "error": null,
-      "warnings": [
-        "(node:31706) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time"
-      ]
+  "V-03:ranAt": "2026-11-18T21:03:25.540Z",
+  "V-04": {
+    "testsPerRun": 5,
+    "sampleShape": "one request sample of the 02 format, ~280 bytes as JSON",
+    "dot / 0 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 191,
+      "workerStringifyMsMedian": 0,
+      "attachToOnTestEndMsMedian": 3,
+      "attachToOnTestEndMsMax": 4,
+      "reporterParseMsMedian": 0.01,
+      "onBeginToOnEndMs": 343,
+      "processWallMs": 705,
+      "htmlReportBytes": null
     },
-    {
-      "project": "esm-ts",
-      "node": "v24.2.0",
-      "variant": "extensionless relative import",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
-      "warnings": []
+    "dot / 1000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 264525,
+      "workerStringifyMsMedian": 0.36,
+      "attachToOnTestEndMsMedian": 21,
+      "attachToOnTestEndMsMax": 23,
+      "reporterParseMsMedian": 0.37,
+      "onBeginToOnEndMs": 360,
+      "processWallMs": 726,
+      "htmlReportBytes": null
     },
-    {
-      "project": "esm-ts",
-      "node": "v24.2.0",
-      "variant": "tsconfig path alias",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
-      "warnings": []
+    "dot / 5000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 1321859,
+      "workerStringifyMsMedian": 1.79,
+      "attachToOnTestEndMsMedian": 42,
+      "attachToOnTestEndMsMax": 50,
+      "reporterParseMsMedian": 1.94,
+      "onBeginToOnEndMs": 407,
+      "processWallMs": 769,
+      "htmlReportBytes": null
     },
-    {
-      "project": "esm-ts",
-      "node": "v24.2.0",
-      "variant": "enum (non-erasable syntax)",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
-      "warnings": []
+    "dot / 20000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 5286859,
+      "workerStringifyMsMedian": 7.45,
+      "attachToOnTestEndMsMedian": 107,
+      "attachToOnTestEndMsMax": 132,
+      "reporterParseMsMedian": 7.62,
+      "onBeginToOnEndMs": 546,
+      "processWallMs": 929,
+      "htmlReportBytes": null
     },
-    {
-      "project": "esm-ts",
-      "node": "v22.18.0",
-      "variant": "plain (relative import with .ts)",
-      "ok": true,
-      "value": {
-        "run": {
-          "repeat": 3
-        },
-        "marker": "esm-ts/plain",
-        "tag": "helper-ok"
-      },
-      "error": null,
-      "warnings": []
+    "dot+html / 0 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 191,
+      "workerStringifyMsMedian": 0,
+      "attachToOnTestEndMsMedian": 3,
+      "attachToOnTestEndMsMax": 3,
+      "reporterParseMsMedian": 0.01,
+      "onBeginToOnEndMs": 727,
+      "processWallMs": 1074,
+      "htmlReportBytes": 518527
     },
-    {
-      "project": "esm-ts",
-      "node": "v22.18.0",
-      "variant": "extensionless relative import",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
-      "warnings": []
+    "dot+html / 1000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 264525,
+      "workerStringifyMsMedian": 0.36,
+      "attachToOnTestEndMsMedian": 24,
+      "attachToOnTestEndMsMax": 24,
+      "reporterParseMsMedian": 0.39,
+      "onBeginToOnEndMs": 609,
+      "processWallMs": 952,
+      "htmlReportBytes": 595787
     },
-    {
-      "project": "esm-ts",
-      "node": "v22.18.0",
-      "variant": "tsconfig path alias",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
-      "warnings": []
+    "dot+html / 5000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 1321859,
+      "workerStringifyMsMedian": 1.74,
+      "attachToOnTestEndMsMedian": 44,
+      "attachToOnTestEndMsMax": 49,
+      "reporterParseMsMedian": 1.9,
+      "onBeginToOnEndMs": 658,
+      "processWallMs": 1006,
+      "htmlReportBytes": 880475
     },
-    {
-      "project": "esm-ts",
-      "node": "v22.18.0",
-      "variant": "enum (non-erasable syntax)",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v24.2.0",
-      "variant": "plain (relative import with .ts)",
-      "ok": true,
-      "value": {
-        "run": {
-          "repeat": 3
-        },
-        "marker": "cjs-js/plain",
-        "tag": "helper-ok"
-      },
-      "error": null,
-      "warnings": [
-        "(node:31716) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time",
-        "(node:31716) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<project>/pw-perf.plain.config.ts is not specified and it doesn't parse as CommonJS.",
-        "Reparsing as ES module because module syntax was detected. This incurs a performance overhead.",
-        "To eliminate this warning, add \"type\": \"module\" to <project>/package.json."
-      ]
-    },
-    {
-      "project": "cjs-js",
-      "node": "v24.2.0",
-      "variant": "extensionless relative import",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v24.2.0",
-      "variant": "tsconfig path alias",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v24.2.0",
-      "variant": "enum (non-erasable syntax)",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v22.18.0",
-      "variant": "plain (relative import with .ts)",
-      "ok": true,
-      "value": {
-        "run": {
-          "repeat": 3
-        },
-        "marker": "cjs-js/plain",
-        "tag": "helper-ok"
-      },
-      "error": null,
-      "warnings": [
-        "(node:31720) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<project>/pw-perf.plain.config.ts is not specified and it doesn't parse as CommonJS.",
-        "Reparsing as ES module because module syntax was detected. This incurs a performance overhead.",
-        "To eliminate this warning, add \"type\": \"module\" to <project>/package.json."
-      ]
-    },
-    {
-      "project": "cjs-js",
-      "node": "v22.18.0",
-      "variant": "extensionless relative import",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v22.18.0",
-      "variant": "tsconfig path alias",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
-      "warnings": []
-    },
-    {
-      "project": "cjs-js",
-      "node": "v22.18.0",
-      "variant": "enum (non-erasable syntax)",
-      "ok": false,
-      "value": null,
-      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
-      "warnings": []
+    "dot+html / 20000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 5286859,
+      "workerStringifyMsMedian": 6.81,
+      "attachToOnTestEndMsMedian": 112,
+      "attachToOnTestEndMsMax": 123,
+      "reporterParseMsMedian": 7.35,
+      "onBeginToOnEndMs": 888,
+      "processWallMs": 1246,
+      "htmlReportBytes": 1943095
     }
-  ],
-  "V-07:ranAt": "2026-11-18T20:39:33.577Z",
+  },
+  "V-04:ranAt": "2026-11-18T21:03:33.033Z",
   "V-05": {
     "no flag (config: list + recording reporter)": {
       "exitCode": 0,
@@ -639,7 +573,7 @@
       "stdoutHead": " | Running 4 tests using 1 worker | ··°°"
     }
   },
-  "V-05:ranAt": "2026-11-18T20:40:55.352Z",
+  "V-05:ranAt": "2026-11-18T21:03:39.139Z",
   "V-06": {
     "tests pass, onEnd returns failed": {
       "exitCode": 1,
@@ -688,14 +622,14 @@
       "statusSeenInOnEnd": "passed"
     }
   },
-  "V-06:ranAt": "2026-11-18T20:40:12.536Z",
+  "V-06:ranAt": "2026-11-18T21:03:45.127Z",
   "V-10": [
     {
       "title": "uses page",
       "status": "passed",
       "attachmentInOnTestEnd": true,
-      "sampleCount": 3,
-      "bodyBytes": 1350
+      "sampleCount": 2,
+      "bodyBytes": 887
     },
     {
       "title": "no browser",
@@ -709,17 +643,17 @@
       "status": "failed",
       "attachmentInOnTestEnd": true,
       "sampleCount": 1,
-      "bodyBytes": 765
+      "bodyBytes": 768
     },
     {
       "title": "times out on purpose",
       "status": "timedOut",
       "attachmentInOnTestEnd": true,
       "sampleCount": 1,
-      "bodyBytes": 762
+      "bodyBytes": 766
     }
   ],
-  "V-10:ranAt": "2026-11-18T20:40:14.962Z",
+  "V-10:ranAt": "2026-11-18T21:03:47.599Z",
   "V-11": {
     "--list": {
       "exitCode": 0,
@@ -752,5 +686,680 @@
       "statusInOnEnd": "passed"
     }
   },
-  "V-11:ranAt": "2026-11-18T20:40:56.117Z"
+  "V-11:ranAt": "2026-11-18T21:03:48.391Z",
+  "V-08": {
+    "exitCode": 0,
+    "projects": [
+      "chromium",
+      "webkit"
+    ],
+    "chromium": {
+      "status": "passed",
+      "duration": {
+        "n": 20,
+        "min": 201.8,
+        "median": 203.1,
+        "p90": 203.4,
+        "max": 203.6
+      },
+      "ttfb": {
+        "n": 20,
+        "min": 201.3,
+        "median": 201.9,
+        "p90": 202.3,
+        "max": 202.3
+      },
+      "requestStart": {
+        "n": 20,
+        "min": 0,
+        "median": 0.2,
+        "p90": 0.3,
+        "max": 0.3
+      },
+      "nodeMs": {
+        "n": 20,
+        "min": 201.8,
+        "median": 203.8,
+        "p90": 204.3,
+        "max": 205
+      },
+      "statuses": [],
+      "timeSourceNode": 0,
+      "ttfbNull": 0,
+      "timingMinusOneCounts": {
+        "domainLookupStart": 20,
+        "domainLookupEnd": 20,
+        "connectStart": 20,
+        "connectEnd": 20,
+        "requestStart": 0,
+        "responseStart": 0,
+        "responseEnd": 0
+      },
+      "exampleTiming": {
+        "startTime": 1795035829231.4492,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.047,
+        "responseStart": 201.376,
+        "responseEnd": 201.811
+      }
+    },
+    "webkit": {
+      "status": "passed",
+      "duration": {
+        "n": 20,
+        "min": 201.9,
+        "median": 203.3,
+        "p90": 204.4,
+        "max": 206.5
+      },
+      "ttfb": {
+        "n": 20,
+        "min": 201.2,
+        "median": 202,
+        "p90": 202.3,
+        "max": 203.6
+      },
+      "requestStart": {
+        "n": 20,
+        "min": 0.2,
+        "median": 0.5,
+        "p90": 0.6,
+        "max": 0.6
+      },
+      "nodeMs": {
+        "n": 20,
+        "min": 202.8,
+        "median": 204.9,
+        "p90": 206.7,
+        "max": 207.9
+      },
+      "statuses": [],
+      "timeSourceNode": 0,
+      "ttfbNull": 0,
+      "timingMinusOneCounts": {
+        "domainLookupStart": 20,
+        "domainLookupEnd": 20,
+        "connectStart": 20,
+        "connectEnd": 20,
+        "requestStart": 0,
+        "responseStart": 0,
+        "responseEnd": 0
+      },
+      "exampleTiming": {
+        "startTime": 1795035834464.001,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.175,
+        "responseStart": 201.347,
+        "responseEnd": 201.923
+      }
+    }
+  },
+  "V-08:ranAt": "2026-11-18T21:03:58.693Z",
+  "V-09": {
+    "drain in context override, budget 500 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 597,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 500,
+          "waitedMs": 505.4
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    },
+    "drain in context override, budget 5000 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 5088,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 5000,
+          "waitedMs": 5005.8
+        }
+      ],
+      "sample": {
+        "status": 200,
+        "failureText": null,
+        "duration": 3004.4
+      }
+    },
+    "drain in _perfBuffer after built-in context closed, budget 5000 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 5086,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "buffer",
+          "budget": 5000,
+          "waitedMs": 5007.2
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    },
+    "drain in context override, budget 5000 ms capped by test timeout 2500 ms (05-REQ-27)": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1429,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 1334.7902089999998,
+          "waitedMs": 1339.8
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    }
+  },
+  "V-09:ranAt": "2026-11-18T21:04:14.163Z",
+  "V-12a": {
+    "exitCode": 0,
+    "status": "passed",
+    "requestEventsWithMethodOPTIONS": 0,
+    "optionsHitsOnServer": 3,
+    "serverDelays": {
+      "preflightMs": 300,
+      "getMs": 100
+    },
+    "preflighted": [
+      {
+        "duration": 406.4,
+        "requestStart": 0.4,
+        "ttfb": 102.4,
+        "timing": {
+          "startTime": 1795035855309.914,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.368,
+          "responseStart": 102.722,
+          "responseEnd": 406.359
+        }
+      },
+      {
+        "duration": 404.3,
+        "requestStart": 0.1,
+        "ttfb": 101.6,
+        "timing": {
+          "startTime": 1795035855824.5408,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.134,
+          "responseStart": 101.718,
+          "responseEnd": 404.318
+        }
+      },
+      {
+        "duration": 405.1,
+        "requestStart": 0.5,
+        "ttfb": 101.9,
+        "timing": {
+          "startTime": 1795035856344.403,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.467,
+          "responseStart": 102.375,
+          "responseEnd": 405.059
+        }
+      }
+    ],
+    "simpleCrossOrigin": [
+      {
+        "duration": 102.3,
+        "requestStart": 0.1,
+        "ttfb": 101.8
+      },
+      {
+        "duration": 103.1,
+        "requestStart": 0.1,
+        "ttfb": 102.1
+      },
+      {
+        "duration": 103.2,
+        "requestStart": 0.2,
+        "ttfb": 102.2
+      }
+    ]
+  },
+  "V-12a:ranAt": "2026-11-18T21:04:16.655Z",
+  "V-12b": {
+    "config as written (project workers: 4, no override)": {
+      "exitCode": 0,
+      "configWorkers": 4,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 4,
+      "distinctWorkers": 4,
+      "wallMs": 1767,
+      "runningLine": "Running 4 tests using 4 workers"
+    },
+    "global workers 1, project workers 4 left as is": {
+      "exitCode": 0,
+      "configWorkers": 1,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 1,
+      "distinctWorkers": 1,
+      "wallMs": 4776,
+      "runningLine": "Running 4 tests using 1 worker"
+    },
+    "withPerf copy: workers 1 globally and in the project": {
+      "exitCode": 0,
+      "configWorkers": 1,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 1,
+      "distinctWorkers": 1,
+      "wallMs": 4724,
+      "runningLine": "Running 4 tests using 1 worker"
+    }
+  },
+  "V-12b:ranAt": "2026-11-18T21:04:27.965Z",
+  "V-12c": {
+    "timeout 2000: body 500 + teardown 1000": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1509,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [],
+      "timeoutSeenInTeardown": 2000,
+      "pendingSample": null
+    },
+    "timeout 2000: body 1500 + teardown 1000 (each fits, sum does not)": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 2506,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [],
+      "timeoutSeenInTeardown": 2000,
+      "pendingSample": null
+    },
+    "timeout 2000: body 500 + teardown 3000": {
+      "exitCode": 1,
+      "testStatus": "timedOut",
+      "testDurationMs": 2504,
+      "errors": [
+        "\u001b[31mTearing down \"_perfBuffer\" exceeded the test timeout of 2000ms.\u001b[39m"
+      ],
+      "attachmentPresent": false,
+      "drain": null,
+      "timeoutSeenInTeardown": null,
+      "pendingSample": null
+    },
+    "timeout 3000: body 1000 + request in flight, wait min(5000, remaining - 1000)": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1782,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 604.1089999999999,
+          "waitedMs": 609
+        }
+      ],
+      "timeoutSeenInTeardown": 3000,
+      "pendingSample": "PENDING"
+    },
+    "timeout 3000: body 1000 + request in flight, wait 5000 without the cap": {
+      "exitCode": 1,
+      "testStatus": "timedOut",
+      "testDurationMs": 4062,
+      "errors": [
+        "\u001b[31mTearing down \"context\" exceeded the test timeout of 3000ms.\u001b[39m"
+      ],
+      "attachmentPresent": false,
+      "drain": null,
+      "timeoutSeenInTeardown": null,
+      "pendingSample": null
+    }
+  },
+  "V-12c:ranAt": "2026-11-18T21:04:44.264Z",
+  "V-12d": {
+    "measured = \"measured\"": {
+      "exitCode": 0,
+      "projectsInRun": [
+        "auth",
+        "setup",
+        "measured",
+        "cleanup"
+      ],
+      "executed": [
+        "auth:passed",
+        "setup:passed",
+        "measured:passed",
+        "cleanup:passed"
+      ],
+      "order": [
+        "auth",
+        "setup",
+        "measured",
+        "cleanup"
+      ]
+    },
+    "--project other (removed)": {
+      "exitCode": 1,
+      "error": "Error: Project(s) \"other\" not found. Available projects: \"auth\", \"setup\", \"measured\", \"cleanup\" |     at filterProjects (<prototype>/versions/1.57.0/node_modules/playwright/lib/runner/projectUtils.js:80:11)"
+    },
+    "--project measured": {
+      "exitCode": 0,
+      "executed": [
+        "auth:passed",
+        "setup:passed",
+        "measured:passed",
+        "cleanup:passed"
+      ]
+    }
+  },
+  "V-12d:ranAt": "2026-11-18T21:04:47.646Z",
+  "V-12e": {
+    "exitCode": 0,
+    "projects": [
+      "chromium",
+      "webkit"
+    ],
+    "chromium": {
+      "status": "passed",
+      "errors": [],
+      "cases": {
+        "navigation": {
+          "status": "FAILED",
+          "failureText": "net::ERR_ABORTED"
+        },
+        "route-default": {
+          "status": "FAILED",
+          "failureText": "net::ERR_FAILED"
+        },
+        "route-aborted": {
+          "status": "FAILED",
+          "failureText": "net::ERR_ABORTED"
+        },
+        "route-failed": {
+          "status": "FAILED",
+          "failureText": "net::ERR_FAILED"
+        },
+        "page-close": {
+          "status": "PENDING",
+          "failureText": null
+        },
+        "context-close": {
+          "status": "PENDING",
+          "failureText": null
+        }
+      }
+    },
+    "webkit": {
+      "status": "passed",
+      "errors": [],
+      "cases": {
+        "navigation": {
+          "status": "FAILED",
+          "failureText": "cancelled"
+        },
+        "route-default": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "route-aborted": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "route-failed": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "page-close": {
+          "status": "PENDING",
+          "failureText": null
+        },
+        "context-close": {
+          "status": "PENDING",
+          "failureText": null
+        }
+      }
+    }
+  },
+  "V-12e:ranAt": "2026-11-18T21:04:58.879Z",
+  "V-07": [
+    {
+      "project": "esm-ts",
+      "node": "v24.2.0",
+      "variant": "plain (relative import with .ts)",
+      "ok": true,
+      "value": {
+        "run": {
+          "repeat": 3
+        },
+        "marker": "esm-ts/plain",
+        "tag": "helper-ok"
+      },
+      "error": null,
+      "warnings": [
+        "(node:42413) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time"
+      ]
+    },
+    {
+      "project": "esm-ts",
+      "node": "v24.2.0",
+      "variant": "extensionless relative import",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v24.2.0",
+      "variant": "tsconfig path alias",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v24.2.0",
+      "variant": "enum (non-erasable syntax)",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v22.18.0",
+      "variant": "plain (relative import with .ts)",
+      "ok": true,
+      "value": {
+        "run": {
+          "repeat": 3
+        },
+        "marker": "esm-ts/plain",
+        "tag": "helper-ok"
+      },
+      "error": null,
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v22.18.0",
+      "variant": "extensionless relative import",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v22.18.0",
+      "variant": "tsconfig path alias",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "esm-ts",
+      "node": "v22.18.0",
+      "variant": "enum (non-erasable syntax)",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v24.2.0",
+      "variant": "plain (relative import with .ts)",
+      "ok": true,
+      "value": {
+        "run": {
+          "repeat": 3
+        },
+        "marker": "cjs-js/plain",
+        "tag": "helper-ok"
+      },
+      "error": null,
+      "warnings": [
+        "(node:42422) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time",
+        "(node:42422) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<project>/pw-perf.plain.config.ts is not specified and it doesn't parse as CommonJS.",
+        "Reparsing as ES module because module syntax was detected. This incurs a performance overhead.",
+        "To eliminate this warning, add \"type\": \"module\" to <project>/package.json."
+      ]
+    },
+    {
+      "project": "cjs-js",
+      "node": "v24.2.0",
+      "variant": "extensionless relative import",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v24.2.0",
+      "variant": "tsconfig path alias",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v24.2.0",
+      "variant": "enum (non-erasable syntax)",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v22.18.0",
+      "variant": "plain (relative import with .ts)",
+      "ok": true,
+      "value": {
+        "run": {
+          "repeat": 3
+        },
+        "marker": "cjs-js/plain",
+        "tag": "helper-ok"
+      },
+      "error": null,
+      "warnings": [
+        "(node:42434) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<project>/pw-perf.plain.config.ts is not specified and it doesn't parse as CommonJS.",
+        "Reparsing as ES module because module syntax was detected. This incurs a performance overhead.",
+        "To eliminate this warning, add \"type\": \"module\" to <project>/package.json."
+      ]
+    },
+    {
+      "project": "cjs-js",
+      "node": "v22.18.0",
+      "variant": "extensionless relative import",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find module '<project>/cfg/helpers' imported from <project>/pw-perf.noext.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v22.18.0",
+      "variant": "tsconfig path alias",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_MODULE_NOT_FOUND Cannot find package '@cfg/helpers' imported from <project>/pw-perf.alias.config.ts",
+      "warnings": []
+    },
+    {
+      "project": "cjs-js",
+      "node": "v22.18.0",
+      "variant": "enum (non-erasable syntax)",
+      "ok": false,
+      "value": null,
+      "error": "IMPORT_ERROR ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX TypeScript enum is not supported in strip-only mode",
+      "warnings": []
+    }
+  ],
+  "V-07:ranAt": "2026-11-18T21:04:59.954Z"
 }

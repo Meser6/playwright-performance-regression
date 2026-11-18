@@ -10,7 +10,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -23,9 +25,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30873,
+      "mainPid": 42438,
       "workerPids": [
-        30876
+        42441
       ],
       "error": null
     },
@@ -35,14 +37,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
+        "skipped",
         "passed",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30900,
+      "mainPid": 42448,
       "workerPids": [
-        30901
+        42452,
+        42453
       ],
       "error": null
     },
@@ -53,7 +58,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -66,9 +73,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30906,
+      "mainPid": 42481,
       "workerPids": [
-        30907
+        42482
       ],
       "error": null
     },
@@ -78,14 +85,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
+        "skipped",
         "passed",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30920,
+      "mainPid": 42489,
       "workerPids": [
-        30921
+        42491,
+        42490
       ],
       "error": null
     },
@@ -96,7 +106,9 @@
       "exitCode": 0,
       "tests": [
         "passed",
-        "passed"
+        "passed",
+        "skipped",
+        "skipped"
       ],
       "mainRegistry": {
         "mode": "test",
@@ -109,9 +121,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30926,
+      "mainPid": 42501,
       "workerPids": [
-        30927
+        42510
       ],
       "error": null
     },
@@ -121,14 +133,17 @@
       "perfMode": false,
       "exitCode": 0,
       "tests": [
+        "skipped",
+        "skipped",
         "passed",
         "passed"
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30934,
+      "mainPid": 42519,
       "workerPids": [
-        30935
+        42521,
+        42520
       ],
       "error": null
     },
@@ -152,9 +167,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30948,
+      "mainPid": 42533,
       "workerPids": [
-        30949
+        42541
       ],
       "error": null
     },
@@ -169,9 +184,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30955,
+      "mainPid": 42547,
       "workerPids": [
-        30956
+        42549
       ],
       "error": null
     },
@@ -195,9 +210,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30963,
+      "mainPid": 42557,
       "workerPids": [
-        30964
+        42558
       ],
       "error": null
     },
@@ -212,9 +227,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30977,
+      "mainPid": 42565,
       "workerPids": [
-        30978
+        42566
       ],
       "error": null
     },
@@ -238,9 +253,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 30983,
+      "mainPid": 42581,
       "workerPids": [
-        30984
+        42582
       ],
       "error": null
     },
@@ -255,9 +270,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 30989,
+      "mainPid": 42587,
       "workerPids": [
-        30990
+        42588
       ],
       "error": null
     },
@@ -281,9 +296,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 31005,
+      "mainPid": 42593,
       "workerPids": [
-        31006
+        42594
       ],
       "error": null
     },
@@ -298,9 +313,9 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 31011,
+      "mainPid": 42607,
       "workerPids": [
-        31012
+        42610
       ],
       "error": null
     },
@@ -324,9 +339,9 @@
         }
       },
       "workerRegistriesEqualMain": true,
-      "mainPid": 31017,
+      "mainPid": 42615,
       "workerPids": [
-        31019
+        42616
       ],
       "error": null
     },
@@ -341,14 +356,14 @@
       ],
       "mainRegistry": null,
       "workerRegistriesEqualMain": true,
-      "mainPid": 31024,
+      "mainPid": 42622,
       "workerPids": [
-        31033
+        42623
       ],
       "error": null
     }
   ],
-  "V-01+V-02:ranAt": "2026-11-18T20:38:18.952Z",
+  "V-01+V-02:ranAt": "2026-11-18T21:05:12.121Z",
   "V-03": {
     "resolve": {
       "fromProjectRoot": {
@@ -370,9 +385,108 @@
       "passed": 2
     }
   },
-  "V-03:ranAt": "2026-11-18T20:38:19.822Z",
-  "V-07": "see 1.57.0.json (Node only, no Playwright involved)",
-  "V-07:ranAt": "2026-11-18T20:39:33.580Z",
+  "V-03:ranAt": "2026-11-18T21:05:13.037Z",
+  "V-04": {
+    "testsPerRun": 5,
+    "sampleShape": "one request sample of the 02 format, ~280 bytes as JSON",
+    "dot / 0 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 191,
+      "workerStringifyMsMedian": 0,
+      "attachToOnTestEndMsMedian": 3,
+      "attachToOnTestEndMsMax": 6,
+      "reporterParseMsMedian": 0.01,
+      "onBeginToOnEndMs": 299,
+      "processWallMs": 611,
+      "htmlReportBytes": null
+    },
+    "dot / 1000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 264525,
+      "workerStringifyMsMedian": 0.35,
+      "attachToOnTestEndMsMedian": 16,
+      "attachToOnTestEndMsMax": 16,
+      "reporterParseMsMedian": 0.38,
+      "onBeginToOnEndMs": 314,
+      "processWallMs": 613,
+      "htmlReportBytes": null
+    },
+    "dot / 5000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 1321859,
+      "workerStringifyMsMedian": 1.84,
+      "attachToOnTestEndMsMedian": 48,
+      "attachToOnTestEndMsMax": 49,
+      "reporterParseMsMedian": 1.82,
+      "onBeginToOnEndMs": 354,
+      "processWallMs": 643,
+      "htmlReportBytes": null
+    },
+    "dot / 20000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 5286859,
+      "workerStringifyMsMedian": 6.77,
+      "attachToOnTestEndMsMedian": 105,
+      "attachToOnTestEndMsMax": 124,
+      "reporterParseMsMedian": 7.86,
+      "onBeginToOnEndMs": 485,
+      "processWallMs": 778,
+      "htmlReportBytes": null
+    },
+    "dot+html / 0 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 191,
+      "workerStringifyMsMedian": 0,
+      "attachToOnTestEndMsMedian": 3,
+      "attachToOnTestEndMsMax": 5,
+      "reporterParseMsMedian": 0.01,
+      "onBeginToOnEndMs": 550,
+      "processWallMs": 844,
+      "htmlReportBytes": 519298
+    },
+    "dot+html / 1000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 264525,
+      "workerStringifyMsMedian": 0.4,
+      "attachToOnTestEndMsMedian": 23,
+      "attachToOnTestEndMsMax": 38,
+      "reporterParseMsMedian": 0.39,
+      "onBeginToOnEndMs": 634,
+      "processWallMs": 930,
+      "htmlReportBytes": 596654
+    },
+    "dot+html / 5000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 1321859,
+      "workerStringifyMsMedian": 1.73,
+      "attachToOnTestEndMsMedian": 41,
+      "attachToOnTestEndMsMax": 53,
+      "reporterParseMsMedian": 1.87,
+      "onBeginToOnEndMs": 641,
+      "processWallMs": 941,
+      "htmlReportBytes": 881342
+    },
+    "dot+html / 20000 samples per test": {
+      "exitCode": 0,
+      "passed": 5,
+      "attachmentBytesPerTest": 5286859,
+      "workerStringifyMsMedian": 8.16,
+      "attachToOnTestEndMsMedian": 131,
+      "attachToOnTestEndMsMax": 156,
+      "reporterParseMsMedian": 9.64,
+      "onBeginToOnEndMs": 1274,
+      "processWallMs": 1621,
+      "htmlReportBytes": 1943946
+    }
+  },
+  "V-04:ranAt": "2026-11-18T21:05:20.105Z",
   "V-05": {
     "no flag (config: list + recording reporter)": {
       "exitCode": 0,
@@ -459,7 +573,7 @@
       "stdoutHead": " | Running 4 tests using 1 worker | ··°°"
     }
   },
-  "V-05:ranAt": "2026-11-18T20:41:01.469Z",
+  "V-05:ranAt": "2026-11-18T21:05:26.053Z",
   "V-06": {
     "tests pass, onEnd returns failed": {
       "exitCode": 1,
@@ -508,14 +622,14 @@
       "statusSeenInOnEnd": "passed"
     }
   },
-  "V-06:ranAt": "2026-11-18T20:40:24.706Z",
+  "V-06:ranAt": "2026-11-18T21:05:31.190Z",
   "V-10": [
     {
       "title": "uses page",
       "status": "passed",
       "attachmentInOnTestEnd": true,
       "sampleCount": 2,
-      "bodyBytes": 1251
+      "bodyBytes": 1247
     },
     {
       "title": "no browser",
@@ -529,17 +643,17 @@
       "status": "failed",
       "attachmentInOnTestEnd": true,
       "sampleCount": 1,
-      "bodyBytes": 768
+      "bodyBytes": 391
     },
     {
       "title": "times out on purpose",
       "status": "timedOut",
       "attachmentInOnTestEnd": true,
       "sampleCount": 1,
-      "bodyBytes": 765
+      "bodyBytes": 767
     }
   ],
-  "V-10:ranAt": "2026-11-18T20:40:26.968Z",
+  "V-10:ranAt": "2026-11-18T21:05:33.505Z",
   "V-11": {
     "--list": {
       "exitCode": 0,
@@ -574,5 +688,586 @@
       "statusInOnEnd": "passed"
     }
   },
-  "V-11:ranAt": "2026-11-18T20:41:02.078Z"
+  "V-11:ranAt": "2026-11-18T21:05:34.116Z",
+  "V-08": {
+    "exitCode": 0,
+    "projects": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "chromium": {
+      "status": "passed",
+      "duration": {
+        "n": 20,
+        "min": 200.7,
+        "median": 202.9,
+        "p90": 203.3,
+        "max": 203.5
+      },
+      "ttfb": {
+        "n": 20,
+        "min": 200.5,
+        "median": 201.9,
+        "p90": 202.2,
+        "max": 202.5
+      },
+      "requestStart": {
+        "n": 20,
+        "min": 0.1,
+        "median": 0.2,
+        "p90": 0.3,
+        "max": 0.3
+      },
+      "nodeMs": {
+        "n": 20,
+        "min": 201.5,
+        "median": 203.8,
+        "p90": 204.4,
+        "max": 204.7
+      },
+      "statuses": [],
+      "timeSourceNode": 0,
+      "ttfbNull": 0,
+      "timingMinusOneCounts": {
+        "domainLookupStart": 20,
+        "domainLookupEnd": 20,
+        "connectStart": 20,
+        "connectEnd": 20,
+        "requestStart": 0,
+        "responseStart": 0,
+        "responseEnd": 0
+      },
+      "exampleTiming": {
+        "startTime": 1795035934801.027,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.051,
+        "responseStart": 200.514,
+        "responseEnd": 200.742
+      }
+    },
+    "firefox": {
+      "status": "passed",
+      "duration": {
+        "n": 20,
+        "min": 201.6,
+        "median": 203.3,
+        "p90": 204.6,
+        "max": 205.5
+      },
+      "ttfb": {
+        "n": 20,
+        "min": 200.8,
+        "median": 201.8,
+        "p90": 202.3,
+        "max": 202.4
+      },
+      "requestStart": {
+        "n": 20,
+        "min": 0.5,
+        "median": 1.5,
+        "p90": 2.2,
+        "max": 3.7
+      },
+      "nodeMs": {
+        "n": 20,
+        "min": 197.1,
+        "median": 204.1,
+        "p90": 204.9,
+        "max": 207.3
+      },
+      "statuses": [],
+      "timeSourceNode": 0,
+      "ttfbNull": 0,
+      "timingMinusOneCounts": {
+        "domainLookupStart": 20,
+        "domainLookupEnd": 20,
+        "connectStart": 20,
+        "connectEnd": 20,
+        "requestStart": 0,
+        "responseStart": 0,
+        "responseEnd": 0
+      },
+      "exampleTiming": {
+        "startTime": 1795035940424.458,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.704,
+        "responseStart": 202.071,
+        "responseEnd": 202.111083984375
+      }
+    },
+    "webkit": {
+      "status": "passed",
+      "duration": {
+        "n": 20,
+        "min": 202.4,
+        "median": 205.1,
+        "p90": 206.1,
+        "max": 206.2
+      },
+      "ttfb": {
+        "n": 20,
+        "min": 200.5,
+        "median": 202,
+        "p90": 202.3,
+        "max": 202.7
+      },
+      "requestStart": {
+        "n": 20,
+        "min": 1,
+        "median": 2.7,
+        "p90": 3,
+        "max": 3.4
+      },
+      "nodeMs": {
+        "n": 20,
+        "min": 204.1,
+        "median": 207.3,
+        "p90": 208.1,
+        "max": 208.4
+      },
+      "statuses": [],
+      "timeSourceNode": 0,
+      "ttfbNull": 0,
+      "timingMinusOneCounts": {
+        "domainLookupStart": 2,
+        "domainLookupEnd": 3,
+        "connectStart": 4,
+        "connectEnd": 2,
+        "requestStart": 0,
+        "responseStart": 0,
+        "responseEnd": 0
+      },
+      "exampleTiming": {
+        "startTime": 1795035945731.271,
+        "domainLookupStart": 0,
+        "domainLookupEnd": 0,
+        "connectStart": 0,
+        "secureConnectionStart": -1,
+        "connectEnd": 0,
+        "requestStart": 1.049,
+        "responseStart": 202.607,
+        "responseEnd": 202.901
+      }
+    }
+  },
+  "V-08:ranAt": "2026-11-18T21:05:50.005Z",
+  "V-09": {
+    "drain in context override, budget 500 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 688,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 500,
+          "waitedMs": 507.3
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    },
+    "drain in context override, budget 5000 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 5062,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 5000,
+          "waitedMs": 5006.3
+        }
+      ],
+      "sample": {
+        "status": 200,
+        "failureText": null,
+        "duration": 3002.7
+      }
+    },
+    "drain in _perfBuffer after built-in context closed, budget 5000 ms": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 5056,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "buffer",
+          "budget": 5000,
+          "waitedMs": 5003.1
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    },
+    "drain in context override, budget 5000 ms capped by test timeout 2500 ms (05-REQ-27)": {
+      "sampleBodyUnread": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      },
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1417,
+      "errors": [],
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 1357.120583,
+          "waitedMs": 1361.9
+        }
+      ],
+      "sample": {
+        "status": "PENDING",
+        "failureText": null,
+        "duration": null
+      }
+    }
+  },
+  "V-09:ranAt": "2026-11-18T21:06:05.130Z",
+  "V-12a": {
+    "exitCode": 0,
+    "status": "passed",
+    "requestEventsWithMethodOPTIONS": 0,
+    "optionsHitsOnServer": 3,
+    "serverDelays": {
+      "preflightMs": 300,
+      "getMs": 100
+    },
+    "preflighted": [
+      {
+        "duration": 406.7,
+        "requestStart": 0.2,
+        "ttfb": 101.9,
+        "timing": {
+          "startTime": 1795035966147.729,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.176,
+          "responseStart": 102.076,
+          "responseEnd": 406.708
+        }
+      },
+      {
+        "duration": 405.4,
+        "requestStart": 0.2,
+        "ttfb": 101.9,
+        "timing": {
+          "startTime": 1795035966669.733,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.162,
+          "responseStart": 102.02,
+          "responseEnd": 405.375
+        }
+      },
+      {
+        "duration": 405.6,
+        "requestStart": 0.3,
+        "ttfb": 102.1,
+        "timing": {
+          "startTime": 1795035967183.831,
+          "domainLookupStart": -1,
+          "domainLookupEnd": -1,
+          "connectStart": -1,
+          "secureConnectionStart": -1,
+          "connectEnd": -1,
+          "requestStart": 0.298,
+          "responseStart": 102.422,
+          "responseEnd": 405.64
+        }
+      }
+    ],
+    "simpleCrossOrigin": [
+      {
+        "duration": 103.3,
+        "requestStart": 0.2,
+        "ttfb": 102.2
+      },
+      {
+        "duration": 102,
+        "requestStart": 0.1,
+        "ttfb": 101.6
+      },
+      {
+        "duration": 102.4,
+        "requestStart": 0.2,
+        "ttfb": 101.7
+      }
+    ]
+  },
+  "V-12a:ranAt": "2026-11-18T21:06:07.448Z",
+  "V-12b": {
+    "config as written (project workers: 4, no override)": {
+      "exitCode": 0,
+      "configWorkers": 4,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 4,
+      "distinctWorkers": 4,
+      "wallMs": 1677,
+      "runningLine": "Running 4 tests using 4 workers"
+    },
+    "global workers 1, project workers 4 left as is": {
+      "exitCode": 0,
+      "configWorkers": 1,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 1,
+      "distinctWorkers": 1,
+      "wallMs": 4660,
+      "runningLine": "Running 4 tests using 1 worker"
+    },
+    "withPerf copy: workers 1 globally and in the project": {
+      "exitCode": 0,
+      "configWorkers": 1,
+      "projectWorkersInFullProject": [
+        "(not exposed)"
+      ],
+      "maxConcurrentTests": 1,
+      "distinctWorkers": 1,
+      "wallMs": 4644,
+      "runningLine": "Running 4 tests using 1 worker"
+    }
+  },
+  "V-12b:ranAt": "2026-11-18T21:06:18.479Z",
+  "V-12c": {
+    "timeout 2000: body 500 + teardown 1000": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1508,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [],
+      "timeoutSeenInTeardown": 2000,
+      "pendingSample": null
+    },
+    "timeout 2000: body 1500 + teardown 1000 (each fits, sum does not)": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 2508,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [],
+      "timeoutSeenInTeardown": 2000,
+      "pendingSample": null
+    },
+    "timeout 2000: body 500 + teardown 3000": {
+      "exitCode": 1,
+      "testStatus": "timedOut",
+      "testDurationMs": 2503,
+      "errors": [
+        "\u001b[31mTearing down \"_perfBuffer\" exceeded the test timeout of 2000ms.\u001b[39m"
+      ],
+      "attachmentPresent": false,
+      "drain": null,
+      "timeoutSeenInTeardown": null,
+      "pendingSample": null
+    },
+    "timeout 3000: body 1000 + request in flight, wait min(5000, remaining - 1000)": {
+      "exitCode": 0,
+      "testStatus": "passed",
+      "testDurationMs": 1830,
+      "errors": [],
+      "attachmentPresent": true,
+      "drain": [
+        {
+          "drainedIn": "context",
+          "budget": 697.468541,
+          "waitedMs": 701.7
+        }
+      ],
+      "timeoutSeenInTeardown": 3000,
+      "pendingSample": "PENDING"
+    },
+    "timeout 3000: body 1000 + request in flight, wait 5000 without the cap": {
+      "exitCode": 1,
+      "testStatus": "timedOut",
+      "testDurationMs": 4047,
+      "errors": [
+        "\u001b[31mTearing down \"context\" exceeded the test timeout of 3000ms.\u001b[39m"
+      ],
+      "attachmentPresent": false,
+      "drain": null,
+      "timeoutSeenInTeardown": null,
+      "pendingSample": null
+    }
+  },
+  "V-12c:ranAt": "2026-11-18T21:06:34.287Z",
+  "V-12d": {
+    "measured = \"measured\"": {
+      "exitCode": 0,
+      "projectsInRun": [
+        "auth",
+        "setup",
+        "measured",
+        "cleanup"
+      ],
+      "executed": [
+        "auth:passed",
+        "setup:passed",
+        "measured:passed",
+        "cleanup:passed"
+      ],
+      "order": [
+        "auth",
+        "setup",
+        "measured",
+        "cleanup"
+      ]
+    },
+    "--project other (removed)": {
+      "exitCode": 1,
+      "error": "Error: Project(s) \"other\" not found. Available projects: \"auth\", \"setup\", \"measured\", \"cleanup\" |     at Object.filterProjects (<prototype>/versions/latest/node_modules/playwright/lib/runner/index.js:2244:11)"
+    },
+    "--project measured": {
+      "exitCode": 0,
+      "executed": [
+        "auth:passed",
+        "setup:passed",
+        "measured:passed",
+        "cleanup:passed"
+      ]
+    }
+  },
+  "V-12d:ranAt": "2026-11-18T21:06:37.312Z",
+  "V-12e": {
+    "exitCode": 0,
+    "projects": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "chromium": {
+      "status": "passed",
+      "errors": [],
+      "cases": {
+        "navigation": {
+          "status": "FAILED",
+          "failureText": "net::ERR_ABORTED"
+        },
+        "route-default": {
+          "status": "FAILED",
+          "failureText": "net::ERR_FAILED"
+        },
+        "route-aborted": {
+          "status": "FAILED",
+          "failureText": "net::ERR_ABORTED"
+        },
+        "route-failed": {
+          "status": "FAILED",
+          "failureText": "net::ERR_FAILED"
+        },
+        "page-close": {
+          "status": "PENDING",
+          "failureText": null
+        },
+        "context-close": {
+          "status": "PENDING",
+          "failureText": null
+        }
+      }
+    },
+    "firefox": {
+      "status": "passed",
+      "errors": [],
+      "cases": {
+        "navigation": {
+          "status": "FAILED",
+          "failureText": "NS_BINDING_ABORTED"
+        },
+        "route-default": {
+          "status": "FAILED",
+          "failureText": "NS_ERROR_FAILURE"
+        },
+        "route-aborted": {
+          "status": "FAILED",
+          "failureText": "NS_ERROR_ABORT"
+        },
+        "route-failed": {
+          "status": "FAILED",
+          "failureText": "NS_ERROR_FAILURE"
+        },
+        "page-close": {
+          "status": "PENDING",
+          "failureText": null
+        },
+        "context-close": {
+          "status": "PENDING",
+          "failureText": null
+        }
+      }
+    },
+    "webkit": {
+      "status": "passed",
+      "errors": [],
+      "cases": {
+        "navigation": {
+          "status": "FAILED",
+          "failureText": "cancelled"
+        },
+        "route-default": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "route-aborted": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "route-failed": {
+          "status": "FAILED",
+          "failureText": "Blocked by Web Inspector"
+        },
+        "page-close": {
+          "status": "PENDING",
+          "failureText": null
+        },
+        "context-close": {
+          "status": "PENDING",
+          "failureText": null
+        }
+      }
+    }
+  },
+  "V-12e:ranAt": "2026-11-18T21:06:54.609Z",
+  "V-07": "see 1.57.0.json (Node only, no Playwright involved)",
+  "V-07:ranAt": "2026-11-18T21:06:54.609Z"
 }

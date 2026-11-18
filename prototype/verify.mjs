@@ -7,14 +7,25 @@ import { startServer } from './server.mjs';
 import { v01v02, v03, v03Spawn } from './checks/config-loading.mjs';
 import { v07 } from './checks/native-ts.mjs';
 import { v05, v06, v10, v11 } from './checks/reporter.mjs';
+import { v08, v09, v12a, v12e } from './checks/browsers.mjs';
+import { v12b, v12c, v12d } from './checks/conditions.mjs';
+import { v04 } from './checks/attachments.mjs';
 
 const CHECKS = {
   'V-01+V-02': v01v02,
   'V-03': async (v, srv) => ({ resolve: v03(v), spawnWithSpaceInPath: await v03Spawn(v, srv) }),
+  'V-04': v04,
   'V-05': v05,
   'V-06': v06,
   'V-10': v10,
   'V-11': v11,
+  'V-08': v08,
+  'V-09': v09,
+  'V-12a': v12a,
+  'V-12b': v12b,
+  'V-12c': v12c,
+  'V-12d': v12d,
+  'V-12e': v12e,
   // Independent of the Playwright version; run once.
   'V-07': (v) => (v === VERSIONS[0] ? v07(v) : 'see 1.57.0.json (Node only, no Playwright involved)'),
 };

@@ -19,9 +19,11 @@ function closure(projects, measured) {
 exports.withPerf = function withPerf(config, perfConfig) {
   if (!process.env.PW_PERF_MODE) return config;
   setRegistered({ mode: process.env.PW_PERF_MODE, config: perfConfig ?? null });
-  const overrideWorkers = process.env.PROTO_KEEP_WORKERS !== '1';
+  // PROTO_KEEP_WORKERS: "1" keeps every workers setting, "project" overrides the global one only.
+  const keep = process.env.PROTO_KEEP_WORKERS;
+  const overrideWorkers = keep !== '1' && keep !== 'project';
   const out = { ...config, retries: 0 };
-  if (overrideWorkers) out.workers = 1;
+  if (keep !== '1') out.workers = 1;
   if (config.projects) {
     let projects = config.projects.map((p) => {
       const copy = { ...p, retries: 0 };
