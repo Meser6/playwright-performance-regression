@@ -1,0 +1,7 @@
+{
+  "name": "truncated JSON",
+  "inputText": "{\"schemaVersion\": 1, \"requests\": [",
+  "expected": {
+    "code": "SCHEMA_INVALID_JSON"
+  }
+}

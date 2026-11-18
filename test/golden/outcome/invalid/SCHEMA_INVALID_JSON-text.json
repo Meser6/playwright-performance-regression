@@ -1,0 +1,7 @@
+{
+  "name": "not JSON",
+  "inputText": "exit 0",
+  "expected": {
+    "code": "SCHEMA_INVALID_JSON"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "name": "config snapshot with percentile level p100",
+  "input": {
+    "ci": null,
+    "config": {
+      "checks": {
+        "time": {
+          "percentile": {
+            "level": "p100"
+          }
+        }
+      }
+    },
+    "configDir": "/home/user/project",
+    "custom": {},
+    "endpoints": {},
+    "env": null,
+    "evaluation": {
+      "counts": {
+        "api": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 0,
+          "keys": 0,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0
+        },
+        "custom": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 0,
+          "keys": 0,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0
+        }
+      },
+      "gateEnabled": true,
+      "status": "passed"
+    },
+    "finishedAt": "2026-11-18T10:05:00.000Z",
+    "host": {
+      "arch": "x64",
+      "ci": true,
+      "cpuCount": 4,
+      "cpuModel": "AMD EPYC 7763 64-Core Processor",
+      "platform": "linux",
+      "nodeVersion": "v22.18.0"
+    },
+    "mode": "test",
+    "normalization": "0123456789abcd",
+    "origins": [],
+    "playwright": {
+      "version": "1.57.0"
+    },
+    "runConditions": {
+      "overriddenSettings": [],
+      "projects": [
+        {
+          "browserName": "chromium",
+          "name": "chromium",
+          "repeatEach": 5,
+          "retries": 0,
+          "role": "measured"
+        }
+      ],
+      "workers": 1
+    },
+    "runId": "run-1",
+    "schemaVersion": 1,
+    "startedAt": "2026-11-18T10:00:00.000Z",
+    "thresholdFiles": [],
+    "toolErrors": [],
+    "tests": {
+      "expected": 3,
+      "flaky": 0,
+      "skipped": 0,
+      "status": "passed",
+      "unexpected": 0
+    },
+    "tool": {
+      "name": "playwright-performance-regression",
+      "version": "0.1.0"
+    },
+    "warnings": []
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/config/checks/time/percentile/level"
+    ]
+  }
+}

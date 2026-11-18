@@ -1,0 +1,21 @@
+{
+  "name": "hand-written file (generated: null) with partial entries (02-REQ-21, 02-REQ-25)",
+  "expectedKind": "api",
+  "input": {
+    "entries": {
+      "GET /api/a": {
+        "t": 400,
+        "percentile": 900
+      },
+      "GET /api/b": {
+        "percentile": 900
+      }
+    },
+    "generated": null,
+    "kind": "api",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

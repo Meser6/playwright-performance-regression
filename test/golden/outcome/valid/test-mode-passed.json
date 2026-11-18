@@ -1,0 +1,26 @@
+{
+  "name": "test mode, nothing to report",
+  "input": {
+    "evaluation": {
+      "gateEnabled": true,
+      "status": "passed"
+    },
+    "exitCode": 0,
+    "mode": "test",
+    "paths": {
+      "reportHtml": "/home/user/project/perf-results/report.html",
+      "reportJson": "/home/user/project/perf-results/report.json",
+      "thresholds": [],
+      "thresholdsDiff": null
+    },
+    "runId": "run-1",
+    "schemaVersion": 1,
+    "tests": {
+      "status": "passed"
+    },
+    "toolErrors": []
+  },
+  "expected": {
+    "ok": true
+  }
+}

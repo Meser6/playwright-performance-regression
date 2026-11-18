@@ -1,0 +1,70 @@
+{
+  "name": "derivation without margins",
+  "expectedKind": "api",
+  "input": {
+    "entries": {
+      "GET /api/reports/:id/export": {
+        "maxErrorRate": 0.05,
+        "maxWilson": null,
+        "median": 3400,
+        "minApdex": null,
+        "p99": 6200,
+        "percentile": 4900,
+        "t": null
+      },
+      "GET /api/tickets/:id?search": {
+        "maxErrorRate": 0.05,
+        "maxWilson": 0.05,
+        "median": 900,
+        "minApdex": 0.85,
+        "p99": 2100,
+        "percentile": 1400,
+        "t": 500
+      },
+      "POST /api/orders": {
+        "locked": true,
+        "note": "Known slow, tracked in backlog",
+        "percentile": 3000
+      }
+    },
+    "generated": {
+      "browsers": [
+        "chromium"
+      ],
+      "derivation": {
+        "smallSampleN": 20,
+        "t": {
+          "max": 2000,
+          "medianFactor": 2,
+          "min": 500
+        }
+      },
+      "env": null,
+      "evaluatedPercentile": "p95",
+      "host": {
+        "arch": "x64",
+        "ci": true,
+        "cpuCount": 4,
+        "cpuModel": "AMD EPYC 7763 64-Core Processor",
+        "platform": "linux"
+      },
+      "normalization": "0a3f9c21d47b6e",
+      "playwrightVersion": "1.57.0",
+      "sourceRunId": "2026-11-18T10-00-00-a1b2",
+      "sourceRunStartedAt": "2026-11-18T10:00:00.000Z",
+      "sourceSampleCount": 1200,
+      "tool": {
+        "name": "playwright-performance-regression",
+        "version": "0.1.0"
+      }
+    },
+    "kind": "api",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/generated/derivation"
+    ]
+  }
+}

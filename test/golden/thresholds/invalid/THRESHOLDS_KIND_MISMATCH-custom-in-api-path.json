@@ -1,0 +1,17 @@
+{
+  "name": "custom file read from the api path (02-REQ-22)",
+  "expectedKind": "api",
+  "input": {
+    "entries": {},
+    "generated": null,
+    "kind": "custom",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "code": "THRESHOLDS_KIND_MISMATCH",
+    "pointers": [
+      "/kind"
+    ]
+  },
+  "schemaVerdict": "valid"
+}

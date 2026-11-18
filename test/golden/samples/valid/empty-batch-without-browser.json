@@ -1,0 +1,17 @@
+{
+  "name": "empty batch of a test without a browser (02-REQ-14)",
+  "input": {
+    "collector": {
+      "browserName": null,
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [],
+    "diagnostics": [],
+    "requests": [],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

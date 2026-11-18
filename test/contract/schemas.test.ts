@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { createAjv, ID_PREFIX, readSchema, SCHEMA_FILES, validator } from './schemas.ts';
 
-// Contract tests for the JSON Schemas in schemas/ (01-REQ-36, 02-REQ-01). The golden files
-// that the hand-written validators in core/schema are compared against come with that module;
-// these tests pin the schemas themselves.
+// Contract tests for the JSON Schemas in schemas/ (01-REQ-36, 02-REQ-01). These tests pin the
+// schemas themselves; formats.test.ts compares them with the hand-written validators in
+// src/core/schema on the golden files in test/golden/.
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 

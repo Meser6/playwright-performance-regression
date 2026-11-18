@@ -1,0 +1,8 @@
+{
+  "name": "trailing comma",
+  "expectedKind": "api",
+  "inputText": "{\"schemaVersion\": 1, \"kind\": \"api\",}",
+  "expected": {
+    "code": "SCHEMA_INVALID_JSON"
+  }
+}

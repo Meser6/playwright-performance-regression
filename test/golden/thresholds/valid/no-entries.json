@@ -1,0 +1,13 @@
+{
+  "name": "file without entries",
+  "expectedKind": "api",
+  "input": {
+    "entries": {},
+    "generated": null,
+    "kind": "api",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

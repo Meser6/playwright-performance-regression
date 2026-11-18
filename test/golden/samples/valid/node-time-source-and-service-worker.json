@@ -1,0 +1,49 @@
+{
+  "name": "node fallback timing and a service worker response",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [
+      {
+        "duration": 812.3,
+        "endTime": 1763460001000,
+        "name": "checkout:load-cart",
+        "outcome": "ok"
+      }
+    ],
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": 182.4,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": null,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "node",
+        "ttfb": null,
+        "url": "https://app.example/api/tickets/42?search=abc"
+      },
+      {
+        "duration": 182.4,
+        "fromServiceWorker": true,
+        "method": "GET",
+        "requestStart": 3.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 150.1,
+        "url": "https://app.example/api/tickets/42?search=abc"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

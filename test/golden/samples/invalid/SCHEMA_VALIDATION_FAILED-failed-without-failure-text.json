@@ -1,0 +1,40 @@
+{
+  "name": "FAILED request without failureText",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [
+      {
+        "duration": 812.3,
+        "endTime": 1763460001000,
+        "name": "checkout:load-cart",
+        "outcome": "ok"
+      }
+    ],
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": null,
+        "fromServiceWorker": false,
+        "method": "POST",
+        "requestStart": null,
+        "resourceType": "xhr",
+        "startTime": 1763460000200,
+        "status": "FAILED",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/orders"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/requests/0"
+    ]
+  }
+}
