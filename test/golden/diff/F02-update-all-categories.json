@@ -1,0 +1,179 @@
+{
+  "name": "F02-update-all-categories",
+  "description": "Diff of D03: every category, a large loosening marked with !, an expired muting on its own line.",
+  "input": {
+    "config": {},
+    "options": {},
+    "report": {
+      "startedAt": "2026-11-18T10:00:00.000Z",
+      "endpoints": {
+        "GET /api/locked": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/incomplete": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/muted-only": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/close": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/tightened": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/loosened": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/mixed": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/loosened-much": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/muted-expired": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/muted-active": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/new": {"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}},
+        "GET /api/small-n": {"durations":[[3,150]]},
+        "GET /api/new-small-n": {"durations":[[2,150]]}
+      }
+    },
+    "existing": {
+      "api": {
+        "status": "loaded",
+        "kind": "api",
+        "path": "perf-thresholds.api.json",
+        "file": {
+          "schemaVersion": 1,
+          "kind": "api",
+          "generated": {
+            "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
+            "env": null,
+            "sourceRunId": "run-0",
+            "sourceRunStartedAt": "2026-11-10T10:00:00.000Z",
+            "sourceSampleCount": 800,
+            "evaluatedPercentile": "p95",
+            "derivation": {
+              "t": {"min":500,"max":2000,"medianFactor":2},
+              "smallSampleN": 20,
+              "margins": {
+                "median": {"relative":0.4,"minMs":100,"smallSampleRelative":0.8},
+                "percentile": {"relative":0.4,"minMs":100,"smallSampleRelative":0.8},
+                "p99": {"relative":0.2,"minGapMs":50,"minGapRelative":0.1},
+                "apdex": {"absolute":0.05,"smallSampleAbsolute":0.1},
+                "wilson": {"factor":1.5,"add":0.02,"min":0.03,"max":0.15,"smallSampleMin":0.1},
+                "errors": {"factor":1.5,"add":0.02,"min":0.05}
+              }
+            },
+            "browsers": ["chromium"],
+            "playwrightVersion": "1.57.0",
+            "host": {"platform":"linux","arch":"x64","ci":true,"cpuCount":4,"cpuModel":"AMD EPYC 7763"},
+            "normalization": "0a3f9c21d47b6e"
+          },
+          "entries": {
+            "GET /api/locked": {
+              "t": 500,
+              "median": 220,
+              "percentile": 300,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "locked": true,
+              "note": "Hand-tuned after incident 42"
+            },
+            "GET /api/incomplete": {"percentile":3000,"note":"Custom budget"},
+            "GET /api/muted-only": {"gate":"warn","note":"Backend migration","until":"2026-12-31"},
+            "GET /api/close": {"t":500,"median":230,"percentile":350,"p99":500,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/tightened": {"t":500,"median":220,"percentile":600,"p99":800,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/loosened": {"t":500,"median":220,"percentile":364,"p99":400,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/mixed": {"t":500,"median":150,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.2},
+            "GET /api/loosened-much": {"t":500,"median":120,"percentile":200,"p99":300,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/muted-expired": {
+              "t": 500,
+              "median": 400,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "gate": "warn",
+              "note": "Known slow, ticket #7",
+              "until": "2026-11-15"
+            },
+            "GET /api/muted-active": {
+              "t": 500,
+              "median": 200,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "gate": "warn",
+              "note": "Known slow, ticket #8",
+              "until": "2026-12-01"
+            },
+            "GET /api/unseen": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/unseen-locked": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05,"locked":true},
+            "GET /api/small-n": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05}
+          }
+        }
+      },
+      "custom": null
+    }
+  },
+  "expected": [
+    {
+      "kind": "api",
+      "fileStatus": "updated",
+      "level": "p95",
+      "keys": [
+        {"key":"GET /api/close","category":"unchanged","changes":[],"withinHysteresis":true},
+        {"key":"GET /api/incomplete","category":"locked","changes":[],"incomplete":true},
+        {"key":"GET /api/locked","category":"locked","changes":[]},
+        {"key":"GET /api/loosened","category":"loosened","changes":[{"limit":"p99","before":400,"after":492,"direction":"looser"}]},
+        {
+          "key": "GET /api/loosened-much",
+          "category": "loosened",
+          "changes": [
+            {"limit":"median","before":120,"after":220,"direction":"looser","large":true},
+            {"limit":"percentile","before":200,"after":364,"direction":"looser","large":true},
+            {"limit":"p99","before":300,"after":492,"direction":"looser","large":true}
+          ]
+        },
+        {
+          "key": "GET /api/mixed",
+          "category": "mixed",
+          "changes": [
+            {"limit":"median","before":150,"after":220,"direction":"looser"},
+            {"limit":"maxErrorRate","before":0.2,"after":0.05,"direction":"stricter"}
+          ]
+        },
+        {
+          "key": "GET /api/muted-active",
+          "category": "unchanged",
+          "changes": [],
+          "withinHysteresis": true,
+          "muted": {"until":"2026-12-01","expired":false}
+        },
+        {
+          "key": "GET /api/muted-expired",
+          "category": "tightened",
+          "changes": [{"limit":"median","before":400,"after":220,"direction":"stricter"}],
+          "muted": {"until":"2026-11-15","expired":true}
+        },
+        {"key":"GET /api/muted-only","category":"locked","changes":[],"incomplete":true,"muted":{"until":"2026-12-31","expired":false}},
+        {
+          "key": "GET /api/new",
+          "category": "added",
+          "changes": [],
+          "limits": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05}
+        },
+        {"key":"GET /api/new-small-n","category":"skipped","changes":[]},
+        {"key":"GET /api/small-n","category":"skipped","changes":[]},
+        {
+          "key": "GET /api/tightened",
+          "category": "tightened",
+          "changes": [
+            {"limit":"percentile","before":600,"after":364,"direction":"stricter"},
+            {"limit":"p99","before":800,"after":492,"direction":"stricter"}
+          ]
+        },
+        {"key":"GET /api/unseen","category":"unseen","changes":[]},
+        {"key":"GET /api/unseen-locked","category":"unseen","changes":[]}
+      ],
+      "counts": {"added":1,"removed":0,"loosened":2,"tightened":2,"mixed":1,"unchanged":2,"locked":3,"unseen":2,"skipped":2}
+    },
+    {
+      "kind": "custom",
+      "fileStatus": "not-written",
+      "level": "p95",
+      "keys": [],
+      "counts": {"added":0,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":0}
+    }
+  ]
+}

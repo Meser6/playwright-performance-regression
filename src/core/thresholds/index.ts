@@ -16,3 +16,5 @@ export type {
   LimitName,
   ThresholdsDiff,
 } from './types.ts';
+export { diffThresholds } from './diff.ts';
+export { formatThresholdsDiffMarkdown } from './markdown.ts';
