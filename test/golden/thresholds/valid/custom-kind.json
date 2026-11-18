@@ -1,0 +1,17 @@
+{
+  "name": "custom measurements file",
+  "expectedKind": "custom",
+  "input": {
+    "entries": {
+      "checkout:load-cart": {
+        "median": 800
+      }
+    },
+    "generated": null,
+    "kind": "custom",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

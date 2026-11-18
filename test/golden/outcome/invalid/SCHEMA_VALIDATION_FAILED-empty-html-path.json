@@ -1,0 +1,29 @@
+{
+  "name": "empty reportHtml path",
+  "input": {
+    "evaluation": {
+      "gateEnabled": true,
+      "status": "passed"
+    },
+    "exitCode": 0,
+    "mode": "test",
+    "paths": {
+      "reportHtml": "",
+      "reportJson": "/home/user/project/perf-results/report.json",
+      "thresholds": [],
+      "thresholdsDiff": null
+    },
+    "runId": "run-1",
+    "schemaVersion": 1,
+    "tests": {
+      "status": "passed"
+    },
+    "toolErrors": []
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/paths/reportHtml"
+    ]
+  }
+}

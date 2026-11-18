@@ -1,0 +1,37 @@
+{
+  "name": "response without requestfinished: HTTP status, duration null, timing kept (05-REQ-31)",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [
+      {
+        "duration": 812.3,
+        "endTime": 1763460001000,
+        "name": "checkout:load-cart",
+        "outcome": "ok"
+      }
+    ],
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": null,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": 3.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 503,
+        "timeSource": "browser",
+        "ttfb": 150.1,
+        "url": "https://app.example/api/tickets/42?search=abc"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

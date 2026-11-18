@@ -22,7 +22,7 @@ export type RequestSample = {
    */
   status: number | 'FAILED' | 'PENDING';
   /**
-   * Request.failure().errorText; an empty text is recorded as 'unknown' (05-REQ-11). Present only when status is FAILED. 08-REQ-30 relabels abort texts (e.g. net::ERR_ABORTED) as ABORTED.
+   * Request.failure().errorText; an empty text is recorded as 'unknown' (05-REQ-11). For requests still in flight when their page or context was closed by the test, the collector's CONTEXT_CLOSED_FAILURE_TEXT ('pw-perf: context closed', 05-REQ-30). Present only when status is FAILED. 08-REQ-30 relabels abort texts (e.g. net::ERR_ABORTED and CONTEXT_CLOSED_FAILURE_TEXT) as ABORTED.
    */
   failureText?: string;
   /**
@@ -30,15 +30,15 @@ export type RequestSample = {
    */
   startTime: number;
   /**
-   * From request start to the last response byte (timing.responseEnd). Includes browser queueing, DNS, connection setup and TLS (see requestStart). Null when unknown (FAILED, PENDING).
+   * From request start to the last response byte (timing.responseEnd). Includes browser queueing, DNS, connection setup, TLS and a CORS preflight (see requestStart; 05-REQ-26). Null when unknown: FAILED, PENDING, or a response whose requestfinished event never came, e.g. a body the page did not read (05-REQ-31); such a sample keeps its HTTP status and counts in statuses but not in time statistics.
    */
   duration: number | null;
   /**
-   * timing.requestStart: time from request start until the browser began sending the request, i.e. queueing, DNS, connection and TLS (05-REQ-26). Informational; not evaluated. Null when the browser did not report it or for FAILED/PENDING.
+   * timing.requestStart: time from request start until the browser began sending the request, i.e. queueing, DNS, connection and TLS (05-REQ-26). Does not include a CORS preflight: for preflighted requests the browser measures requestStart and responseStart from the start of the actual request, so the preflight shows only in duration (05-REQ-26). Informational; not evaluated. Null when the browser did not report it or for FAILED/PENDING.
    */
   requestStart: number | null;
   /**
-   * timing.responseStart - timing.requestStart. Null when the browser did not report both values.
+   * timing.responseStart - timing.requestStart; never includes a CORS preflight (05-REQ-26). Null when the browser did not report both values.
    */
   ttfb: number | null;
   /**

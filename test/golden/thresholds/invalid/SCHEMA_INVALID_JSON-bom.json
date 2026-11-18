@@ -1,0 +1,8 @@
+{
+  "name": "UTF-8 BOM before the JSON (02-REQ-04)",
+  "expectedKind": "api",
+  "inputText": "﻿{\"schemaVersion\": 1, \"kind\": \"api\", \"generated\": null, \"entries\": {}}",
+  "expected": {
+    "code": "SCHEMA_INVALID_JSON"
+  }
+}

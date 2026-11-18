@@ -1,0 +1,40 @@
+{
+  "name": "PENDING request with a duration",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [
+      {
+        "duration": 812.3,
+        "endTime": 1763460001000,
+        "name": "checkout:load-cart",
+        "outcome": "ok"
+      }
+    ],
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": 10,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": null,
+        "resourceType": "fetch",
+        "startTime": 1763460000900,
+        "status": "PENDING",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/notifications/poll"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/requests/0/duration"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "thresholds mode with written files and diff",
+  "input": {
+    "evaluation": {
+      "gateEnabled": false,
+      "status": "passed"
+    },
+    "exitCode": 0,
+    "mode": "thresholds",
+    "paths": {
+      "reportHtml": null,
+      "reportJson": "/p/report.json",
+      "thresholds": [
+        "/p/perf-thresholds.api.json"
+      ],
+      "thresholdsDiff": "/p/perf-results/thresholds-diff.md"
+    },
+    "runId": "run-1",
+    "schemaVersion": 1,
+    "tests": {
+      "status": "passed"
+    },
+    "toolErrors": []
+  },
+  "expected": {
+    "ok": true
+  }
+}

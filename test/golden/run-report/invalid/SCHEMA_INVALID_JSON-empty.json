@@ -1,0 +1,7 @@
+{
+  "name": "empty file",
+  "inputText": "",
+  "expected": {
+    "code": "SCHEMA_INVALID_JSON"
+  }
+}

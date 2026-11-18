@@ -1,0 +1,32 @@
+{
+  "name": "tool error gives exit code 3 (02-REQ-26)",
+  "input": {
+    "evaluation": {
+      "gateEnabled": true,
+      "status": "error"
+    },
+    "exitCode": 3,
+    "mode": "test",
+    "paths": {
+      "reportHtml": "/home/user/project/perf-results/report.html",
+      "reportJson": "/home/user/project/perf-results/report.json",
+      "thresholds": [],
+      "thresholdsDiff": null
+    },
+    "runId": "run-1",
+    "schemaVersion": 1,
+    "tests": {
+      "status": "interrupted"
+    },
+    "toolErrors": [
+      {
+        "code": "RUN_INCOMPLETE",
+        "hint": "Rerun.",
+        "message": "The run was interrupted."
+      }
+    ]
+  },
+  "expected": {
+    "ok": true
+  }
+}

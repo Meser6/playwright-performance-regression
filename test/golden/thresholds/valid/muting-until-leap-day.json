@@ -1,0 +1,82 @@
+{
+  "name": "until on 29 February of a leap year",
+  "expectedKind": "api",
+  "input": {
+    "entries": {
+      "GET /api/tickets": {
+        "gate": "warn",
+        "note": "Known slow, JIRA-1",
+        "until": "2028-02-29"
+      }
+    },
+    "generated": {
+      "browsers": [
+        "chromium"
+      ],
+      "derivation": {
+        "margins": {
+          "apdex": {
+            "absolute": 0.05,
+            "smallSampleAbsolute": 0.1
+          },
+          "errors": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "median": {
+            "minMs": 100,
+            "relative": 0.4,
+            "smallSampleRelative": 0.8
+          },
+          "p99": {
+            "minGapMs": 50,
+            "minGapRelative": 0.1,
+            "relative": 0.2
+          },
+          "percentile": {
+            "minMs": 100,
+            "relative": 0.4,
+            "smallSampleRelative": 0.8
+          },
+          "wilson": {
+            "add": 0.02,
+            "factor": 1.5,
+            "max": 0.15,
+            "min": 0.03,
+            "smallSampleMin": 0.1
+          }
+        },
+        "smallSampleN": 20,
+        "t": {
+          "max": 2000,
+          "medianFactor": 2,
+          "min": 500
+        }
+      },
+      "env": null,
+      "evaluatedPercentile": "p95",
+      "host": {
+        "arch": "x64",
+        "ci": true,
+        "cpuCount": 4,
+        "cpuModel": "AMD EPYC 7763 64-Core Processor",
+        "platform": "linux"
+      },
+      "normalization": "0a3f9c21d47b6e",
+      "playwrightVersion": "1.57.0",
+      "sourceRunId": "2026-11-18T10-00-00-a1b2",
+      "sourceRunStartedAt": "2026-11-18T10:00:00.000Z",
+      "sourceSampleCount": 1200,
+      "tool": {
+        "name": "playwright-performance-regression",
+        "version": "0.1.0"
+      }
+    },
+    "kind": "api",
+    "schemaVersion": 1
+  },
+  "expected": {
+    "ok": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "failureText on a request with an HTTP status",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "custom": [
+      {
+        "duration": 812.3,
+        "endTime": 1763460001000,
+        "name": "checkout:load-cart",
+        "outcome": "ok"
+      }
+    ],
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": 182.4,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": 3.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 150.1,
+        "url": "https://app.example/api/tickets/42?search=abc",
+        "failureText": "boom"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/requests/0/failureText"
+    ]
+  }
+}
