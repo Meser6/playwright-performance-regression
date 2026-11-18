@@ -1,0 +1,6 @@
+{
+  "name": "keys.keyBuilder in a JSON config file",
+  "input": { "keys": { "keyBuilder": "[function]" } },
+  "schemaVerdict": "valid",
+  "expected": { "code": "CONFIG_INVALID_TYPE", "paths": ["keys.keyBuilder"] }
+}

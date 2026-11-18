@@ -1,0 +1,6 @@
+{
+  "name": "regex that does not compile",
+  "input": { "measure": { "include": [{ "regex": "(api" }] } },
+  "schemaVerdict": "valid",
+  "expected": { "code": "CONFIG_INVALID_REGEX", "paths": ["measure.include[0]"] }
+}

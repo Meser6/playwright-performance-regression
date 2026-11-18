@@ -1,0 +1,5 @@
+{
+  "name": "tolerance as a string without %",
+  "input": { "gate": { "tolerance": "5" } },
+  "expected": { "code": "CONFIG_INVALID_VALUE", "paths": ["gate.tolerance"] }
+}

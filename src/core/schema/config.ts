@@ -11,7 +11,10 @@ const unit = num({ minimum: 0, maximum: 1 });
 export const urlPattern = oneOf(
   str({ minLength: 1 }),
   obj(
-    { regex: str({ minLength: 1 }), flags: str({ pattern: /^[dgimsuyv]*$/u }) },
+    {
+      regex: str({ minLength: 1 }),
+      flags: str({ pattern: /^[dgimsuyv]*$/u, format: 'regular expression flags from "dgimsuyv"' }),
+    },
     { required: ['regex'] },
   ),
 );
@@ -66,9 +69,15 @@ const checks = obj({
   errors: obj({
     enabled,
     minSamples,
-    statuses: arr(str({ pattern: /^(?:[1-5]xx|[1-5][0-9]{2}|FAILED|ABORTED|PENDING)$/u }), {
-      uniqueItems: true,
-    }),
+    statuses: arr(
+      str({
+        pattern: /^(?:[1-5]xx|[1-5][0-9]{2}|FAILED|ABORTED|PENDING)$/u,
+        format: 'a status like "5xx", "429", "FAILED", "ABORTED" or "PENDING"',
+      }),
+      {
+        uniqueItems: true,
+      },
+    ),
     limit: limitByKind(ratio),
     margin: errorsMargin,
   }),
@@ -106,20 +115,36 @@ export const packageConfig = obj({
       ]),
       { uniqueItems: true, minItems: 1 },
     ),
-    ignoreExtensions: arr(str({ pattern: /^\.[a-z0-9]+$/u }), { uniqueItems: true }),
+    ignoreExtensions: arr(
+      str({ pattern: /^\.[a-z0-9]+$/u, format: 'a lowercase extension with a dot, like ".js"' }),
+      { uniqueItems: true },
+    ),
     include: arr(urlPattern),
     exclude: arr(urlPattern),
     excludeKnownThirdParty: bool,
-    successStatuses: arr(str({ pattern: /^(?:[1-5]xx|[1-5][0-9]{2})$/u }), {
-      uniqueItems: true,
-      minItems: 1,
-    }),
+    successStatuses: arr(
+      str({
+        pattern: /^(?:[1-5]xx|[1-5][0-9]{2})$/u,
+        format: 'a status class like "2xx" or a code like "404"',
+      }),
+      {
+        uniqueItems: true,
+        minItems: 1,
+      },
+    ),
     pendingTimeoutMs: int({ minimum: 0, maximum: 60000 }),
   }),
   keys: obj({
     origins: record(
-      str({ pattern: /^https?:\/\/[^/?#]+$/u }),
-      str({ pattern: /^[a-z0-9.-]*$/u, maxLength: 64 }),
+      str({
+        pattern: /^https?:\/\/[^/?#]+$/u,
+        format: 'an origin without a path, like "https://api.example.com"',
+      }),
+      str({
+        pattern: /^[a-z0-9.-]*$/u,
+        maxLength: 64,
+        format: 'a label of lowercase letters, digits, "." and "-", like "api"',
+      }),
     ),
     idPatterns: obj({
       number: bool,
@@ -137,7 +162,13 @@ export const packageConfig = obj({
   }),
   checks,
   gate: obj({
-    tolerance: oneOf(int({ minimum: 0 }), str({ pattern: /^(?:100|[0-9]{1,2}(?:\.[0-9]+)?)%$/u })),
+    tolerance: oneOf(
+      int({ minimum: 0 }),
+      str({
+        pattern: /^(?:100|[0-9]{1,2}(?:\.[0-9]+)?)%$/u,
+        format: 'an integer >= 0 (ms) or a percentage like "5%"',
+      }),
+    ),
     hardLimitFactor: nullable(num({ minimum: 1 })),
     defaultThresholds: enumOf(['block', 'warn']),
     warnOnly: bool,
@@ -145,7 +176,10 @@ export const packageConfig = obj({
   }),
   thresholds: obj({
     dir: str({ minLength: 1 }),
-    filePrefix: str({ pattern: /^[A-Za-z0-9._-]+$/u }),
+    filePrefix: str({
+      pattern: /^[A-Za-z0-9._-]+$/u,
+      format: 'a file name prefix of letters, digits, ".", "_" and "-"',
+    }),
     update: enumOf(['all', 'new-only']),
     smallSampleN: int({ minimum: 1 }),
     hysteresis: obj({ relative: unit, ratio: num({ minimum: 0, maximum: 0.01 }) }),

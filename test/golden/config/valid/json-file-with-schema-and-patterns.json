@@ -1,0 +1,24 @@
+{
+  "name": "JSON config file with $schema, regex patterns and per-rule settings",
+  "input": {
+    "$schema": "./node_modules/playwright-performance-regression/schemas/config.schema.json",
+    "run": { "env": "staging", "repeat": { "test": 3 }, "projects": ["chromium"] },
+    "measure": {
+      "exclude": ["/socket.io/", "intercom.io", { "regex": "^https://cdn\\.", "flags": "i" }]
+    },
+    "keys": {
+      "origins": { "https://api.example.com": "api" },
+      "extraIdPatterns": [{ "regex": "^[A-Z]{3}-\\d+$" }]
+    },
+    "checks": {
+      "time": {
+        "p99": { "enabled": false },
+        "percentile": { "level": "p90", "limit": { "api": 800 }, "margin": { "relative": 0.25, "minMs": 50 } },
+        "median": { "limit": { "api": 500 } }
+      },
+      "errors": { "statuses": ["5xx", "429", "FAILED", "PENDING"] }
+    },
+    "gate": { "tolerance": "5%" }
+  },
+  "expected": { "ok": true }
+}

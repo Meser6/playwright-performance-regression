@@ -9,7 +9,13 @@ const nodeBuiltins = [...builtinModules, ...builtinModules.map((m) => `node:${m}
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'coverage/', 'node_modules/', 'src/core/types/generated/'],
+    ignores: [
+      'dist/',
+      'coverage/',
+      'node_modules/',
+      'src/core/types/generated/',
+      'src/core/config/generated/',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.strict,

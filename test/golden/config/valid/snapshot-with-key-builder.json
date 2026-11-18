@@ -1,0 +1,6 @@
+{
+  "name": "config snapshot from a run report keeps a key builder as \"[function]\"",
+  "source": "snapshot",
+  "input": { "keys": { "keyBuilder": "[function]" } },
+  "expected": { "ok": true }
+}
