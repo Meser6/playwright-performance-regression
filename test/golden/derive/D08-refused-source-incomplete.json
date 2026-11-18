@@ -1,0 +1,23 @@
+{
+  "name": "D08-refused-source-incomplete",
+  "description": "An interrupted run with tool errors: THRESHOLDS_SOURCE_INCOMPLETE, nothing written.",
+  "input": {
+    "config": {},
+    "options": {"prune":true},
+    "report": {
+      "tests": {"status":"interrupted"},
+      "toolErrors": [{"code":"RUN_INCOMPLETE","message":"The run was interrupted."},{"code":"TESTS_FAILED_TOO_MANY","message":"Too many tests failed."}],
+      "endpoints": {"GET /api/tickets":{"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}}}
+    },
+    "existing": {"api":null,"custom":null}
+  },
+  "expected": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "THRESHOLDS_SOURCE_INCOMPLETE",
+        "message": "The source report is incomplete or untrustworthy (tests interrupted; tool errors: RUN_INCOMPLETE, TESTS_FAILED_TOO_MANY); no thresholds file was written."
+      }
+    ]
+  }
+}

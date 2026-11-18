@@ -1,0 +1,29 @@
+{
+  "name": "D11-refused-invalid-file",
+  "description": "An invalid custom thresholds file stops the derivation of both kinds.",
+  "input": {
+    "config": {},
+    "options": {},
+    "report": {"endpoints":{"GET /api/tickets":{"durations":[[199,120],[1,600]],"percentiles":{"p50":120,"p90":210,"p95":260,"p99":410}}}},
+    "existing": {
+      "api": null,
+      "custom": {
+        "status": "invalid",
+        "kind": "custom",
+        "path": "perf-thresholds.custom.json",
+        "issues": [
+          {
+            "code": "SCHEMA_VALIDATION_FAILED",
+            "source": "perf-thresholds.custom.json",
+            "message": "perf-thresholds.custom.json: /entries/flow/median must be an integer",
+            "problems": [{"pointer":"/entries/flow/median","message":"must be an integer"}]
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "ok": false,
+    "issues": [{"code":"SCHEMA_VALIDATION_FAILED","message":"perf-thresholds.custom.json: /entries/flow/median must be an integer"}]
+  }
+}

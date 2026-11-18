@@ -39,11 +39,11 @@ export function missingFileWarning(
 }
 
 /** major.minor of a version such as 1.57.2 (09-REQ-04). */
-function majorMinor(version: string): string {
+export function majorMinor(version: string): string {
   return version.split('.').slice(0, 2).join('.');
 }
 
-function sameList(a: readonly string[], b: readonly string[]): boolean {
+export function sameList(a: readonly string[], b: readonly string[]): boolean {
   const x = [...new Set(a)].sort(compareText);
   const y = [...new Set(b)].sort(compareText);
   return x.length === y.length && x.every((v, i) => v === y[i]);
@@ -52,6 +52,44 @@ function sameList(a: readonly string[], b: readonly string[]): boolean {
 function listText(list: readonly string[]): string {
   const unique = [...new Set(list)].sort(compareText);
   return unique.length === 0 ? '(none)' : unique.join(', ');
+}
+
+/** Fields of `generated` that differ from the source fingerprint (09-REQ-04, 09-D-13). */
+export interface SourceDifferences {
+  /** One text per differing field: "<field> <thresholds> / <source>". */
+  diffs: string[];
+  /** browsers, playwrightVersion (major.minor) or host differ: the timings are not comparable. */
+  timing: boolean;
+  /** The normalization differs: the keys are not comparable. */
+  keys: boolean;
+}
+
+export function sourceDifferences(generated: Generated, source: RunSource): SourceDifferences {
+  const diffs: string[] = [];
+  let timing = false;
+  let keys = false;
+  if (!sameList(generated.browsers, source.browsers)) {
+    diffs.push(`browsers ${listText(generated.browsers)} / ${listText(source.browsers)}`);
+    timing = true;
+  }
+  if (majorMinor(generated.playwrightVersion) !== majorMinor(source.playwrightVersion)) {
+    diffs.push(`playwrightVersion ${generated.playwrightVersion} / ${source.playwrightVersion}`);
+    timing = true;
+  }
+  const hostFields = ['platform', 'arch', 'ci', 'cpuCount', 'cpuModel'] as const;
+  for (const field of hostFields) {
+    const a = generated.host[field];
+    const b = source.host[field];
+    if (a !== b) {
+      diffs.push(`host.${field} ${JSON.stringify(a)} / ${JSON.stringify(b)}`);
+      timing = true;
+    }
+  }
+  if (generated.normalization !== source.normalization) {
+    diffs.push(`normalization ${generated.normalization} / ${source.normalization}`);
+    keys = true;
+  }
+  return { diffs, timing, keys };
 }
 
 /** Warnings about the `generated` block of a loaded file (09-REQ-04). */
@@ -81,30 +119,7 @@ export function generatedWarnings(
   }
 
   // One warning per file with every differing field (09-REQ-04, 09-D-13).
-  const diffs: string[] = [];
-  let timing = false;
-  let keys = false;
-  if (!sameList(generated.browsers, source.browsers)) {
-    diffs.push(`browsers ${listText(generated.browsers)} / ${listText(source.browsers)}`);
-    timing = true;
-  }
-  if (majorMinor(generated.playwrightVersion) !== majorMinor(source.playwrightVersion)) {
-    diffs.push(`playwrightVersion ${generated.playwrightVersion} / ${source.playwrightVersion}`);
-    timing = true;
-  }
-  const hostFields = ['platform', 'arch', 'ci', 'cpuCount', 'cpuModel'] as const;
-  for (const field of hostFields) {
-    const a = generated.host[field];
-    const b = source.host[field];
-    if (a !== b) {
-      diffs.push(`host.${field} ${JSON.stringify(a)} / ${JSON.stringify(b)}`);
-      timing = true;
-    }
-  }
-  if (generated.normalization !== source.normalization) {
-    diffs.push(`normalization ${generated.normalization} / ${source.normalization}`);
-    keys = true;
-  }
+  const { diffs, timing, keys } = sourceDifferences(generated, source);
   if (diffs.length > 0) {
     const hints: string[] = [];
     if (timing) {

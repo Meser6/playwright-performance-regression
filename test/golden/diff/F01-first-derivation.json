@@ -1,0 +1,70 @@
+{
+  "name": "F01-first-derivation",
+  "description": "Diff of a first derivation (D02): every derived key added, keys with too few samples skipped.",
+  "input": {
+    "config": {},
+    "options": {"env":"qa"},
+    "report": {
+      "env": "qa",
+      "endpoints": {
+        "GET /api/tickets": {"durations":[[150,180],[40,260],[8,420],[2,900]]},
+        "POST /api/orders": {"durations":[[30,640],[15,820],[5,1300]],"errors":2,"other":3},
+        "GET /api/search?q": {"durations":[[12,95.5],[6,130.2],[2,610]]},
+        "GET /api/rare": {"durations":[[3,200]]},
+        "GET /api/always-failing": {"errors":12}
+      },
+      "custom": {"checkout › pay":{"durations":[[10,2400],[5,3100]]},"login":{"durations":[[2,900]]}},
+      "projects": [
+        {"name":"webkit","role":"measured","browserName":"webkit","repeatEach":10,"retries":0},
+        {"name":"chromium","role":"measured","browserName":"chromium","repeatEach":10,"retries":0},
+        {"name":"setup","role":"dependency","browserName":"chromium","repeatEach":1,"retries":0}
+      ]
+    },
+    "existing": {"api":null,"custom":null}
+  },
+  "expected": [
+    {
+      "kind": "api",
+      "fileStatus": "created",
+      "level": "p95",
+      "keys": [
+        {"key":"GET /api/always-failing","category":"skipped","changes":[]},
+        {"key":"GET /api/rare","category":"skipped","changes":[]},
+        {
+          "key": "GET /api/search?q",
+          "category": "added",
+          "changes": [],
+          "limits": {"t":500,"median":196,"percentile":854,"p99":940,"minApdex":0.9,"maxWilson":0.15,"maxErrorRate":0.05}
+        },
+        {
+          "key": "GET /api/tickets",
+          "category": "added",
+          "changes": [],
+          "limits": {"t":500,"median":280,"percentile":376,"p99":510,"minApdex":0.945,"maxWilson":0.035,"maxErrorRate":0.05}
+        },
+        {
+          "key": "POST /api/orders",
+          "category": "added",
+          "changes": [],
+          "limits": {"t":868,"median":896,"percentile":1820,"p99":2002,"minApdex":0.9,"maxWilson":0.15,"maxErrorRate":0.075}
+        }
+      ],
+      "counts": {"added":3,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":2}
+    },
+    {
+      "kind": "custom",
+      "fileStatus": "created",
+      "level": "p95",
+      "keys": [
+        {
+          "key": "checkout › pay",
+          "category": "added",
+          "changes": [],
+          "limits": {"t":3100,"median":4320,"percentile":5580,"p99":6138,"minApdex":0.9,"maxWilson":0.1,"maxErrorRate":0.05}
+        },
+        {"key":"login","category":"skipped","changes":[]}
+      ],
+      "counts": {"added":1,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":1}
+    }
+  ]
+}

@@ -76,6 +76,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   violations (blocking first, by relative exceedance, at most 20 rows, keys shortened in the
   middle to fit the terminal width) with the `over` percentage and `HARD` and `MUTED` flags;
   the slowest sample of the first blocking keys; the result line and the report paths.
+- Derivation of thresholds files from a run report: per key `t`, `median`, the evaluated
+  percentile, `p99`, `minApdex`, `maxWilson` and `maxErrorRate` from the margins in
+  `checks.*.margin`, `checks.slowShare.t.<kind>` and `thresholds.smallSampleN`, rounded towards
+  the looser limit. A derived entry always passes the run it was derived from, and its limits
+  keep `median ≤ percentile < p99`. Keys whose median is above `checks.slowShare.t.<kind>.max`
+  get no `apdex` and `wilson` limits; keys with fewer successful samples than
+  `checks.time.median.minSamples` get no entry.
+- Existing thresholds files are updated, not replaced: `locked` and hand-written partial entries
+  stay byte for byte, `note`, `gate` and `until` are kept on every recomputed entry, entries of
+  keys not seen in the run stay unless `--prune` is given, and `thresholds.update: "new-only"`
+  only adds new keys. An entry whose new limits are within `thresholds.hysteresis` and that
+  still passes the source run stays as it is, so a repeated derivation does not rewrite the
+  file. A file is written only when its entries, the derivation settings, the environment, the
+  evaluated percentile or the run conditions (browsers, machine, normalization, Playwright
+  major.minor) changed; its `generated` block describes the source run.
+- Derivation refusals `THRESHOLDS_SOURCE_INCOMPLETE` (interrupted or timed-out run, tool
+  errors), `THRESHOLDS_EMPTY_REPORT`, `THRESHOLDS_NOTHING_TO_DERIVE` and an invalid existing
+  thresholds file; warnings `THRESHOLDS_KIND_SKIPPED`, `THRESHOLDS_MANUAL_FILE`,
+  `THRESHOLDS_SOURCE_TESTS_FAILED`, `THRESHOLDS_SOURCE_TEST_MODE`, `THRESHOLDS_ENV_MISMATCH`,
+  `THRESHOLDS_SOURCE_MISMATCH` and `THRESHOLDS_LOOSENED_MUCH` (a time limit grew by more than
+  `thresholds.loosenWarnRelative`).
+- Thresholds diff per file: every key as added, removed, loosened, tightened, mixed, unchanged
+  (also within hysteresis), locked, unseen or skipped, with the limit values before and after;
+  large loosenings are marked `!` and expired mutings are listed on their own line. Console
+  output (at most 30 rows per file, keys shortened to the terminal width) and Markdown for
+  `thresholds-diff.md` (every change, for a PR description).
 
 ### Changed
 
