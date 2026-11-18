@@ -1,0 +1,84 @@
+// Types of the package config (03, chapters 5 and 7). The JSON form is generated from
+// schemas/config.schema.json (02-REQ-02); the TypeScript input type differs from it only in URL
+// patterns (RegExp allowed) and keys.keyBuilder (a function).
+import type { ConfigIssue, DeepPartial, Override } from '../types/common.ts';
+import type { PackageConfig } from '../types/generated/formats.ts';
+
+/** JSON form of the package config: a JSON config file or the snapshot in the run report. */
+export type PerfConfigJson = PackageConfig;
+
+/** A string matches as a case-sensitive substring; RegExp and { regex, flags } are regexes. */
+export type UrlPattern = string | RegExp | { regex: string; flags?: string };
+
+export interface KeyBuilderInput {
+  /** Uppercase HTTP method. */
+  method: string;
+  /** Raw URL. */
+  url: string;
+  resourceType: string;
+}
+
+/** Return a key, or undefined to fall back to the built-in normalization (07). */
+export type KeyBuilder = (req: KeyBuilderInput) => string | undefined;
+
+/** Config accepted by definePerfConfig() and withPerf(); every option is optional. */
+export type PerfConfigInput = DeepPartial<
+  Override<
+    PerfConfigJson,
+    {
+      measure: { include: UrlPattern[]; exclude: UrlPattern[] };
+      keys: { extraIdPatterns: UrlPattern[]; keyBuilder: KeyBuilder };
+    }
+  >
+>;
+
+/** Every property required, recursively; arrays and tuples are kept as they are. */
+type Complete<T> = T extends readonly unknown[]
+  ? T
+  : T extends object
+    ? { [K in keyof T]-?: Complete<Exclude<T[K], undefined>> }
+    : T;
+
+type CompleteJson = Complete<Omit<PerfConfigJson, '$schema'>>;
+
+/**
+ * JSON form of a fully resolved config: every option has a value. keys.keyBuilder is present
+ * ("[function]") only when a key builder function was configured (02-REQ-17).
+ */
+export type ResolvedConfigJson = Omit<CompleteJson, 'keys'> & {
+  keys: Omit<CompleteJson['keys'], 'keyBuilder'> & { keyBuilder?: '[function]' };
+};
+
+/** A URL pattern after resolution: a substring, or a compiled regular expression. */
+export type ResolvedUrlPattern = string | RegExp;
+
+/** Fully resolved config: all options filled in, patterns compiled (03, chapter 5). */
+export type ResolvedConfig = Omit<ResolvedConfigJson, 'measure' | 'keys'> & {
+  measure: Omit<ResolvedConfigJson['measure'], 'include' | 'exclude'> & {
+    include: ResolvedUrlPattern[];
+    exclude: ResolvedUrlPattern[];
+  };
+  keys: Omit<ResolvedConfigJson['keys'], 'extraIdPatterns' | 'keyBuilder'> & {
+    extraIdPatterns: ResolvedUrlPattern[];
+    keyBuilder: KeyBuilder | undefined;
+  };
+};
+
+/** Values that override the config, read from the environment by the mode module (03-REQ-04). */
+export interface ConfigOverrides {
+  /** From <PKG>_ENV; replaces run.env. */
+  env?: string | null;
+  /** From <PKG>_REPEAT; replaces run.repeat.<mode>. */
+  repeat?: number;
+  /** Mode the repeat override applies to. Default 'test'. */
+  mode?: 'test' | 'thresholds';
+  /** Where the input came from; 'json' rejects keys.keyBuilder (03-REQ-10). Default 'code'. */
+  source?: 'code' | 'json' | 'snapshot';
+}
+
+export interface ResolvedConfigResult {
+  config: ResolvedConfig;
+  /** JSON form for the run report (02-REQ-17): the full effective config. */
+  snapshot: ResolvedConfigJson;
+  warnings: ConfigIssue[];
+}

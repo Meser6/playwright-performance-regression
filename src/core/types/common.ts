@@ -41,12 +41,24 @@ export interface Diagnostics {
   list(): Issue[];
 }
 
-/** Type helpers for the config input type. */
+/**
+ * Type helpers for the config input type. Functions (keys.keyBuilder) and arrays are replaced
+ * as a whole, never mapped over: a mapped function type would lose its call signature.
+ */
+type Whole = readonly unknown[] | ((...args: never[]) => unknown);
 export type DeepPartial<T> = T extends readonly (infer U)[]
   ? U[]
-  : T extends object
-    ? { [K in keyof T]?: DeepPartial<T[K]> }
-    : T;
+  : T extends Whole
+    ? T
+    : T extends object
+      ? { [K in keyof T]?: DeepPartial<T[K]> }
+      : T;
 export type Override<T, U> = {
-  [K in keyof T]: K extends keyof U ? (U[K] extends object ? Override<T[K], U[K]> : U[K]) : T[K];
+  [K in keyof T]: K extends keyof U
+    ? U[K] extends Whole
+      ? U[K]
+      : U[K] extends object
+        ? Override<T[K], U[K]>
+        : U[K]
+    : T[K];
 };
