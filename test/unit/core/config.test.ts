@@ -142,6 +142,22 @@ describe('URL patterns and the key builder (03, chapter 5; 02-REQ-17)', () => {
     expect(snapshot.keys.extraIdPatterns).toEqual([{ regex: '^[a-z]{3}-\\d+$', flags: 'u' }]);
   });
 
+  test('g and y flags are dropped when compiling; the snapshot keeps them', () => {
+    const { config, snapshot } = resolved({
+      measure: { exclude: [/socket/gi, { regex: 'poll', flags: 'yu' }] },
+      keys: { extraIdPatterns: [{ regex: '^[A-Z]{2}-[0-9]+$', flags: 'g' }] },
+    });
+    expect(config.measure.exclude.map((p) => (p as RegExp).flags)).toEqual(['i', 'u']);
+    expect((config.keys.extraIdPatterns[0] as RegExp).flags).toBe('');
+    const pattern = config.keys.extraIdPatterns[0] as RegExp;
+    expect([pattern.test('PL-1'), pattern.test('PL-1')]).toEqual([true, true]);
+    expect(snapshot.measure.exclude).toEqual([
+      { regex: 'socket', flags: 'gi' },
+      { regex: 'poll', flags: 'yu' },
+    ]);
+    expect(snapshot.keys.extraIdPatterns).toEqual([{ regex: '^[A-Z]{2}-[0-9]+$', flags: 'g' }]);
+  });
+
   test('a snapshot resolves to the same snapshot', () => {
     const first = resolved({ measure: { exclude: [/socket/g] } }).snapshot;
     expect(resolved(first, { source: 'snapshot' }).snapshot).toEqual(first);

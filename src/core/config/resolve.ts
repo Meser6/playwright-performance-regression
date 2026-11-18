@@ -203,8 +203,13 @@ function snapshotPattern(pattern: JsonPattern): JsonPattern {
     : { regex: pattern.regex, flags: pattern.flags ?? '' };
 }
 
+/**
+ * Compiles a pattern. The g and y flags are dropped: they make RegExp.test() depend on the
+ * previous call (03, chapter 5; 07-REQ-09). The snapshot keeps the flags as given.
+ */
 function compilePattern(pattern: JsonPattern): ResolvedUrlPattern {
-  return typeof pattern === 'string' ? pattern : new RegExp(pattern.regex, pattern.flags ?? '');
+  if (typeof pattern === 'string') return pattern;
+  return new RegExp(pattern.regex, (pattern.flags ?? '').replace(/[gy]/g, ''));
 }
 
 /**
