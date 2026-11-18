@@ -40,6 +40,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with fallback warnings `NORMALIZE_KEY_BUILDER_INVALID` and `NORMALIZE_KEY_BUILDER_THREW`.
 - Normalization fingerprint of the key rules and warnings `NORMALIZE_HIGH_CARDINALITY` and
   `NORMALIZE_TOO_MANY_KEYS` for key explosion.
+- Statistics per endpoint key and custom measurement: sample, success, error and per-status
+  counts (cancelled requests are labeled `ABORTED` and are not errors by default), time sources,
+  test counts, samples from failed tests, exact minimum, maximum and average, percentiles p50,
+  p90, p95, p99 and the evaluated percentile (linear interpolation, as in spreadsheets and
+  NumPy), TTFB, the 3 slowest samples with their start time and the 5 tests with the most
+  samples. Above `advanced.maxSamplesPerKey` successful samples a seeded uniform sample is kept;
+  the result does not depend on the order of the samples.
+- Only samples of measured projects are aggregated; warnings
+  `STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS`, `STATS_SAMPLES_WITHOUT_BROWSER_TIMING` and
+  `STATS_MULTIPLE_BROWSERS`.
+- Apdex and Wilson score interval functions used by the evaluation and thresholds.
 
 ### Changed
 
