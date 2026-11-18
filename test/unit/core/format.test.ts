@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { ceilTo, floorTo, roundMs, stringifyStable } from '../../../src/core/format/index.ts';
+import {
+  RATIO_DECIMALS,
+  ceilTo,
+  floorTo,
+  roundMs,
+  roundRatio,
+  stringifyStable,
+} from '../../../src/core/format/index.ts';
 
 describe('rounding (02-REQ-07, 02-REQ-08)', () => {
   test('roundMs rounds durations to 0.1 ms', () => {
@@ -7,6 +14,13 @@ describe('rounding (02-REQ-07, 02-REQ-08)', () => {
     expect(roundMs(123.45)).toBe(123.5);
     expect(roundMs(0.04)).toBe(0);
     expect(roundMs(812)).toBe(812);
+  });
+
+  test('roundRatio rounds ratios to RATIO_DECIMALS places (09-REQ-08)', () => {
+    expect(RATIO_DECIMALS).toBe(4);
+    expect(roundRatio(0.11764)).toBe(0.1176);
+    expect(roundRatio(0.03615)).toBe(0.0362);
+    expect(Object.is(roundRatio(-0.00001), 0)).toBe(true);
   });
 
   test('02-AC-09 ceilTo and floorTo remove float representation errors first', () => {

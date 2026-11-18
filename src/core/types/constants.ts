@@ -6,3 +6,9 @@
  * classification in core/stats (08-REQ-05) use one value.
  */
 export const CONTEXT_CLOSED_FAILURE_TEXT = 'pw-perf: context closed';
+
+/** Name of the npm package (00). */
+export const PACKAGE_NAME = 'playwright-performance-regression';
+
+/** Command used in hints of issues, e.g. "npx pw-perf thresholds" (04). */
+export const CLI_COMMAND = 'npx pw-perf';

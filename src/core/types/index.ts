@@ -30,4 +30,4 @@ export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
 export type RawCustomSample = CustomSample;
 export type Kind = 'api' | 'custom';
-export { CONTEXT_CLOSED_FAILURE_TEXT } from './constants.ts';
+export { CLI_COMMAND, CONTEXT_CLOSED_FAILURE_TEXT, PACKAGE_NAME } from './constants.ts';
