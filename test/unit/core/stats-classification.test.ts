@@ -31,16 +31,21 @@ describe('status labels (08-REQ-05)', () => {
     expect(CONTEXT_CLOSED_FAILURE_TEXT).toBe('pw-perf: context closed');
   });
 
-  test.each([...ABORT_FAILURE_TEXTS])('08-AC-17 FAILED with failureText %j is ABORTED', (text) => {
-    expect(requestStatusLabel({ status: 'FAILED', failureText: text })).toBe('ABORTED');
-  });
+  describe('08-AC-17 abort texts are ABORTED, other failure texts stay FAILED', () => {
+    test.each([...ABORT_FAILURE_TEXTS])(
+      '08-AC-17 FAILED with failureText %j is ABORTED',
+      (text) => {
+        expect(requestStatusLabel({ status: 'FAILED', failureText: text })).toBe('ABORTED');
+      },
+    );
 
-  test.each(['Blocked by Web Inspector', 'net::ERR_FAILED', 'NS_ERROR_FAILURE', 'unknown'])(
-    '08-AC-17 FAILED with failureText %j stays FAILED',
-    (text) => {
-      expect(requestStatusLabel({ status: 'FAILED', failureText: text })).toBe('FAILED');
-    },
-  );
+    test.each(['Blocked by Web Inspector', 'net::ERR_FAILED', 'NS_ERROR_FAILURE', 'unknown'])(
+      '08-AC-17 FAILED with failureText %j stays FAILED',
+      (text) => {
+        expect(requestStatusLabel({ status: 'FAILED', failureText: text })).toBe('FAILED');
+      },
+    );
+  });
 
   test('FAILED without failureText stays FAILED', () => {
     expect(requestStatusLabel({ status: 'FAILED' })).toBe('FAILED');
