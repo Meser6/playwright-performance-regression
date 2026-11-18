@@ -1,0 +1,159 @@
+// Thresholds files: state, checks of the `generated` block and unseen entries (09, chapter 4).
+import type { ResolvedConfig } from '../config/index.ts';
+import type { Generated, Issue, Kind, ThresholdFileInfo } from '../types/index.ts';
+import { CLI_COMMAND } from '../types/index.ts';
+import type { LoadedThresholdsFile, RunSource } from './types.ts';
+
+/** Code unit order, never localeCompare (02-REQ-04). */
+export function compareText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+export function plural(n: number, word: string, many = `${word}s`): string {
+  return `${n} ${n === 1 ? word : many}`;
+}
+
+const KIND_NOUN: Record<Kind, string> = { api: 'endpoint', custom: 'custom measurement' };
+
+/** Path of the file without the environment label: <prefix>.<kind>.<env>.json → <prefix>.<kind>.json. */
+function envlessPath(path: string, env: string): string {
+  const suffix = `.${env}.json`;
+  return path.endsWith(suffix) ? `${path.slice(0, -suffix.length)}.json` : path;
+}
+
+/** THRESHOLDS_FILE_MISSING (09-REQ-02, 09-REQ-03). */
+export function missingFileWarning(
+  file: Extract<LoadedThresholdsFile, { status: 'missing' }>,
+  env: string | null,
+): Issue {
+  const derive = `Derive thresholds with \`${CLI_COMMAND} thresholds\`${env === null ? '' : ` (environment "${env}")`}.`;
+  const envless =
+    env !== null && file.envlessFileExists
+      ? ` ${envlessPath(file.path, env)} exists but is not used for environment "${env}": thresholds of another environment would give false alarms or hide regressions.`
+      : '';
+  return {
+    code: 'THRESHOLDS_FILE_MISSING',
+    message: `Thresholds file ${file.path} not found; ${KIND_NOUN[file.kind]} keys are evaluated with default thresholds.`,
+    hint: `${derive}${envless}`,
+  };
+}
+
+/** major.minor of a version such as 1.57.2 (09-REQ-04). */
+function majorMinor(version: string): string {
+  return version.split('.').slice(0, 2).join('.');
+}
+
+function sameList(a: readonly string[], b: readonly string[]): boolean {
+  const x = [...new Set(a)].sort(compareText);
+  const y = [...new Set(b)].sort(compareText);
+  return x.length === y.length && x.every((v, i) => v === y[i]);
+}
+
+function listText(list: readonly string[]): string {
+  const unique = [...new Set(list)].sort(compareText);
+  return unique.length === 0 ? '(none)' : unique.join(', ');
+}
+
+/** Warnings about the `generated` block of a loaded file (09-REQ-04). */
+export function generatedWarnings(
+  path: string,
+  generated: Generated,
+  cfg: Pick<ResolvedConfig, 'checks'>,
+  env: string | null,
+  source: RunSource,
+): Issue[] {
+  const issues: Issue[] = [];
+  const level = cfg.checks.time.percentile.level;
+  if (generated.evaluatedPercentile !== level) {
+    issues.push({
+      code: 'EVAL_PERCENTILE_MISMATCH',
+      message: `Thresholds in ${path} were derived for ${generated.evaluatedPercentile}, but this run evaluates ${level}; the percentile limits are compared with ${level}.`,
+      hint: `Derive thresholds again with \`${CLI_COMMAND} thresholds\` after changing checks.time.percentile.level.`,
+    });
+  }
+  if (generated.env !== env) {
+    const show = (v: string | null): string => (v === null ? 'none' : `"${v}"`);
+    issues.push({
+      code: 'THRESHOLDS_ENV_MISMATCH',
+      message: `Thresholds in ${path} were derived for environment ${show(generated.env)}, but this run uses environment ${show(env)}.`,
+      hint: 'The file was probably copied or renamed by hand; derive thresholds for this environment.',
+    });
+  }
+
+  // One warning per file with every differing field (09-REQ-04, 09-D-13).
+  const diffs: string[] = [];
+  let timing = false;
+  let keys = false;
+  if (!sameList(generated.browsers, source.browsers)) {
+    diffs.push(`browsers ${listText(generated.browsers)} / ${listText(source.browsers)}`);
+    timing = true;
+  }
+  if (majorMinor(generated.playwrightVersion) !== majorMinor(source.playwrightVersion)) {
+    diffs.push(`playwrightVersion ${generated.playwrightVersion} / ${source.playwrightVersion}`);
+    timing = true;
+  }
+  const hostFields = ['platform', 'arch', 'ci', 'cpuCount', 'cpuModel'] as const;
+  for (const field of hostFields) {
+    const a = generated.host[field];
+    const b = source.host[field];
+    if (a !== b) {
+      diffs.push(`host.${field} ${JSON.stringify(a)} / ${JSON.stringify(b)}`);
+      timing = true;
+    }
+  }
+  if (generated.normalization !== source.normalization) {
+    diffs.push(`normalization ${generated.normalization} / ${source.normalization}`);
+    keys = true;
+  }
+  if (diffs.length > 0) {
+    const hints: string[] = [];
+    if (timing) {
+      hints.push(
+        'Another machine, browser or Playwright version changes the timings: derive thresholds on the same infrastructure as the evaluation.',
+      );
+    }
+    if (keys) {
+      hints.push(
+        `Another normalization changes the keys: derive thresholds again with \`${CLI_COMMAND} thresholds\`.`,
+      );
+    }
+    issues.push({
+      code: 'THRESHOLDS_SOURCE_MISMATCH',
+      message: `Thresholds in ${path} come from a run with other conditions (thresholds / this run): ${diffs.join('; ')}.`,
+      hint: hints.join(' '),
+    });
+  }
+  return issues;
+}
+
+/** THRESHOLDS_UNSEEN_ENTRIES (09-REQ-05). */
+export function unseenWarning(path: string, unseen: readonly string[]): Issue {
+  return {
+    code: 'THRESHOLDS_UNSEEN_ENTRIES',
+    message: `${plural(unseen.length, 'entry', 'entries')} in ${path} ${unseen.length === 1 ? 'was' : 'were'} not seen in this run.`,
+    hint: `Run the full suite, or remove stale entries with \`${CLI_COMMAND} thresholds --prune\`.`,
+  };
+}
+
+/** THRESHOLDS_FILE_OUTDATED (02-REQ-12). */
+export function outdatedWarning(path: string, from: number, current: number): Issue {
+  return {
+    code: 'THRESHOLDS_FILE_OUTDATED',
+    message: `Thresholds file ${path} has format version ${from}; it was read after migration to version ${current}.`,
+    hint: `The next \`${CLI_COMMAND} thresholds\` writes it in the current version and keeps locked entries.`,
+  };
+}
+
+/** thresholdFiles[] entry of the run report. */
+export function fileInfo(file: LoadedThresholdsFile, unseenKeys: string[]): ThresholdFileInfo {
+  return {
+    kind: file.kind,
+    path: file.path,
+    status: file.status,
+    generated:
+      file.status === 'loaded' && file.file.generated !== null
+        ? structuredClone(file.file.generated)
+        : null,
+    unseenKeys,
+  };
+}
