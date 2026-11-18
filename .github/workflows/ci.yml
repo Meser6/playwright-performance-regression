@@ -15,7 +15,9 @@ concurrency:
 jobs:
   checks:
     name: Checks (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+    # Pinned: Chromium of the lowest supported Playwright (the dev dependency, 1.57) does not
+    # install on newer Ubuntu releases that ubuntu-latest may point to.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
