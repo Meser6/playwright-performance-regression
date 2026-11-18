@@ -51,6 +51,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS`, `STATS_SAMPLES_WITHOUT_BROWSER_TIMING` and
   `STATS_MULTIPLE_BROWSERS`.
 - Apdex and Wilson score interval functions used by the evaluation and thresholds.
+- Evaluation of every endpoint key and custom measurement against the thresholds files: limits
+  from the file entry, completed from the config for hand-written entries, or default
+  thresholds; rules `median`, `percentile`, `p99`, `apdex` (upper bound of the 95% interval),
+  `wilson` and `errors` (lower bound), each with its own minimum sample count; hard limit,
+  tolerance in keys or percent, `gate.warnOnly` and `gate.defaultThresholds`; evaluation status
+  `passed`, `warned`, `failed` or `error` and per-kind counters. An invalid thresholds file
+  stops the evaluation of its kind only and never falls back to default thresholds.
+- Muting of a key in the thresholds file (`gate: "warn"` with `note` and `until`): its
+  violations never block until the end date; warnings `THRESHOLDS_MUTED`,
+  `THRESHOLDS_MUTE_EXPIRING` (7 days before) and `THRESHOLDS_MUTE_EXPIRED`.
+- Thresholds file warnings `THRESHOLDS_FILE_MISSING` (also naming a file without the
+  environment label), `THRESHOLDS_FILE_OUTDATED`, `THRESHOLDS_UNSEEN_ENTRIES`,
+  `THRESHOLDS_ENTRIES_NOT_EVALUATED`, `EVAL_PERCENTILE_MISMATCH`, `THRESHOLDS_ENV_MISMATCH`,
+  `THRESHOLDS_SOURCE_MISMATCH` (other browser, Playwright minor version, machine or
+  normalization) and `EVAL_NO_SAMPLES`.
+- Exit code of a perf-mode run in the outcome file: 3 for tool errors, 2 for blocking
+  violations in `test` mode, otherwise 0 (also with warnings and in `thresholds` mode). Failed
+  tests are a warning `TESTS_FAILED` up to `gate.maxFailedTestShare` and a tool error
+  `TESTS_FAILED_TOO_MANY` above it; a timed-out, interrupted or `maxFailures`-stopped run is
+  `RUN_INCOMPLETE`, a sharded run `RUN_SHARDED`.
+- Console summary of a run report: header with mode, environment, tests and CI commit; tool
+  errors and up to 10 warnings with hints; counters per kind and muted keys; a table of
+  violations (blocking first, by relative exceedance, at most 20 rows, keys shortened in the
+  middle to fit the terminal width) with the `over` percentage and `HARD` and `MUTED` flags;
+  the slowest sample of the first blocking keys; the result line and the report paths.
 
 ### Changed
 

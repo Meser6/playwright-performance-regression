@@ -1,0 +1,103 @@
+{
+  "name": "G10-new-key-default-thresholds",
+  "description": "G10: key without an entry, 20 samples, p50 800 ms, p95 1100 ms, no errors: default thresholds run no apdex or wilson, median 800 <= 2000, percentile 1100 <= 2000; passed.",
+  "input": {
+    "config": {},
+    "options": {},
+    "thresholds": {
+      "api": {
+        "status": "loaded",
+        "kind": "api",
+        "path": "perf-thresholds.api.json",
+        "file": {"schemaVersion":1,"kind":"api","generated":null,"entries":{}}
+      },
+      "custom": {
+        "status": "loaded",
+        "kind": "custom",
+        "path": "perf-thresholds.custom.json",
+        "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
+      }
+    },
+    "aggregates": {
+      "endpoints": {
+        "GET /api/new": {"durations":[[18,800],[2,1100]]},
+        "GET /api/filler-01": {"durations":[[20,300]]},
+        "GET /api/filler-02": {"durations":[[20,300]]},
+        "GET /api/filler-03": {"durations":[[20,300]]},
+        "GET /api/filler-04": {"durations":[[20,300]]},
+        "GET /api/filler-05": {"durations":[[20,300]]},
+        "GET /api/filler-06": {"durations":[[20,300]]},
+        "GET /api/filler-07": {"durations":[[20,300]]},
+        "GET /api/filler-08": {"durations":[[20,300]]},
+        "GET /api/filler-09": {"durations":[[20,300]]},
+        "GET /api/filler-10": {"durations":[[20,300]]},
+        "GET /api/filler-11": {"durations":[[20,300]]},
+        "GET /api/filler-12": {"durations":[[20,300]]},
+        "GET /api/filler-13": {"durations":[[20,300]]},
+        "GET /api/filler-14": {"durations":[[20,300]]},
+        "GET /api/filler-15": {"durations":[[20,300]]},
+        "GET /api/filler-16": {"durations":[[20,300]]},
+        "GET /api/filler-17": {"durations":[[20,300]]},
+        "GET /api/filler-18": {"durations":[[20,300]]},
+        "GET /api/filler-19": {"durations":[[20,300]]},
+        "GET /api/filler-20": {"durations":[[20,300]]},
+        "GET /api/filler-21": {"durations":[[20,300]]},
+        "GET /api/filler-22": {"durations":[[20,300]]},
+        "GET /api/filler-23": {"durations":[[20,300]]},
+        "GET /api/filler-24": {"durations":[[20,300]]},
+        "GET /api/filler-25": {"durations":[[20,300]]},
+        "GET /api/filler-26": {"durations":[[20,300]]},
+        "GET /api/filler-27": {"durations":[[20,300]]},
+        "GET /api/filler-28": {"durations":[[20,300]]},
+        "GET /api/filler-29": {"durations":[[20,300]]},
+        "GET /api/filler-30": {"durations":[[20,300]]},
+        "GET /api/filler-31": {"durations":[[20,300]]},
+        "GET /api/filler-32": {"durations":[[20,300]]},
+        "GET /api/filler-33": {"durations":[[20,300]]},
+        "GET /api/filler-34": {"durations":[[20,300]]},
+        "GET /api/filler-35": {"durations":[[20,300]]},
+        "GET /api/filler-36": {"durations":[[20,300]]},
+        "GET /api/filler-37": {"durations":[[20,300]]},
+        "GET /api/filler-38": {"durations":[[20,300]]},
+        "GET /api/filler-39": {"durations":[[20,300]]}
+      },
+      "custom": {}
+    }
+  },
+  "expected": {
+    "status": "passed",
+    "gateEnabled": true,
+    "counts": {
+      "api": {
+        "keys": 40,
+        "fromFile": 0,
+        "fromDefaults": 40,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
+      },
+      "custom": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
+      }
+    },
+    "violations": [],
+    "notEvaluated": [],
+    "warnings": [],
+    "toolErrors": []
+  }
+}

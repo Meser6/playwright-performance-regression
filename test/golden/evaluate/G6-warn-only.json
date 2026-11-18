@@ -1,0 +1,121 @@
+{
+  "name": "G6-warn-only",
+  "description": "G6: warnOnly; five keys with violations, one above the hard limit: nothing blocks; warned.",
+  "input": {
+    "config": {"gate":{"warnOnly":true}},
+    "options": {},
+    "thresholds": {
+      "api": {
+        "status": "loaded",
+        "kind": "api",
+        "path": "perf-thresholds.api.json",
+        "file": {
+          "schemaVersion": 1,
+          "kind": "api",
+          "generated": null,
+          "entries": {
+            "GET /api/a": {"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05},
+            "GET /api/b": {"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05},
+            "GET /api/c": {"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05},
+            "GET /api/d": {"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05},
+            "GET /api/e": {"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05}
+          }
+        }
+      },
+      "custom": {
+        "status": "loaded",
+        "kind": "custom",
+        "path": "perf-thresholds.custom.json",
+        "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
+      }
+    },
+    "aggregates": {
+      "endpoints": {
+        "GET /api/a": {"durations":[[20,1500]]},
+        "GET /api/b": {"durations":[[20,1500]]},
+        "GET /api/c": {"durations":[[20,1500]]},
+        "GET /api/d": {"durations":[[20,1500]]},
+        "GET /api/e": {"durations":[[20,3000]]},
+        "GET /api/filler-01": {"durations":[[20,300]]},
+        "GET /api/filler-02": {"durations":[[20,300]]},
+        "GET /api/filler-03": {"durations":[[20,300]]},
+        "GET /api/filler-04": {"durations":[[20,300]]},
+        "GET /api/filler-05": {"durations":[[20,300]]},
+        "GET /api/filler-06": {"durations":[[20,300]]},
+        "GET /api/filler-07": {"durations":[[20,300]]},
+        "GET /api/filler-08": {"durations":[[20,300]]},
+        "GET /api/filler-09": {"durations":[[20,300]]},
+        "GET /api/filler-10": {"durations":[[20,300]]},
+        "GET /api/filler-11": {"durations":[[20,300]]},
+        "GET /api/filler-12": {"durations":[[20,300]]},
+        "GET /api/filler-13": {"durations":[[20,300]]},
+        "GET /api/filler-14": {"durations":[[20,300]]},
+        "GET /api/filler-15": {"durations":[[20,300]]},
+        "GET /api/filler-16": {"durations":[[20,300]]},
+        "GET /api/filler-17": {"durations":[[20,300]]},
+        "GET /api/filler-18": {"durations":[[20,300]]},
+        "GET /api/filler-19": {"durations":[[20,300]]},
+        "GET /api/filler-20": {"durations":[[20,300]]},
+        "GET /api/filler-21": {"durations":[[20,300]]},
+        "GET /api/filler-22": {"durations":[[20,300]]},
+        "GET /api/filler-23": {"durations":[[20,300]]},
+        "GET /api/filler-24": {"durations":[[20,300]]},
+        "GET /api/filler-25": {"durations":[[20,300]]},
+        "GET /api/filler-26": {"durations":[[20,300]]},
+        "GET /api/filler-27": {"durations":[[20,300]]},
+        "GET /api/filler-28": {"durations":[[20,300]]},
+        "GET /api/filler-29": {"durations":[[20,300]]},
+        "GET /api/filler-30": {"durations":[[20,300]]},
+        "GET /api/filler-31": {"durations":[[20,300]]},
+        "GET /api/filler-32": {"durations":[[20,300]]},
+        "GET /api/filler-33": {"durations":[[20,300]]},
+        "GET /api/filler-34": {"durations":[[20,300]]},
+        "GET /api/filler-35": {"durations":[[20,300]]}
+      },
+      "custom": {}
+    }
+  },
+  "expected": {
+    "status": "warned",
+    "gateEnabled": true,
+    "counts": {
+      "api": {
+        "keys": 40,
+        "fromFile": 5,
+        "fromDefaults": 35,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 5,
+        "blockingViolations": 0,
+        "muted": 0
+      },
+      "custom": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
+      }
+    },
+    "violations": [
+      {"kind":"api","key":"GET /api/a","rule":"percentile","actual":1500,"limit":1400,"hardLimitExceeded":false,"blocking":false},
+      {"kind":"api","key":"GET /api/b","rule":"percentile","actual":1500,"limit":1400,"hardLimitExceeded":false,"blocking":false},
+      {"kind":"api","key":"GET /api/c","rule":"percentile","actual":1500,"limit":1400,"hardLimitExceeded":false,"blocking":false},
+      {"kind":"api","key":"GET /api/d","rule":"percentile","actual":1500,"limit":1400,"hardLimitExceeded":false,"blocking":false},
+      {"kind":"api","key":"GET /api/e","rule":"median","actual":3000,"limit":2000,"hardLimitExceeded":false,"blocking":false},
+      {"kind":"api","key":"GET /api/e","rule":"percentile","actual":3000,"limit":1400,"hardLimitExceeded":true,"blocking":false}
+    ],
+    "notEvaluated": [],
+    "warnings": [],
+    "toolErrors": []
+  }
+}

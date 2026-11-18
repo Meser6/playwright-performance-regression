@@ -1,0 +1,37 @@
+playwright-performance-regression · mode: test · env: qa · 128 tests (127 passed, 1 failed, 2 skipped) · main@3f2a91c
+
+Warnings:
+  ! TESTS_FAILED: 1 of 128 test executions failed; the performance result still decides.
+    Hint: Functional failures are reported by your regular test run.
+  ! THRESHOLDS_UNSEEN_ENTRIES: 3 entries in perf-thresholds.api.qa.json were not seen in this run.
+    Hint: Run the full suite, or remove stale entries with `npx pw-perf thresholds --prune`.
+  ! THRESHOLDS_ENTRIES_NOT_EVALUATED: 1 key with an entry in the thresholds file had too few samples and was not evaluated.
+    Hint: Run more repetitions (run.repeat or `npx pw-perf test --repeat`), or accept that the endpoint is called rarely.
+  ! THRESHOLDS_MUTED: 1 key is muted; its violations do not block.
+    Hint: Muted keys are listed with their note and end date; remove gate and until from the entry once the cause is fixed.
+
+Endpoints: 9 keys · 7 from file · 1 default · 1 too few samples · 1 median only · 3 unseen entries
+Custom:    2 keys · 1 from file · 1 default · 0 too few samples · 0 median only
+Muted:     POST /api/reports/export until 2026-12-31 — "Depends on report service, tracked in backlog"
+
+    kind    key                                                  rule           actual    limit   over    n  src   flag
+  ✖ api     GET /api/health                                      median          50 ms     1 ms  >999%   20  file  HARD
+  ✖ api     GET /api/health                                      p95             50 ms     1 ms  >999%   20  file  HARD
+  ✖ api     GET /api/search                                      wilson  0.309 (0.400)    0.100  +209%  100  file
+  ✖ api     POST /api/orders                                     errors  0.118 (0.400)    0.050  +135%    5  file
+  ✖ api     GET /api/organizations/:i…?filter&include&page&sort  median        2600 ms  2000 ms   +30%   20  file
+  ✖ api     GET /api/tickets/:id?search                          median         890 ms   700 ms   +27%   40  file
+  ✖ api     GET /api/tickets/:id?search                          p95           1712 ms  1400 ms   +22%   40  file
+  ✖ custom  checkout                                             p95           3500 ms  3000 ms   +17%   20  file
+  ✖ api     GET /api/search                                      apdex   0.781 (0.700)    0.900   +15%  100  file
+  ✖ api     GET /api/organizations/:i…?filter&include&page&sort  p95           2600 ms  2500 ms    +4%   20  file
+  ! api     POST /api/reports/export                             p95           2150 ms  2000 ms    +7%   20  file  MUTED
+
+  slowest: GET /api/health — 50 ms in "health" (tests/health.spec.ts:3)
+  slowest: GET /api/search — 1500 ms in "search › full text" (tests/search.spec.ts:8)
+  slowest: POST /api/orders — 212 ms in "orders › place order" (tests/orders.spec.ts:17)
+  slowest: GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&include&page&sort — 2600 ms in "deployments › list" (tests/deployments.spec.ts:120)
+  slowest: GET /api/tickets/:id?search — 2431 ms in "tickets › search by id" (tests/tickets.spec.ts:42)
+
+FAILED: 6 blocking violations (tolerance: 0)
+Report: perf-results/report.html · perf-results/report.json

@@ -1,5 +1,13 @@
 // Rounding rules of the file formats (02-REQ-07, 02-REQ-08).
 
+/** Decimal places of ratios in the run report: interval bounds and point estimates (09-REQ-08, P-13). */
+export const RATIO_DECIMALS = 4;
+
+/** Rounds a ratio to RATIO_DECIMALS places (08-REQ-24, 09-REQ-08); never returns -0. */
+export function roundRatio(x: number): number {
+  return Math.round(x * 1e4) / 1e4 + 0;
+}
+
 /** Durations in ms, rounded to 0.1 ms (02-REQ-07). */
 export function roundMs(x: number): number {
   return Math.round(x * 10) / 10;

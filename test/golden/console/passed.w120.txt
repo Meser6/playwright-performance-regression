@@ -1,0 +1,6 @@
+playwright-performance-regression · mode: test · 10 tests (10 passed, 0 failed)
+
+Endpoints: 2 keys · 1 from file · 1 default · 0 too few samples · 1 median only
+
+PASSED: no violations in 2 evaluated keys
+Report: perf-results/report.html · perf-results/report.json
