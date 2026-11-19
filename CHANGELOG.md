@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0-next.1] - 2026-11-19
+
 ### Added
 
 - `init` asks first whether to set the package up with a guided tutorial; no (or
