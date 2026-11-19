@@ -13,6 +13,8 @@ export interface SummaryOptions {
   color: boolean;
   /** Directory the report paths are shown relative to. */
   cwd: string;
+  /** Whether report.html was written; default: report.html of the config snapshot. */
+  html?: boolean;
 }
 
 /** At most this many warnings are listed; tool errors are always listed in full (chapter 8.1). */
@@ -371,11 +373,12 @@ function resolvePath(base: string, path: string): string {
   return rootOf(b) + segments(`${b}/${p}`).join('/');
 }
 
-function reportLine(report: RunReport, cwd: string): string[] {
+function reportLine(report: RunReport, cwd: string, html: boolean | undefined): string[] {
   const options = report.config.report;
   if (options?.dir === undefined) return [];
   const dir = resolvePath(report.configDir, options.dir);
-  const files = [...(options.html === false ? [] : ['report.html']), 'report.json'];
+  const withHtml = html ?? options.html !== false;
+  const files = [...(withHtml ? ['report.html'] : []), 'report.json'];
   return [`Report: ${files.map((f) => relativePath(cwd, `${dir}/${f}`)).join(' · ')}`];
 }
 
@@ -395,6 +398,6 @@ export function formatSummary(report: RunReport, opts: SummaryOptions): string {
     if (slowest.length > 0) lines.push('', ...slowest);
     lines.push('');
   }
-  lines.push(resultLine(report, paint), ...reportLine(report, opts.cwd));
+  lines.push(resultLine(report, paint), ...reportLine(report, opts.cwd, opts.html));
   return `${lines.join('\n')}\n`;
 }
