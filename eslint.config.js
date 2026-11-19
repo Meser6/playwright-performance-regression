@@ -163,6 +163,16 @@ export default tseslint.config(
     'node:',
     '../../package.json',
   ]),
+  // The init wizard is part of the CLI: the same modules, one directory deeper (04, chapter 4.10).
+  ...moduleBoundaries('src/cli/init', [
+    './',
+    '../host.ts',
+    '../output.ts',
+    '../run.ts',
+    '../../core/',
+    '../../mode/',
+    'node:',
+  ]),
   // @playwright/test at runtime only in the "./test" entry point (01-REQ-26).
   {
     files: ['src/entries/**/*.ts'],

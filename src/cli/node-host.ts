@@ -2,14 +2,14 @@
 // child process started with process.execPath and without a shell (04-REQ-13, NF-05, V-03).
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { rm, stat } from 'node:fs/promises';
+import { readdir, rm, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fileExists, readTextFile } from '../io/index.ts';
 import { peerDependencies, version } from '../../package.json';
-import type { CliHost, PlaywrightInstall } from './host.ts';
+import type { CliHost, DirEntry, PlaywrightInstall } from './host.ts';
 
 function isModuleNotFound(error: unknown): boolean {
   return (
@@ -82,5 +82,15 @@ export function nodeHost(): CliHost {
       }
     },
     importModule: (url) => import(url),
+    listDir: async (path): Promise<DirEntry[]> => {
+      try {
+        const entries = await readdir(path, { withFileTypes: true });
+        return entries
+          .map((e) => ({ name: e.name, directory: e.isDirectory() }))
+          .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      } catch {
+        return [];
+      }
+    },
   };
 }

@@ -219,6 +219,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `CLI_WRITE_FAILED` end it with exit code 3. `pw-perf init` ends with
   `CLI_COMMAND_NOT_AVAILABLE`. `--help` (also per command, with the
   note on repeated tests and data conflicts) and `--version`.
+- CI recipes in `examples/ci/` (`github-actions.yml`, `gitlab-ci.yml`, `Jenkinsfile`,
+  `azure-pipelines.yml`): pull request and nightly triggers, the report uploaded always, exit
+  code 2 as a soft failure on GitLab, Jenkins and Azure Pipelines, and a time limit.
 
 ### Changed
 

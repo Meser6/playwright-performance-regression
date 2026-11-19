@@ -1,0 +1,119 @@
+--- /dev/null
++++ b/azure-pipelines.perf.yml
+@@ -0,0 +1,46 @@
++# Performance measurement run with playwright-performance-regression (pw-perf).
++# Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
++# night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
++# config error) fails it. The report in perf-results/ is published also when the run fails.
++trigger: none
++
++pr:
++  branches:
++    include:
++      - '*'
++
++schedules:
++  - cron: '0 3 * * *'
++    displayName: Nightly measurement run
++    branches:
++      include:
++        - main
++    always: true
++
++pool:
++  vmImage: ubuntu-latest
++
++jobs:
++  - job: perf
++    timeoutInMinutes: 60
++    steps:
++      - task: NodeTool@0
++        inputs:
++          versionSpec: '22.x'
++      - script: npm ci
++        displayName: Install dependencies
++      - script: npx playwright install --with-deps chromium
++        displayName: Install Chromium
++      - bash: |
++          code=0
++          npx pw-perf test --grep @perf || code=$?
++          if [ "$code" -eq 2 ]; then
++            echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
++            exit 0
++          fi
++          exit $code
++        displayName: Measurement run
++      - publish: perf-results
++        artifact: perf-results
++        condition: always()
++        displayName: Publish the performance report
+--- a/package.json
++++ b/package.json
+@@ -4,5 +4,9 @@
+   "type": "module",
+   "devDependencies": {
+     "@playwright/test": "~1.57.0"
++  },
++  "scripts": {
++    "perf:test": "pw-perf test --grep @perf",
++    "perf:thresholds": "pw-perf thresholds --grep @perf"
+   }
+ }
+--- a/playwright.config.ts
++++ b/playwright.config.ts
+@@ -1,8 +1,10 @@
+ // Input of the init wizard tests (04-AC-17): tests import test from @playwright/test (D-14),
+ // a setup project, tests tagged @perf, Azure Pipelines.
+ import { defineConfig } from '@playwright/test';
++import { withPerf } from 'playwright-performance-regression/config';
++import perfConfig from './pw-perf.config';
+ 
+-export default defineConfig({
++export default withPerf(defineConfig({
+   testDir: 'tests',
+   timeout: 20_000,
+   use: { baseURL: process.env.DEMO_URL },
+@@ -10,4 +12,4 @@
+     { name: 'setup', testMatch: /.*\.setup\.ts/ },
+     { name: 'chromium', testMatch: /.*\.spec\.ts/, dependencies: ['setup'] },
+   ],
+-});
++}), perfConfig);
+--- /dev/null
++++ b/pw-perf.config.ts
+@@ -0,0 +1,18 @@
++// Configuration of playwright-performance-regression, written by "npx pw-perf init".
++// Only the values that differ from the defaults are set. All options:
++// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
++import { definePerfConfig } from 'playwright-performance-regression';
++
++export default definePerfConfig({
++  gate: {
++    // Report regressions without failing the run; remove after the first weeks.
++    warnOnly: true,
++  },
++
++  // Options changed most often, with their default values:
++  // run: { repeat: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
++  // measure: { exclude: ['/socket.io/'] },
++  // gate: { warnOnly: false, tolerance: 0, maxFailedTestShare: 0.1 },
++  // thresholds: { dir: '.' },
++  // report: { dir: 'perf-results' },
++});
+--- a/tests/home.spec.ts
++++ b/tests/home.spec.ts
+@@ -1,4 +1,5 @@
+-import { expect, test, type Page } from '@playwright/test';
++import { expect, test } from 'playwright-performance-regression/test';
++import { type Page } from '@playwright/test';
+ 
+ async function open(page: Page): Promise<void> {
+   await page.goto('/page');
+--- a/tests/shop.spec.ts
++++ b/tests/shop.spec.ts
+@@ -1,4 +1,4 @@
+-import { test, expect } from '@playwright/test';
++import { test, expect } from 'playwright-performance-regression/test';
+ 
+ test('item @perf', async ({ page }) => {
+   await page.goto('/page');

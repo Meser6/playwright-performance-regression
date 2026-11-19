@@ -39,6 +39,12 @@ export interface PathHelpers {
   dirname: (path: string) => string;
 }
 
+/** One entry of a directory listing. */
+export interface DirEntry {
+  name: string;
+  directory: boolean;
+}
+
 export interface CliHost {
   cwd: string;
   paths: PathHelpers;
@@ -68,4 +74,6 @@ export interface CliHost {
   isDirectory(path: string): Promise<boolean>;
   /** Imports a module by file URL (package config files). */
   importModule(url: string): Promise<unknown>;
+  /** Entries of a directory; empty when it does not exist. */
+  listDir(path: string): Promise<DirEntry[]>;
 }

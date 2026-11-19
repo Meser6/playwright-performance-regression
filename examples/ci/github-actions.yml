@@ -1,0 +1,33 @@
+# Performance measurement run with playwright-performance-regression (pw-perf).
+# Save as .github/workflows/perf.yml. Runs on pull requests and every night; the report in
+# perf-results/ is uploaded also when the run fails. Exit codes: 0 ok, 2 performance regression,
+# 3 tool or config error.
+name: Performance
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Measurement run
+        run: npx pw-perf test
+      - name: Upload the performance report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-results
+          path: perf-results/
+          retention-days: 30

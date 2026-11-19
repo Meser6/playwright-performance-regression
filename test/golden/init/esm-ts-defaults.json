@@ -1,0 +1,10 @@
+{
+  "name": "esm-ts with the default answers (--yes): fixtures file wrapped, GitHub Actions job",
+  "input": {
+    "project": "init-esm-ts",
+    "answers": null
+  },
+  "expected": {
+    "manualSteps": []
+  }
+}

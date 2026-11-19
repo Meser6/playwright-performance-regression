@@ -1,0 +1,22 @@
+{
+  "name": "esm-ts with answers other than the defaults: label, @perf, 3 repetitions, no warn-only, environments qa and staging",
+  "input": {
+    "project": "init-esm-ts",
+    "answers": {
+      "originLabels": {
+        "https://api.example.com": "backend"
+      },
+      "scope": "tagged",
+      "repeatTest": 3,
+      "warnOnly": false,
+      "envLabels": [
+        "qa",
+        "staging"
+      ],
+      "addCi": true
+    }
+  },
+  "expected": {
+    "manualSteps": []
+  }
+}

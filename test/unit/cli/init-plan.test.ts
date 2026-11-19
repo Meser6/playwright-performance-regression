@@ -1,0 +1,384 @@
+// Init wizard, pure parts (04, chapter 4.10): detection, change plan with golden diffs (12,
+// chapter 8: test/golden/init/), recognized layouts and the CI templates (13-AC-11).
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, test } from 'vitest';
+import { CI_COMMAND, CI_TARGETS, ciFiles } from '../../../src/cli/init/ci.ts';
+import { detectProject } from '../../../src/cli/init/detect.ts';
+import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
+import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
+import type { InitAnswers } from '../../../src/cli/init/index.ts';
+import {
+  addScripts,
+  swapTestImport,
+  wrapPlaywrightConfig,
+  wrapTestObject,
+} from '../../../src/cli/init/patterns.ts';
+import { renderPerfConfig } from '../../../src/cli/init/perf-config.ts';
+import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
+import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
+
+const update = process.env['GOLDEN_UPDATE'] === '1';
+const ROOT = join(import.meta.dirname, '../../..');
+
+interface InitGolden {
+  name: string;
+  input: { project: string; answers: InitAnswers | null };
+  expected: { manualSteps: { code: string; message: string }[] };
+}
+
+const goldenFiles = readdirSync(INIT_GOLDEN)
+  .filter((f) => f.endsWith('.json'))
+  .sort();
+
+function readGolden(file: string): InitGolden {
+  return JSON.parse(readFileSync(join(INIT_GOLDEN, file), 'utf8')) as InitGolden;
+}
+
+function files(entries: Record<string, string>): Map<string, string> {
+  return new Map(Object.entries(entries));
+}
+
+const ANSWERS: InitAnswers = {
+  originLabels: {},
+  scope: 'all',
+  repeatTest: 5,
+  warnOnly: true,
+  envLabels: [],
+  addCi: false,
+};
+
+describe('detectProject', () => {
+  test('reads the project as text: config, version, package manager, module type, tests, CI', async () => {
+    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
+    expect(info.playwrightConfig?.path).toBe('playwright.config.ts');
+    expect(info.playwrightVersion).toBe('1.57.0');
+    expect(info.packageManager).toBe('npm');
+    expect(info.moduleType).toBe('esm');
+    expect(info.testDir).toBe('tests');
+    expect(info.filesImportingPlaywrightTest).toEqual(['tests/fixtures.ts']);
+    expect(info.filesWithExtend).toEqual(['tests/fixtures.ts']);
+    expect(info.taggedPerfTestFiles).toBe(0);
+    expect(info.baseUrls).toEqual(['https://api.example.com']);
+    expect(info.projectNames).toEqual(['chromium']);
+    expect(info.ciPlatform).toBe('github');
+    expect(info.existing).toEqual({
+      perfConfig: null,
+      wrappedConfig: false,
+      wrappedTest: false,
+      scripts: ['test'],
+    });
+
+    const cjs = await detectDir(join(PROJECTS, 'init-cjs-js'));
+    expect([cjs.packageManager, cjs.moduleType, cjs.ciPlatform]).toEqual(['pnpm', 'cjs', 'gitlab']);
+    const swap = await detectDir(join(PROJECTS, 'init-import-swap'));
+    expect([swap.packageManager, swap.ciPlatform, swap.taggedPerfTestFiles]).toEqual([
+      'npm',
+      'azure',
+      1,
+    ]);
+    expect(swap.filesImportingPlaywrightTest).toEqual([
+      'tests/auth.setup.ts',
+      'tests/home.spec.ts',
+      'tests/shop.spec.ts',
+    ]);
+    const existing = await detectDir(join(PROJECTS, 'init-existing-project'));
+    expect(existing.ciPlatform).toBe('jenkins');
+    expect(existing.filesWithExtend).toEqual(['tests/a11y.ts', 'tests/fixtures.ts']);
+  });
+
+  test('installed Playwright wins over the dependency range; yarn and packageManager; .mjs is ESM', () => {
+    const info = detectProject(
+      files({
+        'package.json':
+          '{"packageManager":"yarn@4.1.0","devDependencies":{"@playwright/test":"^1.50.0"}}',
+        'node_modules/@playwright/test/package.json': '{"version":"1.58.2"}',
+        'playwright.config.mjs': "export default { testDir: './e2e/' };",
+        'pw-perf.config.json': '{}',
+      }),
+    );
+    expect(info.playwrightVersion).toBe('1.58.2');
+    expect(info.packageManager).toBe('yarn');
+    expect(info.moduleType).toBe('esm');
+    expect(info.testDir).toBe('e2e');
+    expect(info.existing.perfConfig).toBe('pw-perf.config.json');
+    expect(detectProject(files({ 'yarn.lock': '', 'package.json': '{}' })).packageManager).toBe(
+      'yarn',
+    );
+    expect(detectProject(files({})).playwrightConfig).toBeNull();
+  });
+
+  test('expect.extend() is not a test object; withPerf and withPerfFixtures are detected', () => {
+    const info = detectProject(
+      files({
+        'playwright.config.ts': 'export default withPerf(defineConfig({}), perfConfig);',
+        'tests/matchers.ts': "import { expect } from '@playwright/test';\nexpect.extend({});",
+        'tests/a.spec.ts': "import { test } from 'playwright-performance-regression/test';",
+      }),
+    );
+    expect(info.filesWithExtend).toEqual([]);
+    expect(info.existing.wrappedConfig).toBe(true);
+    expect(info.existing.wrappedTest).toBe(true);
+  });
+});
+
+describe('planInitChanges golden diffs (test/golden/init)', () => {
+  for (const file of goldenFiles) {
+    test(`04-AC-17 04-AC-18 04-AC-20 golden ${file}`, async () => {
+      const golden = readGolden(file);
+      const info = await detectDir(join(PROJECTS, golden.input.project));
+      const plan = planInitChanges(info, golden.input.answers ?? defaultAnswers(info));
+      const diff = planDiff(plan);
+      const manualSteps = plan.manualSteps.map(({ code, message }) => ({ code, message }));
+      const diffFile = join(INIT_GOLDEN, file.replace(/\.json$/u, '.diff'));
+      if (update) {
+        writeFileSync(diffFile, diff);
+        writeFileSync(
+          join(INIT_GOLDEN, file),
+          `${JSON.stringify({ ...golden, expected: { manualSteps } }, null, 2)}\n`,
+        );
+        return;
+      }
+      expect(diff).toBe(readFileSync(diffFile, 'utf8'));
+      expect(manualSteps).toEqual(golden.expected.manualSteps);
+    });
+  }
+
+  test('04-AC-18 a config wrapper and several test objects are not changed and give INIT_MANUAL_STEP', async () => {
+    const info = await detectDir(join(PROJECTS, 'init-existing-project'));
+    const plan = planInitChanges(info, defaultAnswers(info));
+    const paths = plan.changes.map((c) => c.path);
+    expect(paths).not.toContain('playwright.config.ts');
+    expect(paths).not.toContain('tests/fixtures.ts');
+    expect(paths).not.toContain('tests/a11y.ts');
+    const messages = plan.manualSteps.map((s) => `${s.code} ${s.message}`);
+    expect(messages.some((m) => m.startsWith('INIT_MANUAL_STEP playwright.config.ts'))).toBe(true);
+    expect(
+      messages.some((m) => m.startsWith('INIT_MANUAL_STEP tests/a11y.ts, tests/fixtures.ts')),
+    ).toBe(true);
+    // The instruction of 03, chapter 3.4 (other config wrapper, several test objects, mergeTests).
+    const hints = plan.manualSteps.map((s) => s.hint).join('\n');
+    expect(hints).toContain('withPerf(otherWrapper(defineConfig({ ... })), perfConfig)');
+    expect(hints).toContain('withPerfFixtures(mergeTests(a, b))');
+  });
+
+  test('04-AC-21 @perf with environments qa and staging: scripts per label, run.env unchanged, existing script kept', () => {
+    const info = detectProject(
+      files({
+        'package.json': `${JSON.stringify({ scripts: { 'perf:test:qa': 'echo own' } }, null, 2)}\n`,
+        'playwright.config.ts': 'export default defineConfig({});\n',
+        'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a @perf', () => {});\n",
+      }),
+    );
+    const plan = planInitChanges(info, {
+      ...ANSWERS,
+      scope: 'tagged',
+      envLabels: ['qa', 'staging'],
+    });
+    const pkg = plan.changes.find((c) => c.path === 'package.json');
+    expect(JSON.parse(pkg?.after ?? '{}')).toEqual({
+      scripts: {
+        'perf:test:qa': 'echo own',
+        'perf:thresholds:qa': 'pw-perf thresholds --grep @perf --env qa',
+        'perf:test:staging': 'pw-perf test --grep @perf --env staging',
+        'perf:thresholds:staging': 'pw-perf thresholds --grep @perf --env staging',
+      },
+    });
+    expect(plan.manualSteps).toEqual([
+      expect.objectContaining({
+        code: 'INIT_MANUAL_STEP',
+        message: 'package.json: the script "perf:test:qa" exists and was not changed.',
+        hint: expect.stringContaining('"perf:test:qa": "pw-perf test --grep @perf --env qa"'),
+      }),
+    ]);
+    const config = plan.changes.find((c) => c.path === 'pw-perf.config.ts')?.after ?? '';
+    expect(config).not.toMatch(/\benv\b/u);
+  });
+
+  test('pw-perf.config.ts holds only values that differ from the defaults', () => {
+    const config = renderPerfConfig(ANSWERS);
+    expect(config).toContain('warnOnly: true');
+    expect(config).not.toContain('repeat: { test: 5 }');
+    expect(config).not.toContain('origins: {\n');
+    const other = renderPerfConfig({ ...ANSWERS, warnOnly: false, repeatTest: 7 });
+    expect(other).toContain('repeat: { test: 7 }');
+    expect(other).not.toContain('\n    warnOnly: false,');
+  });
+
+  test('another package config format is never rewritten; the answers become a manual step', () => {
+    const info = detectProject(
+      files({
+        'pw-perf.config.json': '{}',
+        'playwright.config.ts': 'export default defineConfig({});\n',
+      }),
+    );
+    const plan = planInitChanges(info, { ...ANSWERS, repeatTest: 3 });
+    expect(plan.changes.map((c) => c.path)).not.toContain('pw-perf.config.ts');
+    expect(plan.changes.map((c) => c.path)).not.toContain('playwright.config.ts');
+    expect(plan.manualSteps.map((s) => s.message)).toEqual([
+      'pw-perf.config.json exists and was not changed.',
+      'playwright.config.ts was not changed: the package config is pw-perf.config.json.',
+      'No test object was found to measure: no file imports test from @playwright/test.',
+      'package.json was not found.',
+    ]);
+  });
+});
+
+describe('recognized layouts (04-REQ-39)', () => {
+  test('playwright.config: defineConfig or an object, ESM or CommonJS, as the last statement', () => {
+    expect(
+      wrapPlaywrightConfig(
+        "import { defineConfig } from '@playwright/test';\n\nexport default defineConfig({ a: ')' });\n",
+        './pw-perf.config',
+      ),
+    ).toBe(
+      "import { defineConfig } from '@playwright/test';\nimport { withPerf } from 'playwright-performance-regression/config';\nimport perfConfig from './pw-perf.config';\n\nexport default withPerf(defineConfig({ a: ')' }), perfConfig);\n",
+    );
+    expect(
+      wrapPlaywrightConfig(
+        '// header\nexport default {\n  testDir: `t`,\n};\n',
+        './pw-perf.config',
+      ),
+    ).toBe(
+      "// header\nimport { withPerf } from 'playwright-performance-regression/config';\nimport perfConfig from './pw-perf.config';\nexport default withPerf({\n  testDir: `t`,\n}, perfConfig);\n",
+    );
+    expect(
+      wrapPlaywrightConfig(
+        "'use strict';\nmodule.exports = { retries: 0 } // done\n",
+        './pw-perf.config',
+      ),
+    ).toBe(
+      "'use strict';\nconst { withPerf } = require('playwright-performance-regression/config');\nmodule.exports = withPerf({ retries: 0 }, require('./pw-perf.config').default) // done\n",
+    );
+    for (const text of [
+      'export default withSomething(defineConfig({}));\n',
+      'const config = defineConfig({});\nexport default config;\n',
+      'export default defineConfig({}) satisfies X;\n',
+      'export default defineConfig({});\nexport const other = 1;\n',
+      'export default defineConfig({ a: (1 }));\n',
+    ]) {
+      expect(wrapPlaywrightConfig(text, './pw-perf.config'), text).toBeNull();
+    }
+  });
+
+  test('test object: one base.extend(...) with type arguments, ESM or CommonJS', () => {
+    expect(
+      wrapTestObject(
+        "import { test as base } from '@playwright/test';\nexport const test = base.extend<{ f: () => Promise<void> }>({ f: async ({}, use) => use(async () => {}) });\n",
+      ),
+    ).toBe(
+      "import { test as base } from '@playwright/test';\nimport { withPerfFixtures } from 'playwright-performance-regression/fixture';\nexport const test = withPerfFixtures(base.extend<{ f: () => Promise<void> }>({ f: async ({}, use) => use(async () => {}) }));\n",
+    );
+    expect(
+      wrapTestObject(
+        'const pw = require("@playwright/test");\nexports.test = pw.test.extend({});\n',
+      ),
+    ).toBe(
+      'const pw = require("@playwright/test");\nconst { withPerfFixtures } = require(\'playwright-performance-regression/fixture\');\nexports.test = withPerfFixtures(pw.test.extend({}));\n',
+    );
+    expect(wrapTestObject('export const test = base.extend({}).extend({});\n')).toBeNull();
+    expect(wrapTestObject('export const adminTest = base.extend({});\n')).toBeNull();
+  });
+
+  test('import swap: test and expect move to the package, other names and aliases stay', () => {
+    expect(swapTestImport("import { test, expect } from '@playwright/test';\n")).toBe(
+      "import { test, expect } from 'playwright-performance-regression/test';\n",
+    );
+    expect(
+      swapTestImport('import {\n  expect,\n  test,\n  type Page,\n} from "@playwright/test"\n'),
+    ).toBe(
+      'import { expect, test } from "playwright-performance-regression/test"\nimport { type Page } from "@playwright/test"\n',
+    );
+    expect(swapTestImport("const { test, expect: e } = require('@playwright/test');\n")).toBe(
+      "const { test } = require('playwright-performance-regression/test');\nconst { expect: e } = require('@playwright/test');\n",
+    );
+    expect(swapTestImport("import { test as setup } from '@playwright/test';\n")).toBeNull();
+    expect(swapTestImport("import { expect } from '@playwright/test';\n")).toBeNull();
+    expect(swapTestImport("import type { Page } from '@playwright/test';\n")).toBeNull();
+  });
+
+  test('package.json keeps its indentation and line endings', () => {
+    expect(addScripts('{\r\n\t"name": "a"\r\n}\r\n', { 'perf:test': 'pw-perf test' })).toBe(
+      '{\r\n\t"name": "a",\r\n\t"scripts": {\r\n\t\t"perf:test": "pw-perf test"\r\n\t}\r\n}\r\n',
+    );
+    expect(addScripts('[]', {})).toBeNull();
+    expect(addScripts('{"scripts": 1}', {})).toBeNull();
+    expect(addScripts('{', {})).toBeNull();
+  });
+
+  test('scanning skips strings, comments, templates and regular expressions', () => {
+    const text = "f(')', \"(\", `${g(')')}`, /\\)/u, // )\n/* ) */ x)";
+    expect(matchBracket(text, 1)).toBe(text.length);
+    expect(matchBracket('f(a]', 1)).toBe(-1);
+    expect(
+      addImports("import a from 'a';\nimport {\n  b,\n} from 'b';\n\nrun();\n", ['import c;']),
+    ).toBe("import a from 'a';\nimport {\n  b,\n} from 'b';\nimport c;\n\nrun();\n");
+    expect(addImports('/**\n * doc\n */\nrun();', ['import c;'])).toBe(
+      '/**\n * doc\n */\nimport c;\nrun();',
+    );
+    expect(addImports('run();', ['import c;'])).toBe('import c;\nrun();');
+  });
+
+  test('unified diff with context and hunk headers', () => {
+    const before = 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\n';
+    const after = before.replace('b\n', 'B\n').replace('j\n', '');
+    expect(unifiedDiff({ path: 'x', kind: 'modify', before, after })).toBe(
+      '--- a/x\n+++ b/x\n@@ -1,5 +1,5 @@\n a\n-b\n+B\n c\n d\n e\n@@ -7,5 +7,4 @@\n g\n h\n i\n-j\n k\n',
+    );
+    // Changes 6 lines apart share one hunk.
+    expect(
+      unifiedDiff({ path: 'x', kind: 'modify', before, after: before.replace('i\n', '') }).split(
+        '@@',
+      ).length,
+    ).toBe(3);
+    expect(unifiedDiff({ path: 'n', kind: 'create', before: null, after: 'x\n' })).toBe(
+      '--- /dev/null\n+++ b/n\n@@ -0,0 +1,1 @@\n+x\n',
+    );
+    expect(unifiedDiff({ path: 'n', kind: 'modify', before: 'x\n', after: 'x\n' })).toBe('');
+  });
+});
+
+describe('CI templates', () => {
+  const RECIPES = {
+    github: 'github-actions.yml',
+    gitlab: 'gitlab-ci.yml',
+    jenkins: 'Jenkinsfile',
+    azure: 'azure-pipelines.yml',
+  } as const;
+
+  test('13-AC-11 the templates of the wizard are byte for byte the files in examples/ci', () => {
+    expect(Object.keys(CI_TEMPLATES).sort()).toEqual(Object.keys(RECIPES).sort());
+    for (const [platform, file] of Object.entries(RECIPES)) {
+      const recipe = readFileSync(join(ROOT, 'examples/ci', file), 'utf8').replaceAll('\r\n', '\n');
+      expect(CI_TEMPLATES[platform as keyof typeof RECIPES], file).toBe(recipe);
+      // One command to fill in the flags of the answers (04-REQ-42).
+      expect(recipe.split(CI_COMMAND).length - 1, file).toBe(1);
+    }
+    expect(readdirSync(join(ROOT, 'examples/ci')).sort()).toEqual(Object.values(RECIPES).sort());
+  });
+
+  test('13-AC-11 with the default answers the wizard writes the recipe unchanged', async () => {
+    for (const platform of Object.keys(RECIPES) as (keyof typeof RECIPES)[]) {
+      expect(ciFiles(platform, 'all', [])).toEqual([
+        { path: CI_TARGETS[platform].path(null), text: CI_TEMPLATES[platform] },
+      ]);
+    }
+    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
+    const plan = planInitChanges(info, defaultAnswers(info));
+    expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
+      readFileSync(join(ROOT, 'examples/ci/github-actions.yml'), 'utf8'),
+    );
+  });
+
+  test('04-REQ-42 only --grep and --env are filled in; one job file per environment', () => {
+    const [qa, staging] = ciFiles('gitlab', 'tagged', ['qa', 'staging']);
+    expect(qa?.path).toBe('.gitlab/perf-qa.gitlab-ci.yml');
+    expect(qa?.text).toContain('    - npx pw-perf test --grep @perf --env qa\n');
+    expect(qa?.text).toContain('\nperf-qa:\n');
+    expect(staging?.path).toBe('.gitlab/perf-staging.gitlab-ci.yml');
+    const [jenkins] = ciFiles('jenkins', 'all', ['prod']);
+    expect(jenkins?.text).toBe(
+      CI_TEMPLATES.jenkins.replace(CI_COMMAND, `${CI_COMMAND} --env prod`),
+    );
+  });
+});

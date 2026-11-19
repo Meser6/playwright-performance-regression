@@ -1,6 +1,6 @@
 // Fake CLI host: captured streams, a scripted Playwright child process and signal handlers.
 import { EventEmitter } from 'node:events';
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type {
   ChildProcessLike,
@@ -105,6 +105,15 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     exists: io.fileExists,
     isDirectory: async (path) => (options.directories ?? []).includes(path),
     importModule: options.importModule ?? ((url) => import(url)),
+    listDir: async (path) => {
+      try {
+        return (await readdir(path, { withFileTypes: true }))
+          .map((e) => ({ name: e.name, directory: e.isDirectory() }))
+          .sort((a, b) => (a.name < b.name ? -1 : 1));
+      } catch {
+        return [];
+      }
+    },
   };
   return fake;
 }
