@@ -78,4 +78,36 @@ describe('demo server', () => {
     expect(server.apiUrl).toMatch(/^http:\/\/localhost:\d+$/u);
     expect(server.apiUrl.split(':')[2]).not.toBe(server.url.split(':')[2]);
   });
+
+  test('streams NDJSON and server-sent events until the given time', async () => {
+    const [ms, response] = await timed(`${server.url}/api/stream?ms=350`);
+    expect(ms).toBeGreaterThanOrEqual(300);
+    expect(response.headers.get('content-type')).toBe('application/x-ndjson');
+    const events = await fetch(`${server.url}/api/events?ms=250`);
+    expect(events.headers.get('content-type')).toBe('text/event-stream');
+    expect(await events.text()).toMatch(/^data: 1\n\n/u);
+    // Without ms the stream stays open: read the first chunk and stop.
+    const open = await fetch(`${server.url}/api/stream`);
+    const reader = open.body?.getReader();
+    const first = await reader?.read();
+    expect(new TextDecoder().decode(first?.value)).toBe('{"n":1}\n');
+    await reader?.cancel();
+  });
+
+  test('serves the shop page and listens on given ports', async () => {
+    const app = await (await fetch(`${server.url}/app`)).text();
+    expect(app).toContain("'/api/products', '/api/cart', '/api/users/'");
+    const probe = await startDemoServer();
+    const ports = [Number(probe.url.split(':')[2]), Number(probe.apiUrl.split(':')[2])];
+    await probe.close();
+    const fixed = await startDemoServer({ port: ports[0], apiPort: ports[1] });
+    try {
+      expect([fixed.url, fixed.apiUrl]).toEqual([
+        `http://127.0.0.1:${ports[0]}`,
+        `http://localhost:${ports[1]}`,
+      ]);
+    } finally {
+      await fixed.close();
+    }
+  });
 });
