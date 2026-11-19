@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;sha256-NczooZoEwk0CPgfuEFUbnRFp9bbi8jrYYzyk+WNBTEc=&#39;; style-src &#39;sha256-rMj6c+jgU9bq6OVZSVVT3M4IvsOeXLSFzdizre4Z7Bc=&#39;; img-src data:"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="generator" content="playwright-performance-regression 0.1.0"><link rel="icon" href="data:,"><title>Performance report run-1</title><style>:root{color-scheme:light dark;--bg: #ffffff;--fg: #1b1f24;--muted: #57606a;--border: #d0d7de;--panel: #f6f8fa;--ok: #116329;--warn: #7d4e00;--bad: #b3261e;--link: #0550ae;--mark: #1b1f24;--range: #9fb4cc}@media(prefers-color-scheme:dark){:root{--bg: #0d1117;--fg: #e6edf3;--muted: #9da7b3;--border: #3d444d;--panel: #161b22;--ok: #56d364;--warn: #e3b341;--bad: #ff8e88;--link: #79c0ff;--mark: #e6edf3;--range: #3b5070}}*{box-sizing:border-box}html{background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{margin:0;overflow-x:hidden}main,footer{max-width:1280px;margin:0 auto;padding:0 16px}h1{margin:0 0 12px;font-size:24px}h2{margin:32px 0 12px;font-size:19px;border-bottom:1px solid var(--border);padding-bottom:4px}h2.sub{border:0;font-size:15px;margin:16px 0 4px}h3{margin:0 0 4px;font-size:15px}h4{margin:12px 0 4px;font-size:14px}p{margin:4px 0}a{color:var(--link)}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}pre{background:var(--panel);border:1px solid var(--border);padding:12px;overflow-x:auto}.page-header{padding-top:24px}.tool,.muted-text,.limit,.hint{color:var(--muted)}.meta{display:flex;flex-wrap:wrap;gap:4px 24px;margin:0}.meta dt{color:var(--muted);font-size:12px}.meta dd{margin:0;overflow-wrap:anywhere}.origins,.plain{margin:0;padding-left:20px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.card{border:1px solid var(--border);border-left-width:6px;border-radius:6px;padding:12px;background:var(--panel);color:var(--fg)}.card.ok{border-left-color:var(--ok)}.card.warn{border-left-color:var(--warn)}.card.bad{border-left-color:var(--bad)}.card .status{font-size:18px;font-weight:700;text-transform:uppercase}.card.ok .status{color:var(--ok)}.card.warn .status{color:var(--warn)}.card.bad .status{color:var(--bad)}.note{font-style:italic}.toolbar{margin-top:12px}.issues{list-style:none;padding:0;margin:0}.issues li{border-left:4px solid currentColor;padding:4px 12px;margin:8px 0}.issues li p{color:var(--fg)}.issues li p.hint{color:var(--muted)}.highlight{border:2px solid var(--bad);border-radius:6px;padding:0 12px 12px}.scroll{overflow-x:auto;max-width:100%}table{border-collapse:collapse;width:100%;margin:4px 0 12px}caption{text-align:left;color:var(--muted);padding:4px 0}th,td{border-bottom:1px solid var(--border);padding:4px 8px;text-align:left;vertical-align:top}thead th{background:var(--panel);white-space:nowrap}th[scope=row]{font-weight:400}.num{text-align:right;white-space:nowrap}table.keys th.key{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;white-space:nowrap}th button{font:inherit;font-weight:700;color:inherit;background:none;border:0;padding:0;cursor:default}.js th button{cursor:pointer;text-decoration:underline dotted}.js th[aria-sort=ascending] button:after{content:" ▲"}.js th[aria-sort=descending] button:after{content:" ▼"}table.keys tr:first-child>td:first-of-type{white-space:nowrap}.details-row>td{padding-top:0}details>summary{cursor:pointer;color:var(--link)}.details-body{padding:4px 0 12px;max-width:960px}.full-key code,.url{overflow-wrap:anywhere;word-break:break-all}.facts{display:grid;grid-template-columns:max-content 1fr;gap:2px 16px;margin:8px 0}.facts div{display:contents}.facts dt{color:var(--muted)}.facts dd{margin:0}.slowest,.top-tests{margin:0;padding-left:20px}table.checks{width:auto}.bar{width:100%;max-width:640px;height:auto;display:block;margin:8px 0}.bar text{fill:var(--fg);font-size:11px}.bar .bar-limit-text{fill:var(--bad)}.bar-axis{stroke:var(--muted);stroke-width:1}.bar-range{fill:var(--range)}.bar-mark{stroke:var(--mark);stroke-width:2}.bar-limit{stroke:var(--bad);stroke-width:1.5;stroke-dasharray:4 3}.filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:8px 0}.filters[hidden],[hidden]{display:none!important}input[type=search]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-left:4px}#download{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer}button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--link);outline-offset:2px}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}footer{margin:40px auto 24px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px}@media print{:root{color-scheme:light;--bg: #ffffff;--fg: #000000;--muted: #444444;--border: #bbbbbb;--panel: #ffffff;--ok: #0b5e20;--warn: #6a4200;--bad: #a1150e;--link: #000000;--mark: #000000;--range: #c8d3e0}.filters,.toolbar,th button:after{display:none!important}.scroll{overflow:visible}tbody,tr{break-inside:avoid}details[data-violation]::details-content{content-visibility:visible;display:block}}</style></head>
+<body><main><header class="page-header"><p class="tool">playwright-performance-regression v0.1.0</p><h1>Performance report</h1><dl class="meta"><div><dt>Run ID</dt><dd><code>run-1</code></dd></div><div><dt>Started</dt><dd>2026-11-18 10:00:00 UTC</dd></div><div><dt>Duration</dt><dd>5 min 0 s</dd></div><div><dt>Mode</dt><dd>test</dd></div><div><dt>Environment</dt><dd>—</dd></div><div><dt>Playwright</dt><dd>1.57.0</dd></div><div><dt>Node.js</dt><dd>v22.18.0</dd></div><div><dt>System</dt><dd>linux x64</dd></div><div><dt>CPU</dt><dd>AMD EPYC 7763 64-Core Processor (4 cores)</dd></div></dl></header><div class="toolbar"><button type="button" id="download" hidden>Download JSON (aggregates, without raw samples)</button><a id="download-link" download="report-data.json" hidden tabindex="-1"></a></div><section aria-labelledby="verdict-h"><h2 id="verdict-h">Verdict</h2><div class="verdict"><div class="card ok"><h3>Tests</h3><p class="status">passed</p><p>3 expected · 0 unexpected · 0 flaky · 0 skipped</p></div><div class="card ok"><h3>Performance</h3><p class="status">passed</p></div><div class="card ok"><h3>Tool errors</h3><p class="status">none</p></div></div></section><section aria-labelledby="counters-h"><h2 id="counters-h">Counters</h2><div class="scroll"><table class="counters"><caption>Keys per kind</caption><thead><tr><th scope="col">Counter</th><th scope="col" class="num">API</th><th scope="col" class="num">Custom</th></tr></thead><tbody><tr><th scope="row">Keys</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Evaluated with thresholds from the file</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Evaluated with default thresholds</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Not evaluated</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Not evaluated: too few samples</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">File entries not evaluated (small n)</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Evaluated by the median only</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">File entries not seen in this run</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Violations</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Blocking violations</th><td class="num">0</td><td class="num">0</td></tr><tr><th scope="row">Muted (active)</th><td class="num">0</td><td class="num">0</td></tr></tbody></table></div></section><section aria-labelledby="endpoints-h"><h2 id="endpoints-h">Endpoints</h2><p>No requests or custom measurements were recorded. See the <a href="https://github.com/Meser6/playwright-performance-regression#readme" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p></section><section aria-labelledby="thresholds-h"><h2 id="thresholds-h">Thresholds files</h2><p>No thresholds files were loaded in this run.</p></section><section aria-labelledby="conditions-h"><h2 id="conditions-h">Run conditions</h2><p>1 worker. Settings overridden by withPerf(): none.</p><div class="scroll"><table><caption>Projects</caption><thead><tr><th scope="col">Project</th><th scope="col">Role</th><th scope="col">Browser</th><th scope="col" class="num">repeatEach</th><th scope="col" class="num">retries</th></tr></thead><tbody><tr><th scope="row">chromium</th><td>measured</td><td>chromium</td><td class="num">5</td><td class="num">0</td></tr></tbody></table></div></section><section aria-labelledby="config-h"><h2 id="config-h">Configuration</h2><details><summary>Configuration snapshot</summary><pre><code>{
+  &quot;advanced&quot;: {
+    &quot;maxSamplesPerKey&quot;: 5000,
+    &quot;seed&quot;: 1
+  },
+  &quot;checks&quot;: {
+    &quot;errors&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;limit&quot;: {
+        &quot;api&quot;: 0.05,
+        &quot;custom&quot;: 0.05
+      },
+      &quot;margin&quot;: {
+        &quot;add&quot;: 0.02,
+        &quot;factor&quot;: 1.5,
+        &quot;min&quot;: 0.05
+      },
+      &quot;minSamples&quot;: 5,
+      &quot;statuses&quot;: [
+        &quot;5xx&quot;,
+        &quot;FAILED&quot;,
+        &quot;PENDING&quot;
+      ]
+    },
+    &quot;slowShare&quot;: {
+      &quot;apdex&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;limit&quot;: {
+          &quot;api&quot;: 0.85,
+          &quot;custom&quot;: 0.85
+        },
+        &quot;margin&quot;: {
+          &quot;absolute&quot;: 0.05,
+          &quot;smallSampleAbsolute&quot;: 0.1
+        },
+        &quot;minSamples&quot;: 20
+      },
+      &quot;t&quot;: {
+        &quot;api&quot;: {
+          &quot;max&quot;: 2000,
+          &quot;medianFactor&quot;: 2,
+          &quot;min&quot;: 500
+        },
+        &quot;custom&quot;: {
+          &quot;max&quot;: 10000,
+          &quot;medianFactor&quot;: 2,
+          &quot;min&quot;: 1000
+        }
+      },
+      &quot;wilson&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;limit&quot;: {
+          &quot;api&quot;: 0.05,
+          &quot;custom&quot;: 0.05
+        },
+        &quot;margin&quot;: {
+          &quot;add&quot;: 0.02,
+          &quot;factor&quot;: 1.5,
+          &quot;max&quot;: 0.15,
+          &quot;min&quot;: 0.03,
+          &quot;smallSampleMin&quot;: 0.1
+        },
+        &quot;minSamples&quot;: 20
+      }
+    },
+    &quot;time&quot;: {
+      &quot;median&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;limit&quot;: {
+          &quot;api&quot;: 2000,
+          &quot;custom&quot;: 5000
+        },
+        &quot;margin&quot;: {
+          &quot;minMs&quot;: 100,
+          &quot;relative&quot;: 0.4,
+          &quot;smallSampleRelative&quot;: 0.8
+        },
+        &quot;minSamples&quot;: 5
+      },
+      &quot;p99&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;limit&quot;: {
+          &quot;api&quot;: 4000,
+          &quot;custom&quot;: 10000
+        },
+        &quot;margin&quot;: {
+          &quot;minGapMs&quot;: 50,
+          &quot;minGapRelative&quot;: 0.1,
+          &quot;relative&quot;: 0.2
+        },
+        &quot;minSamples&quot;: 100
+      },
+      &quot;percentile&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;level&quot;: &quot;p95&quot;,
+        &quot;limit&quot;: {
+          &quot;api&quot;: 2000,
+          &quot;custom&quot;: 5000
+        },
+        &quot;margin&quot;: {
+          &quot;minMs&quot;: 100,
+          &quot;relative&quot;: 0.4,
+          &quot;smallSampleRelative&quot;: 0.8
+        },
+        &quot;minSamples&quot;: 20
+      }
+    }
+  },
+  &quot;gate&quot;: {
+    &quot;defaultThresholds&quot;: &quot;block&quot;,
+    &quot;hardLimitFactor&quot;: 2,
+    &quot;maxFailedTestShare&quot;: 0.1,
+    &quot;tolerance&quot;: 0,
+    &quot;warnOnly&quot;: false
+  },
+  &quot;keys&quot;: {
+    &quot;dropQueryParams&quot;: [],
+    &quot;extraIdPatterns&quot;: [],
+    &quot;idPatterns&quot;: {
+      &quot;email&quot;: true,
+      &quot;hex&quot;: true,
+      &quot;mixed&quot;: true,
+      &quot;number&quot;: true,
+      &quot;token&quot;: true,
+      &quot;uuid&quot;: true
+    },
+    &quot;keepQueryValues&quot;: [],
+    &quot;origins&quot;: {},
+    &quot;query&quot;: &quot;names&quot;
+  },
+  &quot;measure&quot;: {
+    &quot;exclude&quot;: [
+      &quot;/socket.io/&quot;
+    ],
+    &quot;excludeKnownThirdParty&quot;: true,
+    &quot;ignoreExtensions&quot;: [
+      &quot;.js&quot;,
+      &quot;.mjs&quot;,
+      &quot;.css&quot;,
+      &quot;.map&quot;,
+      &quot;.html&quot;,
+      &quot;.png&quot;,
+      &quot;.jpg&quot;,
+      &quot;.jpeg&quot;,
+      &quot;.gif&quot;,
+      &quot;.svg&quot;,
+      &quot;.webp&quot;,
+      &quot;.avif&quot;,
+      &quot;.ico&quot;,
+      &quot;.woff&quot;,
+      &quot;.woff2&quot;,
+      &quot;.ttf&quot;,
+      &quot;.otf&quot;,
+      &quot;.eot&quot;
+    ],
+    &quot;include&quot;: [],
+    &quot;pendingTimeoutMs&quot;: 2000,
+    &quot;resourceTypes&quot;: [
+      &quot;document&quot;,
+      &quot;xhr&quot;,
+      &quot;fetch&quot;
+    ],
+    &quot;successStatuses&quot;: [
+      &quot;2xx&quot;,
+      &quot;3xx&quot;
+    ]
+  },
+  &quot;report&quot;: {
+    &quot;dir&quot;: &quot;perf-results&quot;,
+    &quot;html&quot;: true,
+    &quot;rawUrls&quot;: false
+  },
+  &quot;run&quot;: {
+    &quot;env&quot;: null,
+    &quot;keepReporters&quot;: [],
+    &quot;projects&quot;: &quot;auto&quot;,
+    &quot;repeat&quot;: {
+      &quot;test&quot;: 5,
+      &quot;thresholds&quot;: 10
+    }
+  },
+  &quot;thresholds&quot;: {
+    &quot;dir&quot;: &quot;.&quot;,
+    &quot;filePrefix&quot;: &quot;perf-thresholds&quot;,
+    &quot;hysteresis&quot;: {
+      &quot;ratio&quot;: 0.01,
+      &quot;relative&quot;: 0.1
+    },
+    &quot;loosenWarnRelative&quot;: 0.5,
+    &quot;smallSampleN&quot;: 20,
+    &quot;update&quot;: &quot;all&quot;
+  }
+}</code></pre></details></section></main><footer>Generated by <a href="https://github.com/Meser6/playwright-performance-regression" rel="noopener noreferrer">playwright-performance-regression</a> v0.1.0</footer>
+<script type="application/json" id="report-data">{"ci":null,"config":{"advanced":{"maxSamplesPerKey":5000,"seed":1},"checks":{"errors":{"enabled":true,"limit":{"api":0.05,"custom":0.05},"margin":{"add":0.02,"factor":1.5,"min":0.05},"minSamples":5,"statuses":["5xx","FAILED","PENDING"]},"slowShare":{"apdex":{"enabled":true,"limit":{"api":0.85,"custom":0.85},"margin":{"absolute":0.05,"smallSampleAbsolute":0.1},"minSamples":20},"t":{"api":{"max":2000,"medianFactor":2,"min":500},"custom":{"max":10000,"medianFactor":2,"min":1000}},"wilson":{"enabled":true,"limit":{"api":0.05,"custom":0.05},"margin":{"add":0.02,"factor":1.5,"max":0.15,"min":0.03,"smallSampleMin":0.1},"minSamples":20}},"time":{"median":{"enabled":true,"limit":{"api":2000,"custom":5000},"margin":{"minMs":100,"relative":0.4,"smallSampleRelative":0.8},"minSamples":5},"p99":{"enabled":true,"limit":{"api":4000,"custom":10000},"margin":{"minGapMs":50,"minGapRelative":0.1,"relative":0.2},"minSamples":100},"percentile":{"enabled":true,"level":"p95","limit":{"api":2000,"custom":5000},"margin":{"minMs":100,"relative":0.4,"smallSampleRelative":0.8},"minSamples":20}}},"gate":{"defaultThresholds":"block","hardLimitFactor":2,"maxFailedTestShare":0.1,"tolerance":0,"warnOnly":false},"keys":{"dropQueryParams":[],"extraIdPatterns":[],"idPatterns":{"email":true,"hex":true,"mixed":true,"number":true,"token":true,"uuid":true},"keepQueryValues":[],"origins":{},"query":"names"},"measure":{"exclude":["/socket.io/"],"excludeKnownThirdParty":true,"ignoreExtensions":[".js",".mjs",".css",".map",".html",".png",".jpg",".jpeg",".gif",".svg",".webp",".avif",".ico",".woff",".woff2",".ttf",".otf",".eot"],"include":[],"pendingTimeoutMs":2000,"resourceTypes":["document","xhr","fetch"],"successStatuses":["2xx","3xx"]},"report":{"dir":"perf-results","html":true,"rawUrls":false},"run":{"env":null,"keepReporters":[],"projects":"auto","repeat":{"test":5,"thresholds":10}},"thresholds":{"dir":".","filePrefix":"perf-thresholds","hysteresis":{"ratio":0.01,"relative":0.1},"loosenWarnRelative":0.5,"smallSampleN":20,"update":"all"}},"configDir":"/home/user/project","custom":{},"endpoints":{},"env":null,"evaluation":{"counts":{"api":{"blockingViolations":0,"fileEntriesNotEvaluated":0,"fromDefaults":0,"fromFile":0,"keys":0,"medianOnly":0,"muted":0,"notEvaluated":0,"tooFewSamples":0,"unseenThresholdEntries":0,"violations":0},"custom":{"blockingViolations":0,"fileEntriesNotEvaluated":0,"fromDefaults":0,"fromFile":0,"keys":0,"medianOnly":0,"muted":0,"notEvaluated":0,"tooFewSamples":0,"unseenThresholdEntries":0,"violations":0}},"gateEnabled":true,"status":"passed"},"finishedAt":"2026-11-18T10:05:00.000Z","host":{"arch":"x64","ci":true,"cpuCount":4,"cpuModel":"AMD EPYC 7763 64-Core Processor","nodeVersion":"v22.18.0","platform":"linux"},"mode":"test","normalization":"0123456789abcd","origins":[],"playwright":{"version":"1.57.0"},"runConditions":{"overriddenSettings":[],"projects":[{"browserName":"chromium","name":"chromium","repeatEach":5,"retries":0,"role":"measured"}],"workers":1},"runId":"run-1","schemaVersion":1,"startedAt":"2026-11-18T10:00:00.000Z","tests":{"expected":3,"flaky":0,"skipped":0,"status":"passed","unexpected":0},"thresholdFiles":[],"tool":{"name":"playwright-performance-regression","version":"0.1.0"},"toolErrors":[],"warnings":[]}</script>
+<script>(()=>{const D=document.getElementById("report-data"),b=D?.textContent??'{"endpoints":{},"custom":{}}',C=JSON.parse(b);document.documentElement.classList.add("js");function H(e,a,d,f){if(e===void 0)return null;switch(a){case"result":return f;case"samples":return e.successCount;case"errors":return e.errorCount;case"p50":return e.stats?.percentiles.p50??null;case"percentile":return e.stats?.percentiles[d]??null;case"p99":return e.stats?.percentiles.p99??null;case"max":return e.stats?.max??null;case"ttfb":return e.ttfb?.p50??null;case"tests":return e.testCount;default:return null}}function T(e,a){return e<a?-1:e>a?1:0}function M(e){const a=e.dataset.kind==="custom"?"custom":"endpoints",d=e.dataset.percentile??"p95",f=C[a],m=Array.from(e.tBodies),v=Array.from(e.querySelectorAll("th[data-sort]"));let u=null;function w(r,o){const s=o==="ascending"?1:-1,l=m.map(t=>{const n=t.dataset.key??"",A=Number(t.dataset.group??"3");return{body:t,key:n,value:H(f[n],r,d,A)}});l.sort((t,n)=>{if(r!=="key"){if(t.value===null||n.value===null){if(t.value!==n.value)return t.value===null?1:-1}else if(t.value!==n.value)return(t.value-n.value)*s;return T(t.key,n.key)}return T(t.key,n.key)*s});for(const t of l)e.appendChild(t.body);for(const t of v)t.dataset.sort===r?t.setAttribute("aria-sort",o):t.removeAttribute("aria-sort")}for(const r of v){const o=r.dataset.sort??"key";r.querySelector("button")?.addEventListener("click",()=>{const s=o==="key"||o==="result"?"ascending":"descending",l=u!==null&&u.column===o?u.direction==="ascending"?"descending":"ascending":s;u={column:o,direction:l},w(o,l)})}const c=document.querySelector(`[data-filters-for="${e.id}"]`);if(c===null)return;const g=c.querySelector('[data-filter="text"]'),L=c.querySelector('[data-filter="violations"]'),E=c.querySelector('[data-filter="not-evaluated"]'),k=c.querySelector("[data-count]");function h(){const r=(g?.value??"").toLowerCase();let o=0;for(const s of m){const l=(s.dataset.key??"").toLowerCase(),t=s.dataset.result??"",n=l.includes(r)&&!(L?.checked===!0&&t!=="fail")&&!(E?.checked===!0&&t==="not-evaluated");s.hidden=!n,n&&o++}k!==null&&(k.textContent=`showing ${o} of ${m.length}`)}for(const r of[g,L,E])r?.addEventListener("input",h),r?.addEventListener("change",h);c.hidden=!1}for(const e of Array.from(document.querySelectorAll("table.keys")))M(e);const p=document.getElementById("download"),y=document.getElementById("download-link");p instanceof HTMLButtonElement&&y instanceof HTMLAnchorElement&&(p.addEventListener("click",()=>{const e=URL.createObjectURL(new Blob([b],{type:"application/json"}));y.href=e,y.click(),setTimeout(()=>URL.revokeObjectURL(e),1e3)}),p.hidden=!1);let i=[];window.addEventListener("beforeprint",()=>{i=Array.from(document.querySelectorAll("details[data-violation]:not([open])"));for(const e of i)e.open=!0});window.addEventListener("afterprint",()=>{for(const e of i)e.open=!1;i=[]});})();</script>
+</body></html>

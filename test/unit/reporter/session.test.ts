@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { parseOutcome, parseRunReport } from '../../../src/core/schema/index.ts';
 import type { Outcome, RunReport } from '../../../src/core/types/index.ts';
 import { generateRunId } from '../../../src/mode/index.ts';
+import { renderHtmlReport } from '../../../src/html/index.ts';
 import { runSettings } from '../../../src/reporter/session.ts';
 import { createAjv, validator } from '../../contract/schemas.ts';
 import {
@@ -92,7 +93,7 @@ describe('reporter session in test mode', () => {
     expect(outcome).toMatchObject({ runId: 'run-1', mode: 'test', exitCode: 0 });
     expect(outcome.paths).toEqual({
       reportJson: join(dir, 'perf-results', 'report.json'),
-      reportHtml: null,
+      reportHtml: join(dir, 'perf-results', 'report.html'),
       thresholds: [],
       thresholdsDiff: null,
     });
@@ -102,8 +103,7 @@ describe('reporter session in test mode', () => {
       'playwright-performance-regression: perf mode overrides trace; removed projects firefox.\n',
     );
     expect(out).toContain('PASSED');
-    // No HTML yet (WP-13): the summary names only the JSON report.
-    expect(out).toContain('Report: perf-results/report.json\n');
+    expect(out).toContain('Report: perf-results/report.html');
     expect(out).not.toContain('\u001b[');
   });
 
@@ -412,6 +412,66 @@ describe('reporter session in test mode', () => {
     expect(generateRunId(new Date(Date.UTC(2026, 10, 18, 10, 0, 0)), () => 0.0408)).toBe(
       '2026-11-18T10-00-00-0a71',
     );
+  });
+});
+
+describe('reporter session: HTML report', () => {
+  const htmlPath = (): string => join(dir, 'perf-results', 'report.html');
+
+  async function run(
+    input: Parameters<typeof registered>[0],
+    options: Parameters<typeof session>[2] = {},
+  ): Promise<{ outcome: Outcome; out: string }> {
+    const outcomeFile = join(dir, 'run.outcome.json');
+    const captured = fakeHost(dir);
+    const s = session(captured, registered(input, { mode: 'test', outcomeFile }), options);
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 20, PATHS, steady);
+    await s.end({ status: 'passed' });
+    return { outcome: readOutcome(outcomeFile), out: captured.stdout.join('') };
+  }
+
+  test('11-REQ-04 report.html is written next to report.json from the written report', async () => {
+    const { outcome } = await run({});
+    expect(outcome.exitCode).toBe(0);
+    expect(outcome.paths.reportHtml).toBe(htmlPath());
+    const page = readFileSync(htmlPath(), 'utf8');
+    expect(page.startsWith('<!doctype html>')).toBe(true);
+    expect(page).toBe(renderHtmlReport(readReport()));
+  });
+
+  test('11 chapter 12: with report.html false no HTML is written', async () => {
+    const { outcome, out } = await run({ report: { html: false } });
+    expect(existsSync(htmlPath())).toBe(false);
+    expect(outcome.paths.reportHtml).toBeNull();
+    expect(out).toContain('Report: perf-results/report.json\n');
+  });
+
+  test('11 chapter 13: HTML_RENDER_FAILED keeps report.json, records the error and exit code 3', async () => {
+    const { outcome } = await run(
+      {},
+      {
+        renderHtml: () => {
+          throw new Error('render bug');
+        },
+      },
+    );
+    expect(outcome.exitCode).toBe(3);
+    expect(outcome.paths.reportHtml).toBeNull();
+    expect(codes(outcome.toolErrors)).toEqual(['HTML_RENDER_FAILED']);
+    expect(existsSync(htmlPath())).toBe(false);
+    const report = readReport();
+    expect(codes(report.toolErrors)).toEqual(['HTML_RENDER_FAILED']);
+    expect(report.toolErrors[0]?.message).toContain('render bug');
+  });
+
+  test('11 chapter 13: HTML_WRITE_FAILED keeps report.json, records the error and exit code 3', async () => {
+    mkdirSync(htmlPath(), { recursive: true });
+    const { outcome, out } = await run({});
+    expect(outcome.exitCode).toBe(3);
+    expect(codes(outcome.toolErrors)).toEqual(['HTML_WRITE_FAILED']);
+    expect(codes(readReport().toolErrors)).toEqual(['HTML_WRITE_FAILED']);
+    expect(out).toContain('HTML_WRITE_FAILED');
   });
 });
 

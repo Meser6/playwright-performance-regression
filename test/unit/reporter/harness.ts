@@ -11,6 +11,7 @@ import * as io from '../../../src/io/index.ts';
 import type { PerfModeState } from '../../../src/mode/index.ts';
 import type { RegisteredState } from '../../../src/registry/index.ts';
 import { RunSession, runSettings } from '../../../src/reporter/session.ts';
+import type { SessionOptions } from '../../../src/reporter/session.ts';
 import type {
   ConfigLike,
   ProjectLike,
@@ -193,10 +194,14 @@ export function result(
   };
 }
 
-export function session(captured: Captured, state: RegisteredState | undefined): RunSession {
+export function session(
+  captured: Captured,
+  state: RegisteredState | undefined,
+  options: SessionOptions = {},
+): RunSession {
   const settings = runSettings(state, captured.host.env, '0.0.0-test');
   if (settings === null) throw new Error('perf mode is off');
-  return new RunSession(captured.host, settings);
+  return new RunSession(captured.host, settings, options);
 }
 
 /** `count` passing tests, each with one request per path and duration `ms(i)`. */

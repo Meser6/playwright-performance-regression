@@ -147,6 +147,11 @@ export default tseslint.config(
   // io may use the pure core (stable JSON, format parsers) besides node:* (01-REQ-20).
   ...moduleBoundaries('src/io', ['./', 'node:', '../core/']),
   ...moduleBoundaries('src/html', ['./', '../core/types/']),
+  // The page script runs in the browser and has no imports (11-REQ-25).
+  {
+    files: ['src/html/template/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
   ...moduleBoundaries('src/console', ['./', '../core/types/']),
   ...moduleBoundaries('src/cli', [
     './',

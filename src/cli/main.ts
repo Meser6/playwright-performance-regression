@@ -1,6 +1,7 @@
 // CLI entry logic (01, chapter 4.10; 04): parses the arguments and runs the command. Every error
 // is caught at this boundary and ends with exit code 3 (01, chapter 8).
 import type { Issue } from '../core/types/index.ts';
+import { renderHtmlReport } from '../html/index.ts';
 import { helpText } from './help.ts';
 import type { CliHost } from './host.ts';
 import { renderReport, thresholdsFrom } from './offline.ts';
@@ -10,7 +11,7 @@ import { parseArgs } from './parse.ts';
 import { runTests } from './run.ts';
 
 export interface MainOptions {
-  /** HTML renderer for the report command; the command is not available without it. */
+  /** HTML renderer for the report command; renderHtmlReport by default (11). */
   renderHtml?: HtmlRenderer;
 }
 
@@ -52,7 +53,7 @@ export async function main(
       case 'thresholds-from':
         return await thresholdsFrom(cmd, host);
       case 'report':
-        return await renderReport(cmd, host, options.renderHtml);
+        return await renderReport(cmd, host, options.renderHtml ?? renderHtmlReport);
       case 'init':
         host.stderr.write(
           formatIssues(

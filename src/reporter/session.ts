@@ -24,10 +24,12 @@ import {
   formatThresholdsDiffMarkdown,
 } from '../core/thresholds/index.ts';
 import type { ThresholdsDiff } from '../core/thresholds/index.ts';
-import { PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
+import { CLI_COMMAND, PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
+import { stringifyStable } from '../core/format/index.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
+import { renderHtmlReport } from '../html/index.ts';
 import { generateRunId, readModeState } from '../mode/index.ts';
 import type { PerfModeState } from '../mode/index.ts';
 import { notWrappedWarning } from '../registry/index.ts';
@@ -130,9 +132,8 @@ function plural(n: number, word: string, many = `${word}s`): string {
   return `${n} ${n === 1 ? word : many}`;
 }
 
-/** Options the reporter could get later; the HTML report is rendered by WP-13. */
 export interface SessionOptions {
-  /** Renders report.html from the run report; while unset no HTML file is written. */
+  /** Renders report.html from the run report (11); renderHtmlReport by default. */
   renderHtml?: ((report: RunReport) => string) | undefined;
 }
 
@@ -506,23 +507,31 @@ export class RunSession {
       report = build();
     }
 
-    try {
-      const path = io.resolvePath(reportDir, 'report.json');
-      await io.writeJsonStable(path, report);
-      paths.reportJson = path;
-    } catch (error) {
-      toolErrors.push({
-        code: 'REPORT_WRITE_FAILED',
-        message: `The run report could not be written to ${reportDir}: ${error instanceof Error ? error.message : String(error)}`,
-        hint: 'Check that report.dir is writable.',
-      });
-      report = build();
-    }
-    if (this.options.renderHtml !== undefined) {
-      // Hook for the HTML report (11, WP-13).
-      const path = io.resolvePath(reportDir, 'report.html');
-      await io.writeTextAtomic(path, this.options.renderHtml(report));
-      paths.reportHtml = path;
+    const writeJson = async (): Promise<boolean> => {
+      try {
+        const path = io.resolvePath(reportDir, 'report.json');
+        await io.writeJsonStable(path, report);
+        paths.reportJson = path;
+        return true;
+      } catch (error) {
+        toolErrors.push({
+          code: 'REPORT_WRITE_FAILED',
+          message: `The run report could not be written to ${reportDir}: ${error instanceof Error ? error.message : String(error)}`,
+          hint: 'Check that report.dir is writable.',
+        });
+        report = build();
+        return false;
+      }
+    };
+    await writeJson();
+    if (cfg.report.html) {
+      const issue = await this.writeHtml(report, io.resolvePath(reportDir, 'report.html'), paths);
+      if (issue !== null) {
+        // The JSON report stays and records the HTML error (11, chapter 12; exit code 3).
+        toolErrors.push(issue);
+        report = build();
+        if (paths.reportJson !== null) await writeJson();
+      }
     }
 
     const { width, color } = this.terminal();
@@ -544,6 +553,40 @@ export class RunSession {
       );
     }
     return buildOutcome(report, paths);
+  }
+
+  /**
+   * Writes report.html next to report.json (11-REQ-04). The page is rendered from the report as
+   * written to JSON, so `report` renders the same HTML from report.json (11-AC-10). Returns the
+   * HTML_RENDER_FAILED or HTML_WRITE_FAILED tool error (11, chapter 13), or null.
+   */
+  private async writeHtml(
+    report: RunReport,
+    path: string,
+    paths: Outcome['paths'],
+  ): Promise<Issue | null> {
+    const render = this.options.renderHtml ?? renderHtmlReport;
+    let page: string;
+    try {
+      page = render(JSON.parse(stringifyStable(report)) as RunReport);
+    } catch (error) {
+      return {
+        code: 'HTML_RENDER_FAILED',
+        message: `The HTML report could not be rendered: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        hint: 'This is a bug in the package; please report it with the message above. report.json is complete.',
+      };
+    }
+    try {
+      await this.host.io.writeTextAtomic(path, page);
+      paths.reportHtml = path;
+      return null;
+    } catch (error) {
+      return {
+        code: 'HTML_WRITE_FAILED',
+        message: `The HTML report could not be written to ${path}: ${error instanceof Error ? error.message : String(error)}`,
+        hint: `Check that report.dir is writable; \`${CLI_COMMAND} report\` renders it again from report.json.`,
+      };
+    }
   }
 
   /**
