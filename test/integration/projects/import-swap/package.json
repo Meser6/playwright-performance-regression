@@ -1,0 +1,5 @@
+{
+  "name": "integration-import-swap",
+  "private": true,
+  "type": "module"
+}

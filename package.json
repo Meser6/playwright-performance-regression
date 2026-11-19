@@ -133,6 +133,7 @@
     "eslint": "10.15.0",
     "globals": "^17.14.0",
     "json-schema-to-typescript": "16.0.0",
+    "playwright-bdd": "9.2.1",
     "prettier": "3.10.1",
     "publint": "0.3.25",
     "tsup": "9.0.0",

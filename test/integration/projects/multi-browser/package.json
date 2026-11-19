@@ -1,0 +1,5 @@
+{
+  "name": "integration-multi-browser",
+  "private": true,
+  "type": "module"
+}

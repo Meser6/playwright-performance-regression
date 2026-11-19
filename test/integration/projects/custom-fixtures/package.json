@@ -1,0 +1,5 @@
+{
+  "name": "integration-custom-fixtures",
+  "private": true,
+  "type": "module"
+}
