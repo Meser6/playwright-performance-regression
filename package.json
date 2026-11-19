@@ -96,8 +96,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && tsup",
-    "typecheck": "tsc --noEmit",
+    "build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && node scripts/build-html-assets.mjs --check && tsup",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/html/template",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -107,6 +107,8 @@
     "check:pr-title": "node scripts/check-pr-title.mjs",
     "gen:types": "node scripts/generate-types.mjs",
     "check:types-generated": "node scripts/generate-types.mjs --check",
+    "gen:html": "node scripts/build-html-assets.mjs",
+    "check:html-generated": "node scripts/build-html-assets.mjs --check",
     "publint": "publint --strict",
     "attw": "attw --pack . --profile node16"
   },
@@ -123,6 +125,8 @@
     "@playwright/test": "1.57.0",
     "@types/node": "^22.20.5",
     "ajv": "8.20.0",
+    "axe-core": "4.14.1",
+    "esbuild": "0.28.2",
     "eslint": "10.15.0",
     "globals": "^17.14.0",
     "json-schema-to-typescript": "16.0.0",

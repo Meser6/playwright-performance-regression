@@ -55,6 +55,7 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - run: pnpm check:types-generated
+      - run: pnpm check:html-generated
       - run: pnpm check:ac
       - run: pnpm publint
       - run: pnpm attw
