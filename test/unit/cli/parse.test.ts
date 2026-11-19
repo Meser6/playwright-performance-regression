@@ -187,6 +187,28 @@ describe('parseArgs', () => {
     expect(codes(['init', '--force'])).toEqual(['CLI_INVALID_OPTION']);
   });
 
+  test('04-AC-23 init --lang takes one of the wizard languages; an unknown code lists the codes', () => {
+    expect(parsed(['init', '--lang', 'pl'])).toEqual({
+      kind: 'init',
+      yes: false,
+      dryRun: false,
+      lang: 'pl',
+    });
+    expect(parsed(['init', '--yes', '--lang=uk'])).toEqual({
+      kind: 'init',
+      yes: true,
+      dryRun: false,
+      lang: 'uk',
+    });
+    const result = parseArgs(['init', '--lang', 'xx']);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.map((i) => i.code)).toEqual(['CLI_INVALID_OPTION']);
+    expect(result.issues[0]?.message).toContain('"xx"');
+    expect(result.issues[0]?.message).toContain('en, es, fr, pl, it, uk, ru');
+    expect(codes(['init', '--lang'])).toEqual(['CLI_MISSING_ARGUMENT']);
+  });
+
   test('04-AC-14 thresholds --prune with --grep, --project or a file path is CLI_PRUNE_WITH_FILTER', () => {
     for (const filter of [
       ['--grep', '@cart'],
