@@ -7,5 +7,9 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, 'test/perf/**', 'test/stats/**'],
     // Own tests never retry: a flaky test is fixed, not retried (12-REQ-06).
     retry: 0,
+    // Shared Windows and macOS runners are several times slower than a laptop; a test timeout is
+    // a hang guard, not a performance limit (performance limits live in test/perf, 12-D-05).
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
   },
 });
