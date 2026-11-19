@@ -45,8 +45,13 @@ jobs:
           done
           echo "::error::$VERSION is not installable from npm after 5 minutes."
           exit 1
+      # Yarn 1 on the runner cannot `yarn create <pkg>@<version>`; corepack provides the Yarn
+      # pinned by the test project (`packageManager`).
+      - if: matrix.package-manager == 'yarn'
+        run: corepack enable
       # 13-AC-10: `npm init` / `pnpm create` / `yarn create` in a fresh Playwright project.
       - run: pnpm vitest run test/release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           RELEASE_PACKAGE_MANAGER: ${{ matrix.package-manager }}
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'

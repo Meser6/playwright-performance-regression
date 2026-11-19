@@ -21,7 +21,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "create-playwright-performance-regression": "./index.js"
+    "create-playwright-performance-regression": "index.js"
   },
   "files": [
     "index.js"

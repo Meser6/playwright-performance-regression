@@ -51,7 +51,7 @@ describe('check-packages', () => {
 
   test('create publishes one executable file under its own command', () => {
     expect(checkPackages(main, { ...create, files: ['index.js', 'lib'] })).toEqual([
-      'create/package.json: "files" must list only the executable ./index.js.',
+      'create/package.json: "files" must list only the executable index.js.',
     ]);
     expect(checkPackages(main, { ...create, bin: { other: './index.js' } })).toEqual([
       'create/package.json: "bin" must have the one command "create-playwright-performance-regression".',

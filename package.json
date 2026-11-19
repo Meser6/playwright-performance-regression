@@ -84,8 +84,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.cts",
   "bin": {
-    "playwright-performance-regression": "./dist/cli.js",
-    "pw-perf": "./dist/cli.js"
+    "playwright-performance-regression": "dist/cli.js",
+    "pw-perf": "dist/cli.js"
   },
   "files": [
     "dist",
