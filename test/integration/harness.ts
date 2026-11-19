@@ -27,6 +27,7 @@ import type { DemoServer } from '../demo-server/server.ts';
 export const ROOT = join(import.meta.dirname, '../..');
 const PROJECTS = join(import.meta.dirname, 'projects');
 const RUNNER = join(ROOT, 'node_modules/@playwright/test/cli.js');
+const CLI = join(ROOT, 'dist/cli.js');
 const LINKED = ['@playwright/test', 'playwright-bdd'];
 export const RUN_TIMEOUT = 180_000;
 
@@ -58,8 +59,11 @@ export interface ProjectRun {
 
 export interface Harness {
   server: DemoServer;
-  /** Copies `name` and links the dependencies; returns the copy's directory. */
-  copy(name: string): string;
+  /**
+   * Copies `name` from `test/integration/projects` (or the directory `from`) and links the
+   * dependencies; returns the copy's directory.
+   */
+  copy(name: string, from?: string): string;
   run(dir: string, options?: RunOptions): Promise<ProjectRun>;
   close(): Promise<void>;
 }
@@ -67,6 +71,8 @@ export interface Harness {
 export interface RunOptions {
   env?: Record<string, string>;
   args?: string[];
+  /** Run `pw-perf <args>` (the built CLI) instead of `playwright test <args>`. */
+  cli?: boolean;
 }
 
 export async function startHarness(): Promise<Harness> {
@@ -78,9 +84,12 @@ export async function startHarness(): Promise<Harness> {
   let runs = 0;
   return {
     server,
-    copy(name) {
+    copy(name, from = PROJECTS) {
       const dir = join(scratch, `${name} copy`);
-      cpSync(join(PROJECTS, name), dir, { recursive: true });
+      cpSync(join(from, name), dir, {
+        recursive: true,
+        filter: (path) => !/[\\/](node_modules|perf-results|test-results|\.auth)$/u.test(path),
+      });
       const type = process.platform === 'win32' ? 'junction' : 'dir';
       mkdirSync(join(dir, 'node_modules/@playwright'), { recursive: true });
       for (const dep of LINKED) {
@@ -168,7 +177,8 @@ function runProject(
   const outcomeFile = join(dir, 'outcome.json');
   const started = performance.now();
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [RUNNER, 'test', ...(options.args ?? [])], {
+    const command = options.cli === true ? [CLI] : [RUNNER, 'test'];
+    const child = spawn(process.execPath, [...command, ...(options.args ?? [])], {
       cwd: dir,
       env: {
         ...clean,

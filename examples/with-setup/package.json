@@ -1,0 +1,14 @@
+{
+  "name": "example-with-setup",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "perf:test": "pw-perf test --grep @perf",
+    "perf:thresholds": "pw-perf thresholds --grep @perf"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "playwright-performance-regression": "file:../.."
+  }
+}
