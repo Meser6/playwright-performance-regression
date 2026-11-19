@@ -45,6 +45,12 @@ export interface DirEntry {
   directory: boolean;
 }
 
+/** Questions in the terminal (init, 04-REQ-37). `ask` rejects with PromptAborted on Ctrl+C. */
+export interface Prompt {
+  ask(question: string): Promise<string>;
+  close(): void;
+}
+
 export interface CliHost {
   cwd: string;
   paths: PathHelpers;
@@ -52,6 +58,7 @@ export interface CliHost {
   platform: string;
   /** os.tmpdir(): directory of the outcome file (04-REQ-11). */
   tmpdir: string;
+  stdin: { isTTY?: boolean };
   stdout: Stream;
   stderr: Stream;
   now(): Date;
@@ -76,4 +83,8 @@ export interface CliHost {
   importModule(url: string): Promise<unknown>;
   /** Entries of a directory; empty when it does not exist. */
   listDir(path: string): Promise<DirEntry[]>;
+  /** Writes a UTF-8 file, creating its directory. */
+  writeText(path: string, text: string): Promise<void>;
+  /** Terminal questions on stdin and stdout (init). */
+  createPrompt(): Prompt;
 }

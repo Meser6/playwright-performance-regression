@@ -7,3 +7,5 @@ export { readProjectFiles } from './files.ts';
 export type { InitAnswers } from './perf-config.ts';
 export { planInitChanges, plannedScripts } from './plan.ts';
 export type { FileChange, InitPlan } from './plan.ts';
+export { PromptAborted, readlinePrompt } from './prompt.ts';
+export { runInit } from './wizard.ts';

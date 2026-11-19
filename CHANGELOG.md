@@ -216,9 +216,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `pw-perf report [--input] [--output] [--config]` renders the HTML report again from a run
   report (`CLI_REPORT_NOT_FOUND` when it is missing), also with `report.html: false`; the page is
   identical to the one written by the run. It needs no Playwright. `HTML_RENDER_FAILED` and
-  `CLI_WRITE_FAILED` end it with exit code 3. `pw-perf init` ends with
-  `CLI_COMMAND_NOT_AVAILABLE`. `--help` (also per command, with the
+  `CLI_WRITE_FAILED` end it with exit code 3. `--help` (also per command, with the
   note on repeated tests and data conflicts) and `--version`.
+- `pw-perf init [--yes] [--dry-run]`: guided setup in eleven steps, each with a short explanation.
+  It reads the project as text (playwright.config is never imported), asks for the label of the
+  `baseURL` origin, which tests to measure (all or `@perf`, with `INIT_NO_TAGGED_TESTS` when no
+  test has the tag), the repetitions, a warn-only start, environments and a CI job, and shows a
+  diff of every change before it asks to apply it: a new `pw-perf.config.ts` with only the values
+  that differ from the defaults, `withPerf()` around `export default defineConfig({...})`,
+  `export default {...}` or `module.exports = ...`, `withPerfFixtures()` around
+  `export const test = base.extend(...)` (or `exports.test = ...`), or imports of `test` from
+  `@playwright/test` switched to `playwright-performance-regression/test`, `perf-results/` in
+  `.gitignore`, `perf:test` and `perf:thresholds` scripts (with `--grep @perf` and one pair per
+  environment with `--env`), and a CI job file from `examples/ci/` for GitHub Actions, GitLab CI,
+  Jenkins or Azure Pipelines. Other layouts (config wrappers, several test objects, `mergeTests`)
+  and existing scripts or CI files are left as they are, with an `INIT_MANUAL_STEP` instruction.
+  A second run changes nothing; an existing `pw-perf.config.ts` is replaced only after its own
+  confirmation (never with `--yes`). Without a terminal and without `--yes` it only shows the
+  plan. Exit codes: 0 done, 3 `INIT_NO_PLAYWRIGHT_CONFIG`, `INIT_PLAYWRIGHT_TOO_OLD` or
+  `INIT_WRITE_FAILED`, 130 interrupted (nothing is written before the changes step).
 - CI recipes in `examples/ci/` (`github-actions.yml`, `gitlab-ci.yml`, `Jenkinsfile`,
   `azure-pipelines.yml`): pull request and nightly triggers, the report uploaded always, exit
   code 2 as a soft failure on GitLab, Jenkins and Azure Pipelines, and a time limit.
