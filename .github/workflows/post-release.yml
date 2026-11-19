@@ -57,3 +57,5 @@ jobs:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
           # Yarn 4 forbids creating a lockfile on CI by default; the test project is fresh.
           YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+          # Yarn 4 quarantines versions published minutes ago; this check runs right after a release.
+          YARN_NPM_MINIMAL_AGE_GATE: '0'
