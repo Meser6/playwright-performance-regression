@@ -72,7 +72,7 @@ const en = {
   taggedFiles: 'Files with tests tagged @perf: {count}.',
   noTaggedMessage: 'No test is tagged @perf, so all tests are proposed.',
   noTaggedHint:
-    "Tag the tests to measure with test('title @perf', ...) or test('title', { tag: '@perf' }, ...), then choose @perf.",
+    "Tag the tests to measure with test('title', { tag: '@perf' }, ...), then choose @perf.",
   scopeQuestion: 'Measure all tests or only tests tagged @perf? [{all}/@perf]',
   scopeAll: 'all',
 
@@ -232,7 +232,7 @@ const pl: Messages = {
   taggedFiles: 'Pliki z testami oznaczonymi @perf: {count}.',
   noTaggedMessage: 'Żaden test nie ma tagu @perf, więc proponowane są wszystkie testy.',
   noTaggedHint:
-    "Oznacz testy do pomiaru: test('tytuł @perf', ...) albo test('tytuł', { tag: '@perf' }, ...), a potem wybierz @perf.",
+    "Oznacz testy do pomiaru: test('tytuł', { tag: '@perf' }, ...), a potem wybierz @perf.",
   scopeQuestion: 'Mierzyć wszystkie testy czy tylko oznaczone @perf? [{all}/@perf]',
   scopeAll: 'wszystkie',
 
@@ -388,7 +388,7 @@ const es: Messages = {
   taggedFiles: 'Archivos con tests etiquetados @perf: {count}.',
   noTaggedMessage: 'Ningún test tiene la etiqueta @perf, así que se proponen todos los tests.',
   noTaggedHint:
-    "Etiqueta los tests a medir con test('título @perf', ...) o test('título', { tag: '@perf' }, ...) y luego elige @perf.",
+    "Etiqueta los tests a medir con test('título', { tag: '@perf' }, ...) y luego elige @perf.",
   scopeQuestion: '¿Medir todos los tests o solo los etiquetados @perf? [{all}/@perf]',
   scopeAll: 'todos',
 
@@ -547,7 +547,7 @@ const fr: Messages = {
   taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
   noTaggedMessage: "Aucun test n'est marqué @perf, tous les tests sont donc proposés.",
   noTaggedHint:
-    "Marquez les tests à mesurer avec test('titre @perf', ...) ou test('titre', { tag: '@perf' }, ...), puis choisissez @perf.",
+    "Marquez les tests à mesurer avec test('titre', { tag: '@perf' }, ...), puis choisissez @perf.",
   scopeQuestion: 'Mesurer tous les tests ou seulement ceux marqués @perf ? [{all}/@perf]',
   scopeAll: 'tous',
 
@@ -708,7 +708,7 @@ const it: Messages = {
   taggedFiles: 'File con test contrassegnati @perf: {count}.',
   noTaggedMessage: 'Nessun test ha il tag @perf, quindi vengono proposti tutti i test.',
   noTaggedHint:
-    "Contrassegna i test da misurare con test('titolo @perf', ...) o test('titolo', { tag: '@perf' }, ...), poi scegli @perf.",
+    "Contrassegna i test da misurare con test('titolo', { tag: '@perf' }, ...), poi scegli @perf.",
   scopeQuestion: 'Misurare tutti i test o solo quelli contrassegnati @perf? [{all}/@perf]',
   scopeAll: 'tutti',
 
@@ -867,7 +867,7 @@ const uk: Messages = {
   taggedFiles: 'Файли з тестами з тегом @perf: {count}.',
   noTaggedMessage: 'Жоден тест не має тегу @perf, тому пропонуються всі тести.',
   noTaggedHint:
-    "Позначте тести для вимірювання: test('назва @perf', ...) або test('назва', { tag: '@perf' }, ...), а потім виберіть @perf.",
+    "Позначте тести для вимірювання: test('назва', { tag: '@perf' }, ...), а потім виберіть @perf.",
   scopeQuestion: 'Вимірювати всі тести чи лише з тегом @perf? [{all}/@perf]',
   scopeAll: 'усі',
 
@@ -1023,7 +1023,7 @@ const ru: Messages = {
   taggedFiles: 'Файлы с тестами с тегом @perf: {count}.',
   noTaggedMessage: 'Ни у одного теста нет тега @perf, поэтому предлагаются все тесты.',
   noTaggedHint:
-    "Отметьте тесты для измерения: test('название @perf', ...) или test('название', { tag: '@perf' }, ...), затем выберите @perf.",
+    "Отметьте тесты для измерения: test('название', { tag: '@perf' }, ...), затем выберите @perf.",
   scopeQuestion: 'Измерять все тесты или только с тегом @perf? [{all}/@perf]',
   scopeAll: 'все',
 

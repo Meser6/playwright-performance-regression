@@ -7,6 +7,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 import type { Prompt } from '../../../src/cli/host.ts';
 import { PromptAborted, readlinePrompt } from '../../../src/cli/init/index.ts';
 import { main } from '../../../src/cli/main.ts';
+import { stripAnsi } from '../../../src/console/color.ts';
 import { fakeCliHost } from './harness.ts';
 import { copyProject, INIT_GOLDEN, removeCopies, snapshot, snapshotDiff } from './init-helpers.ts';
 
@@ -76,9 +77,9 @@ describe('init wizard', () => {
   test('04-AC-19 Ctrl+C before step 9 leaves no changes and ends with 130', async () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
-    // Questions before step 9: Enter (2), label (3), scope (4), repeats (5), warn-only (6),
-    // environments (7), CI (8).
-    for (let at = 0; at < 7; at += 1) {
+    // Questions before step 9: tutorial (0a), language (0), Enter (2), label (3), scope (4), repeats (5),
+    // warn-only (6), environments (7), CI (8).
+    for (let at = 0; at < 9; at += 1) {
       const script = scriptedPrompt([], at);
       const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
       expect(await main(['init'], fake.host), `abort at question ${at}`).toBe(130);
@@ -92,6 +93,8 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
     const answers = [
+      '', // tutorial: yes
+      '', // language: en
       '', // Enter
       'backend', // label
       '@perf', // scope
@@ -106,7 +109,7 @@ describe('init wizard', () => {
     let output = '';
     const out = new Writable({
       write(chunk: Buffer, _encoding, done) {
-        output += chunk.toString();
+        output += stripAnsi(chunk.toString());
         // Answer when a question is waiting: it ends with ") " (the default in parentheses).
         if (/(\) |continue\. )$/u.test(output))
           setImmediate(() => input.write(`${answers.shift() ?? ''}\n`));
@@ -129,8 +132,12 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const input = new PassThrough();
     const out = new PassThrough();
+    let shown = '';
     out.on('data', (chunk: Buffer) => {
-      if (chunk.toString().endsWith('Press Enter to continue. ')) input.write('\u0003');
+      shown += stripAnsi(chunk.toString());
+      // Enter for the tutorial and language questions, Ctrl+C at "Press Enter".
+      if (shown.endsWith('Press Enter to continue. ')) input.write('\u0003');
+      else if (shown.endsWith(') ')) setImmediate(() => input.write('\r'));
     });
     const fake = fakeCliHost({
       cwd: dir,
@@ -152,10 +159,12 @@ describe('init wizard', () => {
     );
 
     // Interactive: every default, then "y" to the overwrite question.
-    const script = scriptedPrompt(['', '', '', '', '', '', '', 'y']);
+    const script = scriptedPrompt(['', '', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
     expect(await main(['init'], tty.host)).toBe(0);
-    expect(script.asked).toContain('  pw-perf.config.ts exists. Overwrite it? (y/N) ');
+    expect(script.asked.map(stripAnsi)).toContain(
+      '  pw-perf.config.ts exists. Overwrite it? (y/N) ',
+    );
     expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toContain('definePerfConfig');
   });
 
@@ -194,7 +203,7 @@ describe('init wizard', () => {
       prompt: () => ({
         ask: async (question) => {
           asked.push(question);
-          return question.includes('Run a first thresholds run') ? 'y' : '';
+          return stripAnsi(question).includes('Run a first thresholds run') ? 'y' : '';
         },
         close: () => undefined,
       }),
@@ -202,7 +211,124 @@ describe('init wizard', () => {
     });
     // No Playwright installed in the fake host: the run ends with CLI_PLAYWRIGHT_NOT_FOUND.
     expect(await main(['init'], fake.host)).toBe(3);
-    expect(asked.at(-1)).toBe('  Run a first thresholds run now? (y/N) ');
+    expect(stripAnsi(asked.at(-1) ?? '')).toBe('  Run a first thresholds run now? (y/N) ');
     expect(fake.stderr.join('')).toContain('CLI_PLAYWRIGHT_NOT_FOUND');
+  });
+
+  test('04-AC-23 init --yes --lang pl gives Polish wizard texts and the same files as --lang en', async () => {
+    const en = copyProject('init-esm-ts');
+    const pl = copyProject('init-esm-ts');
+    const fakeEn = fakeCliHost({ cwd: en, playwright: null });
+    const fakePl = fakeCliHost({ cwd: pl, playwright: null });
+    expect(await main(['init', '--yes', '--lang', 'en'], fakeEn.host)).toBe(0);
+    expect(await main(['init', '--yes', '--lang', 'pl'], fakePl.host)).toBe(0);
+    expect(snapshot(pl)).toEqual(snapshot(en));
+    expect(fakePl.written.length).toBe(fakeEn.written.length);
+    const out = fakePl.stdout.join('');
+    expect(out).toContain('[1/11] Projekt');
+    expect(out).toContain('Zastosować tę zmianę?');
+    expect(out).toContain('Następne kroki:');
+    expect(out).not.toContain('Apply this change?');
+    // Diffs, codes, file and option names stay in English.
+    expect(out).toContain('+++ b/pw-perf.config.ts');
+    expect(fakePl.stderr.join('')).toContain('warning INIT_NO_TAGGED_TESTS');
+    expect(fakePl.stderr.join('')).toContain('@perf');
+    // Without --lang and without a terminal: English.
+    const plain = copyProject('init-esm-ts');
+    const fakeDefault = fakeCliHost({ cwd: plain, playwright: null });
+    expect(await main(['init', '--yes'], fakeDefault.host)).toBe(0);
+    expect(fakeDefault.stdout.join('')).toBe(fakeEn.stdout.join(''));
+  });
+
+  test('04-AC-23 the language chosen in step 0 of a terminal session is used for the questions', async () => {
+    const dir = copyProject('init-esm-ts');
+    const script = scriptedPrompt(['', 'pl']);
+    const fake = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      prompt: script.prompt,
+      env: { NO_COLOR: '1' },
+    });
+    expect(await main(['init'], fake.host)).toBe(0);
+    expect(script.asked[0]).toBe(
+      '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
+    );
+    expect(script.asked[1]).toBe('  Language / Język? [en/es/fr/pl/it/uk/ru] (en) ');
+    expect(script.asked[2]).toBe('  Naciśnij Enter, aby kontynuować. ');
+    expect(script.asked).toContain('  Ile powtórzeń każdego testu w pomiarze? (5) ');
+    expect(script.asked).toContain('  Zacząć w trybie warn-only przez pierwsze tygodnie? (T/n) ');
+  });
+
+  test('04-AC-24 wizard colors in a terminal; none with NO_COLOR, TERM=dumb or without a terminal; FORCE_COLOR without one', async () => {
+    const ESC = String.fromCharCode(27);
+    const output = async (env: Record<string, string>, tty: boolean): Promise<string> => {
+      const dir = copyProject('init-esm-ts');
+      const script = scriptedPrompt([]);
+      const fake = fakeCliHost({
+        cwd: dir,
+        playwright: null,
+        env,
+        ...(tty ? { prompt: script.prompt } : {}),
+      });
+      expect(await main(tty ? ['init', '--lang', 'en'] : ['init', '--yes'], fake.host)).toBe(0);
+      return [...script.asked, ...fake.stdout, ...fake.stderr].join('');
+    };
+    const colored = await output({}, true);
+    expect(colored).toContain(ESC);
+    expect(colored).toContain(`${ESC}[36m`); // cyan step headers
+    expect(colored).toContain(`${ESC}[32m+`); // green added diff lines
+    const noColor = await output({ NO_COLOR: '1' }, true);
+    expect(noColor).not.toContain(ESC);
+    expect(stripAnsi(colored)).toBe(noColor);
+    expect(await output({ TERM: 'dumb' }, true)).not.toContain(ESC);
+    const pipe = await output({}, false);
+    expect(pipe).not.toContain(ESC);
+    const forced = await output({ FORCE_COLOR: '1' }, false);
+    expect(forced).toContain(ESC);
+    expect(stripAnsi(forced)).toBe(pipe);
+  });
+
+  test('04-AC-25 "no" to the tutorial question ends with 0, changes no file and prints the manual setup', async () => {
+    const dir = copyProject('init-esm-ts');
+    const before = snapshot(dir);
+    const script = scriptedPrompt(['n']);
+    const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
+    expect(await main(['init'], fake.host)).toBe(0);
+    expect(script.asked.map(stripAnsi)).toEqual([
+      '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
+    ]);
+    expect(fake.written).toEqual([]);
+    expect(snapshot(dir)).toEqual(before);
+    const out = stripAnsi(fake.stdout.join(''));
+    expect(out).toContain('playwright-performance-regression is installed; no file was changed.');
+    expect(out).toContain('withPerf() from playwright-performance-regression/config');
+    expect(out).toContain('withPerfFixtures() from playwright-performance-regression/fixture');
+    expect(out).toContain('npx pw-perf thresholds');
+    expect(out).toContain('docs/adoption.md');
+  });
+
+  test('04-AC-25 --no-tutorial does the same without the question, also with --yes or --lang', async () => {
+    const dir = copyProject('init-esm-ts');
+    const before = snapshot(dir);
+    const script = scriptedPrompt([]);
+    const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
+    expect(await main(['init', '--no-tutorial'], tty.host)).toBe(0);
+    expect(script.asked).toEqual([]);
+    expect(stripAnsi(tty.stdout.join(''))).toContain('To set it up by hand:');
+    const yes = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main(['init', '--yes', '--no-tutorial', '--lang', 'pl'], yes.host)).toBe(0);
+    expect(yes.stdout.join('')).toContain('Konfiguracja ręczna:');
+    expect(yes.written).toEqual([]);
+    expect(snapshot(dir)).toEqual(before);
+  });
+
+  test('04-AC-25 --yes skips the tutorial question and sets the project up', async () => {
+    const dir = copyProject('init-esm-ts');
+    const fake = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    expect(out).not.toContain('guided tutorial');
+    expect(out).toContain('[0/11] Language');
+    expect(fake.written.length).toBe(6);
   });
 });
