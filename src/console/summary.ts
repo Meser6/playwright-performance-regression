@@ -2,6 +2,8 @@
 // report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
 // terminal width, the color decision and the current directory, and prints the text.
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
+import { painter } from './color.ts';
+import type { ColorStyle, Painter } from './color.ts';
 import { compareText, padEnd, padStart, plural, textWidth, truncateMiddle } from './text.ts';
 
 export { truncateMiddle };
@@ -9,7 +11,7 @@ export { truncateMiddle };
 export interface SummaryOptions {
   /** Terminal columns; 120 without a terminal (09-REQ-22). */
   width: number;
-  /** ANSI colors: only in a TTY without NO_COLOR (09-REQ-22). */
+  /** ANSI colors: see colorEnabled (09-REQ-22, 04-REQ-44). */
   color: boolean;
   /** Directory the report paths are shown relative to. */
   cwd: string;
@@ -41,10 +43,7 @@ const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'p99',
 ]);
 
-const ANSI = { red: '\u001b[31m', yellow: '\u001b[33m', green: '\u001b[32m', bold: '\u001b[1m' };
-const RESET = '\u001b[0m';
-
-type Paint = (text: string, style: keyof typeof ANSI) => string;
+type Paint = Painter;
 
 /**
  * Relative exceedance r of a failed check (09-REQ-19, 09-REQ-20): actual / limit for rules
@@ -308,7 +307,7 @@ function resultLine(report: RunReport, paint: Paint): string {
         ? ''
         : ` (tolerance: ${gate.tolerance})`;
   let word: string;
-  let style: keyof typeof ANSI;
+  let style: ColorStyle;
   let reason: string;
   const status = report.evaluation.status;
   if (report.toolErrors.length > 0 || status === 'error') {
@@ -384,7 +383,7 @@ function reportLine(report: RunReport, cwd: string, html: boolean | undefined): 
 
 /** Console summary of a run report (09, chapter 8). Ends with a newline. */
 export function formatSummary(report: RunReport, opts: SummaryOptions): string {
-  const paint: Paint = (text, style) => (opts.color ? `${ANSI[style]}${text}${RESET}` : text);
+  const paint: Paint = painter(opts.color);
   const list = violations(report);
   const lines: string[] = [header(report), ''];
   lines.push(...issueLines('Errors:', report.toolErrors, Infinity, paint('✖', 'red'), 'errors'));

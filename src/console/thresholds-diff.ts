@@ -7,6 +7,8 @@ import {
   diffMarker,
 } from '../core/types/index.ts';
 import type { KeyDiff, ThresholdsDiff } from '../core/types/index.ts';
+import { painter } from './color.ts';
+import type { ColorStyle } from './color.ts';
 import { padEnd, plural, textWidth, truncateMiddle } from './text.ts';
 
 export interface ThresholdsDiffOptions {
@@ -14,7 +16,7 @@ export interface ThresholdsDiffOptions {
   paths: string[];
   /** Terminal columns; 120 without a terminal (09-REQ-22). */
   width: number;
-  /** ANSI colors: only in a TTY without NO_COLOR (09-REQ-22). */
+  /** ANSI colors: see colorEnabled (09-REQ-22, 04-REQ-44). */
   color: boolean;
   /** --prune was given: unseen entries left in the file are locked ones. */
   prune: boolean;
@@ -27,9 +29,7 @@ export const MAX_DIFF_ROWS = 30;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
 
-const ANSI = { red: '\u001b[31m', yellow: '\u001b[33m', green: '\u001b[32m' };
-const RESET = '\u001b[0m';
-type Style = keyof typeof ANSI;
+type Style = Extract<ColorStyle, 'red' | 'yellow' | 'green'>;
 
 const MARKER_STYLE: Record<string, Style> = {
   '+': 'green',
@@ -114,8 +114,7 @@ function mutedSuffix(k: KeyDiff): string {
  * Ends with a newline.
  */
 export function formatThresholdsDiff(diffs: ThresholdsDiff[], opts: ThresholdsDiffOptions): string {
-  const paint = (text: string, style: Style): string =>
-    opts.color ? `${ANSI[style]}${text}${RESET}` : text;
+  const paint: (text: string, style: Style) => string = painter(opts.color);
   const lines: string[] = [];
   diffs.forEach((diff, i) => {
     lines.push(...fileLines(diff, opts.paths[i] ?? `${diff.kind} thresholds`, opts, paint));

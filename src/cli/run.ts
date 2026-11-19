@@ -7,7 +7,7 @@ import { MODE_ENV_NAMES, generateRunId, writeModeState } from '../mode/index.ts'
 import { resolveExitCode } from './exit.ts';
 import type { ExitInput } from './exit.ts';
 import type { ChildProcessLike, CliHost, ForwardedSignal } from './host.ts';
-import { formatIssues, infoLine, resultLines } from './output.ts';
+import { formatIssues, infoLine, outputStyle, resultLines } from './output.ts';
 import type { ParsedCommand } from './parse.ts';
 import { playwrightConfigArg, testFilters } from './playwright-args.ts';
 import { withPerfReporterArg } from './reporter-arg.ts';
@@ -106,7 +106,7 @@ export function versionAtLeast(version: string, minimum: string): boolean {
 }
 
 function style(host: CliHost): { color: boolean } {
-  return { color: host.stderr.isTTY === true && (host.env.NO_COLOR ?? '') === '' };
+  return outputStyle(host.stderr, host.env);
 }
 
 /** Directory @playwright/test is resolved from: the -c directory, else cwd (04-REQ-13, 04-D-15). */

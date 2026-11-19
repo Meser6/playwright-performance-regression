@@ -7,7 +7,7 @@ import { runInit } from './init/index.ts';
 import type { CliHost } from './host.ts';
 import { renderReport, thresholdsFrom } from './offline.ts';
 import type { HtmlRenderer } from './offline.ts';
-import { formatIssues } from './output.ts';
+import { formatIssues, outputStyle } from './output.ts';
 import { parseArgs } from './parse.ts';
 import { runTests } from './run.ts';
 
@@ -17,7 +17,7 @@ export interface MainOptions {
 }
 
 function color(host: CliHost): { color: boolean } {
-  return { color: host.stderr.isTTY === true && (host.env.NO_COLOR ?? '') === '' };
+  return outputStyle(host.stderr, host.env);
 }
 
 function internalError(error: unknown): Issue {

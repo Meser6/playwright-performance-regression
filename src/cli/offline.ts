@@ -24,7 +24,7 @@ import { resolveBaseDir } from './base-dir.ts';
 import { configSourceLine, resolveCliConfig } from './config-file.ts';
 import type { CliConfig } from './config-file.ts';
 import type { CliHost } from './host.ts';
-import { formatIssues, infoLine } from './output.ts';
+import { formatIssues, infoLine, outputStyle } from './output.ts';
 import type { ParsedCommand } from './parse.ts';
 
 export type FromCommand = Extract<ParsedCommand, { kind: 'thresholds-from' }>;
@@ -45,7 +45,7 @@ class Printer {
   }
 
   get color(): boolean {
-    return this.host.stderr.isTTY === true && (this.host.env.NO_COLOR ?? '') === '';
+    return outputStyle(this.host.stderr, this.host.env).color;
   }
 
   errors(issues: readonly Issue[]): number {
@@ -240,7 +240,7 @@ export async function thresholdsFrom(cmd: FromCommand, host: CliHost): Promise<n
     formatThresholdsDiff(diffs, {
       paths: derived.value.files.map((file) => relativeSlashPath(host.cwd, absolute[file.kind])),
       width,
-      color: stdout.isTTY === true && (host.env.NO_COLOR ?? '') === '',
+      color: outputStyle(stdout, host.env).color,
       prune: cmd.prune,
       diffPath: diffWritten ? relativeSlashPath(host.cwd, diffPath) : null,
     }),

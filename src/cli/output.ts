@@ -1,20 +1,26 @@
 // Messages of the CLI (04-REQ-30, 04-REQ-31): on stderr, in English, each line prefixed with the
-// package name; errors and warnings with their code and a hint. Colors only in a terminal without
-// NO_COLOR (01, chapter 4.9). Pure.
+// package name; errors and warnings with their code and a hint. Colors by the rules of
+// 04-REQ-44 (colorEnabled). Pure.
+import { colorEnabled, paint as paintText } from '../console/color.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome } from '../core/types/index.ts';
 
 export const PREFIX = `${PACKAGE_NAME}: `;
 
-const ANSI = { red: '\u001b[31m', yellow: '\u001b[33m', green: '\u001b[32m' } as const;
-const RESET = '\u001b[0m';
-
 export interface OutputStyle {
   color: boolean;
 }
 
-function paint(text: string, style: keyof typeof ANSI, opts: OutputStyle): string {
-  return opts.color ? `${ANSI[style]}${text}${RESET}` : text;
+/** The output style of `stream` (04-REQ-44). */
+export function outputStyle(
+  stream: { isTTY?: boolean | undefined },
+  env: Readonly<Record<string, string | undefined>>,
+): OutputStyle {
+  return { color: colorEnabled(stream, env) };
+}
+
+function paint(text: string, style: 'red' | 'yellow' | 'green', opts: OutputStyle): string {
+  return paintText(text, style, opts.color);
 }
 
 /** One informational line. */

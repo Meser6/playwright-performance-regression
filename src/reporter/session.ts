@@ -27,6 +27,7 @@ import type { ThresholdsDiff } from '../core/thresholds/index.ts';
 import { CLI_COMMAND, PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
+import { colorEnabled } from '../console/color.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import { renderHtmlReport } from '../html/index.ts';
@@ -410,13 +411,12 @@ export class RunSession {
 
   private terminal(): { width: number; color: boolean } {
     const out = this.host.stdout;
-    const noColor = (this.host.env.NO_COLOR ?? '') !== '';
     return {
       width:
         out.isTTY === true && out.columns !== undefined && out.columns > 0
           ? out.columns
           : DEFAULT_WIDTH,
-      color: out.isTTY === true && !noColor,
+      color: colorEnabled(out, this.host.env),
     };
   }
 
