@@ -248,6 +248,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   troubleshooting for every warning and error code, FAQ, and upgrading.
 - Example projects `examples/basic` and `examples/with-setup`, runnable against the demo app of
   the repository.
+- Both packages are published from GitHub Actions with npm provenance (trusted publishing), in
+  the same version, with pre-releases under the `next` dist-tag; a demo HTML report with a
+  blocking violation is published on GitHub Pages.
 
 ### Changed
 

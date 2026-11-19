@@ -1,0 +1,177 @@
+name: Release
+
+# Release of both packages (13, chapter 5), started by pushing a tag vX.Y.Z or vX.Y.Z-next.N on
+# main (RELEASING.md). Order: preconditions (tag on main, tag == version of both package.json
+# files, CHANGELOG section, no "private": true) -> the full CI and the performance tests ->
+# publish both packages with npm provenance through trusted publishing (OIDC, no npm token) ->
+# GitHub Release from the CHANGELOG section -> the create package in fresh projects with npm,
+# pnpm and yarn (13-AC-10) -> the demo report on GitHub Pages (stable releases).
+# A re-run for the same tag skips what is already published (13, chapter 11).
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Release preconditions
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      dist-tag: ${{ steps.check.outputs.dist-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Require the tag to be on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::The tag $GITHUB_REF_NAME does not point to a commit on main."
+            exit 1
+          fi
+      # 13-REQ-06 step 1, 13-REQ-07: fails while either package.json has "private": true.
+      - name: Check the tag, both versions and the CHANGELOG section
+        id: check
+        run: |
+          if ! dist_tag="$(node scripts/check-release.mjs "$GITHUB_REF_NAME")"; then
+            echo "::error::Release preconditions failed for $GITHUB_REF_NAME (see the log above and RELEASING.md)."
+            exit 1
+          fi
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
+
+  # 13-REQ-06 step 2, 13-AC-03: the CI matrix of 13-REQ-09 and the checks of 13-REQ-11 pass on
+  # the tagged commit; a failing performance test blocks the release (12-D-05).
+  ci:
+    name: CI
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+
+  perf:
+    name: Performance
+    needs: prepare
+    uses: ./.github/workflows/nightly.yml
+
+  publish:
+    name: Publish to npm
+    needs: [prepare, ci, perf]
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance (13-D-05)
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      DIST_TAG: ${{ needs.prepare.outputs.dist-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+      - name: Require npm with trusted publishing (11.5.1 or later)
+        run: |
+          node -e "const [a,b,c]=process.argv[1].split('.').map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)" "$(npm --version)" || {
+            echo "::error::npm $(npm --version) cannot publish through trusted publishing; use a Node version that ships npm 11.5.1 or later."
+            exit 1
+          }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm check:packages
+      # The main package first: the create package installs it (01-REQ-39).
+      - name: Publish playwright-performance-regression and create-playwright-performance-regression
+        run: |
+          for dir in . create; do
+            name="$(node -p "require('./$dir/package.json').name")"
+            if npm view "$name@$VERSION" version >/dev/null 2>&1; then
+              echo "$name@$VERSION is already on npm; skipped."
+              continue
+            fi
+            (cd "$dir" && npm publish --provenance --access public --tag "$DIST_TAG")
+          done
+
+  github-release:
+    name: GitHub Release
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PRERELEASE: ${{ needs.prepare.outputs.dist-tag == 'next' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      # 13-REQ-06 step 4: the notes are the CHANGELOG section of the version.
+      - name: Create or update the release
+        run: |
+          node scripts/check-release.mjs "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/notes.md"
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${flags[@]}"
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${flags[@]}"
+          fi
+
+  create-smoke:
+    name: Create package from npm (${{ matrix.package-manager }})
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        package-manager: [npm, pnpm, yarn]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # The registry may need a moment before a new version can be installed.
+      - name: Wait until the version is on npm
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          for _ in $(seq 1 30); do
+            if npm view "create-playwright-performance-regression@$VERSION" version >/dev/null 2>&1 &&
+              npm view "playwright-performance-regression@$VERSION" version >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$VERSION is not installable from npm after 5 minutes."
+          exit 1
+      # 13-AC-10: `npm init` / `pnpm create` / `yarn create` in a fresh Playwright project.
+      - run: pnpm vitest run test/release
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_PACKAGE_MANAGER: ${{ matrix.package-manager }}
+
+  demo:
+    name: Demo report
+    needs: [prepare, github-release]
+    # 13-REQ-17: stable releases only; pre-releases do not replace the demo.
+    if: needs.prepare.outputs.dist-tag == 'latest'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/demo.yml

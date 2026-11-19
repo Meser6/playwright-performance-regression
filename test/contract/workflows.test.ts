@@ -19,6 +19,9 @@ interface Step {
 }
 interface Job {
   name?: string;
+  permissions?: Record<string, string>;
+  environment?: string | { name: string };
+  outputs?: Record<string, string>;
   'runs-on'?: string;
   'continue-on-error'?: boolean;
   needs?: string | string[];
@@ -146,5 +149,62 @@ describe('workflows', () => {
     expect(report.needs).toEqual(['playwright-next', 'option-collisions', 'stats']);
     expect(report.if).toBe("failure() && github.event_name == 'schedule'");
     expect(runs(report).join('\n')).toContain('gh issue create');
+  });
+
+  test('13-AC-03 13-REQ-06 the release runs the full CI and the performance tests before publishing', () => {
+    const release = workflow('release.yml');
+    expect(release.on).toEqual({ push: { tags: ['v*'] } });
+    expect(job(release, 'ci').uses).toBe('./.github/workflows/ci.yml');
+    expect(job(release, 'perf').uses).toBe('./.github/workflows/nightly.yml');
+    expect(Object.keys(workflow('ci.yml').on)).toContain('workflow_call');
+    expect(Object.keys(workflow('nightly.yml').on)).toContain('workflow_call');
+    expect(job(release, 'ci').needs).toBe('prepare');
+    expect(job(release, 'publish').needs).toEqual(['prepare', 'ci', 'perf']);
+    for (const id of ['github-release', 'create-smoke']) {
+      expect(job(release, id).needs, id).toEqual(['prepare', 'publish']);
+    }
+  });
+
+  test('13-REQ-06 13-REQ-07 the preconditions check the tag, both versions, the CHANGELOG and "private"', () => {
+    const prepare = runs(job(workflow('release.yml'), 'prepare')).join('\n');
+    expect(prepare).toContain('git merge-base --is-ancestor "$GITHUB_SHA" origin/main');
+    expect(prepare).toContain('node scripts/check-release.mjs "$GITHUB_REF_NAME"');
+  });
+
+  test('13-REQ-06 13-D-05 both packages are published with provenance through trusted publishing', () => {
+    const release = workflow('release.yml');
+    const publish = job(release, 'publish');
+    expect(publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
+    const text = runs(publish).join('\n');
+    expect(text).toContain('for dir in . create; do');
+    expect(text).toContain('npm publish --provenance --access public --tag "$DIST_TAG"');
+    expect(text).toContain('pnpm check:packages');
+    // No npm token anywhere: trusted publishing only.
+    expect(readFileSync(join(DIR, 'release.yml'), 'utf8')).not.toMatch(
+      /NPM_TOKEN|NODE_AUTH_TOKEN/u,
+    );
+    expect(runs(job(release, 'github-release')).join('\n')).toContain('--notes-file');
+  });
+
+  test('13-AC-10 the release runs the create package from npm with npm, pnpm and yarn', () => {
+    const smoke = job(workflow('release.yml'), 'create-smoke');
+    expect(smoke.strategy?.matrix?.['package-manager']).toEqual(['npm', 'pnpm', 'yarn']);
+    const step = (smoke.steps ?? []).find((s) => s.run === 'pnpm vitest run test/release');
+    expect(step?.env?.['RELEASE_VERSION']).toBe('${{ needs.prepare.outputs.version }}');
+  });
+
+  test('13-REQ-17 the demo report is deployed to GitHub Pages after a stable release or by hand', () => {
+    const release = workflow('release.yml');
+    const demoJob = job(release, 'demo');
+    expect(demoJob.uses).toBe('./.github/workflows/demo.yml');
+    expect(demoJob.if).toBe("needs.prepare.outputs.dist-tag == 'latest'");
+    const demo = workflow('demo.yml');
+    expect(Object.keys(demo.on).sort()).toEqual(['workflow_call', 'workflow_dispatch']);
+    expect(runs(job(demo, 'build'))).toContain(
+      'node scripts/build-demo-report.mjs --out "$RUNNER_TEMP/demo"',
+    );
+    const deploy = job(demo, 'deploy');
+    expect(deploy.if).toBe('${{ !github.event.repository.private }}');
+    expect(deploy.permissions).toEqual({ pages: 'write', 'id-token': 'write' });
   });
 });

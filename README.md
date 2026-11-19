@@ -205,7 +205,8 @@ not in public issues.
 ## Contributing
 
 Issues and pull requests are welcome. The project uses pnpm, Conventional Commits and squash
-merges; `pnpm lint`, `pnpm typecheck` and `pnpm test` (after `pnpm build`) must pass.
+merges; `pnpm lint`, `pnpm typecheck` and `pnpm test` (after `pnpm build`) must pass. Releases
+follow [RELEASING.md](RELEASING.md).
 
 ## License
 
