@@ -22,3 +22,16 @@ export const CLI_COMMAND = 'npx pw-perf';
 /** Documentation of every config option, linked from config errors (03-REQ-12, 13-REQ-15). */
 export const DOCS_CONFIG_URL =
   'https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md';
+
+/** Package config file name without extension (00, chapter 14.1; 03, chapter 4). */
+export const CONFIG_FILE_BASENAME = 'pw-perf.config';
+
+/** Extensions of the package config file, in the order the CLI looks for them (01, chapter 7.3). */
+export const CONFIG_FILE_EXTENSIONS: readonly string[] = [
+  '.ts',
+  '.mts',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.json',
+];

@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { parseOutcome, parseRunReport } from '../../../src/core/schema/index.ts';
 import type { Outcome, RunReport } from '../../../src/core/types/index.ts';
-import { generateRunId, runSettings } from '../../../src/reporter/session.ts';
+import { generateRunId } from '../../../src/mode/index.ts';
+import { runSettings } from '../../../src/reporter/session.ts';
 import { createAjv, validator } from '../../contract/schemas.ts';
 import {
   batch,

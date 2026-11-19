@@ -11,7 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Package manifest with the entry points `playwright-performance-regression`, `/config`,
   `/fixture`, `/test`, `/reporter` and the `playwright-performance-regression` and `pw-perf`
-  commands (placeholders, no functionality yet).
+  commands.
 - JSON Schemas for the configuration and all file formats, published under `schemas/`.
 - Reading of the sample batch, run report, thresholds and outcome files with `schemaVersion`
   checks, migrations and error codes `SCHEMA_INVALID_JSON`, `SCHEMA_VERSION_MISSING`,
@@ -172,6 +172,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `RUN_SHARDED`, `REPORT_WRITE_FAILED`, `THRESHOLDS_WRITE_FAILED` and
   `REPORTER_INTERNAL_ERROR`; `OUTCOME_WRITE_FAILED` on stderr. A sample attachment that cannot
   be read is skipped with a tool error.
+- The `pw-perf` command (also `playwright-performance-regression`): `pw-perf test` and
+  `pw-perf thresholds` run `playwright test` in perf mode. Own options `--env`, `--repeat` and
+  (thresholds) `--prune` are read anywhere before `--`; every other argument goes to Playwright
+  unchanged, and `--config`/`-c` belongs to Playwright. `--repeat` and `--env` are checked like
+  `PW_PERF_REPEAT` and `PW_PERF_ENV`. Playwright is found in the project (from the directory of
+  `-c` when given, so a monorepo can run `pw-perf test -c apps/web/playwright.config.ts` from its
+  root) and started with Node, without a shell. With `--reporter` the package reporter is added to
+  the last `--reporter` value. The CLI sets the `PW_PERF_*` variables, prints the mode line and a
+  tip to measure a subset, forwards SIGINT and SIGTERM to Playwright (a second Ctrl+C within 5 s
+  stops it at once) and ends with the exit code of the outcome file: 0, 2 or 3, 130 or 143 after a
+  signal, Playwright's own code with `--list`. Without an outcome file the result is 3 with
+  `CLI_OUTCOME_MISSING` and its usual causes (no `withPerf()`, a config error, no matching test).
+  After the run it prints one result line and the report path.
+- CLI errors `CLI_UNKNOWN_COMMAND`, `CLI_INVALID_OPTION`, `CLI_MISSING_ARGUMENT`,
+  `CLI_UNSUPPORTED_PLAYWRIGHT_OPTION` (`--ui`, `--ui-host`, `--ui-port`, `--debug`, `--shard`),
+  `CLI_PRUNE_WITH_FILTER` (`--prune` with `--grep`, `--grep-invert`, `--project`,
+  `--last-failed`, `--only-changed`, `--test-list` or file paths), `CLI_FROM_WITH_PLAYWRIGHT_ARGS`,
+  `CLI_PLAYWRIGHT_NOT_FOUND`, `CLI_REPORTER_PATH_UNSUPPORTED`, `CLI_SPAWN_FAILED`,
+  `CLI_OUTCOME_INVALID`, `CLI_REPORT_NOT_FOUND`, `CLI_WRITE_FAILED` and `CLI_INTERNAL_ERROR`;
+  warnings `CLI_MODE_ALREADY_SET` and `CLI_PLAYWRIGHT_UNSUPPORTED_VERSION`.
+- `pw-perf thresholds --from <report.json>` derives the thresholds files from a run report without
+  running tests, with the same functions as a thresholds run (identical files), and writes
+  `thresholds-diff.md`. The environment label is `--env` or the label of the report;
+  `CLI_REPORT_TESTS_FAILED` warns about a report with failed tests. It needs no Playwright.
+- Package config in the commands without tests: `--config <file>`, else `pw-perf.config.*`
+  (`.ts`, `.mts`, `.js`, `.mjs`, `.cjs`, `.json`) in the current directory or in the config
+  directory of the report, else the config snapshot of the report. TypeScript files are loaded by
+  Node itself; a file that cannot be loaded gives `CONFIG_FILE_LOAD_FAILED` with a fix hint for
+  imports without extension, `tsconfig` path aliases and enums (an error with `--config`, a
+  warning and the snapshot otherwise), and Node's type-stripping warnings become one `note:` line.
+  `CONFIG_FILE_NOT_FOUND` for a missing `--config` file, `CONFIG_SNAPSHOT_DIFFERS` when the file
+  differs from the snapshot in options that change the result. The CLI prints the config source
+  and the base directory of relative paths (`CLI_CONFIG_DIR_MISSING` when it falls back to the
+  current directory).
+- `pw-perf report [--input] [--output] [--config]` finds the run report
+  (`CLI_REPORT_NOT_FOUND`), but ends with `CLI_COMMAND_NOT_AVAILABLE` until the HTML report exists;
+  `pw-perf init` ends with `CLI_COMMAND_NOT_AVAILABLE` too. `--help` (also per command, with the
+  note on repeated tests and data conflicts) and `--version`.
 
 ### Changed
 

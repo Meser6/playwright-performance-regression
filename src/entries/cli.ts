@@ -1,3 +1,4 @@
-// CLI entry point placeholder; commands are added by later work packages.
-process.stderr.write('playwright-performance-regression: the CLI is not implemented yet\n');
-process.exitCode = 1;
+// Binaries "playwright-performance-regression" and "pw-perf" (01, chapter 9; 04).
+import { main, nodeHost } from '../cli/index.ts';
+
+process.exitCode = await main(process.argv.slice(2), nodeHost());
