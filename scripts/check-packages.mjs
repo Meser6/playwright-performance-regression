@@ -6,8 +6,8 @@
 //   dependency only @playwright/test (none in create-<pkg>), the same version in both, and
 //   create-<pkg> publishes one executable file;
 // - contents (`npm pack --dry-run`): only the files of the "files" field, nothing from test/ or
-//   prototype/, no spec-ids.json, no source maps with absolute paths, and the unpacked size
-//   below MAX_UNPACKED_BYTES. Needs `pnpm build` first.
+//   prototype/, no spec-ids.json, no source maps with absolute paths, the packed size below
+//   MAX_PACKED_BYTES and the unpacked size below MAX_UNPACKED_BYTES. Needs `pnpm build` first.
 //
 // Usage: node scripts/check-packages.mjs
 // No dependencies; Node built-ins only (and the npm CLI for `npm pack`).
@@ -17,16 +17,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Limit of the unpacked size of the package in bytes (13-REQ-11 sets 500 kB; raised with this
- * justification). Every entry point has an ESM and a CJS build (01-REQ-34), each with shared
- * chunks, so the code ships twice (about 640 kB together, the CLI included). The code is not
- * minified, so stack traces in bug reports stay readable; minifying would save only about
- * 140 kB. Loading the ESM build from thin CJS wrappers (require of ES modules) would ship the
- * code once, but breaks CommonJS projects that load the package from outside node_modules,
- * where Playwright transpiles it (linked checkouts). The rest is schemas/ (85 kB), the type
- * declarations (55 kB) and README, CHANGELOG and LICENSE. 1.3 MB before the shared chunks.
+ * Size limits (13-REQ-11, 13-D-19). They are an alarm for mistakes such as bundled tests, source
+ * maps or a bundled dependency, not a budget for features. The packed size is what
+ * `npm install` downloads; the unpacked limit is a looser second check. Every entry point has an
+ * ESM and a CJS build (01-REQ-34), so the code ships twice; the wizard texts in seven languages
+ * add about 70 kB.
  */
-export const MAX_UNPACKED_BYTES = 900_000;
+export const MAX_PACKED_BYTES = 400_000;
+export const MAX_UNPACKED_BYTES = 2_000_000;
 
 /** Paths that must never be published, whatever "files" says. */
 const FORBIDDEN = [/^test\//u, /^prototype\//u, /^spec-ids\.json$/u];
@@ -106,14 +104,14 @@ export function checkPackages(main, create, createDir) {
   return problems;
 }
 
-/** @typedef {{ files: { path: string, size: number }[], unpackedSize: number }} Pack */
+/** @typedef {{ files: { path: string, size: number }[], unpackedSize: number, size?: number }} Pack */
 
 /**
  * Problems of the contents of one package as `npm pack` lists them.
  * @param {Pack} pack
  * @param {Record<string, any>} manifest the package.json of the package
  * @param {string} label
- * @param {{ maxUnpackedBytes?: number, readFile?: (path: string) => string }} [options]
+ * @param {{ maxUnpackedBytes?: number, maxPackedBytes?: number, readFile?: (path: string) => string }} [options]
  *   readFile reads a packed file (path relative to the package) for the source map check
  * @returns {string[]}
  */
@@ -151,6 +149,12 @@ export function checkPackContents(pack, manifest, label, options = {}) {
       `${label}: the unpacked package has ${pack.unpackedSize} bytes, above the limit of ${max} bytes (scripts/check-packages.mjs).`,
     );
   }
+  const maxPacked = options.maxPackedBytes;
+  if (maxPacked !== undefined && pack.size !== undefined && pack.size > maxPacked) {
+    problems.push(
+      `${label}: the packed package has ${pack.size} bytes, above the limit of ${maxPacked} bytes (scripts/check-packages.mjs).`,
+    );
+  }
   return problems;
 }
 
@@ -183,7 +187,7 @@ export function npmPack(dir) {
     shell: process.platform === 'win32',
   });
   const [pack] = JSON.parse(output);
-  return { files: pack.files, unpackedSize: pack.unpackedSize };
+  return { files: pack.files, unpackedSize: pack.unpackedSize, size: pack.size };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -197,10 +201,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ...checkPackages(main, create, join(root, 'create')),
     ...checkPackContents(mainPack, main, main.name, {
       maxUnpackedBytes: MAX_UNPACKED_BYTES,
+      maxPackedBytes: MAX_PACKED_BYTES,
       readFile: (path) => readFileSync(join(root, path), 'utf8'),
     }),
     ...checkPackContents(createPack, create, create.name, {
       maxUnpackedBytes: MAX_UNPACKED_BYTES,
+      maxPackedBytes: MAX_PACKED_BYTES,
       readFile: (path) => readFileSync(join(root, 'create', path), 'utf8'),
     }),
   ];
@@ -209,6 +215,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
   console.log(
-    `package.json and create/package.json are fine; unpacked sizes: ${main.name} ${mainPack.unpackedSize} bytes (limit ${MAX_UNPACKED_BYTES}), ${create.name} ${createPack.unpackedSize} bytes.`,
+    `package.json and create/package.json are fine; sizes: ${main.name} ${mainPack.size} bytes packed (limit ${MAX_PACKED_BYTES}), ${mainPack.unpackedSize} unpacked (limit ${MAX_UNPACKED_BYTES}); ${create.name} ${createPack.size} packed, ${createPack.unpackedSize} unpacked.`,
   );
 }
