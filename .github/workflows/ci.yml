@@ -1,29 +1,75 @@
 name: CI
 
+# Every pull request and push to main (13-REQ-09, 13-REQ-11):
+# - checks: lint, format, types, generated files, package checks, AC coverage (once);
+# - test: unit, contract, integration and e2e tests on the OS x Node x Playwright matrix with
+#   Chromium (required);
+# - browsers: Firefox and WebKit, informational (best effort, D-13).
+# The scheduled runs (performance, statistics, Playwright pre-release) are in nightly.yml and
+# weekly.yml; they do not block a merge (12-D-05, 13-REQ-10).
+
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   checks:
-    name: Checks (Node ${{ matrix.node }})
+    name: Checks
     # Pinned: Chromium of the lowest supported Playwright (the dev dependency, 1.57) does not
     # install on newer Ubuntu releases that ubuntu-latest may point to.
     runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm check:types-generated
+      - run: pnpm check:html-generated
+      - run: pnpm check:ci-generated
+      - run: pnpm check:docs-generated
+      # 13-AC-07: actionlint (workflow linter) on the GitHub Actions recipe and on the workflows
+      # of this repository (the other recipes are checked by test/contract/ci-recipes.test.ts).
+      - name: Lint the GitHub Actions recipe and workflows
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color examples/ci/github-actions.yml .github/workflows/*.yml
+      - run: pnpm check:ac
+      - run: pnpm build
+      # 13-REQ-11: package.json rules, packed contents and unpacked size of both packages.
+      - run: pnpm check:packages
+      - run: pnpm publint
+      - run: pnpm attw
+
+  test:
+    name: Test (${{ matrix.os }}, Node ${{ matrix.node }}, Playwright ${{ matrix.playwright }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # Linux only for now; the full OS x Node x Playwright matrix (13-REQ-09) comes with
-        # the integration tests.
-        node: [22, 24]
+        # 13-REQ-09: Linux with every supported Node line and the lowest and latest Playwright;
+        # macOS and Windows with the oldest and newest Node line and the latest Playwright
+        # (13-D-06). ubuntu-24.04: see the checks job.
+        os: [ubuntu-24.04]
+        node: [22, 24, 26]
+        playwright: [minimum, latest]
+        include:
+          - { os: macos-latest, node: 22, playwright: latest }
+          - { os: macos-latest, node: 26, playwright: latest }
+          - { os: windows-latest, node: 22, playwright: latest }
+          - { os: windows-latest, node: 26, playwright: latest }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -32,37 +78,52 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The collector integration tests run real Chromium (12, chapter 6). Browsers are cached
-      # per Playwright version; the system libraries are installed on every run.
+      # "minimum" is the pinned dev dependency (the lowest supported version, 01, chapter 12.2).
+      - name: Install the latest Playwright
+        if: matrix.playwright == 'latest'
+        shell: bash
+        run: pnpm add --save-dev --save-exact @playwright/test@latest
       - name: Read the Playwright version
         id: playwright
+        shell: bash
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      # The integration and e2e tests run real Chromium (12, chapter 6). Browsers are cached
+      # per OS and Playwright version; the Linux system libraries are installed on every run.
       - name: Cache Playwright browsers
         id: browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/ms-playwright
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+            ~/AppData/Local/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
       - name: Install Chromium
         if: steps.browsers.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
       - name: Install Chromium system dependencies
-        if: steps.browsers.outputs.cache-hit == 'true'
+        if: steps.browsers.outputs.cache-hit == 'true' && runner.os == 'Linux'
         run: pnpm exec playwright install-deps chromium
-      - run: pnpm lint
-      - run: pnpm format:check
-      - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
-      - run: pnpm check:types-generated
-      - run: pnpm check:html-generated
-      - run: pnpm check:ci-generated
-      - run: pnpm check:docs-generated
-      # 13-AC-07: actionlint (workflow linter) on the GitHub Actions recipe (the other recipes are
-      # checked by test/contract/ci-recipes.test.ts).
-      - name: Lint the GitHub Actions recipe
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color examples/ci/github-actions.yml
-      - run: pnpm check:packages
-      - run: pnpm check:ac
-      - run: pnpm publint
-      - run: pnpm attw
+
+  browsers:
+    name: Browsers (Firefox, WebKit; informational)
+    # Best effort (D-13): a failure is reported but never blocks a merge.
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm add --save-dev --save-exact @playwright/test@latest
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm build
+      - name: Measure Firefox and WebKit projects
+        run: pnpm vitest run test/integration/projects.test.ts -t multi-browser
+        env:
+          INTEGRATION_BROWSERS: firefox,webkit
