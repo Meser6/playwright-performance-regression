@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `init` asks first whether to set the package up with a guided tutorial; no (or
+  `--no-tutorial`) prints the manual setup steps and changes nothing.
+- `init` speaks English, Spanish, French, Polish, Italian, Ukrainian and Russian: chosen in the
+  first step or with `--lang <code>`. Codes, file names and the written files stay English.
+- Colors in the terminal for `init` (step headers, questions, diffs, summary) and the CLI
+  messages, run summary and thresholds diff, with `NO_COLOR`, `FORCE_COLOR` and `TERM=dumb`.
+
 ### Fixed
 
 - The `init` hint and the docs show Playwright's tag option `{ tag: '@perf' }` for tagging tests.

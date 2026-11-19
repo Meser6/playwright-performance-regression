@@ -33,7 +33,8 @@ shows a diff of every change before writing anything: it wraps your Playwright c
 `test` object or switches test imports, creates `pw-perf.config.ts`, adds `perf:test` and
 `perf:thresholds` scripts, ignores `perf-results/`, and can add a CI job. `pnpm create` and
 `yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
-`@next` with `yarn create`); `-- --yes` accepts the defaults without questions.
+`@next` with `yarn create`); `-- --yes` accepts the defaults without questions. The guided
+setup speaks English, Spanish, French, Polish, Italian, Ukrainian and Russian (`--lang <code>`).
 
 <details>
 <summary>Manual setup</summary>
