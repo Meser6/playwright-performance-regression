@@ -1,0 +1,5 @@
+{
+  "name": "integration-existing-project",
+  "private": true,
+  "type": "module"
+}
