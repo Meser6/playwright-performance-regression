@@ -1,0 +1,11 @@
+{
+  "name": "init-existing-project",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "perf:test": "node scripts/own-perf.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0"
+  }
+}

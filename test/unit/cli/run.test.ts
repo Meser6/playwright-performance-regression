@@ -359,7 +359,7 @@ describe('runTests with a fake Playwright', () => {
 });
 
 describe('main', () => {
-  test('help, version, errors and the commands not available yet', async () => {
+  test('help, version and errors', async () => {
     const fake = fakeCliHost({ cwd: dir });
     expect(await main(['--version'], fake.host)).toBe(0);
     expect(fake.stdout).toEqual(['1.2.3\n']);
@@ -372,8 +372,6 @@ describe('main', () => {
     expect(fake.stdout[3]).toContain('--grep-invert');
     expect(await main(['nope'], fake.host)).toBe(3);
     expect(fake.stderr.join('')).toContain('error CLI_UNKNOWN_COMMAND: Unknown command "nope".');
-    expect(await main(['init'], fake.host)).toBe(3);
-    expect(fake.stderr.join('')).toContain('error CLI_COMMAND_NOT_AVAILABLE');
   });
 
   test('an unexpected error is CLI_INTERNAL_ERROR with exit code 3', async () => {

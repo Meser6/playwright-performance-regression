@@ -1,11 +1,12 @@
 // Fake CLI host: captured streams, a scripted Playwright child process and signal handlers.
 import { EventEmitter } from 'node:events';
-import { rm } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type {
   ChildProcessLike,
   CliHost,
   ForwardedSignal,
+  Prompt,
   SpawnOptions,
 } from '../../../src/cli/host.ts';
 import * as io from '../../../src/io/index.ts';
@@ -35,6 +36,8 @@ export interface FakeHost {
   advance(ms: number): void;
   /** Directory @playwright/test was resolved from. */
   resolvedFrom?: string;
+  /** Files written through the host, in order. */
+  written: string[];
 }
 
 export interface FakeHostOptions {
@@ -48,6 +51,8 @@ export interface FakeHostOptions {
   directories?: string[];
   reporterPath?: string;
   importModule?: (url: string) => Promise<unknown>;
+  /** Terminal questions (init); without it the host has no terminal. */
+  prompt?: () => Prompt;
 }
 
 export function fakeCliHost(options: FakeHostOptions): FakeHost {
@@ -66,6 +71,7 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
       time += ms;
     },
     host: undefined as unknown as CliHost,
+    written: [],
   };
   fake.host = {
     cwd: options.cwd,
@@ -73,7 +79,8 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     env: options.env ?? {},
     platform: options.platform ?? 'linux',
     tmpdir: join(options.cwd, 'tmp'),
-    stdout: { write: (t: string) => fake.stdout.push(t) },
+    stdin: { isTTY: options.prompt !== undefined },
+    stdout: { write: (t: string) => fake.stdout.push(t), isTTY: options.prompt !== undefined },
     stderr: { write: (t: string) => fake.stderr.push(t) },
     now: () => new Date(time),
     random: () => 0.0408,
@@ -105,6 +112,24 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     exists: io.fileExists,
     isDirectory: async (path) => (options.directories ?? []).includes(path),
     importModule: options.importModule ?? ((url) => import(url)),
+    listDir: async (path) => {
+      try {
+        return (await readdir(path, { withFileTypes: true }))
+          .map((e) => ({ name: e.name, directory: e.isDirectory() }))
+          .sort((a, b) => (a.name < b.name ? -1 : 1));
+      } catch {
+        return [];
+      }
+    },
+    writeText: async (path, text) => {
+      fake.written.push(path);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, text);
+    },
+    createPrompt: () => {
+      if (options.prompt === undefined) throw new Error('no terminal');
+      return options.prompt();
+    },
   };
   return fake;
 }

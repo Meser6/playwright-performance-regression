@@ -1,0 +1,46 @@
+# Performance measurement run with playwright-performance-regression (pw-perf).
+# Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
+# night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
+# config error) fails it. The report in perf-results/ is published also when the run fails.
+trigger: none
+
+pr:
+  branches:
+    include:
+      - '*'
+
+schedules:
+  - cron: '0 3 * * *'
+    displayName: Nightly measurement run
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: perf
+    timeoutInMinutes: 60
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.x'
+      - script: npm ci
+        displayName: Install dependencies
+      - script: npx playwright install --with-deps chromium
+        displayName: Install Chromium
+      - bash: |
+          code=0
+          npx pw-perf test || code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
+            exit 0
+          fi
+          exit $code
+        displayName: Measurement run
+      - publish: perf-results
+        artifact: perf-results
+        condition: always()
+        displayName: Publish the performance report

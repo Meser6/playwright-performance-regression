@@ -108,12 +108,16 @@ const REPORT = [
 const INIT = [
   `Usage: ${CLI_COMMAND} init [--yes] [--dry-run]`,
   '',
-  'Guided setup of the package in this project.',
+  'Guided setup of the package in this project: asks a few questions, shows a diff of every',
+  'change and applies it after confirmation. Files it does not recognize are left unchanged',
+  'with instructions. Without a terminal and without --yes it only shows the planned changes.',
   '',
   'Options:',
   '  -y, --yes      Accept the default answers and write the changes',
   '  --dry-run      Show the planned changes only',
   '  -h, --help     Show this help',
+  '',
+  'Exit codes: 0 done (also with manual steps left) · 3 error · 130 interrupted',
 ];
 
 const TOPICS: Record<HelpTopic, string[]> = {

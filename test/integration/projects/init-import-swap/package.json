@@ -1,0 +1,8 @@
+{
+  "name": "init-import-swap",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "~1.57.0"
+  }
+}

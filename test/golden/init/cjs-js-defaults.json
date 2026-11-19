@@ -1,0 +1,19 @@
+{
+  "name": "cjs-js with the default answers (--yes): module.exports and exports.test wrapped, GitLab job, pnpm",
+  "input": {
+    "project": "init-cjs-js",
+    "answers": null
+  },
+  "expected": {
+    "manualSteps": [
+      {
+        "code": "INIT_MANUAL_STEP",
+        "message": ".gitlab-ci.yml was not changed: include the new job file in it."
+      },
+      {
+        "code": "INIT_MANUAL_STEP",
+        "message": ".gitlab/perf.gitlab-ci.yml installs the dependencies with npm."
+      }
+    ]
+  }
+}

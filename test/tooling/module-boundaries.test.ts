@@ -167,6 +167,24 @@ describe('module import boundaries', () => {
     }
   });
 
+  test('the init wizard imports what the CLI imports, from one directory deeper', async () => {
+    for (const code of [
+      "export { DEFAULT_CONFIG } from '../../core/config/index.ts';\n",
+      "export { isEnvLabel } from '../../mode/index.ts';\n",
+      "export { runTests } from '../run.ts';\n",
+      "import { createInterface } from 'node:readline/promises';\nexport const a = createInterface;\n",
+    ]) {
+      expect(await violations('src/cli/init', code), code).toEqual([]);
+    }
+    for (const code of [
+      "export { getRegistered } from '../../registry/index.ts';\n",
+      "export { withPerf } from '../../config/index.ts';\n",
+      "import { test } from '@playwright/test';\nexport const a = test;\n",
+    ]) {
+      expect(await violations('src/cli/init', code), code).toContain(RULE);
+    }
+  });
+
   test('01-AC-02 every module outside core has a dependency rule', async () => {
     for (const dir of [
       'src/mode',
@@ -178,6 +196,7 @@ describe('module import boundaries', () => {
       'src/html',
       'src/console',
       'src/cli',
+      'src/cli/init',
     ]) {
       expect(
         await violations(dir, "export { a } from '../unknown-module/index.ts';\n"),

@@ -1,0 +1,33 @@
+{
+  "name": "create-playwright-performance-regression",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Set up playwright-performance-regression in a Playwright project: npm init playwright-performance-regression",
+  "keywords": [
+    "playwright",
+    "performance",
+    "regression",
+    "create",
+    "init"
+  ],
+  "homepage": "https://github.com/Meser6/playwright-performance-regression#readme",
+  "bugs": {
+    "url": "https://github.com/Meser6/playwright-performance-regression/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Meser6/playwright-performance-regression.git",
+    "directory": "create"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-playwright-performance-regression": "./index.js"
+  },
+  "files": [
+    "index.js"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

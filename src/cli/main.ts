@@ -3,6 +3,7 @@
 import type { Issue } from '../core/types/index.ts';
 import { renderHtmlReport } from '../html/index.ts';
 import { helpText } from './help.ts';
+import { runInit } from './init/index.ts';
 import type { CliHost } from './host.ts';
 import { renderReport, thresholdsFrom } from './offline.ts';
 import type { HtmlRenderer } from './offline.ts';
@@ -55,20 +56,7 @@ export async function main(
       case 'report':
         return await renderReport(cmd, host, options.renderHtml ?? renderHtmlReport);
       case 'init':
-        host.stderr.write(
-          formatIssues(
-            [
-              {
-                code: 'CLI_COMMAND_NOT_AVAILABLE',
-                message: 'The init command is not available in this version.',
-                hint: 'Set up the project by hand: wrap playwright.config with withPerf() and the test object with withPerfFixtures().',
-              },
-            ],
-            'error',
-            color(host),
-          ),
-        );
-        return 3;
+        return await runInit(cmd, host, color(host));
     }
   } catch (error) {
     host.stderr.write(formatIssues([internalError(error)], 'error', color(host)));

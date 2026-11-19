@@ -1,0 +1,91 @@
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,1 @@
++perf-results/
+--- /dev/null
++++ b/.gitlab/perf.gitlab-ci.yml
+@@ -0,0 +1,21 @@
++# Performance measurement run with playwright-performance-regression (pw-perf).
++# Include this file from .gitlab-ci.yml. Runs in merge request pipelines and scheduled
++# pipelines; exit code 2 (performance regression) is a soft failure, 3 (tool or config error)
++# fails the job. The report in perf-results/ is kept also when the job fails.
++perf:
++  image: node:22
++  timeout: 1h
++  rules:
++    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
++    - if: $CI_PIPELINE_SOURCE == "schedule"
++  script:
++    - npm ci
++    - npx playwright install --with-deps chromium
++    - npx pw-perf test
++  allow_failure:
++    exit_codes: 2
++  artifacts:
++    when: always
++    paths:
++      - perf-results/
++    expire_in: 30 days
+--- a/package.json
++++ b/package.json
+@@ -3,5 +3,9 @@
+   "private": true,
+   "devDependencies": {
+     "@playwright/test": "1.57.0"
++  },
++  "scripts": {
++    "perf:test": "pw-perf test",
++    "perf:thresholds": "pw-perf thresholds"
+   }
+ }
+--- a/playwright.config.js
++++ b/playwright.config.js
+@@ -1,10 +1,11 @@
+ // @ts-check
+ // Input of the init wizard tests (04-AC-17): CommonJS, JavaScript, pnpm, GitLab CI.
+ const { defineConfig } = require('@playwright/test');
++const { withPerf } = require('playwright-performance-regression/config');
+ 
+-module.exports = defineConfig({
++module.exports = withPerf(defineConfig({
+   testDir: 'tests',
+   timeout: 20_000,
+   reporter: 'dot',
+   use: { baseURL: process.env.DEMO_URL },
+-});
++}), require('./pw-perf.config').default);
+--- /dev/null
++++ b/pw-perf.config.ts
+@@ -0,0 +1,18 @@
++// Configuration of playwright-performance-regression, written by "npx pw-perf init".
++// Only the values that differ from the defaults are set. All options:
++// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
++import { definePerfConfig } from 'playwright-performance-regression';
++
++export default definePerfConfig({
++  gate: {
++    // Report regressions without failing the run; remove after the first weeks.
++    warnOnly: true,
++  },
++
++  // Options changed most often, with their default values:
++  // run: { repeat: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
++  // measure: { exclude: ['/socket.io/'] },
++  // gate: { warnOnly: false, tolerance: 0, maxFailedTestShare: 0.1 },
++  // thresholds: { dir: '.' },
++  // report: { dir: 'perf-results' },
++});
+--- a/tests/fixtures.js
++++ b/tests/fixtures.js
+@@ -1,8 +1,9 @@
+ const base = require('@playwright/test');
++const { withPerfFixtures } = require('playwright-performance-regression/fixture');
+ 
+-exports.test = base.test.extend({
++exports.test = withPerfFixtures(base.test.extend({
+   api: async ({ page }, use) => {
+     await use((path) => page.evaluate((p) => fetch(p).then((r) => r.text()), path));
+   },
+-});
++}));
+ exports.expect = base.expect;

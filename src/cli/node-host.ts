@@ -2,14 +2,15 @@
 // child process started with process.execPath and without a shell (04-REQ-13, NF-05, V-03).
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { rm, stat } from 'node:fs/promises';
+import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fileExists, readTextFile } from '../io/index.ts';
 import { peerDependencies, version } from '../../package.json';
-import type { CliHost, PlaywrightInstall } from './host.ts';
+import type { CliHost, DirEntry, PlaywrightInstall } from './host.ts';
+import { readlinePrompt } from './init/index.ts';
 
 function isModuleNotFound(error: unknown): boolean {
   return (
@@ -55,6 +56,7 @@ export function nodeHost(): CliHost {
     env: process.env,
     platform: process.platform,
     tmpdir: tmpdir(),
+    stdin: process.stdin,
     stdout: process.stdout,
     stderr: process.stderr,
     now: () => new Date(),
@@ -82,5 +84,20 @@ export function nodeHost(): CliHost {
       }
     },
     importModule: (url) => import(url),
+    listDir: async (path): Promise<DirEntry[]> => {
+      try {
+        const entries = await readdir(path, { withFileTypes: true });
+        return entries
+          .map((e) => ({ name: e.name, directory: e.isDirectory() }))
+          .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      } catch {
+        return [];
+      }
+    },
+    writeText: async (path, text) => {
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, text, 'utf8');
+    },
+    createPrompt: () => readlinePrompt(process.stdin, process.stdout),
   };
 }

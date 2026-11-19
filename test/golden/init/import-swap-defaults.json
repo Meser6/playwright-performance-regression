@@ -1,0 +1,10 @@
+{
+  "name": "import-swap with the default answers (--yes): imports swapped to the package's test, @perf scripts, Azure job",
+  "input": {
+    "project": "init-import-swap",
+    "answers": null
+  },
+  "expected": {
+    "manualSteps": []
+  }
+}
