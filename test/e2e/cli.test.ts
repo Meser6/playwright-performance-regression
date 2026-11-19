@@ -15,7 +15,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { PACKAGE_NAME } from '../../src/core/types/index.ts';
 import { startDemoServer } from '../demo-server/server.ts';
@@ -141,8 +141,10 @@ describe('pw-perf test and thresholds', () => {
       expect(run.stderr).toContain(
         `${PACKAGE_NAME}: tests passed · performance passed · exit code 0`,
       );
-      expect(run.stderr).toContain(`${PACKAGE_NAME}: report: ${reportPath(run)}`);
+      const html = join(dirname(reportPath(run)), 'report.html');
+      expect(run.stderr).toContain(`${PACKAGE_NAME}: report: ${html}`);
       expect(existsSync(reportPath(run))).toBe(true);
+      expect(readFileSync(html, 'utf8').startsWith('<!doctype html>')).toBe(true);
       expect(outcomeFilesLeft()).toEqual([]);
     },
     RUN_TIMEOUT,

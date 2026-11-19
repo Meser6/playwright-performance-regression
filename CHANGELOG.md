@@ -162,8 +162,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for an incomplete or untrustworthy run, and `PW_PERF_PRUNE=1` removes entries not seen in the
   run. Playwright's status becomes `failed` when the exit code of the run is not 0. At the start
   of the run it prints the settings perf mode changed and the number of test executions. A run
-  that starts no test (`--list`, a filter that selects nothing) writes and prints nothing. The
-  HTML report is not written yet.
+  that starts no test (`--list`, a filter that selects nothing) writes and prints nothing.
+- HTML report `<report.dir>/report.html` next to `report.json` (unless `report.html` is
+  `false`): one self-contained file without network requests, readable without JavaScript, with
+  the verdict, counters, muted keys, warnings, endpoint and custom measurement tables (violations
+  first, details per key with checks, a percentile bar, statuses, slowest samples and top tests),
+  thresholds files, run conditions and the config snapshot. JavaScript adds sorting, filters and
+  a download of the embedded data (aggregates without raw samples). Light and dark theme, print
+  styles and a Content-Security-Policy without inline exceptions. Tool errors
+  `HTML_RENDER_FAILED` and `HTML_WRITE_FAILED` keep `report.json` and end with exit code 3.
 - Reporter warnings `RUN_CONDITIONS_CHANGED` (other workers, retries or repetitions than perf
   mode sets, retried results or trace and video attachments set in test files),
   `TESTS_NOT_INSTRUMENTED`, `ATTACHMENT_DUPLICATE`, `COLLECTOR_REQUESTS_PENDING` (with the keys
