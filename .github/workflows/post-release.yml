@@ -1,0 +1,52 @@
+name: Post-release checks
+
+# Runs after the owner approved the staged versions on npm (RELEASING.md): installs the create
+# package from the registry with npm, pnpm and yarn in a fresh Playwright project (13-AC-10).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version, e.g. 0.1.0-next.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create-smoke:
+    name: Create package from npm (${{ matrix.package-manager }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        package-manager: [npm, pnpm, yarn]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # The registry may need a moment before a new version can be installed.
+      - name: Wait until the version is on npm
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          for _ in $(seq 1 30); do
+            if npm view "create-playwright-performance-regression@$VERSION" version >/dev/null 2>&1 &&
+              npm view "playwright-performance-regression@$VERSION" version >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$VERSION is not installable from npm after 5 minutes."
+          exit 1
+      # 13-AC-10: `npm init` / `pnpm create` / `yarn create` in a fresh Playwright project.
+      - run: pnpm vitest run test/release
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_PACKAGE_MANAGER: ${{ matrix.package-manager }}

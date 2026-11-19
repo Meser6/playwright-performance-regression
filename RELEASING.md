@@ -8,14 +8,34 @@ Releases are published by `.github/workflows/release.yml` when a tag `vX.Y.Z` or
    neither `package.json` has `"private": true` (`scripts/check-release.mjs`); otherwise it stops
    before anything is published;
 2. runs the full CI (`ci.yml`) and the performance tests (`nightly.yml`) on the tagged commit;
-3. builds and publishes both packages from the `npm` environment with npm provenance through
-   trusted publishing (OIDC; no npm token), dist-tag `next` for `-next.N`, `latest` otherwise; a
-   version already on npm is skipped, so a failed run can be re-run for the same tag;
+3. builds and **stages** both packages on npm from the `npm` environment with npm provenance
+   through trusted publishing (OIDC; no npm token; `npm stage publish`), dist-tag `next` for
+   `-next.N`, `latest` otherwise; a version already on npm is skipped, so a failed run can be
+   re-run for the same tag. Staged versions are not public until the owner approves them with
+   2FA (see "Approving a release");
 4. creates the GitHub Release with the CHANGELOG section as notes;
-5. runs the published create package with npm, pnpm and yarn in fresh Playwright projects
-   (`test/release/`, 13-AC-10);
-6. for stable releases, builds the demo report and deploys it to GitHub Pages (`demo.yml`,
+5. for stable releases, builds the demo report and deploys it to GitHub Pages (`demo.yml`,
    13-REQ-17).
+
+After the approval, `post-release.yml` (run by hand with the version) installs the published
+create package with npm, pnpm and yarn in fresh Playwright projects (`test/release/`, 13-AC-10).
+
+## Approving a release
+
+The trusted publisher of both packages allows **stage publish only**: CI can stage a version,
+but only the owner can make it public, with 2FA. After the `Release` run is green:
+
+1. Approve `playwright-performance-regression` first (the create package installs it), then
+   `create-playwright-performance-regression`:
+   - on npmjs.com: package → **Staged versions** → the version → **Approve** (2FA), or
+   - in a terminal: `npm stage list playwright-performance-regression`, then
+     `npm stage approve <stage-id>` (2FA); the same for the create package.
+2. Check: `npm view playwright-performance-regression@next version` (or `@latest`) prints the
+   new version.
+3. Run **Actions → Post-release checks → Run workflow** with the version (or
+   `gh workflow run post-release.yml -f version=X.Y.Z`); all three jobs must be green.
+
+A staged version that should not be released is rejected with `npm stage reject <stage-id>`.
 
 Release tags are only pushed by the owner as part of this checklist; they are never moved or
 deleted (13-REQ-23).
@@ -39,7 +59,7 @@ only be done by the owner.
    `create-playwright-performance-regression` (npm account with 2FA, 13-REQ-08): on npmjs.com,
    package → Settings → Trusted Publisher → GitHub Actions with organization or user `Meser6`,
    repository `playwright-performance-regression`, workflow filename `release.yml`, environment
-   `npm`. If npm offers these settings only for a package that already exists, first publish a
+   `npm`, permission **stage publish** only (the default; direct publish stays off). If npm offers these settings only for a package that already exists, first publish a
    placeholder of each name by hand, exactly like step 4 (version `0.0.0`, the description
    "Placeholder; the first release follows."), then configure the trusted publisher. Optionally
    add required reviewers to the `npm` environment (Settings → Environments).
@@ -80,8 +100,9 @@ only be done by the owner.
    git tag v0.1.0-next.0 && git push origin v0.1.0-next.0
    ```
 
-   Then follow the `Release` run in the Actions tab; every job, including the three
-   `Create package from npm` jobs (13-AC-10), must be green.
+   Then follow the `Release` run in the Actions tab until every job is green, approve both
+   staged versions and run the post-release checks ("Approving a release" above). The first
+   staged publish also validates the trusted publisher configuration on npm.
 
 8. **Verify provenance** (13-AC-01): the npm page of both packages shows the provenance
    attestation of the `release.yml` run, and
@@ -103,5 +124,6 @@ only be done by the owner.
    section (breaking changes under `Breaking` with migration steps, 13-REQ-05).
 2. After the merge: `node scripts/check-release.mjs vX.Y.Z`, then tag and push `vX.Y.Z` (or
    `vX.Y.Z-next.N` to try a release under `next` first).
-3. If publishing fails after the tag was pushed, re-run the failed jobs of the same `Release`
+3. Approve the staged versions and run the post-release checks ("Approving a release").
+4. If staging fails after the tag was pushed, re-run the failed jobs of the same `Release`
    run; versions already on npm are skipped.
