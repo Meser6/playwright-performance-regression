@@ -37,7 +37,7 @@ describe.each([
   });
 
   test(
-    'perf:thresholds then perf:test pass with the derived thresholds',
+    '01-AC-05 perf:thresholds then perf:test pass with the derived thresholds',
     async () => {
       const scripts = (
         JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
