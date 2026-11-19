@@ -184,7 +184,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
       {
         code: 'INIT_NO_TAGGED_TESTS',
         message: 'No test is tagged @perf, so all tests are proposed.',
-        hint: "Tag the tests to measure with test('title @perf', ...) or test('title', { tag: '@perf' }, ...), then choose @perf.",
+        hint: "Tag the tests to measure with test('title', { tag: '@perf' }, ...), then choose @perf.",
       },
     ]);
   }
