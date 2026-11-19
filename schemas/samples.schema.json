@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pkg.invalid/schemas/samples.schema.json",
   "title": "Sample batch",
-  "description": "Raw samples collected during one test execution, attached to the test result as the '<pkg>-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.",
+  "description": "Raw samples collected during one test execution, attached to the test result as the 'playwright-performance-regression-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "collector", "requests", "custom", "diagnostics"],

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pkg.invalid/schemas/config.schema.json",
   "title": "Package config",
-  "description": "JSON form of the package config: a '<pkg>.config.json' file and the effective config snapshot in the run report. The 'default' keywords are the single source of default values (03-REQ-05). The TypeScript input type additionally accepts RegExp in url patterns and a keyBuilder function (03, chapter 5).",
+  "description": "JSON form of the package config: a 'pw-perf.config.json' file and the effective config snapshot in the run report. The 'default' keywords are the single source of default values (03-REQ-05). The TypeScript input type additionally accepts RegExp in url patterns and a keyBuilder function (03, chapter 5).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -14,12 +14,12 @@
       "default": {},
       "properties": {
         "env": {
-          "description": "Environment label (D-18). Overridden by <PKG>_ENV / --env. Null: no label, one set of thresholds files.",
+          "description": "Environment label (D-18). Overridden by PW_PERF_ENV / --env. Null: no label, one set of thresholds files.",
           "$ref": "common.schema.json#/$defs/envLabelOrNull",
           "default": null
         },
         "repeat": {
-          "description": "Repetitions of each measured test (D-03). Overridden by <PKG>_REPEAT / --repeat for the current mode.",
+          "description": "Repetitions of each measured test (D-03). Overridden by PW_PERF_REPEAT / --repeat for the current mode.",
           "type": "object",
           "additionalProperties": false,
           "default": {},

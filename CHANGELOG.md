@@ -258,3 +258,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   name (e.g. `a percentile name like "p95"`) instead of printing the regular expression.
 - Smaller package: the entry points share code chunks instead of each bundling its own copy
   (about 820 kB unpacked instead of 1.3 MB). Every entry point keeps its ESM and CommonJS build.
+- The descriptions in the published `schemas/*.json` use the real names
+  (`pw-perf.config.json`, `PW_PERF_ENV`, `PW_PERF_REPEAT`, `PW_PERF_OUTCOME_FILE`, the
+  `playwright-performance-regression-samples` attachment) instead of placeholders.

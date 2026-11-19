@@ -66,9 +66,9 @@ export type ResolvedConfig = Omit<ResolvedConfigJson, 'measure' | 'keys'> & {
 
 /** Values that override the config, read from the environment by the mode module (03-REQ-04). */
 export interface ConfigOverrides {
-  /** From <PKG>_ENV; replaces run.env. */
+  /** From PW_PERF_ENV; replaces run.env. */
   env?: string | null;
-  /** From <PKG>_REPEAT; replaces run.repeat.<mode>. */
+  /** From PW_PERF_REPEAT; replaces run.repeat.<mode>. */
   repeat?: number;
   /** Mode the repeat override applies to. Default 'test'. */
   mode?: 'test' | 'thresholds';
