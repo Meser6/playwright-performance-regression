@@ -3,9 +3,10 @@ name: Release
 # Release of both packages (13, chapter 5), started by pushing a tag vX.Y.Z or vX.Y.Z-next.N on
 # main (RELEASING.md). Order: preconditions (tag on main, tag == version of both package.json
 # files, CHANGELOG section, no "private": true) -> the full CI and the performance tests ->
-# publish both packages with npm provenance through trusted publishing (OIDC, no npm token) ->
-# GitHub Release from the CHANGELOG section -> the create package in fresh projects with npm,
-# pnpm and yarn (13-AC-10) -> the demo report on GitHub Pages (stable releases).
+# stage both packages on npm with provenance through trusted publishing (OIDC, no npm token;
+# the owner approves the staged versions with 2FA, RELEASING.md) -> GitHub Release from the
+# CHANGELOG section -> the demo report on GitHub Pages (stable releases). The create package
+# check from npm (13-AC-10) runs after the approval in post-release.yml.
 # A re-run for the same tag skips what is already published (13, chapter 11).
 
 on:
@@ -81,17 +82,21 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           cache: pnpm
-      - name: Require npm with trusted publishing (11.5.1 or later)
+      # `npm stage` needs a newer npm than the one bundled with Node 24.
+      - run: npm install --global npm@11.21.0
+      - name: Require npm with staged publishing (11.15.0 or later)
         run: |
-          node -e "const [a,b,c]=process.argv[1].split('.').map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)" "$(npm --version)" || {
-            echo "::error::npm $(npm --version) cannot publish through trusted publishing; use a Node version that ships npm 11.5.1 or later."
+          node -e "const [a,b]=process.argv[1].split('.').map(Number); process.exit(a>11||(a===11&&b>=15)?0:1)" "$(npm --version)" || {
+            echo "::error::npm $(npm --version) cannot stage packages through trusted publishing; npm 11.15.0 or later is required."
             exit 1
           }
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm check:packages
       # The main package first: the create package installs it (01-REQ-39).
-      - name: Publish playwright-performance-regression and create-playwright-performance-regression
+      # Staged publishing (13-D-18): the versions become public only after the owner approves
+      # them with 2FA on npmjs.com or with `npm stage approve` (RELEASING.md).
+      - name: Stage playwright-performance-regression and create-playwright-performance-regression
         run: |
           for dir in . create; do
             name="$(node -p "require('./$dir/package.json').name")"
@@ -99,8 +104,15 @@ jobs:
               echo "$name@$VERSION is already on npm; skipped."
               continue
             fi
-            (cd "$dir" && npm publish --provenance --access public --tag "$DIST_TAG")
+            (cd "$dir" && npm stage publish --provenance --access public --tag "$DIST_TAG")
           done
+          {
+            echo "## Approve the staged versions"
+            echo
+            echo "Both packages are staged as \`$VERSION\` (dist-tag \`$DIST_TAG\`). Approve them with 2FA:"
+            echo "npmjs.com → package → Staged versions, or \`npm stage list <package>\` and \`npm stage approve <stage-id>\`."
+            echo "Approve \`playwright-performance-regression\` first. Then run the \`Post-release checks\` workflow with version \`$VERSION\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   github-release:
     name: GitHub Release
@@ -127,43 +139,6 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${flags[@]}"
           fi
-
-  create-smoke:
-    name: Create package from npm (${{ matrix.package-manager }})
-    needs: [prepare, publish]
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        package-manager: [npm, pnpm, yarn]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      # The registry may need a moment before a new version can be installed.
-      - name: Wait until the version is on npm
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          for _ in $(seq 1 30); do
-            if npm view "create-playwright-performance-regression@$VERSION" version >/dev/null 2>&1 &&
-              npm view "playwright-performance-regression@$VERSION" version >/dev/null 2>&1; then
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "::error::$VERSION is not installable from npm after 5 minutes."
-          exit 1
-      # 13-AC-10: `npm init` / `pnpm create` / `yarn create` in a fresh Playwright project.
-      - run: pnpm vitest run test/release
-        env:
-          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
-          RELEASE_PACKAGE_MANAGER: ${{ matrix.package-manager }}
 
   demo:
     name: Demo report

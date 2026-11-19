@@ -160,9 +160,7 @@ describe('workflows', () => {
     expect(Object.keys(workflow('nightly.yml').on)).toContain('workflow_call');
     expect(job(release, 'ci').needs).toBe('prepare');
     expect(job(release, 'publish').needs).toEqual(['prepare', 'ci', 'perf']);
-    for (const id of ['github-release', 'create-smoke']) {
-      expect(job(release, id).needs, id).toEqual(['prepare', 'publish']);
-    }
+    expect(job(release, 'github-release').needs).toEqual(['prepare', 'publish']);
   });
 
   test('13-REQ-06 13-REQ-07 the preconditions check the tag, both versions, the CHANGELOG and "private"', () => {
@@ -171,13 +169,15 @@ describe('workflows', () => {
     expect(prepare).toContain('node scripts/check-release.mjs "$GITHUB_REF_NAME"');
   });
 
-  test('13-REQ-06 13-D-05 both packages are published with provenance through trusted publishing', () => {
+  test('13-REQ-06 13-D-05 both packages are staged with provenance through trusted publishing', () => {
     const release = workflow('release.yml');
     const publish = job(release, 'publish');
     expect(publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
     const text = runs(publish).join('\n');
     expect(text).toContain('for dir in . create; do');
-    expect(text).toContain('npm publish --provenance --access public --tag "$DIST_TAG"');
+    expect(text).toContain('npm stage publish --provenance --access public --tag "$DIST_TAG"');
+    expect(text).not.toMatch(/(^|[^e] )npm publish/mu);
+    expect(text).toContain('GITHUB_STEP_SUMMARY');
     expect(text).toContain('pnpm check:packages');
     // No npm token anywhere: trusted publishing only.
     expect(readFileSync(join(DIR, 'release.yml'), 'utf8')).not.toMatch(
@@ -186,11 +186,13 @@ describe('workflows', () => {
     expect(runs(job(release, 'github-release')).join('\n')).toContain('--notes-file');
   });
 
-  test('13-AC-10 the release runs the create package from npm with npm, pnpm and yarn', () => {
-    const smoke = job(workflow('release.yml'), 'create-smoke');
+  test('13-AC-10 after approval the create package is checked from npm with npm, pnpm and yarn', () => {
+    const post = workflow('post-release.yml');
+    expect(Object.keys(post.on)).toEqual(['workflow_dispatch']);
+    const smoke = job(post, 'create-smoke');
     expect(smoke.strategy?.matrix?.['package-manager']).toEqual(['npm', 'pnpm', 'yarn']);
     const step = (smoke.steps ?? []).find((s) => s.run === 'pnpm vitest run test/release');
-    expect(step?.env?.['RELEASE_VERSION']).toBe('${{ needs.prepare.outputs.version }}');
+    expect(step?.env?.['RELEASE_VERSION']).toBe('${{ inputs.version }}');
   });
 
   test('13-REQ-17 the demo report is deployed to GitHub Pages after a stable release or by hand', () => {
