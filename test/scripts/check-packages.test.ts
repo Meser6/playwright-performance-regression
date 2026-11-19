@@ -6,6 +6,7 @@ import {
   checkPackContents,
   checkPackages,
   INSTALL_SCRIPTS,
+  MAX_PACKED_BYTES,
   MAX_UNPACKED_BYTES,
 } from '../../scripts/check-packages.mjs';
 
@@ -63,9 +64,10 @@ describe('check-packages', () => {
 });
 
 describe('check-packages: package contents and size (13-REQ-11)', () => {
-  const pack = (paths: string[], unpackedSize = 1000) => ({
+  const pack = (paths: string[], unpackedSize = 1000, size = 500) => ({
     files: paths.map((path) => ({ path, size: 1 })),
     unpackedSize,
+    size,
   });
   const mainFiles = [
     'package.json',
@@ -129,6 +131,21 @@ describe('check-packages: package contents and size (13-REQ-11)', () => {
       'package.json: the source map dist/c.js.map has an absolute path (C:\\work\\src\\c.ts).',
       'package.json: the source map dist/d.js.map has an absolute path (file:///work/src/d.ts).',
     ]);
+  });
+
+  test('13-AC-12 a packed size above the limit fails', () => {
+    expect(
+      checkPackContents(pack(mainFiles, 1000, MAX_PACKED_BYTES + 1), main, 'package.json', {
+        maxPackedBytes: MAX_PACKED_BYTES,
+      }),
+    ).toEqual([
+      `package.json: the packed package has ${MAX_PACKED_BYTES + 1} bytes, above the limit of ${MAX_PACKED_BYTES} bytes (scripts/check-packages.mjs).`,
+    ]);
+    expect(
+      checkPackContents(pack(mainFiles, 1000, MAX_PACKED_BYTES), main, 'package.json', {
+        maxPackedBytes: MAX_PACKED_BYTES,
+      }),
+    ).toEqual([]);
   });
 
   test('13-AC-12 an unpacked size above the limit fails', () => {
