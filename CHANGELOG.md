@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The `init` hint and the docs show Playwright's tag option `{ tag: '@perf' }` for tagging tests.
 - `bin` paths in both packages no longer start with `./`, so npm stops warning that it
   corrected them when publishing.
 - README: `yarn create` with a version (such as `@next`) needs Yarn 2 or later.
