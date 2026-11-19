@@ -235,6 +235,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   confirmation (never with `--yes`). Without a terminal and without `--yes` it only shows the
   plan. Exit codes: 0 done, 3 `INIT_NO_PLAYWRIGHT_CONFIG`, `INIT_PLAYWRIGHT_TOO_OLD` or
   `INIT_WRITE_FAILED`, 130 interrupted (nothing is written before the changes step).
+- `create-playwright-performance-regression` for `npm init playwright-performance-regression`
+  (also `pnpm create` and `yarn create`): installs the package of the same version as a dev
+  dependency with the package manager of the project's lockfile, without a shell, then runs
+  `pw-perf init` with the given arguments.
 - CI recipes in `examples/ci/` (`github-actions.yml`, `gitlab-ci.yml`, `Jenkinsfile`,
   `azure-pipelines.yml`): pull request and nightly triggers, the report uploaded always, exit
   code 2 as a soft failure on GitLab, Jenkins and Azure Pipelines, and a time limit.

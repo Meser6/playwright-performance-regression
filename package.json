@@ -111,7 +111,8 @@
     "check:html-generated": "node scripts/build-html-assets.mjs --check",
     "gen:ci": "node scripts/build-ci-templates.mjs",
     "check:ci-generated": "node scripts/build-ci-templates.mjs --check",
-    "publint": "publint --strict",
+    "check:packages": "node scripts/check-packages.mjs",
+    "publint": "publint --strict && publint --strict create",
     "attw": "attw --pack . --profile node16"
   },
   "peerDependencies": {
