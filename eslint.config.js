@@ -129,6 +129,35 @@ export default tseslint.config(
     ],
     ['@playwright/test'],
   ),
+  ...moduleBoundaries(
+    'src/reporter',
+    [
+      './',
+      '../core/',
+      '../mode/',
+      '../registry/',
+      '../io/',
+      '../html/',
+      '../console/',
+      // Package version when withPerf() was not applied (01-REQ-07).
+      '../../package.json',
+    ],
+    ['@playwright/test'],
+  ),
+  // io may use the pure core (stable JSON, format parsers) besides node:* (01-REQ-20).
+  ...moduleBoundaries('src/io', ['./', 'node:', '../core/']),
+  ...moduleBoundaries('src/html', ['./', '../core/types/']),
+  ...moduleBoundaries('src/console', ['./', '../core/types/']),
+  ...moduleBoundaries('src/cli', [
+    './',
+    '../core/',
+    '../mode/',
+    '../io/',
+    '../html/',
+    '../console/',
+    'node:',
+    '../../package.json',
+  ]),
   // @playwright/test at runtime only in the "./test" entry point (01-REQ-26).
   {
     files: ['src/entries/**/*.ts'],
