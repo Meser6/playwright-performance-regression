@@ -6,6 +6,14 @@
       "how": "Manual: a person outside the project installs the package in a fresh Playwright project following the README; timed before 0.1.0 and 1.0.0."
     },
     {
+      "id": "01-AC-06",
+      "how": "Prototype (WP-02, before the modules were implemented): the results of the assumptions are recorded in the specification repository, not testable here."
+    },
+    {
+      "id": "12-AC-06",
+      "how": "Specification repository: export-spec-ids is a script of that repository and is checked there; this repository only consumes spec-ids.json."
+    },
+    {
       "id": "13-AC-01",
       "how": "Release workflow: provenance attestation is checked on the npm package page after publishing."
     },
@@ -16,10 +24,6 @@
     {
       "id": "13-AC-09",
       "how": "Manual: the reserved name is checked on npm (npm view) before publishing 0.1.0."
-    },
-    {
-      "id": "13-AC-10",
-      "how": "Release workflow: the create package is run in fresh projects with npm, pnpm and yarn against the next version."
     },
     {
       "id": "13-AC-14",
