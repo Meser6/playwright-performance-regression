@@ -32,7 +32,8 @@ This installs the package as a dev dependency and starts a short guided setup (`
 shows a diff of every change before writing anything: it wraps your Playwright config, wraps your
 `test` object or switches test imports, creates `pw-perf.config.ts`, adds `perf:test` and
 `perf:thresholds` scripts, ignores `perf-results/`, and can add a CI job. `pnpm create` and
-`yarn create` work too; `-- --yes` accepts the defaults without questions.
+`yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
+`@next` with `yarn create`); `-- --yes` accepts the defaults without questions.
 
 <details>
 <summary>Manual setup</summary>

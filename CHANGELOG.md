@@ -7,6 +7,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `bin` paths in both packages no longer start with `./`, so npm stops warning that it
+  corrected them when publishing.
+- README: `yarn create` with a version (such as `@next`) needs Yarn 2 or later.
+
 ## [0.1.0-next.0] - 2026-11-19
 
 ### Added

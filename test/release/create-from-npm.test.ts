@@ -29,8 +29,13 @@ const playwrightVersion = (
 const CREATE: Record<string, string[]> = {
   npm: ['init', `${PACKAGE}@${VERSION}`, '--', '--yes'],
   pnpm: ['create', `${PACKAGE}@${VERSION}`, '--yes'],
+  // Yarn 1 cannot run `yarn create <pkg>@<version>` (it calls the bin with the version appended);
+  // the check uses current Yarn through corepack.
   yarn: ['create', `${PACKAGE}@${VERSION}`, '--yes'],
 };
+
+/** Yarn version used through corepack (`packageManager` in the fresh project). */
+const YARN_VERSION = 'yarn@4.18.1';
 
 let server: DemoServer;
 
@@ -85,6 +90,14 @@ describe.runIf(VERSION !== '')('create package from npm', () => {
       writeFileSync(join(dir, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
       // Yarn 2+ would use Plug'n'Play; the integration expects node_modules like npm and pnpm.
       writeFileSync(join(dir, '.yarnrc.yml'), 'nodeLinker: node-modules\n');
+      if (MANAGER === 'yarn') {
+        const pinned = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as Record<
+          string,
+          unknown
+        >;
+        pinned['packageManager'] = YARN_VERSION;
+        writeFileSync(join(dir, 'package.json'), `${JSON.stringify(pinned, null, 2)}\n`);
+      }
 
       const install = await run(MANAGER, ['install'], dir);
       expect(install.status, install.output).toBe(0);
