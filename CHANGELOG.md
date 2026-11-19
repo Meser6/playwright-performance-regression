@@ -256,3 +256,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and that `failureText` can be the collector's context-closed text. The structure is unchanged.
 - File validation messages describe the expected format of an environment label or percentile
   name (e.g. `a percentile name like "p95"`) instead of printing the regular expression.
+- Smaller package: the entry points share code chunks instead of each bundling its own copy
+  (about 820 kB unpacked instead of 1.3 MB). Every entry point keeps its ESM and CommonJS build.
