@@ -213,9 +213,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   differs from the snapshot in options that change the result. The CLI prints the config source
   and the base directory of relative paths (`CLI_CONFIG_DIR_MISSING` when it falls back to the
   current directory).
-- `pw-perf report [--input] [--output] [--config]` finds the run report
-  (`CLI_REPORT_NOT_FOUND`), but ends with `CLI_COMMAND_NOT_AVAILABLE` until the HTML report exists;
-  `pw-perf init` ends with `CLI_COMMAND_NOT_AVAILABLE` too. `--help` (also per command, with the
+- `pw-perf report [--input] [--output] [--config]` renders the HTML report again from a run
+  report (`CLI_REPORT_NOT_FOUND` when it is missing), also with `report.html: false`; the page is
+  identical to the one written by the run. It needs no Playwright. `HTML_RENDER_FAILED` and
+  `CLI_WRITE_FAILED` end it with exit code 3. `pw-perf init` ends with
+  `CLI_COMMAND_NOT_AVAILABLE`. `--help` (also per command, with the
   note on repeated tests and data conflicts) and `--version`.
 
 ### Changed

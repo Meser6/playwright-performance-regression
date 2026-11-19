@@ -393,15 +393,17 @@ describe('pw-perf without tests', () => {
   );
 
   test(
-    'thresholds --from with a missing report, and the report command without the HTML renderer',
+    '04-AC-08 11-AC-10 report without @playwright/test gives the HTML of the run; a missing report for thresholds --from',
     async () => {
       const { cwd } = await workspace('report command');
       const missing = await runCli(['thresholds', '--from', 'nope.json'], { cwd });
       expect(missing.status).toBe(3);
       expect(missing.stderr).toContain('error CLI_REPORT_NOT_FOUND');
+      const { run } = await sourceRun();
       const report = await runCli(['report', '--input', 'report.json'], { cwd });
-      expect(report.status).toBe(3);
-      expect(report.stderr).toContain('error CLI_COMMAND_NOT_AVAILABLE');
+      expect(report.status, report.output).toBe(0);
+      const fromRun = readFileSync(join(dirname(reportPath(run)), 'report.html'), 'utf8');
+      expect(readFileSync(join(cwd, 'report.html'), 'utf8') === fromRun).toBe(true);
     },
     RUN_TIMEOUT,
   );

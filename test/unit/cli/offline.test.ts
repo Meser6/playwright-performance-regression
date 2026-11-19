@@ -386,10 +386,29 @@ describe('report', () => {
     expect(existsSync(join(cwd, 'out', 'r.html'))).toBe(true);
   });
 
-  test('without the HTML renderer the command is not available yet (exit code 3)', async () => {
+  test('11-AC-10 report renders the same HTML as onEnd of the run', async () => {
+    const report = await reporterRun('test');
+    const fromRun = readFileSync(join(project, 'perf-results', 'report.html'), 'utf8');
+    cpSync(report, join(cwd, 'in', 'report.json'));
+    const fake = cli();
+    expect(await main(['report', '--input', 'in/report.json'], fake.host)).toBe(0);
+    expect(readFileSync(join(cwd, 'in', 'report.html'), 'utf8') === fromRun).toBe(true);
+    expect(fake.stderr.join('')).toContain(`report: ${join(cwd, 'in', 'report.html')}`);
+  });
+
+  test('11 chapter 13: a failing renderer gives HTML_RENDER_FAILED; a failing write CLI_WRITE_FAILED', async () => {
     const report = await reporterRun('test');
     const fake = cli();
-    expect(await main(['report', '--input', report], fake.host)).toBe(3);
-    expect(fake.stderr.join('')).toContain('error CLI_COMMAND_NOT_AVAILABLE');
+    const broken = (): string => {
+      throw new Error('render bug');
+    };
+    expect(await main(['report', '--input', report], fake.host, { renderHtml: broken })).toBe(3);
+    expect(fake.stderr.join('')).toContain('error HTML_RENDER_FAILED');
+    expect(fake.stderr.join('')).toContain('render bug');
+
+    mkdirSync(join(cwd, 'out.html'));
+    const write = cli();
+    expect(await main(['report', '--input', report, '--output', 'out.html'], write.host)).toBe(3);
+    expect(write.stderr.join('')).toContain('error CLI_WRITE_FAILED');
   });
 });

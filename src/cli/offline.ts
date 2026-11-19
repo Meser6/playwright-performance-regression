@@ -260,12 +260,12 @@ export type HtmlRenderer = (report: RunReport) => string;
 /**
  * `report` (04-REQ-28): input from --input or `<report.dir>/report.json` of the base directory,
  * output from --output or report.html next to the input; written also with report.html false.
- * Without a renderer the command ends with CLI_COMMAND_NOT_AVAILABLE.
+ * A failing renderer gives HTML_RENDER_FAILED (11, chapter 13), a failing write CLI_WRITE_FAILED.
  */
 export async function renderReport(
   cmd: ReportCommand,
   host: CliHost,
-  renderHtml: HtmlRenderer | undefined,
+  renderHtml: HtmlRenderer,
 ): Promise<number> {
   const out = new Printer(host);
   let report: RunReport;
@@ -308,17 +308,20 @@ export async function renderReport(
     cmd.output === undefined
       ? resolvePath(host.paths.dirname(inputPath), 'report.html')
       : host.paths.resolve(host.cwd, cmd.output);
-  if (renderHtml === undefined) {
+  let page: string;
+  try {
+    page = renderHtml(report);
+  } catch (error) {
     return out.errors([
       {
-        code: 'CLI_COMMAND_NOT_AVAILABLE',
-        message: `The HTML report is not available in this version, so ${outputPath} was not written.`,
-        hint: `The run report ${inputPath} is valid; the console summary of each run shows its result.`,
+        code: 'HTML_RENDER_FAILED',
+        message: `The HTML report could not be rendered from ${inputPath}: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        hint: 'This is a bug in the package; please report it with the message above.',
       },
     ]);
   }
   try {
-    await writeTextAtomic(outputPath, renderHtml(report));
+    await writeTextAtomic(outputPath, page);
   } catch (error) {
     return out.errors([
       {
