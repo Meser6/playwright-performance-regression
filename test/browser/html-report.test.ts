@@ -272,11 +272,16 @@ describe('HTML report in Chromium', { timeout: 60_000 }, () => {
     await pw(page.locator('#endpoints-table > tbody').first()).toBeVisible();
     expect(Date.now() - started).toBeLessThan(2000);
     expect(await page.locator('#endpoints-table > tbody').count()).toBe(500);
+    // Each click re-sorts all 500 rows (the direction alternates). The median of five sorts per
+    // column is compared: a single sample measures the CI runner, which runs the integration
+    // tests in parallel, more than the sort (one-off 270 ms on a 3-core macOS runner, ~45 ms
+    // locally).
     for (const column of ['max', 'key', 'percentile']) {
-      const ms = (await page.evaluate(
-        `(() => { const b = document.querySelector('#endpoints-table th[data-sort="${column}"] button'); const t = performance.now(); b.click(); document.body.offsetHeight; return performance.now() - t; })()`,
-      )) as number;
-      expect(ms, column).toBeLessThan(200);
+      const times = (await page.evaluate(
+        `(() => { const b = document.querySelector('#endpoints-table th[data-sort="${column}"] button'); const out = []; for (let i = 0; i < 5; i++) { const t = performance.now(); b.click(); document.body.offsetHeight; out.push(performance.now() - t); } return out; })()`,
+      )) as number[];
+      const median = [...times].sort((a, b) => a - b)[2];
+      expect(median, `${column}: ${times.join(', ')}`).toBeLessThan(200);
     }
     await context.close();
   });

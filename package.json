@@ -103,6 +103,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:perf": "vitest run --config vitest.perf.config.ts test/perf",
+    "test:stats": "vitest run --config vitest.perf.config.ts test/stats",
     "check:ac": "node scripts/check-ac-coverage.mjs",
     "check:pr-title": "node scripts/check-pr-title.mjs",
     "gen:types": "node scripts/generate-types.mjs",

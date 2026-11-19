@@ -141,6 +141,21 @@ function teardownMs(r: Result): number {
   return r.endTime - Number(mark.description);
 }
 
+/**
+ * Body end → page close, both measured in the worker: the afterEach hooks plus the collector's
+ * wait (it drains before the context closes). Unlike teardownMs it leaves out the rest of the
+ * teardown and the delivery of the result to the runner, which a loaded CI machine can delay by
+ * seconds.
+ */
+function waitMs(r: Result): number {
+  const mark = (type: string): number => {
+    const found = r.annotations.find((a) => a.type === type);
+    if (found?.description === undefined) throw new Error(`no ${type} mark in "${r.title}"`);
+    return Number(found.description);
+  };
+  return mark('page-close') - mark('body-end');
+}
+
 /** The single sample whose URL path is `path`. */
 function samplePath(b: SampleBatch, path: string): RawRequestSample {
   const found = b.requests.filter((s) => new URL(s.url).pathname === path);
@@ -415,13 +430,15 @@ describe('collector in Chromium: requests in flight at test end', () => {
         expect(sample(batch(run, title), k).status, title).toBe('PENDING');
       }
       // Budget = 2000 - time since the teardown started - 1000: about 1000 ms.
-      const plain = teardownMs(result(run, 'budget without hooks'));
-      expect(plain).toBeGreaterThanOrEqual(900);
-      expect(plain).toBeLessThan(1700);
+      const plain = result(run, 'budget without hooks');
+      const timeline = (r: Result): string =>
+        `${r.title}: ${JSON.stringify({ annotations: r.annotations, startTime: r.startTime, duration: r.duration, endTime: r.endTime })}`;
+      expect(waitMs(plain), timeline(plain)).toBeGreaterThanOrEqual(900);
+      expect(waitMs(plain), timeline(plain)).toBeLessThan(1700);
       // The afterEach hook runs before the collector's teardown: 500 ms more.
-      const hooked = teardownMs(result(run, 'budget with afterEach'));
-      expect(hooked).toBeGreaterThanOrEqual(1400);
-      expect(hooked).toBeLessThan(2200);
+      const hooked = result(run, 'budget with afterEach');
+      expect(waitMs(hooked), timeline(hooked)).toBeGreaterThanOrEqual(1400);
+      expect(waitMs(hooked), timeline(hooked)).toBeLessThan(2200);
     });
   });
 });

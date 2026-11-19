@@ -4,7 +4,7 @@
 // (see harness.ts).
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { firefox } from '@playwright/test';
+import { firefox, webkit } from '@playwright/test';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
   bddgen,
@@ -140,18 +140,24 @@ describe('multi-browser', () => {
     RUN_TIMEOUT,
   );
 
-  // Best effort: CI installs Chromium only. Set INTEGRATION_FIREFOX=1 with the Firefox of the
-  // installed Playwright to run it.
-  test.skipIf(process.env.INTEGRATION_FIREFOX !== '1' || !existsSync(firefox.executablePath()))(
-    'run.projects ["firefox"] measures Firefox (best effort)',
-    async () => {
-      const run = await harness.run(dir, { env: { ...PERF, PERF_PROJECTS: 'firefox' } });
-      expectStatus(run, 0);
-      expect(run.results.map((r) => r.project)).toEqual(['firefox', 'firefox']);
-      expect(sampleCount(run, 'GET /api/products')).toBe(2);
-    },
-    RUN_TIMEOUT,
-  );
+  // Best effort (D-13): the regular CI installs Chromium only. The informational CI job sets
+  // INTEGRATION_BROWSERS=firefox,webkit with those browsers of the installed Playwright.
+  const browsers = (process.env.INTEGRATION_BROWSERS ?? '').split(',');
+  for (const [name, type] of [
+    ['firefox', firefox],
+    ['webkit', webkit],
+  ] as const) {
+    test.skipIf(!browsers.includes(name) || !existsSync(type.executablePath()))(
+      `run.projects ["${name}"] measures ${name} (best effort)`,
+      async () => {
+        const run = await harness.run(dir, { env: { ...PERF, PERF_PROJECTS: name } });
+        expectStatus(run, 0);
+        expect(run.results.map((r) => r.project)).toEqual([name, name]);
+        expect(sampleCount(run, 'GET /api/products')).toBe(2);
+      },
+      RUN_TIMEOUT,
+    );
+  }
 
   test(
     '12-AC-03 without perf mode the Chromium project passes and records nothing',

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { stringifyStable } from '../../../src/core/format/index.ts';
 import { parseRunReport } from '../../../src/core/schema/index.ts';
@@ -133,7 +133,8 @@ describe('renderHtmlReport', () => {
 
     const script = [
       `import { readFileSync } from 'node:fs';`,
-      `import { renderHtmlReport } from ${JSON.stringify(join(ROOT, 'src/html/index.ts'))};`,
+      // A file URL: an absolute Windows path (D:\\...) is not a valid import specifier.
+      `import { renderHtmlReport } from ${JSON.stringify(pathToFileURL(join(ROOT, 'src/html/index.ts')).href)};`,
       `const r = JSON.parse(readFileSync(${JSON.stringify(join(RUN_REPORTS, 'full-run.json'))}, 'utf8')).input;`,
       `process.stdout.write(renderHtmlReport(r));`,
     ].join('\n');

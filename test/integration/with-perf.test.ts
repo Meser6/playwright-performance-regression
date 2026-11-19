@@ -222,31 +222,33 @@ describe('withPerf with real Playwright', () => {
     TIMEOUT,
   );
 
-  test.each([
-    ['ESM, TypeScript config, pw-perf.config.ts', 'esm-ts', undefined, 'ts', reporterEsm],
-    ['ESM, pw-perf.config.mjs', 'esm-ts', 'playwright.mjs.config.ts', 'mjs', reporterEsm],
-    ['ESM, pw-perf.config.json', 'esm-ts', 'playwright.json.config.ts', 'json', reporterEsm],
-    [
-      'CJS, JavaScript config, require(pw-perf.config.ts).default',
-      'cjs-js',
-      undefined,
-      'cjs',
-      reporterCjs,
-    ],
-  ])(
-    '03-AC-07 the package config reaches the worker registry: %s',
-    (_name, project, config, label, reporter) => {
-      const run = runPlaywright(project, { PW_PERF_MODE: 'test' }, config);
-      expect(run.status, run.output).toBe(0);
-      expect(run.main.registry?.origins).toEqual({ 'https://api.example.com': label });
-      expect(run.main.reporters.at(-1)?.[0]).toBe(reporter);
-      const measured = run.executions.filter((e) => e.title === 'measured');
-      expect(measured.length).toBeGreaterThanOrEqual(2);
-      for (const execution of measured) {
-        expect(execution.registry?.origins).toEqual({ 'https://api.example.com': label });
-        expect(execution.retry).toBe(0);
-      }
-    },
-    TIMEOUT,
-  );
+  describe('03-AC-07 ESM and CJS projects with .ts, .mjs and .json package configs', () => {
+    test.each([
+      ['ESM, TypeScript config, pw-perf.config.ts', 'esm-ts', undefined, 'ts', reporterEsm],
+      ['ESM, pw-perf.config.mjs', 'esm-ts', 'playwright.mjs.config.ts', 'mjs', reporterEsm],
+      ['ESM, pw-perf.config.json', 'esm-ts', 'playwright.json.config.ts', 'json', reporterEsm],
+      [
+        'CJS, JavaScript config, require(pw-perf.config.ts).default',
+        'cjs-js',
+        undefined,
+        'cjs',
+        reporterCjs,
+      ],
+    ])(
+      '03-AC-07 the package config reaches the worker registry: %s',
+      (_name, project, config, label, reporter) => {
+        const run = runPlaywright(project, { PW_PERF_MODE: 'test' }, config);
+        expect(run.status, run.output).toBe(0);
+        expect(run.main.registry?.origins).toEqual({ 'https://api.example.com': label });
+        expect(run.main.reporters.at(-1)?.[0]).toBe(reporter);
+        const measured = run.executions.filter((e) => e.title === 'measured');
+        expect(measured.length).toBeGreaterThanOrEqual(2);
+        for (const execution of measured) {
+          expect(execution.registry?.origins).toEqual({ 'https://api.example.com': label });
+          expect(execution.retry).toBe(0);
+        }
+      },
+      TIMEOUT,
+    );
+  });
 });

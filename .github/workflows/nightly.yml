@@ -1,0 +1,44 @@
+name: Nightly
+
+# Performance tests (12-PERF-01 – 12-PERF-04, 12, chapter 7) on Linux. The results are uploaded
+# as an artifact (12-REQ-12, 12-AC-04). A failure blocks the next release, not a merge (12-D-05).
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  perf:
+    name: Performance tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: pnpm test:perf
+        env:
+          PERF_RESULTS_DIR: ${{ runner.temp }}/perf-test-results
+      - name: Upload the results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf-test-results
+          path: ${{ runner.temp }}/perf-test-results
+          retention-days: 90
+          if-no-files-found: warn
