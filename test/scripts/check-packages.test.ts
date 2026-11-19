@@ -2,7 +2,12 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { checkPackages, INSTALL_SCRIPTS } from '../../scripts/check-packages.mjs';
+import {
+  checkPackContents,
+  checkPackages,
+  INSTALL_SCRIPTS,
+  MAX_UNPACKED_BYTES,
+} from '../../scripts/check-packages.mjs';
 
 const root = join(import.meta.dirname, '../..');
 const read = (path: string): Record<string, unknown> =>
@@ -54,5 +59,90 @@ describe('check-packages', () => {
     expect(checkPackages(main, { ...create, name: 'create-x' })[0]).toBe(
       'create/package.json: the name must be "create-playwright-performance-regression".',
     );
+  });
+});
+
+describe('check-packages: package contents and size (13-REQ-11)', () => {
+  const pack = (paths: string[], unpackedSize = 1000) => ({
+    files: paths.map((path) => ({ path, size: 1 })),
+    unpackedSize,
+  });
+  const mainFiles = [
+    'package.json',
+    'README.md',
+    'CHANGELOG.md',
+    'LICENSE',
+    'dist/index.js',
+    'dist/index.cjs',
+    'schemas/config.schema.json',
+  ];
+
+  test('13-AC-12 a pack with only the files of the "files" field passes', () => {
+    expect(checkPackContents(pack(mainFiles), main, 'package.json')).toEqual([]);
+    expect(
+      checkPackContents(pack(['package.json', 'README.md', 'index.js']), create, 'create'),
+    ).toEqual([]);
+  });
+
+  test('13-AC-12 files outside "files", test files, prototype and spec-ids.json fail', () => {
+    expect(
+      checkPackContents(
+        pack([...mainFiles, 'test/unit/a.test.ts', 'prototype/x.js', 'spec-ids.json', 'src/a.ts']),
+        main,
+        'package.json',
+      ),
+    ).toEqual([
+      'package.json: the package contains prototype/x.js, which is not allowed.',
+      'package.json: the package contains spec-ids.json, which is not allowed.',
+      'package.json: the package contains src/a.ts, which is not listed in "files".',
+      'package.json: the package contains test/unit/a.test.ts, which is not allowed.',
+    ]);
+    expect(checkPackContents(pack(['package.json', 'lib.js']), create, 'create')).toEqual([
+      'create: the package contains lib.js, which is not listed in "files".',
+      'create: "files" lists index.js, but the package has no such file.',
+    ]);
+  });
+
+  test('13-AC-12 an entry of "files" missing from the pack fails (package not built)', () => {
+    expect(
+      checkPackContents(
+        pack(mainFiles.filter((path) => !path.startsWith('dist/'))),
+        main,
+        'package.json',
+      ),
+    ).toEqual(['package.json: "files" lists dist, but the package has no such file.']);
+  });
+
+  test('13-AC-12 source maps with absolute paths fail', () => {
+    const maps: Record<string, string> = {
+      'dist/a.js.map': JSON.stringify({ sources: ['../src/a.ts'] }),
+      'dist/b.js.map': JSON.stringify({ sources: ['/home/runner/work/src/b.ts'] }),
+      'dist/c.js.map': JSON.stringify({ sources: ['C:\\work\\src\\c.ts'] }),
+      'dist/d.js.map': JSON.stringify({ sources: ['file:///work/src/d.ts'] }),
+    };
+    expect(
+      checkPackContents(pack([...mainFiles, ...Object.keys(maps)]), main, 'package.json', {
+        readFile: (path) => maps[path] ?? '',
+      }),
+    ).toEqual([
+      'package.json: the source map dist/b.js.map has an absolute path (/home/runner/work/src/b.ts).',
+      'package.json: the source map dist/c.js.map has an absolute path (C:\\work\\src\\c.ts).',
+      'package.json: the source map dist/d.js.map has an absolute path (file:///work/src/d.ts).',
+    ]);
+  });
+
+  test('13-AC-12 an unpacked size above the limit fails', () => {
+    expect(
+      checkPackContents(pack(mainFiles, MAX_UNPACKED_BYTES + 1), main, 'package.json', {
+        maxUnpackedBytes: MAX_UNPACKED_BYTES,
+      }),
+    ).toEqual([
+      `package.json: the unpacked package has ${MAX_UNPACKED_BYTES + 1} bytes, above the limit of ${MAX_UNPACKED_BYTES} bytes (scripts/check-packages.mjs).`,
+    ]);
+    expect(
+      checkPackContents(pack(mainFiles, MAX_UNPACKED_BYTES), main, 'package.json', {
+        maxUnpackedBytes: MAX_UNPACKED_BYTES,
+      }),
+    ).toEqual([]);
   });
 });

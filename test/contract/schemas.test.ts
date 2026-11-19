@@ -287,3 +287,11 @@ describe('schemas', () => {
     expect(validate({ ...outcome, paths: { ...outcome.paths, reportHtml: '' } })).toBe(false);
   });
 });
+
+describe('published schema texts', () => {
+  test('descriptions use the real package, file and variable names, not placeholders', () => {
+    for (const file of SCHEMA_FILES) {
+      expect(JSON.stringify(readSchema(file)), file).not.toMatch(/<pkg>|<PKG>/u);
+    }
+  });
+});

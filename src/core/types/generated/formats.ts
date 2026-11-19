@@ -113,7 +113,7 @@ export interface FileFormats {
   outcome: OutcomeFile;
 }
 /**
- * JSON form of the package config: a '<pkg>.config.json' file and the effective config snapshot in the run report. The 'default' keywords are the single source of default values (03-REQ-05). The TypeScript input type additionally accepts RegExp in url patterns and a keyBuilder function (03, chapter 5).
+ * JSON form of the package config: a 'pw-perf.config.json' file and the effective config snapshot in the run report. The 'default' keywords are the single source of default values (03-REQ-05). The TypeScript input type additionally accepts RegExp in url patterns and a keyBuilder function (03, chapter 5).
  */
 export interface PackageConfig {
   /**
@@ -125,11 +125,11 @@ export interface PackageConfig {
    */
   run?: {
     /**
-     * Environment label (D-18). Overridden by <PKG>_ENV / --env. Null: no label, one set of thresholds files.
+     * Environment label (D-18). Overridden by PW_PERF_ENV / --env. Null: no label, one set of thresholds files.
      */
     env?: string | null;
     /**
-     * Repetitions of each measured test (D-03). Overridden by <PKG>_REPEAT / --repeat for the current mode.
+     * Repetitions of each measured test (D-03). Overridden by PW_PERF_REPEAT / --repeat for the current mode.
      */
     repeat?: {
       /**
@@ -707,7 +707,7 @@ export interface PackageConfig {
   };
 }
 /**
- * Raw samples collected during one test execution, attached to the test result as the '<pkg>-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
+ * Raw samples collected during one test execution, attached to the test result as the 'playwright-performance-regression-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
  */
 export interface SampleBatch {
   schemaVersion: 1;
@@ -1634,7 +1634,7 @@ export interface HostFingerprint {
   cpuModel: string;
 }
 /**
- * Small file the reporter writes at the end of onEnd to the path from <PKG>_OUTCOME_FILE (ADR-0009). Read and deleted by the CLI. Not written when the run was started without the CLI.
+ * Small file the reporter writes at the end of onEnd to the path from PW_PERF_OUTCOME_FILE (ADR-0009). Read and deleted by the CLI. Not written when the run was started without the CLI.
  */
 export interface OutcomeFile {
   schemaVersion: 1;
