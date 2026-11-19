@@ -28,7 +28,7 @@ import { PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
-import { readModeState } from '../mode/index.ts';
+import { generateRunId, readModeState } from '../mode/index.ts';
 import type { PerfModeState } from '../mode/index.ts';
 import { notWrappedWarning } from '../registry/index.ts';
 import type { RegisteredState, RunConditions } from '../registry/index.ts';
@@ -115,15 +115,6 @@ export function runSettings(
     warnings: [notWrappedWarning()],
     toolErrors: read.ok ? [] : read.issues,
   };
-}
-
-/** `YYYY-MM-DDTHH-MM-SS-xxxx` in UTC with 4 random hex digits (04-REQ-10). */
-export function generateRunId(date: Date, random: () => number): string {
-  const time = date.toISOString().slice(0, 19).replaceAll(':', '-');
-  const hex = Math.floor(random() * 0x10000)
-    .toString(16)
-    .padStart(4, '0');
-  return `${time}-${hex}`;
 }
 
 function internalError(where: string, error: unknown): Issue {
