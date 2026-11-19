@@ -427,5 +427,5 @@ describe('renderHtmlReport', () => {
     const page = renderHtmlReport(report);
     expect(Buffer.byteLength(page)).toBeLessThan(5 * 1024 * 1024);
     expect(stringifyStable(report).length).toBeGreaterThan(5 * 1024 * 1024);
-  });
+  }, 60_000); // builds 2.5 M samples: slow on shared CI runners; this test checks size, not time
 });

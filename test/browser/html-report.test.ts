@@ -257,7 +257,10 @@ describe('HTML report in Chromium', { timeout: 60_000 }, () => {
     }
   });
 
-  test('11-AC-05 a 500-key report loads in under 2 s and sorts 500 rows in under 200 ms', async () => {
+  // The time limits of 11-AC-05 are checked in the isolated performance suite
+  // (test/perf/html.test.ts, 12-PERF-03, 12-D-05): on shared CI runners that run the integration
+  // tests in parallel a single timing measures the runner more than the page.
+  test('11-AC-05 a 500-key report loads and every sort reorders all 500 rows', async () => {
     const report = largeReport(500, 5000);
     const html = renderHtmlReport(report);
     const context = await browser.newContext();
@@ -267,21 +270,22 @@ describe('HTML report in Chromium', { timeout: 60_000 }, () => {
         : route.abort(),
     );
     const page = await context.newPage();
-    const started = Date.now();
     await page.goto(URL, { waitUntil: 'load' });
     await pw(page.locator('#endpoints-table > tbody').first()).toBeVisible();
-    expect(Date.now() - started).toBeLessThan(2000);
     expect(await page.locator('#endpoints-table > tbody').count()).toBe(500);
-    // Each click re-sorts all 500 rows (the direction alternates). The median of five sorts per
-    // column is compared: a single sample measures the CI runner, which runs the integration
-    // tests in parallel, more than the sort (one-off 270 ms on a 3-core macOS runner, ~45 ms
-    // locally).
-    for (const column of ['max', 'key', 'percentile']) {
-      const times = (await page.evaluate(
-        `(() => { const b = document.querySelector('#endpoints-table th[data-sort="${column}"] button'); const out = []; for (let i = 0; i < 5; i++) { const t = performance.now(); b.click(); document.body.offsetHeight; out.push(performance.now() - t); } return out; })()`,
-      )) as number[];
-      const median = [...times].sort((a, b) => a - b)[2];
-      expect(median, `${column}: ${times.join(', ')}`).toBeLessThan(200);
+    const keysAfterClick = (column: string) =>
+      page.evaluate(
+        `(() => { document.querySelector('#endpoints-table th[data-sort="${column}"] button').click(); return [...document.querySelectorAll('#endpoints-table > tbody')].map((t) => t.getAttribute('data-key')); })()`,
+      ) as Promise<string[]>;
+    // Keys are unique, so sorting by key gives one exact order in each direction.
+    const first = await keysAfterClick('key');
+    const second = await keysAfterClick('key');
+    const ascending = [...first].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+    expect(first.length).toBe(500);
+    expect([first, second]).toContainEqual(ascending);
+    expect([first, second]).toContainEqual([...ascending].reverse());
+    for (const column of ['max', 'percentile']) {
+      expect((await keysAfterClick(column)).length, column).toBe(500);
     }
     await context.close();
   });
