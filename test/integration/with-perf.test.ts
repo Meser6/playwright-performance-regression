@@ -79,6 +79,8 @@ function runPlaywright(project: string, env: Record<string, string>, config?: st
       timeout: TIMEOUT,
     },
   );
+  // The package reporter writes its run report to report.dir of the sample project.
+  rmSync(join(projects, project, 'perf-results'), { recursive: true, force: true });
   const output = `${result.stdout}${result.stderr}`;
   const read = (name: string): string => {
     const path = join(out, name);
@@ -190,7 +192,9 @@ describe('withPerf with real Playwright', () => {
         PW_PERF_REPEAT: '2',
         INTEGRATION_PROJECTS: 'firefox',
       });
-      expect(run.status, run.output).toBe(0);
+      // The tests of this project record no samples, so the derivation refuses (10-REQ-13).
+      expect(run.status, run.output).toBe(1);
+      expect(run.output).toContain('THRESHOLDS_EMPTY_REPORT');
       expect(run.main.projects.map((p) => [p.name, p.repeatEach])).toEqual([
         ['setup', 1],
         ['cleanup', 1],

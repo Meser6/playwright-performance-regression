@@ -150,6 +150,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `sampleStart`/`sampleEnd`, outcomes `ok`, `error` and `unfinished`, name validation
   (`TypeError` with `CUSTOM_INVALID_NAME`) and the diagnostics `CUSTOM_ALREADY_STARTED`,
   `CUSTOM_END_WITHOUT_START` and `CUSTOM_UNFINISHED`.
+- The package reporter (`playwright-performance-regression/reporter`), added by `withPerf()` in
+  perf mode. It aggregates the sample attachments of the measured projects, evaluates them
+  against the thresholds files of the run's environment label
+  (`<thresholds.dir>/<thresholds.filePrefix>.<kind>[.<env>].json`, never the file without the
+  label), writes
+  `<report.dir>/report.json`, prints the summary (colors only in a terminal without
+  `NO_COLOR`, tables fitted to the terminal width) and writes the outcome file to
+  `PW_PERF_OUTCOME_FILE`. In `thresholds` mode it also writes the changed thresholds files and
+  `<report.dir>/thresholds-diff.md` and prints the diff after the summary; nothing is written
+  for an incomplete or untrustworthy run, and `PW_PERF_PRUNE=1` removes entries not seen in the
+  run. Playwright's status becomes `failed` when the exit code of the run is not 0. At the start
+  of the run it prints the settings perf mode changed and the number of test executions. A run
+  that starts no test (`--list`, a filter that selects nothing) writes and prints nothing. The
+  HTML report is not written yet.
+- Reporter warnings `RUN_CONDITIONS_CHANGED` (other workers, retries or repetitions than perf
+  mode sets, retried results or trace and video attachments set in test files),
+  `TESTS_NOT_INSTRUMENTED`, `ATTACHMENT_DUPLICATE`, `COLLECTOR_REQUESTS_PENDING` (with the keys
+  that have the most pending requests), `CONFIG_DUPLICATE_ORIGIN_LABEL` for `use.baseURL` of
+  measured projects, `NOT_WRAPPED_WITH_PERF` and `THRESHOLDS_DIFF_WRITE_FAILED`; tool errors
+  `RUN_SHARDED`, `REPORT_WRITE_FAILED`, `THRESHOLDS_WRITE_FAILED` and
+  `REPORTER_INTERNAL_ERROR`; `OUTCOME_WRITE_FAILED` on stderr. A sample attachment that cannot
+  be read is skipped with a tool error.
 
 ### Changed
 
