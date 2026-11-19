@@ -7,6 +7,8 @@ import type { CliIssue } from '../../core/types/index.ts';
 import { ciFiles, commandFlags } from './ci.ts';
 import { EXTEND_CALL, PERF_CONFIG_NAMES } from './detect.ts';
 import type { ProjectInfo } from './detect.ts';
+import { translator } from './messages.ts';
+import type { Translate, WizardLanguage } from './messages.ts';
 import { renderPerfConfig } from './perf-config.ts';
 import type { InitAnswers } from './perf-config.ts';
 import {
@@ -58,25 +60,31 @@ function change(info: ProjectInfo, path: string, after: string): FileChange | nu
   return { path, kind: before === null ? 'create' : 'modify', before, after };
 }
 
-const CONFIG_HINT = (path: string): string =>
+const CONFIG_HINT = (t: Translate, path: string): string =>
   [
-    `Wrap the exported config in withPerf() as the outermost call (also around other wrappers):`,
+    t('configHintIntro'),
     `  import { withPerf } from '${PACKAGE_NAME}/config';`,
     `  import perfConfig from './pw-perf.config';`,
     `  export default withPerf(otherWrapper(defineConfig({ ... })), perfConfig);`,
-    `In ${path} with module.exports: withPerf(config, require('./pw-perf.config').default).`,
+    t('configHintCjs', { path, call: "withPerf(config, require('./pw-perf.config').default)" }),
   ].join('\n');
 
-const TEST_HINT = [
-  `Wrap every test object used by browser tests in withPerfFixtures() from '${PACKAGE_NAME}/fixture':`,
-  '  export const test = withPerfFixtures(base.extend({ ... }));',
-  '  export const adminTest = withPerfFixtures(test.extend({ ... }));',
-  '  export const merged = withPerfFixtures(mergeTests(a, b));',
-  'Wrap the result of mergeTests() and the test passed to createBdd() (playwright-bdd).',
-  `Tests that import test from @playwright/test can import it from '${PACKAGE_NAME}/test' instead.`,
-].join('\n');
+const TEST_HINT = (t: Translate): string =>
+  [
+    t('testHintIntro', { entry: `${PACKAGE_NAME}/fixture` }),
+    '  export const test = withPerfFixtures(base.extend({ ... }));',
+    '  export const adminTest = withPerfFixtures(test.extend({ ... }));',
+    '  export const merged = withPerfFixtures(mergeTests(a, b));',
+    t('testHintMerge'),
+    t('testHintImport', { entry: `${PACKAGE_NAME}/test` }),
+  ].join('\n');
 
-function planPerfConfig(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
+function planPerfConfig(
+  info: ProjectInfo,
+  answers: InitAnswers,
+  plan: InitPlan,
+  t: Translate,
+): void {
   const existing = info.existing.perfConfig;
   if (existing === null || existing === PERF_CONFIG_FILE) {
     const c = change(info, PERF_CONFIG_FILE, renderPerfConfig(answers));
@@ -96,22 +104,22 @@ function planPerfConfig(info: ProjectInfo, answers: InitAnswers, plan: InitPlan)
   if (values.length > 0) {
     plan.manualSteps.push(
       manual(
-        `${existing} exists and was not changed.`,
-        `Set these options in it if you want them:\n${values.map((v) => `  ${v}`).join('\n')}`,
+        t('manualPerfConfigKept', { file: existing }),
+        `${t('manualPerfConfigHint')}\n${values.map((v) => `  ${v}`).join('\n')}`,
       ),
     );
   }
 }
 
-function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan): void {
+function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan, t: Translate): void {
   const config = info.playwrightConfig;
   if (config === null || info.existing.wrappedConfig) return;
   const existing = info.existing.perfConfig;
   if (existing !== null && existing.endsWith('.json')) {
     plan.manualSteps.push(
       manual(
-        `${config.path} was not changed: the package config is ${existing}.`,
-        CONFIG_HINT(config.path).replaceAll("'./pw-perf.config'", `'./${existing}'`),
+        t('manualConfigJson', { config: config.path, file: existing }),
+        CONFIG_HINT(t, config.path).replaceAll("'./pw-perf.config'", `'./${existing}'`),
       ),
     );
     return;
@@ -119,17 +127,14 @@ function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan): void {
   const after = wrapPlaywrightConfig(config.text, './pw-perf.config');
   if (after === null) {
     plan.manualSteps.push(
-      manual(
-        `${config.path} was not changed: its export is not a plain defineConfig({...}) or object (for example another wrapper).`,
-        CONFIG_HINT(config.path),
-      ),
+      manual(t('manualConfigPattern', { config: config.path }), CONFIG_HINT(t, config.path)),
     );
     return;
   }
   plan.changes.push({ path: config.path, kind: 'modify', before: config.text, after });
 }
 
-function planTestObject(info: ProjectInfo, plan: InitPlan): void {
+function planTestObject(info: ProjectInfo, plan: InitPlan, t: Translate): void {
   if (info.existing.wrappedTest) return;
   const text = (path: string): string => info.files.get(path) ?? '';
   const extendFiles = info.filesWithExtend;
@@ -142,12 +147,7 @@ function planTestObject(info: ProjectInfo, plan: InitPlan): void {
       return after === null ? [] : [{ path, kind: 'modify' as const, before: text(path), after }];
     });
     if (swaps.length === 0) {
-      plan.manualSteps.push(
-        manual(
-          'No test object was found to measure: no file imports test from @playwright/test.',
-          TEST_HINT,
-        ),
-      );
+      plan.manualSteps.push(manual(t('manualNoTestObject'), TEST_HINT(t)));
     }
     plan.changes.push(...swaps);
     return;
@@ -161,8 +161,10 @@ function planTestObject(info: ProjectInfo, plan: InitPlan): void {
     const files = [...new Set([...extendFiles, ...merges])].sort();
     plan.manualSteps.push(
       manual(
-        `${files.join(', ')} ${files.length === 1 ? 'was' : 'were'} not changed: the test objects are not one \`export const test = base.extend(...)\` (several test objects, mergeTests() or another layout).`,
-        TEST_HINT,
+        `${t(files.length === 1 ? 'manualTestObjectOne' : 'manualTestObjectMany', {
+          files: files.join(', '),
+        })} ${t('testObjectsReason')}`,
+        TEST_HINT(t),
       ),
     );
     return;
@@ -178,14 +180,14 @@ function planGitignore(info: ProjectInfo, plan: InitPlan): void {
   if (c !== null) plan.changes.push(c);
 }
 
-function planScripts(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
+function planScripts(info: ProjectInfo, answers: InitAnswers, plan: InitPlan, t: Translate): void {
   const text = info.files.get('package.json');
   const wanted = plannedScripts(answers);
   if (text === undefined) {
     plan.manualSteps.push(
       manual(
-        'package.json was not found.',
-        `Add these scripts:\n${Object.entries(wanted)
+        t('manualNoPackageJson'),
+        `${t('addScripts')}\n${Object.entries(wanted)
           .map(([k, v]) => `  "${k}": "${v}"`)
           .join('\n')}`,
       ),
@@ -205,10 +207,7 @@ function planScripts(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): v
     if (current[name] === undefined) added[name] = command;
     else if (current[name] !== command) {
       plan.manualSteps.push(
-        manual(
-          `package.json: the script "${name}" exists and was not changed.`,
-          `The wizard would add "${name}": "${command}". Rename one of them, or add the command by hand.`,
-        ),
+        manual(t('manualScriptExists', { name }), t('manualScriptHint', { name, command })),
       );
     }
   }
@@ -217,8 +216,8 @@ function planScripts(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): v
   if (after === null) {
     plan.manualSteps.push(
       manual(
-        'package.json was not changed: it is not a JSON object with a "scripts" object.',
-        `Add these scripts:\n${Object.entries(added)
+        t('manualPackageJsonInvalid'),
+        `${t('addScripts')}\n${Object.entries(added)
           .map(([k, v]) => `  "${k}": "${v}"`)
           .join('\n')}`,
       ),
@@ -234,7 +233,7 @@ const INSTALL: Record<ProjectInfo['packageManager'], string> = {
   yarn: 'yarn install --immutable',
 };
 
-function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
+function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan, t: Translate): void {
   const platform = info.ciPlatform;
   if (!answers.addCi || platform === null) return;
   const created: string[] = [];
@@ -243,10 +242,7 @@ function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
     if (before === file.text) continue;
     if (before !== null) {
       plan.manualSteps.push(
-        manual(
-          `${file.path} exists and was not changed.`,
-          `Compare it with examples/ci/ in the ${PACKAGE_NAME} repository.`,
-        ),
+        manual(t('manualCiKept', { file: file.path }), t('manualCiHint', { pkg: PACKAGE_NAME })),
       );
       continue;
     }
@@ -261,7 +257,7 @@ function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
     if (missing.length > 0) {
       plan.manualSteps.push(
         manual(
-          '.gitlab-ci.yml was not changed: include the new job file in it.',
+          t('manualGitlabInclude'),
           ['include:', ...missing.map((p) => `  - local: ${p}`)].join('\n'),
         ),
       );
@@ -270,22 +266,34 @@ function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
   if (created.length > 0 && info.packageManager !== 'npm') {
     plan.manualSteps.push(
       manual(
-        `${created.join(', ')} ${created.length === 1 ? 'installs' : 'install'} the dependencies with npm.`,
-        `This project uses ${info.packageManager}: replace "npm ci" with "${INSTALL[info.packageManager]}" and "npx" with "${info.packageManager === 'pnpm' ? 'pnpm exec' : 'yarn'}".`,
+        t(created.length === 1 ? 'manualNpmOne' : 'manualNpmMany', { files: created.join(', ') }),
+        t('manualNpmHint', {
+          manager: info.packageManager,
+          install: INSTALL[info.packageManager],
+          npx: info.packageManager === 'pnpm' ? 'pnpm exec' : 'yarn',
+        }),
       ),
     );
   }
 }
 
-/** Pure plan of the init changes; unrecognized layouts give manual steps (04-REQ-39). */
-export function planInitChanges(info: ProjectInfo, answers: InitAnswers): InitPlan {
+/**
+ * Pure plan of the init changes; unrecognized layouts give manual steps (04-REQ-39) in the wizard
+ * language (04-REQ-43). The file changes do not depend on the language.
+ */
+export function planInitChanges(
+  info: ProjectInfo,
+  answers: InitAnswers,
+  lang: WizardLanguage = 'en',
+): InitPlan {
+  const t = translator(lang);
   const plan: InitPlan = { changes: [], manualSteps: [] };
-  planPerfConfig(info, answers, plan);
-  planPlaywrightConfig(info, plan);
-  planTestObject(info, plan);
+  planPerfConfig(info, answers, plan, t);
+  planPlaywrightConfig(info, plan, t);
+  planTestObject(info, plan, t);
   planGitignore(info, plan);
-  planScripts(info, answers, plan);
-  planCi(info, answers, plan);
+  planScripts(info, answers, plan, t);
+  planCi(info, answers, plan, t);
   return plan;
 }
 

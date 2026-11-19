@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { parseOutcome, parseRunReport } from '../../../src/core/schema/index.ts';
 import type { Outcome, RunReport } from '../../../src/core/types/index.ts';
 import { generateRunId } from '../../../src/mode/index.ts';
+import { stripAnsi } from '../../../src/console/color.ts';
 import { renderHtmlReport } from '../../../src/html/index.ts';
 import { runSettings } from '../../../src/reporter/session.ts';
 import { createAjv, validator } from '../../contract/schemas.ts';
@@ -392,6 +393,28 @@ describe('reporter session in test mode', () => {
     expect(await s.end({ status: 'passed' })).toEqual({ status: 'failed' });
     expect(captured.stdout.join('')).toContain('REPORT_WRITE_FAILED');
     expect(captured.stderr.join('')).toContain('OUTCOME_WRITE_FAILED');
+  });
+
+  test('04-AC-24 summary colors in a terminal without NO_COLOR, none with NO_COLOR, TERM=dumb or without a terminal, FORCE_COLOR without one', async () => {
+    const plain: string[] = [];
+    for (const [env, tty, expected] of [
+      [{}, 80, true],
+      [{ NO_COLOR: '1' }, 80, false],
+      [{ TERM: 'dumb' }, 80, false],
+      [{}, undefined, false],
+      [{ FORCE_COLOR: '1' }, undefined, true],
+    ] as const) {
+      const captured = fakeHost(dir, { env, ...(tty === undefined ? {} : { tty }) });
+      const s = session(captured, registered({}, { mode: 'test' }));
+      s.begin(fakeConfig(dir), ROOT);
+      runTests(s, dir, 1, ['/x'], () => 1);
+      await s.end({ status: 'passed' });
+      const text = captured.stdout.join('');
+      expect(text.includes('\u001b['), JSON.stringify(env)).toBe(expected);
+      if (tty === undefined) plain.push(stripAnsi(text));
+    }
+    // Without a terminal (width 120) the colored text equals the plain one apart from ANSI.
+    expect(plain[1]).toBe(plain[0]);
   });
 
   test('colors only in a terminal without NO_COLOR; table width from the terminal', async () => {

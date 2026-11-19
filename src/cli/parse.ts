@@ -4,6 +4,8 @@ import { resolveConfig } from '../core/config/index.ts';
 import { CLI_COMMAND } from '../core/types/index.ts';
 import type { CliIssue, Result } from '../core/types/index.ts';
 import { ENV_LABEL_FORMAT, REPEAT_FORMAT, isEnvLabel, parseRepeat } from '../mode/index.ts';
+import { LANGUAGES, isWizardLanguage } from './init/messages.ts';
+import type { WizardLanguage } from './init/messages.ts';
 import { isListOnly, testFilters, unsupportedOptions } from './playwright-args.ts';
 
 export type HelpTopic = 'test' | 'thresholds' | 'report' | 'init';
@@ -20,7 +22,15 @@ export type ParsedCommand =
     }
   | { kind: 'thresholds-from'; from: string; env?: string; prune: boolean; config?: string }
   | { kind: 'report'; input?: string; output?: string; config?: string }
-  | { kind: 'init'; yes: boolean; dryRun: boolean }
+  | {
+      kind: 'init';
+      yes: boolean;
+      dryRun: boolean;
+      /** Wizard language (04-REQ-43); asked in step 0 when missing. */
+      lang?: WizardLanguage;
+      /** --no-tutorial: only the manual setup steps, no changes (04-REQ-45). */
+      noTutorial?: true;
+    }
   | { kind: 'help'; command?: HelpTopic }
   | { kind: 'version' };
 
@@ -34,6 +44,7 @@ const USAGE_HINT = `Commands: ${COMMANDS.join(', ')}. Run "${CLI_COMMAND} --help
 const RUN_OPTIONS = ['--env', '--repeat', '--prune', '--from'] as const;
 const FROM_OPTIONS = ['--env', '--prune', '--from', '--config'] as const;
 const REPORT_OPTIONS = ['--input', '--output', '--config'] as const;
+const INIT_OPTIONS = ['--yes', '-y', '--dry-run', '--lang', '--no-tutorial'] as const;
 /** Options that take a value. */
 const VALUED: ReadonlySet<string> = new Set([
   '--env',
@@ -42,6 +53,7 @@ const VALUED: ReadonlySet<string> = new Set([
   '--config',
   '--input',
   '--output',
+  '--lang',
 ]);
 
 interface OwnOption {
@@ -306,12 +318,37 @@ function parseInit(args: readonly string[]): Result<ParsedCommand, CliIssue> {
   const issues: CliIssue[] = [];
   let yes = false;
   let dryRun = false;
-  for (const arg of args) {
-    if (arg === '--yes' || arg === '-y') yes = true;
-    else if (arg === '--dry-run') dryRun = true;
-    else issues.push(unexpected('init', arg));
+  let noTutorial = false;
+  let lang: WizardLanguage | undefined;
+  for (let i = 0; i < args.length;) {
+    const own = ownOption(args, i, INIT_OPTIONS, issues);
+    if (own === null) {
+      issues.push(unexpected('init', args[i] as string));
+      i += 1;
+      continue;
+    }
+    i += own.used;
+    const { name, value } = own.option;
+    if (name === '--yes' || name === '-y') yes = true;
+    else if (name === '--dry-run') dryRun = true;
+    else if (name === '--no-tutorial') noTutorial = true;
+    else if (value !== undefined) {
+      const code = value.toLowerCase();
+      if (isWizardLanguage(code)) lang = code;
+      else issues.push(invalidValue('--lang', `one of ${LANGUAGES.join(', ')}`, value));
+    }
   }
-  return issues.length > 0 ? fail(issues) : { ok: true, value: { kind: 'init', yes, dryRun } };
+  if (issues.length > 0) return fail(issues);
+  return {
+    ok: true,
+    value: {
+      kind: 'init',
+      yes,
+      dryRun,
+      ...(lang === undefined ? {} : { lang }),
+      ...(noTutorial ? { noTutorial: true as const } : {}),
+    },
+  };
 }
 
 /** Parses the arguments after the command name (`process.argv.slice(2)`). */

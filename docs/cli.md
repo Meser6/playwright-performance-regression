@@ -20,8 +20,19 @@ pw-perf <command> [options] [playwright test arguments]
 command, and `pw-perf --version` (or `-v`) the installed version.
 
 Messages of the CLI go to stderr; `--help`, `--version` and the thresholds diff of
-`thresholds --from` go to stdout. Colors are used only in a terminal and never when `NO_COLOR` is
-set.
+`thresholds --from` go to stdout.
+
+Colors: the CLI messages, the run summary, the thresholds diff and `init` use the 16 ANSI colors
+when the output is a terminal and `TERM` is not `dumb`. Green means success, red an error or a
+blocking result, yellow a warning, cyan step headers and commands, dim explanations and default
+answers. Every colored item also has a symbol or a word, and the text is the same without
+colors.
+
+| Variable        | Effect                                                   |
+| --------------- | -------------------------------------------------------- |
+| `NO_COLOR=1`    | No colors, also in a terminal and with `FORCE_COLOR`.    |
+| `FORCE_COLOR=1` | Colors also without a terminal (for example in CI logs). |
+| `FORCE_COLOR=0` | No colors.                                               |
 
 ## `pw-perf test`
 
@@ -114,7 +125,7 @@ in the config.
 ## `pw-perf init`
 
 ```text
-pw-perf init [--yes] [--dry-run]
+pw-perf init [--yes] [--dry-run] [--lang <code>] [--no-tutorial]
 ```
 
 Sets the package up in the current project. It reads the project files as text (the Playwright
@@ -123,11 +134,13 @@ to measure, repetitions, a warn-only start, environments, a CI job), shows a dif
 and applies the changes after you confirm them. `npm init playwright-performance-regression`
 installs the package and then runs this command.
 
-| Option         | Meaning                                         |
-| -------------- | ----------------------------------------------- |
-| `-y`, `--yes`  | Take the default answers and write the changes. |
-| `--dry-run`    | Show the planned changes, write nothing.        |
-| `-h`, `--help` | Show the help of the command.                   |
+| Option          | Meaning                                                                     |
+| --------------- | --------------------------------------------------------------------------- |
+| `-y`, `--yes`   | Take the default answers and write the changes.                             |
+| `--dry-run`     | Show the planned changes, write nothing.                                    |
+| `--lang <code>` | Language of the wizard: `en` (default), `es`, `fr`, `pl`, `it`, `uk`, `ru`. |
+| `--no-tutorial` | Print the manual setup steps and change nothing.                            |
+| `-h`, `--help`  | Show the help of the command.                                               |
 
 What it can change:
 
@@ -146,6 +159,14 @@ instruction ([`INIT_MANUAL_STEP`](troubleshooting.md#init_manual_step)); see
 [Adoption](adoption.md) for those cases. Running `init` again changes nothing that is already
 set up. An existing `pw-perf.config.ts` is replaced only after its own confirmation, never with
 `--yes`.
+
+In a terminal, `init` first asks whether to set the package up with a guided tutorial. Answering
+no (or passing `--no-tutorial`) ends right away with exit code 0 and changes no file: it prints
+the manual setup steps and a link to [Adoption](adoption.md). Then it asks for the language of
+the wizard; `--lang` skips that question. With `--yes` or without a terminal both questions are
+skipped and the wizard runs in `--lang` or English. Only the wizard texts are translated: codes,
+file and option names, the written files and the other commands stay in English, and the files
+written are the same in every language.
 
 Without a terminal and without `--yes`, `init` prints the plan with the default answers and
 writes nothing. Nothing is written before the step that applies the changes, so Ctrl+C before

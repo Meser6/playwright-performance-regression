@@ -26,6 +26,11 @@ export default defineConfig([
     sourcemap: false,
     splitting: true,
     treeshake: true,
+    // UTF-8 output instead of \u escapes: the wizard texts (04-REQ-43) are mostly non-ASCII and
+    // escaping would triple their size (13-REQ-11 package size).
+    esbuildOptions(options) {
+      options.charset = 'utf8';
+    },
   },
   {
     // CJS: a separate CommonJS build of the library entry points with its own shared chunks

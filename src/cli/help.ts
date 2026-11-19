@@ -1,4 +1,5 @@
 // Help texts of the CLI (04, chapters 3 and 6; 04-REQ-21). Printed on stdout.
+import { LANGUAGES } from './init/messages.ts';
 import { CLI_COMMAND } from '../core/types/index.ts';
 import type { HelpTopic } from './parse.ts';
 
@@ -106,7 +107,7 @@ const REPORT = [
 ];
 
 const INIT = [
-  `Usage: ${CLI_COMMAND} init [--yes] [--dry-run]`,
+  `Usage: ${CLI_COMMAND} init [--yes] [--dry-run] [--lang <code>] [--no-tutorial]`,
   '',
   'Guided setup of the package in this project: asks a few questions, shows a diff of every',
   'change and applies it after confirmation. Files it does not recognize are left unchanged',
@@ -115,6 +116,8 @@ const INIT = [
   'Options:',
   '  -y, --yes      Accept the default answers and write the changes',
   '  --dry-run      Show the planned changes only',
+  `  --lang <code>  Language of the wizard: ${LANGUAGES.join(', ')} (default: en, or asked)`,
+  '  --no-tutorial  Print the manual setup steps and change nothing',
   '  -h, --help     Show this help',
   '',
   'Exit codes: 0 done (also with manual steps left) · 3 error · 130 interrupted',
