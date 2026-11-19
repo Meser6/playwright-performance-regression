@@ -27,3 +27,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Performance and statistical test results (12-REQ-12)
+perf-test-results/

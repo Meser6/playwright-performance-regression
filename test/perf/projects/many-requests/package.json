@@ -1,0 +1,5 @@
+{
+  "name": "perf-many-requests",
+  "private": true,
+  "type": "module"
+}

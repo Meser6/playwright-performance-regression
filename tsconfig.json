@@ -20,5 +20,5 @@
     "checkJs": true
   },
   "include": ["src", "test", "scripts", "*.config.ts", "eslint.config.js"],
-  "exclude": ["test/integration/projects", "src/html/template"]
+  "exclude": ["test/integration/projects", "test/perf/projects", "src/html/template"]
 }

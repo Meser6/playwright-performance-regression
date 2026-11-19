@@ -53,6 +53,7 @@ export default tseslint.config(
       'src/core/config/generated/',
       // Sample Playwright projects run by the integration tests against the built package.
       'test/integration/projects/',
+      'test/perf/projects/',
     ],
   },
   js.configs.recommended,
