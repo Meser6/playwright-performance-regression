@@ -57,6 +57,11 @@ jobs:
       - run: pnpm check:types-generated
       - run: pnpm check:html-generated
       - run: pnpm check:ci-generated
+      - run: pnpm check:docs-generated
+      # 13-AC-07: actionlint (workflow linter) on the GitHub Actions recipe (the other recipes are
+      # checked by test/contract/ci-recipes.test.ts).
+      - name: Lint the GitHub Actions recipe
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color examples/ci/github-actions.yml
       - run: pnpm check:packages
       - run: pnpm check:ac
       - run: pnpm publint

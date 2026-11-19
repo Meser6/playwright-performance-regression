@@ -111,6 +111,8 @@
     "check:html-generated": "node scripts/build-html-assets.mjs --check",
     "gen:ci": "node scripts/build-ci-templates.mjs",
     "check:ci-generated": "node scripts/build-ci-templates.mjs --check",
+    "gen:docs": "node scripts/build-config-docs.mjs",
+    "check:docs-generated": "node scripts/build-config-docs.mjs --check",
     "check:packages": "node scripts/check-packages.mjs",
     "publint": "publint --strict && publint --strict create",
     "attw": "attw --pack . --profile node16"
@@ -139,6 +141,7 @@
     "tsup": "9.0.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.73.0",
-    "vitest": "5.1.1"
+    "vitest": "5.1.1",
+    "yaml": "2.9.1"
   }
 }

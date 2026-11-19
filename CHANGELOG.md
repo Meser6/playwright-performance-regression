@@ -242,6 +242,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CI recipes in `examples/ci/` (`github-actions.yml`, `gitlab-ci.yml`, `Jenkinsfile`,
   `azure-pipelines.yml`): pull request and nightly triggers, the report uploaded always, exit
   code 2 as a soft failure on GitLab, Jenkins and Azure Pipelines, and a time limit.
+- User documentation: a README with installation, quick start, CI, limitations, privacy and
+  compatibility, and `docs/` with configuration (generated from
+  `schemas/config.schema.json`), CLI, adoption in existing projects, thresholds, CI,
+  troubleshooting for every warning and error code, FAQ, and upgrading.
+- Example projects `examples/basic` and `examples/with-setup`, runnable against the demo app of
+  the repository.
 
 ### Changed
 
