@@ -228,7 +228,9 @@ describe('pw-perf test and thresholds', () => {
       ]);
       expect(run.status, run.output).toBe(0);
       expect(existsSync(reportPath(run))).toBe(true);
-      expect(run.stdout).toContain('✓');
+      // The list reporter marks a passed test with ✓, or with "ok" where the console has no
+      // Unicode symbols (Windows without a terminal).
+      expect(run.stdout).toMatch(/^\s+(✓|ok)\s+1 \[chromium\]/mu);
       expect(run.stderr).toContain('exit code 0');
       // A grep is a test filter: no tip.
       expect(run.stderr).not.toContain('tip:');
