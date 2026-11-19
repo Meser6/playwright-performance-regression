@@ -13,6 +13,18 @@ export function bodyEnd(): void {
   test.info().annotations.push({ type: 'body-end', description: String(Date.now()) });
 }
 
+/**
+ * Marks when the page closes with its context, in the worker. The collector drains before the
+ * context closes, so body end → page close is the afterEach hooks plus the collector's wait,
+ * without the rest of the teardown and the reporting to the runner process.
+ */
+export function markPageClose(page: Page): void {
+  const info = test.info();
+  page.once('close', () => {
+    info.annotations.push({ type: 'page-close', description: String(Date.now()) });
+  });
+}
+
 /** Starts a fetch in the page without waiting for it; resolves when the request was sent. */
 export async function startFetch(page: Page, url: string, init?: RequestInit): Promise<void> {
   await Promise.all([
