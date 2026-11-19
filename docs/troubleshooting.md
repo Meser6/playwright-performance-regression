@@ -293,7 +293,7 @@ version. Update it, then run `init` again.
 ### INIT_NO_TAGGED_TESTS
 
 **Warning.** No test is tagged `@perf`, so the wizard proposes to measure all tests. To measure a
-subset, tag tests with `test('title @perf', ...)` or `test('title', { tag: '@perf' }, ...)` and
+subset, tag tests with `test('title', { tag: '@perf' }, ...)` and
 choose `@perf`; see [adoption.md](adoption.md).
 
 ### INIT_MANUAL_STEP
