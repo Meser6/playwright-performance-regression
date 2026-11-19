@@ -1,7 +1,6 @@
 {
   "name": "playwright-performance-regression",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0-next.0",
   "description": "Catch backend performance regressions from the Playwright tests you already have.",
   "keywords": [
     "playwright",

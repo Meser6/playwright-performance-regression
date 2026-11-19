@@ -2,8 +2,10 @@
 
 Catch backend performance regressions from the Playwright tests you already have.
 
-> **Not published yet.** The package is not on npm yet. The commands below describe how it will
-> be installed; until the first release, the API, file formats and CLI may still change.
+> **Pre-release.** `0.1.0-next.N` versions are published under the `next` tag: install with
+> `npm init playwright-performance-regression@next` or
+> `npm install --save-dev playwright-performance-regression@next`. Until `0.1.0`, the API, file
+> formats and CLI may still change.
 
 ![HTML report of a measurement run](.github/assets/report.png)
 
