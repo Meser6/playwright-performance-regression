@@ -142,7 +142,11 @@ describe('pw-perf test and thresholds', () => {
         `${PACKAGE_NAME}: tests passed · performance passed · exit code 0`,
       );
       const html = join(dirname(reportPath(run)), 'report.html');
-      expect(run.stderr).toContain(`${PACKAGE_NAME}: report: ${html}`);
+      // One absolute Report line at the end of the summary; the CLI does not repeat it (09-REQ-30).
+      expect(run.stderr).not.toContain(`${PACKAGE_NAME}: report:`);
+      const shown = /^Report: (.+)$/mu.exec(run.stdout)?.[1];
+      expect(shown, run.stdout).toBeDefined();
+      expect(realpathSync(shown ?? '')).toBe(realpathSync(html));
       expect(existsSync(reportPath(run))).toBe(true);
       expect(readFileSync(html, 'utf8').startsWith('<!doctype html>')).toBe(true);
       expect(outcomeFilesLeft()).toEqual([]);
@@ -302,8 +306,8 @@ describe('pw-perf test and thresholds', () => {
       const run = await runCli(['thresholds', '--repeat', '10'], {
         env: { THRESHOLDS_DIR: kept },
         onOutput: (child, output) => {
-          // After the first finished test (list reporter).
-          if (!sent && output.includes('✓')) {
+          // After the first finished test (dot reporter, 04-REQ-32).
+          if (!sent && output.includes('·')) {
             sent = true;
             child.kill('SIGINT');
           }
@@ -324,7 +328,7 @@ describe('pw-perf test and thresholds', () => {
       let sent = false;
       const run = await runCli(['test', '--repeat', '10'], {
         onOutput: (child, output) => {
-          if (!sent && output.includes('✓')) {
+          if (!sent && output.includes('·')) {
             sent = true;
             child.kill('SIGTERM');
           }

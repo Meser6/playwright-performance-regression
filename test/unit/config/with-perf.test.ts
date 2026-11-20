@@ -71,7 +71,7 @@ describe('withPerf in perf mode', () => {
       ['chromium', 3],
     ]);
     const reporter = result.reporter as [string][];
-    expect(reporter[0]).toEqual(['list']);
+    expect(reporter[0]).toEqual(['dot']);
     expect(reporter[1]?.[0]).toMatch(/[\\/]reporter\.(?:c?js|ts)$/);
 
     const state = getRegistered();
@@ -84,6 +84,7 @@ describe('withPerf in perf mode', () => {
       overridden: ['workers'],
       removedProjects: ['firefox'],
       removedReporters: [],
+      replacedReporters: [],
     });
   });
 

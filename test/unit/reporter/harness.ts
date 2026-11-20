@@ -84,7 +84,12 @@ export function registered(
     mode,
     packageVersion: '0.0.0-test',
     measuredProjects: measured,
-    runConditions: { overridden: ['trace'], removedProjects: ['firefox'], removedReporters: [] },
+    runConditions: {
+      overridden: ['trace'],
+      removedProjects: ['firefox'],
+      removedReporters: [],
+      replacedReporters: ['list'],
+    },
     warnings: [],
   };
 }

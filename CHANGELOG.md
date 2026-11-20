@@ -23,6 +23,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The `pw-perf.config.ts` written by `init` lists every option: the answers that differ from the
   defaults as code, all other options as comments with their default value and a one-line
   description, grouped by section. The comments are generated from the config schema.
+- Measurement runs replace the `list` reporter with `dot` and add `dot` (also locally) when no
+  console reporter is left, so hundreds of executions no longer flood the terminal. Keep `list`
+  with `--reporter=list` or `run.keepReporters: ['list']`. The info line at the start says
+  `reporter list replaced with dot`.
+- The run summary is easier to spot and read: a separator line and a bold header, bold section
+  headings, red error codes, yellow warning codes, dim hints, red blocking and yellow
+  non-blocking rows, and the verdict as a colored badge (`✔ PASSED`, `! PASSED WITH WARNINGS`,
+  `✖ FAILED`, `✖ ERROR`). Without colors the text keeps the same words and markers.
+- The summary ends with one `Report:` line with the absolute path of `report.html` (or
+  `report.json` without HTML), and the thresholds diff with an absolute `Diff:` path; the CLI no
+  longer prints the `report:` and `thresholds diff:` lines after them.
+- The counters line omits zero counts and says what it counts, e.g. `19 keys · 19 from file ·
+8 checked by median only (few samples) · 2 file entries not seen`.
+- `THRESHOLDS_FILE_MISSING` is reported only for a kind that has keys in the run, so projects
+  without custom measurements no longer get a warning about the custom file.
+
+### Fixed
+
+- A run with too many failed tests (`TESTS_FAILED_TOO_MANY`) or another run problem no longer
+  reports "1 tool error" and "performance failed": the verdict names the cause (`too many failed
+tests (30 of 101 executions); the performance result is not trustworthy`) and the CLI says
+  `performance result not trustworthy`. The exit code stays 3.
 
 ## [0.1.0-next.1] - 2026-11-19
 

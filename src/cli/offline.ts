@@ -242,7 +242,7 @@ export async function thresholdsFrom(cmd: FromCommand, host: CliHost): Promise<n
       width,
       color: outputStyle(stdout, host.env).color,
       prune: cmd.prune,
-      diffPath: diffWritten ? relativeSlashPath(host.cwd, diffPath) : null,
+      diffPath: diffWritten ? diffPath : null,
     }),
   );
   if (writeErrors.length > 0) return out.errors(writeErrors);

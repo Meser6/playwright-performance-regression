@@ -3,17 +3,36 @@
 // (symbols and words stay), so the text without them is the same apart from the ANSI sequences.
 // Pure: the caller passes the stream and the environment.
 
-/** green: success/passed, red: error/blocking, yellow: warning, cyan: step headers and command
- * names, dim: explanations and default values, bold: emphasis (questions, file names). */
-export type ColorStyle = 'green' | 'red' | 'yellow' | 'cyan' | 'dim' | 'bold';
+/** green: success/passed, red: error/blocking, yellow: warning, magenta: tool error (result not
+ * trustworthy), cyan: step headers and command names, dim: explanations, hints and default
+ * values, bold: headings and emphasis (questions, file names). The badges are bold text on a
+ * background of the verdict color (09-REQ-29). */
+export type ColorStyle =
+  | 'green'
+  | 'red'
+  | 'yellow'
+  | 'magenta'
+  | 'cyan'
+  | 'dim'
+  | 'bold'
+  | 'badge-green'
+  | 'badge-yellow'
+  | 'badge-red'
+  | 'badge-magenta';
 
 const ANSI: Record<ColorStyle, string> = {
   green: '\u001b[32m',
   red: '\u001b[31m',
   yellow: '\u001b[33m',
+  magenta: '\u001b[35m',
   cyan: '\u001b[36m',
   dim: '\u001b[2m',
   bold: '\u001b[1m',
+  // Black on the light backgrounds, bright white on the dark ones.
+  'badge-green': '\u001b[1;30;42m',
+  'badge-yellow': '\u001b[1;30;43m',
+  'badge-red': '\u001b[1;97;41m',
+  'badge-magenta': '\u001b[1;97;45m',
 };
 const RESET = '\u001b[0m';
 

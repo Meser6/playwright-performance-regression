@@ -3,7 +3,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import { resolveConfig } from '../core/config/index.ts';
 import type { PerfConfigInput } from '../core/config/index.ts';
 import { ConfigError } from '../core/types/index.ts';
-import { isCiEnv, readModeState } from '../mode/index.ts';
+import { readModeState } from '../mode/index.ts';
 import { setRegistered } from '../registry/index.ts';
 import { reporterEntryPath } from './reporter-path.ts';
 import { planPerfRun } from './run-conditions.ts';
@@ -38,7 +38,6 @@ export function withPerf<T extends PlaywrightTestConfig>(
     projects: perf.run.projects,
     keepReporters: perf.run.keepReporters,
     repeat: perf.run.repeat[state.mode],
-    ci: isCiEnv(process.env),
     reporterPath: reporterEntryPath(),
   });
   if (!plan.ok) throw new ConfigError(plan.issues);

@@ -1,8 +1,7 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: thresholds · 41 tests (40 passed, 0 failed, 1 flaky)
 
 Warnings:
-  ! THRESHOLDS_FILE_MISSING: Thresholds file pw-perf-thresholds.custom.json not found; custom measurement keys are evaluated with default thresholds.
-    Hint: Derive thresholds with `npx pw-perf thresholds`.
   ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 1.
     Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
   ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 2.
@@ -21,9 +20,11 @@ Warnings:
     Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
   ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 9.
     Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  … and 2 more warnings (see report)
+  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 10.
+    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
+  … and 1 more warning (see report)
 
-Endpoints: 22 keys · 22 from file · 0 default · 0 too few samples · 0 median only
+Endpoints: 22 keys · 22 from file
 
     kind  key                             rule   actual    limit  over   n  src   flag
   ! api   GET /api/items/22               p95   1220 ms  1000 ms  +22%  20  file
@@ -48,5 +49,5 @@ Endpoints: 22 keys · 22 from file · 0 default · 0 too few samples · 0 median
   ! api   GET /api/items/03               p95   1030 ms  1000 ms   +3%  20  file
   … and 2 more violations (see report)
 
-PASSED WITH WARNINGS: 22 keys with violations, none blocking (gate.warnOnly) (informational, gate disabled)
-Report: pw-perf-results/report.html · pw-perf-results/report.json
+ ! PASSED WITH WARNINGS  22 keys with violations, none blocking (gate.warnOnly) (informational, gate disabled)
+Report: /work/app/pw-perf-results/report.html

@@ -60,28 +60,26 @@ const EVALUATION_TEXT: Record<Outcome['evaluation']['status'], string> = {
   error: 'performance not evaluated',
 };
 
+/** The performance part of the result line (04-REQ-30). */
+function performanceText(outcome: Outcome): string {
+  if (outcome.mode === 'thresholds') {
+    return outcome.exitCode === 0 ? 'thresholds derived' : 'thresholds not written';
+  }
+  // Exit code 3 with an evaluation: the result is not trustworthy (e.g. TESTS_FAILED_TOO_MANY),
+  // so the evaluation does not decide (09-REQ-25).
+  if (outcome.exitCode === 3 && outcome.evaluation.status !== 'error') {
+    return 'performance result not trustworthy';
+  }
+  return EVALUATION_TEXT[outcome.evaluation.status];
+}
+
 /**
- * At most three lines after a run (04-REQ-30): the result, the report and, in thresholds mode,
- * the thresholds diff. Paths are shown as given.
+ * One line after a run (04-REQ-30). The reporter prints the report and thresholds diff paths at
+ * the end of its output (09-REQ-30), so they are not repeated here.
  */
 export function resultLines(outcome: Outcome | null, exitCode: number, opts: OutputStyle): string {
   const parts: string[] = [];
-  if (outcome !== null) {
-    parts.push(TESTS_TEXT[outcome.tests.status]);
-    parts.push(
-      outcome.mode === 'thresholds'
-        ? outcome.exitCode === 0
-          ? 'thresholds derived'
-          : 'thresholds not written'
-        : EVALUATION_TEXT[outcome.evaluation.status],
-    );
-  }
-  const code = paint(`exit code ${exitCode}`, exitCode === 0 ? 'green' : 'red', opts);
-  parts.push(code);
-  let text = infoLine(parts.join(' · '));
-  const report = outcome?.paths.reportHtml ?? outcome?.paths.reportJson ?? null;
-  if (report !== null) text += infoLine(`report: ${report}`);
-  const diff = outcome?.paths.thresholdsDiff ?? null;
-  if (diff !== null) text += infoLine(`thresholds diff: ${diff}`);
-  return text;
+  if (outcome !== null) parts.push(TESTS_TEXT[outcome.tests.status], performanceText(outcome));
+  parts.push(paint(`exit code ${exitCode}`, exitCode === 0 ? 'green' : 'red', opts));
+  return infoLine(parts.join(' · '));
 }

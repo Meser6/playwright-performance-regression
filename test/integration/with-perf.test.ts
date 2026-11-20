@@ -147,7 +147,7 @@ describe('withPerf with real Playwright', () => {
       expect(run.executions.map((e) => e.retry)).toEqual([0, 0, 0, 0, 0]);
       // Console reporter, the kept reporter and the package reporter; junit and html removed.
       expect(run.main.reporters.map(([name]) => name)).toEqual([
-        'list',
+        'dot',
         join(projects, 'esm-ts/record-reporter.mjs'),
         reporterEsm,
       ]);
@@ -166,6 +166,7 @@ describe('withPerf with real Playwright', () => {
           overridden: ['workers', 'retries', 'trace'],
           removedProjects: ['firefox', 'webkit'],
           removedReporters: ['junit', 'html'],
+          replacedReporters: ['list'],
         },
       });
       for (const execution of run.executions) expect(execution.registry).toEqual(registry);

@@ -20,7 +20,12 @@ function state(input: PerfConfigInput = {}, measuredProjects = ['chromium']): Re
     mode: { mode: 'test' },
     packageVersion: '0.0.0',
     measuredProjects,
-    runConditions: { overridden: [], removedProjects: [], removedReporters: [] },
+    runConditions: {
+      overridden: [],
+      removedProjects: [],
+      removedReporters: [],
+      replacedReporters: [],
+    },
     warnings: [],
   };
 }

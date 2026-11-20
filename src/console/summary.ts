@@ -1,6 +1,7 @@
 // Console summary at the end of a perf-mode run (09, chapter 8; F-12). A function of the run
 // report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
-// terminal width, the color decision and the current directory, and prints the text.
+// terminal width and the color decision, and prints the text. Colors follow 09-REQ-27; without
+// them the text is the same apart from the ANSI sequences.
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
 import { painter } from './color.ts';
 import type { ColorStyle, Painter } from './color.ts';
@@ -13,8 +14,6 @@ export interface SummaryOptions {
   width: number;
   /** ANSI colors: see colorEnabled (09-REQ-22, 04-REQ-44). */
   color: boolean;
-  /** Directory the report paths are shown relative to. */
-  cwd: string;
   /** Whether report.html was written; default: report.html of the config snapshot. */
   html?: boolean;
 }
@@ -97,7 +96,7 @@ function isMuted(evaluation: KeyEvaluation): boolean {
   return evaluation.muted !== null && !evaluation.muted.expired;
 }
 
-function header(report: RunReport): string {
+function header(report: RunReport, paint: Paint): string {
   const t = report.tests;
   const executions = t.expected + t.unexpected + t.flaky;
   const details = [`${t.expected} passed`, `${t.unexpected} failed`];
@@ -111,72 +110,78 @@ function header(report: RunReport): string {
     const commit = ci.commit === null ? '' : `@${ci.commit.slice(0, 7)}`;
     parts.push(`${ci.branch ?? ''}${commit}`);
   }
-  return parts.join(' · ');
+  return paint(parts.join(' · '), 'bold');
 }
 
 function issueLines(
   title: string,
   issues: readonly Issue[],
   limit: number,
-  marker: string,
-  more: string,
+  level: 'error' | 'warning',
+  paint: Paint,
 ): string[] {
   if (issues.length === 0) return [];
-  const lines = [title];
+  const [marker, style, more]: [string, ColorStyle, string] =
+    level === 'error' ? ['✖', 'red', 'error'] : ['!', 'yellow', 'warning'];
+  const lines = [paint(title, 'bold')];
   for (const issue of issues.slice(0, limit)) {
     const times = issue.count !== undefined && issue.count > 1 ? ` (×${issue.count})` : '';
-    lines.push(`  ${marker} ${issue.code}: ${issue.message}${times}`);
-    if (issue.hint !== undefined) lines.push(`    Hint: ${issue.hint}`);
+    lines.push(`  ${paint(`${marker} ${issue.code}`, style)}: ${issue.message}${times}`);
+    if (issue.hint !== undefined) lines.push(paint(`    Hint: ${issue.hint}`, 'dim'));
   }
   if (issues.length > limit) {
-    lines.push(`  … and ${issues.length - limit} more ${more} (see report)`);
+    lines.push(
+      paint(
+        `  … and ${plural(issues.length - limit, `more ${more}`, `more ${more}s`)} (see report)`,
+        'dim',
+      ),
+    );
   }
   return [...lines, ''];
 }
 
 const LABEL_WIDTH = 'Endpoints: '.length;
 
-function counterLines(report: RunReport): string[] {
+/** A bold label padded to the label column. */
+function label(text: string, paint: Paint): string {
+  return paint(text, 'bold') + ' '.repeat(Math.max(0, LABEL_WIDTH - textWidth(text)));
+}
+
+/** Counters per kind (09-REQ-28): the number of keys, then only the non-zero counters. */
+function counterLines(report: RunReport, paint: Paint): string[] {
   const counts = report.evaluation.counts;
   const shown = KINDS.filter(
     (kind) => kind === 'api' || counts.custom.keys > 0 || counts.custom.unseenThresholdEntries > 0,
   );
-  const columns: { label: string; value: (kind: Kind) => number; optional?: boolean }[] = [
-    { label: 'keys', value: (k) => counts[k].keys },
-    { label: 'from file', value: (k) => counts[k].fromFile },
-    { label: 'default', value: (k) => counts[k].fromDefaults },
-    { label: 'too few samples', value: (k) => counts[k].tooFewSamples },
-    { label: 'median only', value: (k) => counts[k].medianOnly },
-    { label: 'unseen entries', value: (k) => counts[k].unseenThresholdEntries, optional: true },
-    {
-      label: 'not evaluated',
-      value: (k) => counts[k].notEvaluated - counts[k].tooFewSamples,
-      optional: true,
-    },
+  const percentileOff = report.config.checks?.time?.percentile?.enabled === false;
+  const medianOnly = `checked by median only (${percentileOff ? 'percentile rule off' : 'few samples'})`;
+  const counters: { text: string; value: (kind: Kind) => number }[] = [
+    { text: 'from file', value: (k) => counts[k].fromFile },
+    { text: 'on default thresholds', value: (k) => counts[k].fromDefaults },
+    { text: 'skipped (too few samples)', value: (k) => counts[k].tooFewSamples },
+    { text: 'not evaluated', value: (k) => counts[k].notEvaluated - counts[k].tooFewSamples },
+    { text: medianOnly, value: (k) => counts[k].medianOnly },
+    { text: 'file entries not seen', value: (k) => counts[k].unseenThresholdEntries },
   ];
-  const used = columns.filter((c) => !c.optional || shown.some((k) => c.value(k) > 0));
-  const widths = used.map((c) => Math.max(...shown.map((k) => String(c.value(k)).length)));
   return shown.map((kind) => {
-    const label = padEnd(kind === 'api' ? 'Endpoints:' : 'Custom:', LABEL_WIDTH);
-    const cells = used.flatMap((c, i) => {
+    const cells = [plural(counts[kind].keys, 'key')];
+    for (const c of counters) {
       const value = c.value(kind);
-      if (c.optional && value === 0) return [];
-      const label = c.label === 'keys' && value === 1 ? 'key' : c.label;
-      return [`${padStart(String(value), widths[i] ?? 0)} ${label}`];
-    });
-    return label + cells.join(' · ');
+      if (value !== 0) cells.push(`${value} ${c.text}`);
+    }
+    return label(kind === 'api' ? 'Endpoints:' : 'Custom:', paint) + cells.join(' · ');
   });
 }
 
-function mutedLines(report: RunReport): string[] {
+function mutedLines(report: RunReport, paint: Paint): string[] {
   const lines: string[] = [];
   for (const kind of KINDS) {
     const aggregates = kind === 'api' ? report.endpoints : report.custom;
     for (const key of Object.keys(aggregates).sort(compareText)) {
       const muted = aggregates[key]?.evaluation.muted;
       if (muted === undefined || muted === null || muted.expired) continue;
-      const label = lines.length === 0 ? 'Muted:' : '';
-      lines.push(`${padEnd(label, LABEL_WIDTH)}${key} until ${muted.until} — "${muted.note}"`);
+      const head = lines.length === 0 ? label('Muted:', paint) : ' '.repeat(LABEL_WIDTH);
+      lines.push(`${head}${key} until ${muted.until} — "${muted.note}"`);
     }
   }
   return lines;
@@ -250,12 +255,10 @@ function tableLines(report: RunReport, list: Violation[], width: number, paint: 
     widths.flag +
     2 * 8;
   const keyWidth = Math.max(MIN_KEY_WIDTH, Math.min(width - fixed, w('key')));
-  const line = (r: typeof head, isHead: boolean): string => {
-    const marker =
-      isHead || r.marker === ' ' ? r.marker : paint(r.marker, r.marker === '✖' ? 'red' : 'yellow');
-    const flag = r.flag.includes('HARD') && !isHead ? paint(r.flag, 'red') : r.flag;
-    return [
-      `  ${marker} ${padEnd(r.kind, widths.kind)}`,
+  // The whole row in one color: red when the violation blocks, yellow otherwise (09-REQ-27).
+  const line = (r: typeof head): string =>
+    [
+      `  ${r.marker} ${padEnd(r.kind, widths.kind)}`,
       padEnd(truncateMiddle(r.key, keyWidth), keyWidth),
       padEnd(r.rule, widths.rule),
       padStart(r.actual, widths.actual),
@@ -263,14 +266,17 @@ function tableLines(report: RunReport, list: Violation[], width: number, paint: 
       padStart(r.over, widths.over),
       padStart(r.n, widths.n),
       padEnd(r.src, widths.src),
-      flag,
+      r.flag,
     ]
       .join('  ')
       .trimEnd();
-  };
-  const lines = [line(head, true), ...rows.map((r) => line(r, false))];
+  const lines = [
+    paint(line(head), 'bold'),
+    ...rows.map((r) => paint(line(r), r.marker === '✖' ? 'red' : 'yellow')),
+  ];
   if (list.length > shown.length) {
-    lines.push(`  … and ${list.length - shown.length} more violations (see report)`);
+    const more = plural(list.length - shown.length, 'more violation', 'more violations');
+    lines.push(paint(`  … and ${more} (see report)`, 'dim'));
   }
   return lines;
 }
@@ -295,6 +301,26 @@ function slowestLines(report: RunReport, list: Violation[]): string[] {
   return lines;
 }
 
+/** Causes named in the ERROR verdict (09-REQ-29): run assessment errors by name, the rest counted. */
+function errorCauses(report: RunReport): string[] {
+  const t = report.tests;
+  const named: Record<string, string> = {
+    TESTS_FAILED_TOO_MANY: `too many failed tests (${t.unexpected} of ${t.expected + t.unexpected + t.flaky} executions)`,
+    RUN_INCOMPLETE: 'the run did not complete',
+    RUN_SHARDED: 'the run is sharded',
+  };
+  const causes: string[] = [];
+  let other = 0;
+  for (const issue of report.toolErrors) {
+    const cause = named[issue.code];
+    if (cause === undefined) other += 1;
+    else if (!causes.includes(cause)) causes.push(cause);
+  }
+  if (other > 0) causes.push(plural(other, 'tool error'));
+  return causes;
+}
+
+/** The verdict (09-REQ-29): a badge " <marker> <WORD> " and one sentence with the reason. */
 function resultLine(report: RunReport, paint: Paint): string {
   const counts = report.evaluation.counts;
   const sum = (field: 'violations' | 'blockingViolations' | 'keys' | 'notEvaluated'): number =>
@@ -306,29 +332,30 @@ function resultLine(report: RunReport, paint: Paint): string {
       : gate?.tolerance === undefined
         ? ''
         : ` (tolerance: ${gate.tolerance})`;
-  let word: string;
+  let badge: string;
   let style: ColorStyle;
   let reason: string;
   const status = report.evaluation.status;
   if (report.toolErrors.length > 0 || status === 'error') {
-    word = 'ERROR';
-    style = 'red';
-    reason = `${plural(report.toolErrors.length, 'tool error')}; the result is not trustworthy`;
+    badge = '✖ ERROR';
+    style = 'badge-magenta';
+    const causes = errorCauses(report);
+    reason = `${causes.length === 0 ? '' : `${causes.join(', ')}; `}the performance result is not trustworthy`;
   } else if (status === 'failed') {
-    word = 'FAILED';
-    style = 'red';
+    badge = '✖ FAILED';
+    style = 'badge-red';
     reason = `${plural(sum('blockingViolations'), 'blocking violation')}${policy}`;
   } else if (status === 'warned') {
-    word = 'PASSED WITH WARNINGS';
-    style = 'yellow';
+    badge = '! PASSED WITH WARNINGS';
+    style = 'badge-yellow';
     reason = `${plural(sum('violations'), 'key')} with violations, none blocking${policy}`;
   } else {
-    word = 'PASSED';
-    style = 'green';
+    badge = '✔ PASSED';
+    style = 'badge-green';
     reason = `no violations in ${plural(sum('keys') - sum('notEvaluated'), 'evaluated key')}`;
   }
   const informational = report.mode === 'thresholds' ? ' (informational, gate disabled)' : '';
-  return `${paint(word, style)}: ${reason}${informational}`;
+  return `${paint(` ${badge} `, style)} ${reason}${informational}`;
 }
 
 // Minimal POSIX-style path handling; Windows separators are turned into "/".
@@ -352,19 +379,6 @@ function segments(path: string): string[] {
   return result;
 }
 
-/** `to` relative to the directory `from`; both absolute or `to` is returned as it is. */
-export function relativePath(from: string, to: string): string {
-  const a = toSlash(from);
-  const b = toSlash(to);
-  if (rootOf(a) === '' || rootOf(a) !== rootOf(b)) return b;
-  const x = segments(a);
-  const y = segments(b);
-  let common = 0;
-  while (common < x.length && common < y.length && x[common] === y[common]) common += 1;
-  const parts = [...x.slice(common).map(() => '..'), ...y.slice(common)];
-  return parts.length === 0 ? '.' : parts.join('/');
-}
-
 function resolvePath(base: string, path: string): string {
   const p = toSlash(path);
   if (rootOf(p) !== '') return rootOf(p) + segments(p).join('/');
@@ -372,31 +386,36 @@ function resolvePath(base: string, path: string): string {
   return rootOf(b) + segments(`${b}/${p}`).join('/');
 }
 
-function reportLine(report: RunReport, cwd: string, html: boolean | undefined): string[] {
+/**
+ * One line with the absolute path of report.html, or report.json without HTML (09-REQ-30):
+ * terminals show an absolute path as a link whatever the current directory.
+ */
+function reportLine(report: RunReport, html: boolean | undefined, paint: Paint): string[] {
   const options = report.config.report;
   if (options?.dir === undefined) return [];
   const dir = resolvePath(report.configDir, options.dir);
-  const withHtml = html ?? options.html !== false;
-  const files = [...(withHtml ? ['report.html'] : []), 'report.json'];
-  return [`Report: ${files.map((f) => relativePath(cwd, `${dir}/${f}`)).join(' · ')}`];
+  const file = (html ?? options.html !== false) ? 'report.html' : 'report.json';
+  return [`${paint('Report:', 'bold')} ${dir}/${file}`];
 }
 
 /** Console summary of a run report (09, chapter 8). Ends with a newline. */
 export function formatSummary(report: RunReport, opts: SummaryOptions): string {
   const paint: Paint = painter(opts.color);
   const list = violations(report);
-  const lines: string[] = [header(report), ''];
-  lines.push(...issueLines('Errors:', report.toolErrors, Infinity, paint('✖', 'red'), 'errors'));
-  lines.push(
-    ...issueLines('Warnings:', report.warnings, MAX_WARNINGS, paint('!', 'yellow'), 'warnings'),
-  );
-  lines.push(...counterLines(report), ...mutedLines(report), '');
+  const lines: string[] = [
+    paint('─'.repeat(Math.max(1, opts.width)), 'dim'),
+    header(report, paint),
+    '',
+  ];
+  lines.push(...issueLines('Errors:', report.toolErrors, Infinity, 'error', paint));
+  lines.push(...issueLines('Warnings:', report.warnings, MAX_WARNINGS, 'warning', paint));
+  lines.push(...counterLines(report, paint), ...mutedLines(report, paint), '');
   if (list.length > 0) {
     lines.push(...tableLines(report, list, opts.width, paint));
     const slowest = slowestLines(report, list);
     if (slowest.length > 0) lines.push('', ...slowest);
     lines.push('');
   }
-  lines.push(resultLine(report, paint), ...reportLine(report, opts.cwd, opts.html));
+  lines.push(resultLine(report, paint), ...reportLine(report, opts.html, paint));
   return `${lines.join('\n')}\n`;
 }
