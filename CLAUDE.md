@@ -5,8 +5,8 @@ Guidance for Claude Code (and any contributor) working in this repository.
 ## Project
 
 `playwright-performance-regression` is an npm package for Playwright Test. In a dedicated
-measurement run (`npx pw-perf test`) it records backend request timings and custom measurements
-during existing e2e tests, groups requests into endpoint keys, compares per-key statistics with
+measurement run (`npx pw-perf test`) it records backend request timings and `test.step`
+durations during existing e2e tests, groups requests into endpoint keys, compares per-key statistics with
 thresholds files committed to the user's repository, and fails the run on regression. A second
 package, `create-playwright-performance-regression`, powers `npm init playwright-performance-regression`.
 
@@ -64,7 +64,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
   ```
 
   - types: `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `revert`
-  - scopes: `core`, `config`, `collector`, `fixture`, `custom`, `normalize`, `stats`,
+  - scopes: `core`, `config`, `collector`, `fixture`, `steps`, `normalize`, `stats`,
     `evaluate`, `thresholds`, `reporter`, `html`, `cli`, `init`, `create`, `schemas`, `deps`,
     `release`
   - breaking changes: `!` after type/scope and a `BREAKING CHANGE:` footer with migration steps
