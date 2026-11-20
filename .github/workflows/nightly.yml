@@ -4,8 +4,6 @@ name: Nightly
 # as an artifact (12-REQ-12, 12-AC-04). A failure blocks the next release, not a merge (12-D-05).
 
 on:
-  schedule:
-    - cron: '17 2 * * *'
   workflow_dispatch:
   workflow_call:
 

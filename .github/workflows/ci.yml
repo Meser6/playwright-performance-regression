@@ -1,18 +1,30 @@
 name: CI
 
-# Every pull request and push to main (13-REQ-09, 13-REQ-11):
+# Every pull request and push to main, and the release workflow (13-REQ-09, 13-REQ-11, 13-D-20):
 # - checks: lint, format, types, generated files, package checks, AC coverage (once);
-# - test: unit, contract, integration and e2e tests on the OS x Node x Playwright matrix with
-#   Chromium (required);
-# - browsers: Firefox and WebKit, informational (best effort, D-13).
-# The scheduled runs (performance, statistics, Playwright pre-release) are in nightly.yml and
-# weekly.yml; they do not block a merge (12-D-05, 13-REQ-10).
+# - test: unit, contract, integration and e2e tests with Chromium. Pull requests and pushes run
+#   three cells; the release workflow (input full) and a manual run with "full" run the whole
+#   OS x Node x Playwright matrix;
+# - browsers: Firefox and WebKit, informational (best effort, D-13), full matrix only.
+# Performance and statistical tests run before every release (nightly.yml, called by the release
+# workflow, or by hand); there are no nightly runs (12-D-05, 13-D-20).
 
 on:
   pull_request:
   push:
     branches: [main]
   workflow_call:
+    inputs:
+      full:
+        description: Run the full OS x Node x Playwright matrix
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run the full OS x Node x Playwright matrix
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -53,23 +65,50 @@ jobs:
       - run: pnpm publint
       - run: pnpm attw
 
+  matrix:
+    name: Matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      cells: ${{ steps.cells.outputs.cells }}
+      full: ${{ steps.cells.outputs.full }}
+    steps:
+      # 13-REQ-09: three cells on pull requests and pushes, the full matrix before a release.
+      # ubuntu-24.04: see the checks job.
+      - id: cells
+        env:
+          FULL: ${{ inputs.full == true }}
+        run: |
+          if [ "$FULL" = "true" ]; then
+            cells='[
+              {"os":"ubuntu-24.04","node":22,"playwright":"minimum"},
+              {"os":"ubuntu-24.04","node":22,"playwright":"latest"},
+              {"os":"ubuntu-24.04","node":24,"playwright":"minimum"},
+              {"os":"ubuntu-24.04","node":24,"playwright":"latest"},
+              {"os":"ubuntu-24.04","node":26,"playwright":"minimum"},
+              {"os":"ubuntu-24.04","node":26,"playwright":"latest"},
+              {"os":"macos-latest","node":22,"playwright":"latest"},
+              {"os":"macos-latest","node":26,"playwright":"latest"},
+              {"os":"windows-latest","node":22,"playwright":"latest"},
+              {"os":"windows-latest","node":26,"playwright":"latest"}
+            ]'
+          else
+            cells='[
+              {"os":"ubuntu-24.04","node":24,"playwright":"latest"},
+              {"os":"ubuntu-24.04","node":22,"playwright":"minimum"},
+              {"os":"windows-latest","node":24,"playwright":"latest"}
+            ]'
+          fi
+          echo "cells=$(echo "$cells" | tr -d ' \n')" >> "$GITHUB_OUTPUT"
+          echo "full=$FULL" >> "$GITHUB_OUTPUT"
+
   test:
     name: Test (${{ matrix.os }}, Node ${{ matrix.node }}, Playwright ${{ matrix.playwright }})
     runs-on: ${{ matrix.os }}
+    needs: matrix
     strategy:
       fail-fast: false
       matrix:
-        # 13-REQ-09: Linux with every supported Node line and the lowest and latest Playwright;
-        # macOS and Windows with the oldest and newest Node line and the latest Playwright
-        # (13-D-06). ubuntu-24.04: see the checks job.
-        os: [ubuntu-24.04]
-        node: [22, 24, 26]
-        playwright: [minimum, latest]
-        include:
-          - { os: macos-latest, node: 22, playwright: latest }
-          - { os: macos-latest, node: 26, playwright: latest }
-          - { os: windows-latest, node: 22, playwright: latest }
-          - { os: windows-latest, node: 26, playwright: latest }
+        include: ${{ fromJSON(needs.matrix.outputs.cells) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -109,7 +148,9 @@ jobs:
 
   browsers:
     name: Browsers (Firefox, WebKit; informational)
-    # Best effort (D-13): a failure is reported but never blocks a merge.
+    # Best effort (D-13): a failure is reported but never blocks a merge. Full matrix only.
+    needs: matrix
+    if: needs.matrix.outputs.full == 'true'
     continue-on-error: true
     runs-on: ubuntu-24.04
     steps:

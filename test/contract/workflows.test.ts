@@ -27,7 +27,10 @@ interface Job {
   needs?: string | string[];
   if?: string;
   uses?: string;
-  strategy?: { matrix?: Record<string, unknown> & { include?: Record<string, unknown>[] } };
+  with?: Record<string, unknown>;
+  strategy?: {
+    matrix?: Record<string, unknown> & { include?: Record<string, unknown>[] | string };
+  };
   steps?: Step[];
 }
 interface Workflow {
@@ -72,23 +75,46 @@ describe('workflows', () => {
     }
   });
 
-  test('13-REQ-09 the CI matrix: Linux Node 22/24/26 x Playwright minimum/latest, macOS and Windows Node 22/26 with the latest Playwright', () => {
+  test('13-REQ-09 13-D-20 three cells on pull requests, the full matrix before a release', () => {
     const ci = workflow('ci.yml');
-    expect(Object.keys(ci.on).sort()).toEqual(['pull_request', 'push', 'workflow_call']);
-    const matrix = job(ci, 'test').strategy?.matrix;
-    expect(matrix?.['os']).toEqual(['ubuntu-24.04']);
-    expect(matrix?.['node']).toEqual([22, 24, 26]);
-    expect(matrix?.['playwright']).toEqual(['minimum', 'latest']);
-    expect(matrix?.include).toEqual([
-      { os: 'macos-latest', node: 22, playwright: 'latest' },
-      { os: 'macos-latest', node: 26, playwright: 'latest' },
-      { os: 'windows-latest', node: 22, playwright: 'latest' },
-      { os: 'windows-latest', node: 26, playwright: 'latest' },
+    expect(Object.keys(ci.on).sort()).toEqual([
+      'pull_request',
+      'push',
+      'workflow_call',
+      'workflow_dispatch',
     ]);
+    const cells = runs(job(ci, 'matrix')).join('\n');
+    const parse = (branch: 'full' | 'short') => {
+      const [full, short] = cells.split('else');
+      const text = (branch === 'full' ? full : short) ?? '';
+      return JSON.parse(/cells='([^']*)'/su.exec(text)?.[1] ?? '[]') as Array<
+        Record<string, unknown>
+      >;
+    };
+    expect(parse('short')).toEqual([
+      { os: 'ubuntu-24.04', node: 24, playwright: 'latest' },
+      { os: 'ubuntu-24.04', node: 22, playwright: 'minimum' },
+      { os: 'windows-latest', node: 24, playwright: 'latest' },
+    ]);
+    const full = parse('full');
+    expect(full).toHaveLength(10);
+    for (const node of [22, 24, 26]) {
+      for (const playwright of ['minimum', 'latest']) {
+        expect(full).toContainEqual({ os: 'ubuntu-24.04', node, playwright });
+      }
+    }
+    for (const os of ['macos-latest', 'windows-latest']) {
+      for (const node of [22, 26]) expect(full).toContainEqual({ os, node, playwright: 'latest' });
+    }
+    expect(job(ci, 'test').strategy?.matrix?.include).toBe(
+      '${{ fromJSON(needs.matrix.outputs.cells) }}',
+    );
     expect(runs(job(ci, 'test'))).toEqual(expect.arrayContaining(['pnpm build', 'pnpm test']));
     const browsers = job(ci, 'browsers');
     expect(browsers['continue-on-error']).toBe(true);
+    expect(browsers.if).toBe("needs.matrix.outputs.full == 'true'");
     expect(runs(browsers).join('\n')).toContain('firefox webkit');
+    expect(job(workflow('release.yml'), 'ci').with).toEqual({ full: true });
   });
 
   test('13-REQ-11 the checks job runs every package check', () => {
@@ -108,7 +134,7 @@ describe('workflows', () => {
     }
   });
 
-  test('12-AC-04 the nightly and weekly runs upload the 12-PERF and 12-STAT results as artifacts', () => {
+  test('12-AC-04 the performance and weekly runs upload the 12-PERF and 12-STAT results as artifacts', () => {
     expect(idsInTests('test/perf', /12-PERF-\d\d/gu)).toEqual([
       '12-PERF-01',
       '12-PERF-02',
@@ -125,7 +151,12 @@ describe('workflows', () => {
       ['weekly.yml', 'stats', 'pnpm test:stats'],
     ] as const) {
       const wf = workflow(file);
-      expect(Object.keys(wf.on), file).toContain('schedule');
+      // 13-D-20: performance tests run before a release or by hand, never on a schedule.
+      expect(Object.keys(wf.on), file).toEqual(
+        file === 'nightly.yml'
+          ? ['workflow_dispatch', 'workflow_call']
+          : expect.arrayContaining(['schedule']),
+      );
       const steps = job(wf, id).steps ?? [];
       const testStep = steps.find((s) => s.run === command);
       const resultsDir = testStep?.env?.['PERF_RESULTS_DIR'];
