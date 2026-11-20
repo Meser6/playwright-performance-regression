@@ -1,7 +1,7 @@
 // Performance measurement run with playwright-performance-regression (pw-perf).
 // Use as the script of a pipeline job, e.g. "Jenkinsfile.perf". Exit code 2 (performance
 // regression) marks the build UNSTABLE, 3 (tool or config error) fails it. The report in
-// perf-results/ is archived also when the run fails.
+// pw-perf-results/ is archived also when the run fails.
 pipeline {
   agent any
   options {
@@ -28,7 +28,7 @@ pipeline {
   }
   post {
     always {
-      archiveArtifacts artifacts: 'perf-results/**', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'pw-perf-results/**', allowEmptyArchive: true
     }
   }
 }

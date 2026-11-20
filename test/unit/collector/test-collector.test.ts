@@ -181,7 +181,7 @@ describe('TestCollector', () => {
       body: expect.any(String),
       contentType: 'application/json',
     });
-    expect(SAMPLES_ATTACHMENT_NAME).toBe('playwright-performance-regression-samples');
+    expect(SAMPLES_ATTACHMENT_NAME).toBe('pw-perf-samples');
   });
 
   test('a failing attachment is reported on stderr and never thrown (05-REQ-20)', async () => {

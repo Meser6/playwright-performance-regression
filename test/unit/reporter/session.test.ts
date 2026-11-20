@@ -39,7 +39,7 @@ const PATHS = ['/api/items/1', '/api/cart'];
 const steady = (i: number, path: string): number => (path === '/api/cart' ? 100 : 50) + (i % 7);
 
 function readReport(): RunReport {
-  const text = readFileSync(join(dir, 'perf-results', 'report.json'), 'utf8');
+  const text = readFileSync(join(dir, 'pw-perf-results', 'report.json'), 'utf8');
   expect(validReport(JSON.parse(text)), JSON.stringify(validReport.errors)).toBe(true);
   const parsed = parseRunReport(text, 'report.json');
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
@@ -93,8 +93,8 @@ describe('reporter session in test mode', () => {
     const outcome = readOutcome(outcomeFile);
     expect(outcome).toMatchObject({ runId: 'run-1', mode: 'test', exitCode: 0 });
     expect(outcome.paths).toEqual({
-      reportJson: join(dir, 'perf-results', 'report.json'),
-      reportHtml: join(dir, 'perf-results', 'report.html'),
+      reportJson: join(dir, 'pw-perf-results', 'report.json'),
+      reportHtml: join(dir, 'pw-perf-results', 'report.html'),
       thresholds: [],
       thresholdsDiff: null,
     });
@@ -104,7 +104,7 @@ describe('reporter session in test mode', () => {
       'playwright-performance-regression: perf mode overrides trace; removed projects firefox.\n',
     );
     expect(out).toContain('PASSED');
-    expect(out).toContain('Report: perf-results/report.html');
+    expect(out).toContain('Report: pw-perf-results/report.html');
     expect(out).not.toContain('\u001b[');
   });
 
@@ -129,7 +129,7 @@ describe('reporter session in test mode', () => {
     s.begin(fakeConfig(dir), ROOT);
     const printed = captured.stdout.length;
     expect(await s.end({ status: 'passed' })).toBeUndefined();
-    expect(existsSync(join(dir, 'perf-results'))).toBe(false);
+    expect(existsSync(join(dir, 'pw-perf-results'))).toBe(false);
     expect(existsSync(outcomeFile)).toBe(false);
     expect(captured.stdout).toHaveLength(printed);
   });
@@ -155,7 +155,7 @@ describe('reporter session in test mode', () => {
 
   test('a blocking violation gives exit code 2 and status failed', async () => {
     writeFileSync(
-      join(dir, 'perf-thresholds.api.json'),
+      join(dir, 'pw-perf-thresholds.api.json'),
       JSON.stringify({
         schemaVersion: 1,
         kind: 'api',
@@ -174,7 +174,7 @@ describe('reporter session in test mode', () => {
   });
 
   test('an invalid thresholds file is a tool error: exit code 3, never default thresholds', async () => {
-    writeFileSync(join(dir, 'perf-thresholds.api.json'), '{ not json');
+    writeFileSync(join(dir, 'pw-perf-thresholds.api.json'), '{ not json');
     const outcomeFile = join(dir, 'run.outcome.json');
     const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
     s.begin(fakeConfig(dir), ROOT);
@@ -188,7 +188,7 @@ describe('reporter session in test mode', () => {
 
   test('09-AC-16 with an environment label the file without the label is not used', async () => {
     writeFileSync(
-      join(dir, 'perf-thresholds.api.json'),
+      join(dir, 'pw-perf-thresholds.api.json'),
       JSON.stringify({ schemaVersion: 1, kind: 'api', generated: null, entries: {} }),
     );
     const s = session(fakeHost(dir), registered({}, { mode: 'test', env: 'qa' }));
@@ -199,11 +199,11 @@ describe('reporter session in test mode', () => {
     expect(report.env).toBe('qa');
     expect(report.thresholdFiles[0]).toMatchObject({
       kind: 'api',
-      path: 'perf-thresholds.api.qa.json',
+      path: 'pw-perf-thresholds.api.qa.json',
       status: 'missing',
     });
     const missing = report.warnings.find((w) => w.code === 'THRESHOLDS_FILE_MISSING');
-    expect(missing?.hint).toContain('perf-thresholds.api.json exists');
+    expect(missing?.hint).toContain('pw-perf-thresholds.api.json exists');
   });
 
   test('04-AC-11 failed tests within gate.maxFailedTestShare warn; above it they are a tool error', async () => {
@@ -381,7 +381,7 @@ describe('reporter session in test mode', () => {
   });
 
   test('REPORT_WRITE_FAILED and OUTCOME_WRITE_FAILED', async () => {
-    writeFileSync(join(dir, 'perf-results'), 'a file, not a directory');
+    writeFileSync(join(dir, 'pw-perf-results'), 'a file, not a directory');
     mkdirSync(join(dir, 'outcome-dir'));
     const captured = fakeHost(dir);
     const s = session(
@@ -439,7 +439,7 @@ describe('reporter session in test mode', () => {
 });
 
 describe('reporter session: HTML report', () => {
-  const htmlPath = (): string => join(dir, 'perf-results', 'report.html');
+  const htmlPath = (): string => join(dir, 'pw-perf-results', 'report.html');
 
   async function run(
     input: Parameters<typeof registered>[0],
@@ -467,7 +467,7 @@ describe('reporter session: HTML report', () => {
     const { outcome, out } = await run({ report: { html: false } });
     expect(existsSync(htmlPath())).toBe(false);
     expect(outcome.paths.reportHtml).toBeNull();
-    expect(out).toContain('Report: perf-results/report.json\n');
+    expect(out).toContain('Report: pw-perf-results/report.json\n');
   });
 
   test('11 chapter 13: HTML_RENDER_FAILED keeps report.json, records the error and exit code 3', async () => {
@@ -499,7 +499,7 @@ describe('reporter session: HTML report', () => {
 });
 
 describe('reporter session in thresholds mode', () => {
-  const thresholdsFile = (): string => join(dir, 'perf-thresholds.api.json');
+  const thresholdsFile = (): string => join(dir, 'pw-perf-thresholds.api.json');
 
   async function derive(
     options: {
@@ -524,19 +524,19 @@ describe('reporter session in thresholds mode', () => {
     const { outcome, stdout } = await derive();
     expect(outcome.exitCode).toBe(0);
     expect(outcome.paths.thresholds).toEqual([thresholdsFile()]);
-    expect(outcome.paths.thresholdsDiff).toBe(join(dir, 'perf-results', 'thresholds-diff.md'));
+    expect(outcome.paths.thresholdsDiff).toBe(join(dir, 'pw-perf-results', 'thresholds-diff.md'));
     const file = JSON.parse(readFileSync(thresholdsFile(), 'utf8')) as {
       entries: Record<string, unknown>;
       generated: { sourceRunId: string };
     };
     expect(Object.keys(file.entries).sort()).toEqual(['GET /api/cart', 'GET /api/items/:id']);
     expect(file.generated.sourceRunId).toBe('run-t');
-    expect(existsSync(join(dir, 'perf-thresholds.custom.json'))).toBe(false);
+    expect(existsSync(join(dir, 'pw-perf-thresholds.custom.json'))).toBe(false);
     expect(readFileSync(outcome.paths.thresholdsDiff ?? '', 'utf8')).toContain('# Thresholds diff');
-    expect(stdout.indexOf('Thresholds: perf-thresholds.api.json (created)')).toBeGreaterThan(
+    expect(stdout.indexOf('Thresholds: pw-perf-thresholds.api.json (created)')).toBeGreaterThan(
       stdout.indexOf('PASSED'),
     );
-    expect(stdout).toContain('Diff: perf-results/thresholds-diff.md');
+    expect(stdout).toContain('Diff: pw-perf-results/thresholds-diff.md');
   });
 
   test('02-AC-04 deriving twice from the same samples gives byte-identical files', async () => {

@@ -54,7 +54,7 @@ const CONSOLE = {
   width: 120,
   color: false,
   prune: false,
-  diffPath: 'perf-results/thresholds-diff.md',
+  diffPath: 'pw-perf-results/thresholds-diff.md',
 };
 
 describe('diffThresholds (10, chapter 9)', () => {
@@ -180,18 +180,18 @@ describe('diffThresholds (10, chapter 9)', () => {
     const d = diffs({ endpoints: { k: FAST }, runId: 'run-2' }, existing(loadedFile(content)));
     expect(d[0]?.counts.unchanged).toBe(1);
     const md = formatThresholdsDiffMarkdown(d, [
-      'perf-thresholds.api.json',
-      'perf-thresholds.custom.json',
+      'pw-perf-thresholds.api.json',
+      'pw-perf-thresholds.custom.json',
     ]);
     expect(md).toBe(
       [
         '# Thresholds diff',
         '',
-        '## perf-thresholds.api.json (unchanged)',
+        '## pw-perf-thresholds.api.json (unchanged)',
         '',
         '1 unchanged',
         '',
-        '## perf-thresholds.custom.json (not written)',
+        '## pw-perf-thresholds.custom.json (not written)',
         '',
         'no entries',
         '',
@@ -204,7 +204,7 @@ describe('diffThresholds (10, chapter 9)', () => {
         '  no entries',
         '',
         'The thresholds files are up to date.',
-        'Diff: perf-results/thresholds-diff.md',
+        'Diff: pw-perf-results/thresholds-diff.md',
         '',
       ].join('\n'),
     );

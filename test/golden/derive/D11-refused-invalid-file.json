@@ -10,12 +10,12 @@
       "custom": {
         "status": "invalid",
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "issues": [
           {
             "code": "SCHEMA_VALIDATION_FAILED",
-            "source": "perf-thresholds.custom.json",
-            "message": "perf-thresholds.custom.json: /entries/flow/median must be an integer",
+            "source": "pw-perf-thresholds.custom.json",
+            "message": "pw-perf-thresholds.custom.json: /entries/flow/median must be an integer",
             "problems": [{"pointer":"/entries/flow/median","message":"must be an integer"}]
           }
         ]
@@ -24,6 +24,6 @@
   },
   "expected": {
     "ok": false,
-    "issues": [{"code":"SCHEMA_VALIDATION_FAILED","message":"perf-thresholds.custom.json: /entries/flow/median must be an integer"}]
+    "issues": [{"code":"SCHEMA_VALIDATION_FAILED","message":"pw-perf-thresholds.custom.json: /entries/flow/median must be an integer"}]
   }
 }

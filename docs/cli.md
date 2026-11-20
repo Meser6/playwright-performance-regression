@@ -44,11 +44,11 @@ Runs `playwright test` in perf mode: every measured test runs several times in o
 backend requests and custom measurements are recorded, compared with the thresholds files of the
 project, and the run fails when an endpoint got slower or returns more errors.
 
-| Option          | Meaning                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| `--env <label>` | Environment label: the run uses `perf-thresholds.<kind>.<label>.json`. Overrides `run.env` of the config. |
-| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.test`.                               |
-| `-h`, `--help`  | Show the help of the command.                                                                             |
+| Option          | Meaning                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| `--env <label>` | Environment label: the run uses `pw-perf-thresholds.<kind>.<label>.json`. Overrides `run.env` of the config. |
+| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.test`.                                  |
+| `-h`, `--help`  | Show the help of the command.                                                                                |
 
 Example: measure only the tests tagged `@perf`:
 
@@ -64,12 +64,12 @@ pw-perf thresholds [--env <label>] [--repeat <n>] [--prune] [playwright test arg
 
 Runs the tests in perf mode like `test`, but without failing on violations, and then writes the
 thresholds files from the measured values. Review the printed diff (also in
-`perf-results/thresholds-diff.md`) and commit the files. See [Thresholds](thresholds.md) for the
+`pw-perf-results/thresholds-diff.md`) and commit the files. See [Thresholds](thresholds.md) for the
 whole workflow.
 
 | Option          | Meaning                                                                                                  |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
-| `--env <label>` | Environment label: the files `perf-thresholds.<kind>.<label>.json` are written. Overrides `run.env`.     |
+| `--env <label>` | Environment label: the files `pw-perf-thresholds.<kind>.<label>.json` are written. Overrides `run.env`.  |
 | `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.thresholds`.                        |
 | `--prune`       | Remove unlocked entries of keys that were not seen in this run. Not allowed together with a test filter. |
 | `-h`, `--help`  | Show the help of the command.                                                                            |
@@ -154,7 +154,7 @@ What it can change:
 - the file that creates your `test` object: wrapped in `withPerfFixtures()`, or, when the tests
   import `test` directly from `@playwright/test`, those imports switched to
   `playwright-performance-regression/test`;
-- `.gitignore`: `perf-results/`;
+- `.gitignore`: `pw-perf-results/`;
 - `package.json`: the scripts `perf:test` and `perf:thresholds` (one pair per environment);
 - a CI job file from the [CI recipes](ci.md).
 
@@ -323,14 +323,14 @@ In CI, treat 2 as "performance regression" and 3 as "the measurement itself did 
 
 ## Output files
 
-| File                                                                      | Written by                                              |
-| ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `perf-results/report.json`                                                | every run (`report.dir`)                                |
-| `perf-results/report.html`                                                | every run unless `report.html` is `false`; `report`     |
-| `perf-results/thresholds-diff.md`                                         | `thresholds`, `thresholds --from`                       |
-| `perf-thresholds.api[.<env>].json`, `perf-thresholds.custom[.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
+| File                                                                            | Written by                                              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `pw-perf-results/report.json`                                                   | every run (`report.dir`)                                |
+| `pw-perf-results/report.html`                                                   | every run unless `report.html` is `false`; `report`     |
+| `pw-perf-results/thresholds-diff.md`                                            | `thresholds`, `thresholds --from`                       |
+| `pw-perf-thresholds.api[.<env>].json`, `pw-perf-thresholds.custom[.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
 
 Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and
 [`thresholds.filePrefix`](configuration.md#thresholdsfileprefix). Commit the thresholds files;
-keep `perf-results/` out of version control.
+keep `pw-perf-results/` out of version control.

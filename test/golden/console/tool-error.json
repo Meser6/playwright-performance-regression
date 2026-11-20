@@ -170,7 +170,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },
@@ -185,7 +185,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -446,14 +446,14 @@
       {
         "generated": null,
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "status": "invalid",
         "unseenKeys": []
       },
       {
         "generated": null,
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "status": "loaded",
         "unseenKeys": []
       }
@@ -466,7 +466,7 @@
       {
         "code": "SCHEMA_INVALID_JSON",
         "hint": "Fix the JSON syntax, or delete the file and let the package write it again.",
-        "message": "perf-thresholds.api.json: not valid JSON"
+        "message": "pw-perf-thresholds.api.json: not valid JSON"
       }
     ],
     "warnings": []

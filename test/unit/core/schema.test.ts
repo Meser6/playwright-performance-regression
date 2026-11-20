@@ -169,14 +169,14 @@ describe('thresholds file (02-REQ-22, 02-REQ-29)', () => {
   test('02-AC-12 parseThresholdsFile rejects a date that does not exist (2026-02-30)', () => {
     const result = parseThresholdsFile(
       text(muted('2026-02-30')),
-      'perf-thresholds.api.json',
+      'pw-perf-thresholds.api.json',
       'api',
     );
     expect(!result.ok && result.issues[0]).toEqual({
       code: 'SCHEMA_VALIDATION_FAILED',
-      source: 'perf-thresholds.api.json',
+      source: 'pw-perf-thresholds.api.json',
       message:
-        'perf-thresholds.api.json: thresholds file does not match the format: /entries/GET ~1api~1tickets/until must be an existing calendar date',
+        'pw-perf-thresholds.api.json: thresholds file does not match the format: /entries/GET ~1api~1tickets/until must be an existing calendar date',
       problems: [
         {
           pointer: '/entries/GET ~1api~1tickets/until',
@@ -219,7 +219,11 @@ describe('thresholds file (02-REQ-22, 02-REQ-29)', () => {
   });
 
   test('kind of the file must match the path (02-REQ-22)', () => {
-    const result = parseThresholdsFile(text(thresholds), 'perf-thresholds.custom.json', 'custom');
+    const result = parseThresholdsFile(
+      text(thresholds),
+      'pw-perf-thresholds.custom.json',
+      'custom',
+    );
     expect(!result.ok && result.issues[0]).toMatchObject({
       code: 'THRESHOLDS_KIND_MISMATCH',
       problems: [{ pointer: '/kind', message: 'must be "custom"' }],
@@ -251,14 +255,14 @@ describe('issue messages (02, chapter 10)', () => {
   });
 
   test('invalid JSON names the source and the parser error', () => {
-    const result = parseRunReport('{', 'perf-results/report.json');
+    const result = parseRunReport('{', 'pw-perf-results/report.json');
     expect(!result.ok && result.issues[0]).toMatchObject({
       code: 'SCHEMA_INVALID_JSON',
-      source: 'perf-results/report.json',
+      source: 'pw-perf-results/report.json',
       problems: [],
     });
     expect(!result.ok && result.issues[0]?.message).toMatch(
-      /^perf-results\/report\.json: run report is not valid JSON \(/,
+      /^pw-perf-results\/report\.json: run report is not valid JSON \(/,
     );
   });
 

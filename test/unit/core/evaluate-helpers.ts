@@ -112,7 +112,7 @@ export function loaded(
   return {
     status: 'loaded',
     kind,
-    path: `perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds.${kind}.json`,
     file: thresholdsFile(kind, entries, generated),
   };
 }
@@ -122,13 +122,13 @@ export function missing(kind: Kind, envlessFileExists = false, env?: string): Lo
   return {
     status: 'missing',
     kind,
-    path: `perf-thresholds.${kind}${label}.json`,
+    path: `pw-perf-thresholds.${kind}${label}.json`,
     envlessFileExists,
   };
 }
 
 export function invalid(kind: Kind): LoadedThresholdsFile {
-  const path = `perf-thresholds.${kind}.json`;
+  const path = `pw-perf-thresholds.${kind}.json`;
   return {
     status: 'invalid',
     kind,

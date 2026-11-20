@@ -643,7 +643,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     path: 'thresholds.filePrefix',
     description: 'File name prefix; files are <prefix>.<kind>[.<env>].json.',
     leaf: true,
-    default: 'perf-thresholds',
+    default: 'pw-perf-thresholds',
   },
   {
     path: 'thresholds.update',
@@ -690,7 +690,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     description:
       'Directory of report.json and report.html, relative to the Playwright config directory.',
     leaf: true,
-    default: 'perf-results',
+    default: 'pw-perf-results',
   },
   { path: 'report.html', description: 'Write the HTML report.', leaf: true, default: true },
   {

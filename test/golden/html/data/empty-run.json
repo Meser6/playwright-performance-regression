@@ -169,7 +169,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },
@@ -184,7 +184,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -446,7 +446,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },
@@ -461,7 +461,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1

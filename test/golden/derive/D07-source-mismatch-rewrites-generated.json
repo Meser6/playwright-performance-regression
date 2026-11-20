@@ -9,7 +9,7 @@
       "api": {
         "status": "loaded",
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "file": {
           "schemaVersion": 1,
           "kind": "api",
@@ -84,7 +84,7 @@
     "warnings": [
       {
         "code": "THRESHOLDS_SOURCE_MISMATCH",
-        "message": "Thresholds in perf-thresholds.api.json were derived under other conditions than the source report (file / source report): playwrightVersion 1.56.1 / 1.57.0; host.cpuModel \"Intel Xeon\" / \"AMD EPYC 7763\"."
+        "message": "Thresholds in pw-perf-thresholds.api.json were derived under other conditions than the source report (file / source report): playwrightVersion 1.56.1 / 1.57.0; host.cpuModel \"Intel Xeon\" / \"AMD EPYC 7763\"."
       }
     ]
   }

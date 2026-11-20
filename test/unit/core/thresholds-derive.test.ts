@@ -583,11 +583,11 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
     const files = existing(absent('api'), {
       status: 'invalid',
       kind: 'custom',
-      path: 'perf-thresholds.custom.json',
+      path: 'pw-perf-thresholds.custom.json',
       issues: [
         {
           code: 'SCHEMA_INVALID_JSON',
-          source: 'perf-thresholds.custom.json',
+          source: 'pw-perf-thresholds.custom.json',
           message: 'bad',
           problems: [],
         },

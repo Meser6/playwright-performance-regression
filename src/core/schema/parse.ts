@@ -71,7 +71,7 @@ const HINTS: Record<SchemaIssueCode, string> = {
   SCHEMA_VALIDATION_FAILED:
     "Fix the listed fields; the JSON Schemas in the package's schemas/ directory describe the format.",
   THRESHOLDS_KIND_MISMATCH:
-    'Each kind has its own file (perf-thresholds.api… and perf-thresholds.custom…); move the entries to the right file or fix "kind".',
+    'Each kind has its own file (pw-perf-thresholds.api… and pw-perf-thresholds.custom…); move the entries to the right file or fix "kind".',
 };
 
 function describeProblems(problems: Pick<Problem, 'pointer' | 'message'>[], more: boolean): string {

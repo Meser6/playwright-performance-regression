@@ -20,7 +20,7 @@ All recipes install dependencies with `npm ci`; in a pnpm or yarn project replac
 --grep @perf` in the pull-request job and `npx pw-perf test` in the nightly one.
 - **Installs Chromium** with its system libraries (`npx playwright install --with-deps chromium`).
 - **Runs** `npx pw-perf test`.
-- **Uploads `perf-results/` always**, also when the run fails, because that is when you need the
+- **Uploads `pw-perf-results/` always**, also when the run fails, because that is when you need the
   report: GitHub `if: always()`, GitLab `artifacts: when: always`, Jenkins `post { always { ... } }`,
   Azure `condition: always()`.
 - **Has a time limit** (60 minutes), because a measurement run repeats every test.
@@ -40,8 +40,8 @@ measurement did not work. See [CLI exit codes](cli.md#exit-codes) for all codes.
 
 - The job log contains the summary: verdict, counters, the violations table and the slowest
   sample of the first blocking keys.
-- `perf-results/report.html` is a self-contained page: download the artifact and open it.
-- `perf-results/report.json` is the machine-readable report, also the input of
+- `pw-perf-results/report.html` is a self-contained page: download the artifact and open it.
+- `pw-perf-results/report.json` is the machine-readable report, also the input of
   `pw-perf thresholds --from` (see [Thresholds](thresholds.md)) and `pw-perf report`.
 
 Platform notes on the HTML report:
@@ -51,7 +51,7 @@ Platform notes on the HTML report:
   layout, sorting and filters. Download the archived file instead, or relax the CSP for that
   page if your Jenkins administrators allow it.
 - **Azure Pipelines** does not display HTML artifacts in the browser. Download the
-  `perf-results` artifact and open `report.html` locally.
+  `pw-perf-results` artifact and open `report.html` locally.
 - **GitHub Actions** and **GitLab CI** offer the artifact as a download.
 
 ## Isolation of the environment and the runner

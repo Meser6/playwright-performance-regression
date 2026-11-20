@@ -31,7 +31,7 @@ npm init playwright-performance-regression
 This installs the package as a dev dependency and starts a short guided setup (`pw-perf init`). It
 shows a diff of every change before writing anything: it wraps your Playwright config, wraps your
 `test` object or switches test imports, creates `pw-perf.config.ts`, adds `perf:test` and
-`perf:thresholds` scripts, ignores `perf-results/`, and can add a CI job. `pnpm create` and
+`perf:thresholds` scripts, ignores `pw-perf-results/`, and can add a CI job. `pnpm create` and
 `yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
 `@next` with `yarn create`); `-- --yes` accepts the defaults without questions. The guided
 setup speaks English, Spanish, French, Polish, Italian, Ukrainian and Russian (`--lang <code>`).
@@ -82,7 +82,7 @@ wrappers or custom reporters: see [Adopting the package in an existing project](
 
 ```sh
 npm run perf:thresholds   # measure and write the thresholds files
-git add perf-thresholds.*.json && git commit -m "test: add performance thresholds"
+git add pw-perf-thresholds.*.json && git commit -m "test: add performance thresholds"
 npm run perf:test         # measure again and compare with the thresholds
 ```
 
@@ -93,8 +93,8 @@ Derive thresholds on the same machines that run the check, usually your CI runne
 to your repository with `pw-perf thresholds --from <report.json>`. Thresholds measured on a laptop
 do not fit CI. See [Thresholds](docs/thresholds.md).
 
-The result is printed in the terminal and written to `perf-results/report.json` and
-`perf-results/report.html`.
+The result is printed in the terminal and written to `pw-perf-results/report.json` and
+`pw-perf-results/report.html`.
 
 ## Custom measurements
 
@@ -141,8 +141,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always() # the report matters most when the run fails
         with:
-          name: perf-results
-          path: perf-results/
+          name: pw-perf-results
+          path: pw-perf-results/
 ```
 
 Exit codes: **0** no blocking regression, **2** performance regression, **3** tool or config error

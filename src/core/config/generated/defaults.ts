@@ -98,12 +98,12 @@ export const DEFAULT_CONFIG: ResolvedConfigJson = {
   },
   thresholds: {
     dir: '.',
-    filePrefix: 'perf-thresholds',
+    filePrefix: 'pw-perf-thresholds',
     update: 'all',
     smallSampleN: 20,
     hysteresis: { relative: 0.1, ratio: 0.01 },
     loosenWarnRelative: 0.5,
   },
-  report: { dir: 'perf-results', html: true, rawUrls: false },
+  report: { dir: 'pw-perf-results', html: true, rawUrls: false },
   advanced: { maxSamplesPerKey: 5000, seed: 1 },
 };

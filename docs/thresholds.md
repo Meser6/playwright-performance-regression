@@ -19,11 +19,11 @@ in JSON files in your repository and are reviewed and committed like code.
 There is one file per kind and environment, in `thresholds.dir` (default: next to
 `playwright.config`):
 
-| File                             | Contents                                                       |
-| -------------------------------- | -------------------------------------------------------------- |
-| `perf-thresholds.api.json`       | backend requests, one entry per endpoint key                   |
-| `perf-thresholds.custom.json`    | custom measurements (`perf.measure()`, `perf.start()`/`end()`) |
-| `perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging`              |
+| File                                | Contents                                                       |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `pw-perf-thresholds.api.json`       | backend requests, one entry per endpoint key                   |
+| `pw-perf-thresholds.custom.json`    | custom measurements (`perf.measure()`, `perf.start()`/`end()`) |
+| `pw-perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging`              |
 
 An entry looks like this:
 
@@ -59,13 +59,13 @@ and the limits would be wrong in both directions.
    ```
 
    It runs the measured tests (10 repetitions by default), never fails on violations, and writes
-   `perf-results/report.json`, the thresholds files and `perf-results/thresholds-diff.md`.
+   `pw-perf-results/report.json`, the thresholds files and `pw-perf-results/thresholds-diff.md`.
 
-2. Download the `perf-results` artifact of that job.
+2. Download the `pw-perf-results` artifact of that job.
 3. Derive the files locally from the downloaded report, without running any test:
 
    ```sh
-   npx pw-perf thresholds --from path/to/perf-results/report.json
+   npx pw-perf thresholds --from path/to/pw-perf-results/report.json
    ```
 
    This gives byte-identical files to the ones the CI run derived, using your committed thresholds
@@ -98,7 +98,7 @@ added. A time limit that grows by more than `thresholds.loosenWarnRelative` (50%
 ## Reviewing the diff
 
 Every thresholds run (and `--from`) prints the diff per file and writes it as Markdown to
-`perf-results/thresholds-diff.md`, ready to paste into the pull request description. Each key is
+`pw-perf-results/thresholds-diff.md`, ready to paste into the pull request description. Each key is
 listed as added, removed, loosened, tightened, mixed, unchanged, locked, unseen or skipped, with
 the old and new limits.
 
@@ -160,7 +160,7 @@ npx pw-perf thresholds --env staging
 npx pw-perf test --env staging
 ```
 
-or `run.env` in the config. The label selects `perf-thresholds.<kind>.staging.json`. A run with a
+or `run.env` in the config. The label selects `pw-perf-thresholds.<kind>.staging.json`. A run with a
 label never falls back to the file without a label; when the labelled file is missing it warns
 with `THRESHOLDS_FILE_MISSING` and uses default thresholds. `thresholds --from` uses the label
 stored in the report unless `--env` is given. `init` creates `perf:test:<env>` and

@@ -17,7 +17,7 @@
       "api": {
         "status": "loaded",
         "kind": "api",
-        "path": "perf-thresholds.api.qa.json",
+        "path": "pw-perf-thresholds.api.qa.json",
         "file": {
           "schemaVersion": 1,
           "kind": "api",
@@ -88,7 +88,7 @@
       },
       {
         "code": "THRESHOLDS_MANUAL_FILE",
-        "message": "perf-thresholds.api.qa.json was written by hand (generated: null); its complete entries that are not locked are recomputed."
+        "message": "pw-perf-thresholds.api.qa.json was written by hand (generated: null); its complete entries that are not locked are recomputed."
       }
     ]
   }

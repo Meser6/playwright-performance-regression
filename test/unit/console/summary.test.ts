@@ -132,10 +132,10 @@ describe('console summary golden files', () => {
 
   test('report paths are relative to the current directory', () => {
     expect(formatSummary(report('passed'), { width: 120, color: false, cwd: '/work' })).toContain(
-      'Report: app/perf-results/report.html · app/perf-results/report.json',
+      'Report: app/pw-perf-results/report.html · app/pw-perf-results/report.json',
     );
-    expect(relativePath('/work/app/sub', '/work/app/perf-results/report.json')).toBe(
-      '../perf-results/report.json',
+    expect(relativePath('/work/app/sub', '/work/app/pw-perf-results/report.json')).toBe(
+      '../pw-perf-results/report.json',
     );
     expect(relativePath('C:\\work', 'C:\\work\\out\\r.json')).toBe('out/r.json');
     expect(relativePath('/a', '/a')).toBe('.');

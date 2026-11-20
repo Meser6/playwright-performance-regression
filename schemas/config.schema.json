@@ -648,7 +648,7 @@
           "description": "File name prefix; files are <prefix>.<kind>[.<env>].json.",
           "type": "string",
           "pattern": "^[A-Za-z0-9._-]+$",
-          "default": "perf-thresholds"
+          "default": "pw-perf-thresholds"
         },
         "update": {
           "description": "'all': recompute every unlocked complete entry (with hysteresis, 10); 'new-only': add entries for new keys, keep existing ones.",
@@ -702,7 +702,7 @@
           "description": "Directory of report.json and report.html, relative to the Playwright config directory.",
           "type": "string",
           "minLength": 1,
-          "default": "perf-results"
+          "default": "pw-perf-results"
         },
         "html": {"description": "Write the HTML report.", "type": "boolean", "default": true},
         "rawUrls": {

@@ -176,7 +176,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "update": "all",
         "smallSampleN": 20,
         "hysteresis": {
@@ -186,7 +186,7 @@
         "loosenWarnRelative": 0.5
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },

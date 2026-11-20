@@ -50,7 +50,7 @@ export interface ProjectRun {
   output: string;
   /** Wall time of the whole Playwright run in ms. */
   wallMs: number;
-  /** perf-results/report.json; null when none was written. */
+  /** pw-perf-results/report.json; null when none was written. */
   report: RunReport | null;
   outcome: Outcome | null;
   /** results.json of the JSON reporter, when the project config writes it. */
@@ -88,7 +88,7 @@ export async function startHarness(): Promise<Harness> {
       const dir = join(scratch, `${name} copy`);
       cpSync(join(from, name), dir, {
         recursive: true,
-        filter: (path) => !/[\\/](node_modules|perf-results|test-results|\.auth)$/u.test(path),
+        filter: (path) => !/[\\/](node_modules|pw-perf-results|test-results|\.auth)$/u.test(path),
       });
       const type = process.platform === 'win32' ? 'junction' : 'dir';
       mkdirSync(join(dir, 'node_modules/@playwright'), { recursive: true });
@@ -167,7 +167,7 @@ function runProject(
   runId: string,
   options: RunOptions,
 ): Promise<ProjectRun> {
-  for (const old of ['perf-results', 'test-results', 'results.json', 'outcome.json']) {
+  for (const old of ['pw-perf-results', 'test-results', 'results.json', 'outcome.json']) {
     rmSync(join(dir, old), { recursive: true, force: true });
   }
   const clean = Object.fromEntries(
@@ -200,7 +200,7 @@ function runProject(
           status,
           output,
           wallMs: performance.now() - started,
-          report: readReport(join(dir, 'perf-results', 'report.json')),
+          report: readReport(join(dir, 'pw-perf-results', 'report.json')),
           outcome: readOutcome(outcomeFile),
           results: readResults(join(dir, 'results.json')),
         });

@@ -19,7 +19,7 @@ cd examples/with-setup
 npm install
 npx playwright install chromium
 
-npm run perf:thresholds   # writes perf-thresholds.api.json and perf-thresholds.custom.json
+npm run perf:thresholds   # writes pw-perf-thresholds.api.json and pw-perf-thresholds.custom.json
 npm run perf:test
 ```
 

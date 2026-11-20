@@ -80,7 +80,7 @@ function runPlaywright(project: string, env: Record<string, string>, config?: st
     },
   );
   // The package reporter writes its run report to report.dir of the sample project.
-  rmSync(join(projects, project, 'perf-results'), { recursive: true, force: true });
+  rmSync(join(projects, project, 'pw-perf-results'), { recursive: true, force: true });
   const output = `${result.stdout}${result.stderr}`;
   const read = (name: string): string => {
     const path = join(out, name);

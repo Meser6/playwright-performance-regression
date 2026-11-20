@@ -52,7 +52,7 @@ describe.each([
         args: [...args('perf:thresholds'), '--repeat', '5'],
       });
       expectStatus(thresholds, 0);
-      expect(existsSync(join(dir, 'perf-thresholds.api.json'))).toBe(true);
+      expect(existsSync(join(dir, 'pw-perf-thresholds.api.json'))).toBe(true);
       expect(endpointKeys(thresholds).filter((key) => key.includes('/api/'))).toEqual(keys);
 
       const run = await harness.run(dir, {
@@ -61,7 +61,7 @@ describe.each([
       });
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');
-      expect(existsSync(join(dir, 'perf-results/report.html'))).toBe(true);
+      expect(existsSync(join(dir, 'pw-perf-results/report.html'))).toBe(true);
     },
     RUN_TIMEOUT,
   );

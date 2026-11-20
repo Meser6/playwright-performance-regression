@@ -1,14 +1,14 @@
 --- /dev/null
 +++ b/.gitignore
 @@ -0,0 +1,1 @@
-+perf-results/
++pw-perf-results/
 --- /dev/null
 +++ b/Jenkinsfile.perf
 @@ -0,0 +1,34 @@
 +// Performance measurement run with playwright-performance-regression (pw-perf).
 +// Use as the script of a pipeline job, e.g. "Jenkinsfile.perf". Exit code 2 (performance
 +// regression) marks the build UNSTABLE, 3 (tool or config error) fails it. The report in
-+// perf-results/ is archived also when the run fails.
++// pw-perf-results/ is archived also when the run fails.
 +pipeline {
 +  agent any
 +  options {
@@ -35,7 +35,7 @@
 +  }
 +  post {
 +    always {
-+      archiveArtifacts artifacts: 'perf-results/**', allowEmptyArchive: true
++      archiveArtifacts artifacts: 'pw-perf-results/**', allowEmptyArchive: true
 +    }
 +  }
 +}
@@ -336,7 +336,7 @@
 +  //   // Directory of thresholds files, relative to the Playwright config directory.
 +  //   dir: '.',
 +  //   // File name prefix; files are <prefix>.<kind>[.<env>].json.
-+  //   filePrefix: 'perf-thresholds',
++  //   filePrefix: 'pw-perf-thresholds',
 +  //   // 'all': recompute every unlocked complete entry (with hysteresis); 'new-only': add entries
 +  //   // for new keys, keep existing ones.
 +  //   update: 'all',
@@ -358,7 +358,7 @@
 +  // Run outputs.
 +  // report: {
 +  //   // Directory of report.json and report.html, relative to the Playwright config directory.
-+  //   dir: 'perf-results',
++  //   dir: 'pw-perf-results',
 +  //   // Write the HTML report.
 +  //   html: true,
 +  //   // Include raw URLs of the slowest samples in the run report.

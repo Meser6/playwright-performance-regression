@@ -107,7 +107,7 @@ function runCli(args: string[], options: CliOptions = {}): Promise<CliRun> {
 
 const outcomeFilesLeft = (): string[] =>
   readdirSync(tmp).filter((f) => f.endsWith('.outcome.json'));
-const reportPath = (run: CliRun): string => join(run.out, 'perf-results', 'report.json');
+const reportPath = (run: CliRun): string => join(run.out, 'pw-perf-results', 'report.json');
 
 /** A thresholds run whose report and thresholds files other tests reuse. */
 let source: Promise<{ run: CliRun; thresholds: string }> | undefined;
@@ -159,7 +159,7 @@ describe('pw-perf test and thresholds', () => {
         `${PACKAGE_NAME}: tests passed · thresholds derived · exit code 0`,
       );
       const files = readdirSync(thresholds).sort();
-      expect(files).toEqual(['perf-thresholds.api.json', 'perf-thresholds.custom.json']);
+      expect(files).toEqual(['pw-perf-thresholds.api.json', 'pw-perf-thresholds.custom.json']);
 
       // From another directory: the config file is found in the configDir of the report.
       const again = join(scratch, 'from thresholds');
@@ -194,7 +194,7 @@ describe('pw-perf test and thresholds', () => {
       const { thresholds } = await sourceRun();
       const tight = join(scratch, 'tight thresholds');
       cpSync(thresholds, tight, { recursive: true });
-      const file = join(tight, 'perf-thresholds.api.json');
+      const file = join(tight, 'pw-perf-thresholds.api.json');
       const content = JSON.parse(readFileSync(file, 'utf8')) as {
         entries: Record<string, Record<string, number>>;
       };
@@ -389,7 +389,7 @@ describe('pw-perf without tests', () => {
       expect(good.status, good.output).toBe(0);
       expect(good.stderr).not.toMatch(/^\(node:\d+\)/mu);
       expect(good.stderr).not.toContain('ExperimentalWarning:');
-      expect(existsSync(join(cwd, 'thr', 'perf-thresholds.api.json'))).toBe(true);
+      expect(existsSync(join(cwd, 'thr', 'pw-perf-thresholds.api.json'))).toBe(true);
     },
     RUN_TIMEOUT,
   );

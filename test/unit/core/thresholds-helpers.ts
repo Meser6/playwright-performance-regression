@@ -180,7 +180,7 @@ export function file(
   return {
     status: 'loaded',
     kind,
-    path: `perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds.${kind}.json`,
     file: { schemaVersion: 1, kind, generated: gen, entries },
   };
 }
@@ -189,7 +189,7 @@ export function absent(kind: Kind): LoadedThresholdsFile {
   return {
     status: 'missing',
     kind,
-    path: `perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds.${kind}.json`,
     envlessFileExists: false,
   };
 }
@@ -244,7 +244,7 @@ export function loadedFile(content: ThresholdsFile, migratedFrom?: number): Load
   return {
     status: 'loaded',
     kind: content.kind,
-    path: `perf-thresholds.${content.kind}.json`,
+    path: `pw-perf-thresholds.${content.kind}.json`,
     file: structuredClone(content),
     ...(migratedFrom === undefined ? {} : { migratedFrom }),
   };

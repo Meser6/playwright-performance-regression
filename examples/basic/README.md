@@ -14,9 +14,9 @@ cd examples/basic
 npm install
 npx playwright install chromium
 
-npm run perf:thresholds   # measure and write perf-thresholds.api.json
+npm run perf:thresholds   # measure and write pw-perf-thresholds.api.json
 npm run perf:test         # measure again and compare with the thresholds
 ```
 
-`perf-results/report.html` shows the result. Outside the repository, depend on the published
+`pw-perf-results/report.html` shows the result. Outside the repository, depend on the published
 package instead of `file:../..`.

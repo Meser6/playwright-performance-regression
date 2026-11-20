@@ -13,7 +13,7 @@
       "custom": {
         "status": "loaded",
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "file": {
           "schemaVersion": 1,
           "kind": "custom",
@@ -87,7 +87,7 @@
     "warnings": [
       {
         "code": "THRESHOLDS_KIND_SKIPPED",
-        "message": "No custom measurement key has at least 5 successful samples; perf-thresholds.custom.json was not written."
+        "message": "No custom measurement key has at least 5 successful samples; pw-perf-thresholds.custom.json was not written."
       }
     ]
   }

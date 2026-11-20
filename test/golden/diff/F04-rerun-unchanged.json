@@ -16,7 +16,7 @@
       "api": {
         "status": "loaded",
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "file": {
           "schemaVersion": 1,
           "kind": "api",

@@ -22,7 +22,9 @@ const file = (kind: string, entries: object = {}): string =>
 
 describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
   test('file names follow 02 chapter 8.1 and thresholds.dir is relative to configDir', () => {
-    expect(thresholdsFileName('perf-thresholds', 'api', null)).toBe('perf-thresholds.api.json');
+    expect(thresholdsFileName('pw-perf-thresholds', 'api', null)).toBe(
+      'pw-perf-thresholds.api.json',
+    );
     expect(thresholdsFileName('p', 'custom', 'qa')).toBe('p.custom.qa.json');
     const paths = thresholdsFilePaths({ configDir: dir, dir: 'perf', filePrefix: 'p', env: 'qa' });
     expect(paths.api).toBe(join(dir, 'perf', 'p.api.qa.json'));
@@ -59,28 +61,28 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
   });
 
   test('09-AC-16 with an environment label the file without the label is not used', async () => {
-    writeFileSync(join(dir, 'perf-thresholds.api.json'), file('api'));
+    writeFileSync(join(dir, 'pw-perf-thresholds.api.json'), file('api'));
     const loaded = await loadThresholds({
       configDir: dir,
       dir: '.',
-      filePrefix: 'perf-thresholds',
+      filePrefix: 'pw-perf-thresholds',
       env: 'qa',
     });
     expect(loaded.api).toEqual({
       status: 'missing',
       kind: 'api',
-      path: 'perf-thresholds.api.qa.json',
+      path: 'pw-perf-thresholds.api.qa.json',
       envlessFileExists: true,
     });
     expect(loaded.custom).toMatchObject({ status: 'missing', envlessFileExists: false });
   });
 
   test('a path that cannot be read is invalid, never a fallback to defaults', async () => {
-    mkdirSync(join(dir, 'perf-thresholds.api.json'));
+    mkdirSync(join(dir, 'pw-perf-thresholds.api.json'));
     const loaded = await loadThresholds({
       configDir: dir,
       dir: '.',
-      filePrefix: 'perf-thresholds',
+      filePrefix: 'pw-perf-thresholds',
       env: null,
     });
     expect(loaded.api.status).toBe('invalid');

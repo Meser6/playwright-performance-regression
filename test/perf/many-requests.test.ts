@@ -54,7 +54,7 @@ describe('12-PERF-04 a test with 20,000 requests', () => {
     if (plainTest === undefined || perfTest === undefined) throw new Error('no test result');
     const samples = perfTest.attachments.find((a) => a.name === SAMPLES_ATTACHMENT_NAME);
     const report = JSON.parse(
-      readFileSync(join(workspace.dir, 'perf', 'perf-results', 'report.json'), 'utf8'),
+      readFileSync(join(workspace.dir, 'perf', 'pw-perf-results', 'report.json'), 'utf8'),
     ) as { endpoints: Record<string, { count: number }>; warnings: { code: string }[] };
     // The page load is a request too; the collector keeps at most 20,000 per test
     // (COLLECTOR_SAMPLE_LIMIT_REACHED for the rest).

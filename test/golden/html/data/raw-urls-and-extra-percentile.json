@@ -174,7 +174,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": true
       },
@@ -189,7 +189,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -529,7 +529,7 @@
           }
         },
         "kind": "api",
-        "path": "perf-thresholds.api.qa.json",
+        "path": "pw-perf-thresholds.api.qa.json",
         "status": "loaded",
         "unseenKeys": [
           "GET /api/legacy"
@@ -538,7 +538,7 @@
       {
         "generated": null,
         "kind": "custom",
-        "path": "perf-thresholds.custom.qa.json",
+        "path": "pw-perf-thresholds.custom.qa.json",
         "status": "missing",
         "unseenKeys": []
       }
@@ -731,7 +731,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": true
       },
@@ -746,7 +746,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -1108,7 +1108,7 @@
           }
         },
         "kind": "api",
-        "path": "perf-thresholds.api.qa.json",
+        "path": "pw-perf-thresholds.api.qa.json",
         "status": "loaded",
         "unseenKeys": [
           "GET /api/legacy"
@@ -1117,7 +1117,7 @@
       {
         "generated": null,
         "kind": "custom",
-        "path": "perf-thresholds.custom.qa.json",
+        "path": "pw-perf-thresholds.custom.qa.json",
         "status": "missing",
         "unseenKeys": []
       }
