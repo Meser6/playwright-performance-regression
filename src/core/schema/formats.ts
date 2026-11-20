@@ -462,61 +462,72 @@ const testBreakdown = oneOf(
   nul,
 );
 
-const aggregate = obj(
-  {
-    count,
-    successCount: count,
-    errorCount: count,
-    fromFailedTests: count,
-    testCount: count,
-    statuses: record(
-      str({ pattern: /^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING|ok|error|unfinished)$/u }),
-      int({ minimum: 1 }),
+const aggregateProps = {
+  count,
+  successCount: count,
+  errorCount: count,
+  fromFailedTests: count,
+  testCount: count,
+  statuses: record(
+    str({ pattern: /^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING|ok|error|unfinished)$/u }),
+    int({ minimum: 1 }),
+  ),
+  timeSources: obj({ browser: count, node: count }, { required: ['browser', 'node'] }),
+  stats: oneOf(stats, nul),
+  ttfb: oneOf(
+    obj({ p50: ms, p95: ms, otherP50: msOrNull }, { required: ['p50', 'p95', 'otherP50'] }),
+    nul,
+  ),
+  slowest: arr(slowSample, { maxItems: 3 }),
+  topTests: arr(
+    obj(
+      {
+        title: str(),
+        project: str(),
+        file: str(),
+        line: int({ minimum: 1 }),
+        sampleCount: int({ minimum: 1 }),
+      },
+      { required: ['title', 'project', 'file', 'line', 'sampleCount'] },
     ),
-    timeSources: obj({ browser: count, node: count }, { required: ['browser', 'node'] }),
-    stats: oneOf(stats, nul),
-    ttfb: oneOf(
-      obj({ p50: ms, p95: ms, otherP50: msOrNull }, { required: ['p50', 'p95', 'otherP50'] }),
+    { maxItems: 5 },
+  ),
+  samples: obj({ durations: arr(ms), sampled: bool }, { required: ['durations', 'sampled'] }),
+  evaluation: keyEvaluation,
+  histogram,
+  hints: arr(hint, { maxItems: 3 }),
+};
+const aggregateRequired = [
+  'count',
+  'successCount',
+  'errorCount',
+  'fromFailedTests',
+  'testCount',
+  'statuses',
+  'timeSources',
+  'stats',
+  'ttfb',
+  'slowest',
+  'topTests',
+  'samples',
+  'evaluation',
+  'histogram',
+  'hints',
+];
+
+const aggregate = obj(aggregateProps, { required: aggregateRequired });
+
+/** Step aggregate (06-REQ-28): the aggregate fields plus location and stepErrorsFromFailedTests. */
+const stepAggregate = obj(
+  {
+    ...aggregateProps,
+    location: oneOf(
+      obj({ file: nonEmpty, line: int({ minimum: 1 }) }, { required: ['file', 'line'] }),
       nul,
     ),
-    slowest: arr(slowSample, { maxItems: 3 }),
-    topTests: arr(
-      obj(
-        {
-          title: str(),
-          project: str(),
-          file: str(),
-          line: int({ minimum: 1 }),
-          sampleCount: int({ minimum: 1 }),
-        },
-        { required: ['title', 'project', 'file', 'line', 'sampleCount'] },
-      ),
-      { maxItems: 5 },
-    ),
-    samples: obj({ durations: arr(ms), sampled: bool }, { required: ['durations', 'sampled'] }),
-    evaluation: keyEvaluation,
-    histogram,
-    hints: arr(hint, { maxItems: 3 }),
+    stepErrorsFromFailedTests: count,
   },
-  {
-    required: [
-      'count',
-      'successCount',
-      'errorCount',
-      'fromFailedTests',
-      'testCount',
-      'statuses',
-      'timeSources',
-      'stats',
-      'ttfb',
-      'slowest',
-      'topTests',
-      'samples',
-      'evaluation',
-      'histogram',
-      'hints',
-    ],
-  },
+  { required: [...aggregateRequired, 'location', 'stepErrorsFromFailedTests'] },
 );
 
 export const runReport = obj(
@@ -531,6 +542,7 @@ export const runReport = obj(
     configDir: nonEmpty,
     config: packageConfig,
     normalization: fingerprint,
+    stepNormalization: oneOf(fingerprint, nul),
     ci: oneOf(
       obj(
         {
@@ -588,7 +600,10 @@ export const runReport = obj(
       {
         status: evaluationStatus,
         gateEnabled: bool,
-        counts: obj({ api: evaluationCounts }, { required: ['api'] }),
+        counts: obj(
+          { api: evaluationCounts, step: evaluationCounts },
+          { required: ['api', 'step'] },
+        ),
       },
       { required: ['status', 'gateEnabled', 'counts'] },
     ),
@@ -602,6 +617,7 @@ export const runReport = obj(
       ),
     ),
     endpoints: record(key, aggregate),
+    steps: record(key, stepAggregate),
     testBreakdown,
   },
   {
@@ -616,6 +632,7 @@ export const runReport = obj(
       'configDir',
       'config',
       'normalization',
+      'stepNormalization',
       'ci',
       'host',
       'playwright',
@@ -627,6 +644,7 @@ export const runReport = obj(
       'toolErrors',
       'origins',
       'endpoints',
+      'steps',
       'testBreakdown',
     ],
   },

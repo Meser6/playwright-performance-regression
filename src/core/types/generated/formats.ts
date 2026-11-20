@@ -228,6 +228,66 @@ export interface PackageConfig {
      */
     successStatuses?: [string, ...string[]];
     /**
+     * Durations of test.step steps as keys of kind 'step' (06). false (default) disables, true enables with defaults, an object enables with settings (03-REQ-18).
+     */
+    steps?:
+      | boolean
+      | {
+          /**
+           * Default true when an object is given.
+           */
+          enabled?: boolean;
+          /**
+           * When not empty, only steps whose step key part matches at least one pattern give samples (06-REQ-22).
+           *
+           * Items: A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.
+           */
+          include?: (
+            | string
+            | {
+                regex: string;
+                flags?: string;
+              }
+          )[];
+          /**
+           * Steps whose step key part matches any pattern give no samples; exclude wins over include.
+           *
+           * Items: A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.
+           */
+          exclude?: (
+            | string
+            | {
+                regex: string;
+                flags?: string;
+              }
+          )[];
+          /**
+           * Deepest step level measured; deeper steps are included in their ancestor's time (06-REQ-21).
+           */
+          maxDepth?: number;
+          /**
+           * Playwright step categories measured (06-REQ-20). Steps of other categories are transparent for keys and depth.
+           *
+           * @minItems 1
+           */
+          categories?: [
+            'test.step' | 'expect' | 'pw:api' | 'fixture' | 'hook',
+            ...('test.step' | 'expect' | 'pw:api' | 'fixture' | 'hook')[],
+          ];
+          /**
+           * 'step': one key per step path across tests; 'test': one key per test and step path (06-REQ-23).
+           */
+          groupBy?: 'step' | 'test';
+          /**
+           * false skips the key-stability rules (ids, dates, numbers); privacy rules always apply (06-REQ-35).
+           */
+          normalizeTitles?: boolean;
+          /**
+           * true replaces quoted values in step titles with :value; by default they stay in keys (06-D-26).
+           */
+          redactQuotedValues?: boolean;
+        };
+    /**
      * How long the collector waits at test end for requests still in flight (05).
      */
     pendingTimeoutMs?: number;
@@ -339,6 +399,10 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
+          /**
+           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
+           */
+          step?: number;
         };
       };
       /**
@@ -365,6 +429,10 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
+          /**
+           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
+           */
+          step?: number;
         };
         /**
          * Headroom added to the source run value when deriving this limit (10, chapter 5).
@@ -421,6 +489,10 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
+          /**
+           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
+           */
+          step?: number;
         };
       };
     };
@@ -433,6 +505,20 @@ export interface PackageConfig {
        */
       t?: {
         api?: {
+          /**
+           * Lower clamp of derived T.
+           */
+          min?: number;
+          /**
+           * Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13).
+           */
+          max?: number;
+          /**
+           * Derived T is at most medianFactor × p50.
+           */
+          medianFactor?: number;
+        };
+        step?: {
           /**
            * Lower clamp of derived T.
            */
@@ -480,6 +566,10 @@ export interface PackageConfig {
            * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
            */
           api?: number;
+          /**
+           * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+           */
+          step?: number;
         };
       };
       /**
@@ -527,6 +617,10 @@ export interface PackageConfig {
            * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
            */
           api?: number;
+          /**
+           * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+           */
+          step?: number;
         };
       };
     };
@@ -554,6 +648,10 @@ export interface PackageConfig {
          * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
          */
         api?: number;
+        /**
+         * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+         */
+        step?: number;
       };
       /**
        * Headroom added to the source run value when deriving this limit (10, chapter 5).
@@ -608,7 +706,7 @@ export interface PackageConfig {
      */
     dir?: string;
     /**
-     * File name prefix; files are <prefix>.<kind>[.<env>].json.
+     * File name prefix; files are <prefix>[.steps][.<env>].json.
      */
     filePrefix?: string;
     /**
@@ -756,6 +854,10 @@ export interface RunReport {
    */
   normalization: string;
   /**
+   * Step normalization fingerprint (06-REQ-25); null when measure.steps is disabled. Copied to generated.normalization of derived step thresholds files.
+   */
+  stepNormalization: string | null;
+  /**
    * CI metadata read from well-known environment variables (02-REQ-28); null outside CI or when no known provider is detected and CI is unset.
    */
   ci: CiInfo | null;
@@ -843,7 +945,7 @@ export interface RunReport {
     skipped: number;
   };
   /**
-   * Run-level evaluation summary. Per-key details live in endpoints (02-REQ-15).
+   * Run-level evaluation summary. Per-key details live in endpoints and steps (02-REQ-15).
    */
   evaluation: {
     /**
@@ -856,6 +958,7 @@ export interface RunReport {
     gateEnabled: boolean;
     counts: {
       api: EvaluationCounts;
+      step: EvaluationCounts;
     };
   };
   /**
@@ -889,6 +992,12 @@ export interface RunReport {
    */
   endpoints: {
     [k: string]: Aggregate;
+  };
+  /**
+   * Aggregates of test.step durations by step key (06); empty when measure.steps is disabled.
+   */
+  steps: {
+    [k: string]: StepAggregate;
   };
   /**
    * Per-test costs and the waterfall of the slowest test runs (08-REQ-37, 08-REQ-38); null only in a report migrated from version 1.
@@ -997,9 +1106,9 @@ export interface EvaluationCounts {
 }
 export interface ThresholdFileInfo {
   /**
-   * Sample category: 'api' (backend endpoints).
+   * Sample category: 'api' (backend endpoints) or 'step' (test.step durations, 06).
    */
-  kind: 'api';
+  kind: 'api' | 'step';
   /**
    * Path relative to configDir, with forward slashes.
    */
@@ -1015,7 +1124,7 @@ export interface ThresholdFileInfo {
   /**
    * Keys present in the file but not seen in the run, sorted.
    *
-   * Items: Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Items: Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   unseenKeys: string[];
 }
@@ -1462,6 +1571,295 @@ export interface Hint {
   };
 }
 /**
+ * Statistics of all samples of one step key (06-REQ-28): the aggregate fields plus location and stepErrorsFromFailedTests. ttfb is null; time sources count node samples.
+ */
+export interface StepAggregate {
+  /**
+   * Non-negative integer counter.
+   */
+  count: number;
+  /**
+   * Non-negative integer counter.
+   */
+  successCount: number;
+  /**
+   * Non-negative integer counter.
+   */
+  errorCount: number;
+  /**
+   * Non-negative integer counter.
+   */
+  fromFailedTests: number;
+  /**
+   * Non-negative integer counter.
+   */
+  testCount: number;
+  /**
+   * Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). The labels ok, error and unfinished are reserved for step outcomes (06) (08-REQ-05).
+   */
+  statuses: {
+    [k: string]: number;
+  };
+  timeSources: {
+    /**
+     * Non-negative integer counter.
+     */
+    browser: number;
+    /**
+     * Non-negative integer counter.
+     */
+    node: number;
+  };
+  /**
+   * Time statistics of successful samples; null when successCount is 0.
+   */
+  stats: Stats | null;
+  /**
+   * TTFB of successful samples that have it. Null when no sample has TTFB.
+   */
+  ttfb: {
+    /**
+     * Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+     */
+    p50: number;
+    /**
+     * Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+     */
+    p95: number;
+    /**
+     * p50 of max(0, duration - ttfb) over the samples of p50 (08-REQ-35); null only in a report migrated from version 1.
+     */
+    otherP50: number | null;
+  } | null;
+  /**
+   * Up to 3 slowest successful samples, slowest first.
+   *
+   * @maxItems 3
+   */
+  slowest: [] | [SlowSample] | [SlowSample, SlowSample] | [SlowSample, SlowSample, SlowSample];
+  /**
+   * Up to 5 tests with the most samples of this key (08-REQ-33), most samples first.
+   *
+   * @maxItems 5
+   */
+  topTests:
+    | []
+    | [
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+      ]
+    | [
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+      ]
+    | [
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+      ]
+    | [
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+      ]
+    | [
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+        {
+          title: string;
+          project: string;
+          file: string;
+          line: number;
+          /**
+           * Samples of this key from all repetitions of the test.
+           */
+          sampleCount: number;
+        },
+      ];
+  /**
+   * Retained successful durations, used to derive thresholds without rerunning tests (thresholds --from).
+   */
+  samples: {
+    /**
+     * Sorted ascending. At most advanced.maxSamplesPerKey values (08).
+     *
+     * Items: Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+     */
+    durations: number[];
+    /**
+     * True when successCount exceeded the limit and durations is a seeded uniform sample (P-06).
+     */
+    sampled: boolean;
+  };
+  evaluation: KeyEvaluation;
+  /**
+   * Histogram of the retained durations on a fixed log scale (08-REQ-34); bin i is [edges[i], edges[i+1]). counts has edges.length - 1 entries that sum to samples.durations.length (checked by the parser). Null when stats is null, or in a report migrated from version 1.
+   */
+  histogram: {
+    /**
+     * Bin edges in ms, strictly ascending (checked by the parser); constants of the scale, not rounded to 0.1 ms.
+     *
+     * @minItems 2
+     * @maxItems 31
+     */
+    edges: [number, number, ...number[]];
+    /**
+     * Retained durations per bin.
+     *
+     * @minItems 1
+     * @maxItems 30
+     *
+     * Items: Non-negative integer counter.
+     */
+    counts: [number, ...number[]];
+  } | null;
+  /**
+   * Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.
+   *
+   * @maxItems 3
+   */
+  hints: [] | [Hint] | [Hint, Hint] | [Hint, Hint, Hint];
+  /**
+   * Smallest (file, line) location among the key's samples, file relative to configDir with '/'; null when no sample has one (06-REQ-28).
+   */
+  location: {
+    file: string;
+    line: number;
+  } | null;
+  /**
+   * Non-negative integer counter.
+   */
+  stepErrorsFromFailedTests: number;
+}
+/**
  * Cost of one test for the backend over all its runs: api requests only (08-REQ-37).
  */
 export interface TestCost {
@@ -1509,7 +1907,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1525,7 +1923,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1539,7 +1937,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1555,7 +1953,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1569,7 +1967,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1583,7 +1981,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1601,7 +1999,7 @@ export interface TestCost {
    *
    * @maxItems 10
    *
-   * Items: Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Items: Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   violatedKeys:
     | []
@@ -1661,7 +2059,7 @@ export interface WaterfallRequest {
    */
   duration: number | null;
   /**
-   * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Aggregate key: normalized endpoint key (07) or step key (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   key: string;
   /**
@@ -1675,9 +2073,9 @@ export interface WaterfallRequest {
 export interface ThresholdsFile {
   schemaVersion: 2;
   /**
-   * Sample category: 'api' (backend endpoints).
+   * Sample category: 'api' (backend endpoints) or 'step' (test.step durations, 06).
    */
-  kind: 'api';
+  kind: 'api' | 'step';
   /**
    * How the file was derived. Null for a file written entirely by hand. Contains no wall-clock time of generation, so deriving twice from the same report gives identical files (S-04).
    */
@@ -1722,7 +2120,7 @@ export interface Generated {
   playwrightVersion: string;
   host: HostFingerprint;
   /**
-   * Fingerprint of the normalization that produced the keys: built-in rules version, effective keys config and base origins (07-REQ-21). A different value means the keys may not match.
+   * 53-bit hash53 value (08) as 14 lowercase hexadecimal digits, zero-padded.
    */
   normalization: string;
 }

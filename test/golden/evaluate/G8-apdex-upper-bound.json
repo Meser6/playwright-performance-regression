@@ -78,6 +78,19 @@
         "violations": 1,
         "blockingViolations": 1,
         "muted": 0
+      },
+      "step": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
       }
     },
     "violations": [{"kind":"api","key":"GET /api/search","rule":"apdex","actual":0.7811,"limit":0.85,"hardLimitExceeded":false,"blocking":true}],

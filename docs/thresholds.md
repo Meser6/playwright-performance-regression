@@ -19,10 +19,12 @@ in JSON files in your repository and are reviewed and committed like code.
 There is one file per kind and environment, in `thresholds.dir` (default: next to
 `playwright.config`):
 
-| File                                | Contents                                          |
-| ----------------------------------- | ------------------------------------------------- |
-| `pw-perf-thresholds.api.json`       | backend requests, one entry per endpoint key      |
-| `pw-perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging` |
+| File                                  | Contents                                                         |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `pw-perf-thresholds.json`             | backend requests, one entry per endpoint key                     |
+| `pw-perf-thresholds.<env>.json`       | the same for an environment label, e.g. `staging`                |
+| `pw-perf-thresholds.steps.json`       | `test.step` keys, with `measure.steps` on ([steps.md](steps.md)) |
+| `pw-perf-thresholds.steps.<env>.json` | the same for an environment label                                |
 
 An entry looks like this:
 

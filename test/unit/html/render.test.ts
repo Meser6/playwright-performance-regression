@@ -325,7 +325,7 @@ describe('renderHtmlReport', () => {
 
   test('11 chapter 12: an empty run shows a message instead of tables and rankings', () => {
     const page = renderHtmlReport(readCase(join(RUN_REPORTS, 'empty-run.json')).input);
-    expect(page).toContain('No requests were recorded.');
+    expect(page).toContain('No requests or steps were recorded.');
     expect(page).not.toContain('<table class="keys"');
     expect(page).not.toContain('id="rank-h"');
     expect(page).toContain('No test made backend requests in measured projects.');

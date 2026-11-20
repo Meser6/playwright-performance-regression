@@ -13,6 +13,8 @@ export function defaultAnswers(info: ProjectInfo): InitAnswers {
     scope: 'all',
     repeatTest: DEFAULT_ANSWERS_REPEAT,
     warnOnly: true,
+    // Yes when the project has test.step calls (04-REQ-47).
+    steps: info.stepFiles > 0,
     envLabels: [],
     addCi: info.ciPlatform !== null,
   };

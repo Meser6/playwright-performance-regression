@@ -180,6 +180,7 @@ export async function thresholdsFrom(cmd: FromCommand, host: CliHost): Promise<n
     dir: config.thresholds.dir,
     filePrefix: config.thresholds.filePrefix,
     env: config.run.env,
+    steps: config.measure.steps.enabled,
   };
   const loaded = await loadThresholds(location);
   const derived = deriveThresholds(report, config, loaded, {

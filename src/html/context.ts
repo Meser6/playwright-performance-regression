@@ -10,16 +10,16 @@ import type { HtmlValue, SafeHtml } from './escape.ts';
 const DEFAULT_PERCENTILE = 'p95';
 
 /** Kind of a key in links and deep links (11-REQ-38); `request` is reserved for 15. */
-export type LinkKind = 'api';
-export const LINK_KINDS: readonly LinkKind[] = ['api'];
-/** Order of the kinds in rankings and ties (11-REQ-31). */
-export const KIND_ORDER: Record<LinkKind, number> = { api: 0 };
-export const KIND_LABEL: Record<LinkKind, string> = { api: 'endpoint' };
-/** Tab of each kind (11-REQ-26). */
-export const KIND_TAB: Record<LinkKind, string> = { api: 'endpoints' };
+export type LinkKind = 'api' | 'step';
+export const LINK_KINDS: readonly LinkKind[] = ['api', 'step'];
+/** Order of the kinds in rankings and ties (11-REQ-31); 1 is reserved for `request`. */
+export const KIND_ORDER: Record<LinkKind, number> = { api: 0, step: 2 };
+export const KIND_LABEL: Record<LinkKind, string> = { api: 'endpoint', step: 'step' };
+/** Tab of each kind (11-REQ-26, 11-REQ-47). */
+export const KIND_TAB: Record<LinkKind, string> = { api: 'endpoints', step: 'steps' };
 /** Name of each kind in filter chips and table columns. */
-export const KIND_NAME: Record<LinkKind, string> = { api: 'Endpoints' };
-export const KIND_COLUMN: Record<LinkKind, string> = { api: 'API' };
+export const KIND_NAME: Record<LinkKind, string> = { api: 'Endpoints', step: 'Steps' };
+export const KIND_COLUMN: Record<LinkKind, string> = { api: 'API', step: 'Steps' };
 
 export const DASH = '—';
 
@@ -97,7 +97,10 @@ export interface Ctx {
 }
 
 export function aggregatesOf(data: HtmlReportData, kind: LinkKind): Record<string, HtmlAggregate> {
-  const byKind: Record<LinkKind, Record<string, HtmlAggregate>> = { api: data.endpoints };
+  const byKind: Record<LinkKind, Record<string, HtmlAggregate>> = {
+    api: data.endpoints,
+    step: data.steps,
+  };
   return byKind[kind];
 }
 
@@ -106,6 +109,7 @@ export function context(report: RunReport): Ctx {
   const level = report.config.checks?.time?.percentile?.level ?? DEFAULT_PERCENTILE;
   const order = {
     api: defaultOrder(data.endpoints, level),
+    step: defaultOrder(data.steps, level),
   };
   const positions = (keys: string[]) => new Map(keys.map((key, i) => [key, i + 1]));
   return {
@@ -114,7 +118,7 @@ export function context(report: RunReport): Ctx {
     level,
     migrated: report.testBreakdown === null,
     order,
-    position: { api: positions(order.api) },
+    position: { api: positions(order.api), step: positions(order.step) },
   };
 }
 

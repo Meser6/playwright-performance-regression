@@ -28,6 +28,8 @@ export type ConfigLike = Pick<FullConfig, 'rootDir' | 'workers' | 'maxFailures' 
   projects: ProjectLike[];
 };
 
+import type { StepLike } from './steps.ts';
+
 export interface SuiteLike {
   title: string;
   type: Suite['type'];
@@ -45,6 +47,8 @@ export type TestLike = Pick<
 
 export type ResultLike = Pick<TestResult, 'status' | 'retry' | 'startTime'> & {
   attachments: { name: string; contentType: string; body?: Buffer | undefined; path?: string }[];
+  /** Top-level steps (06-REQ-16); optional so that tests can omit it. */
+  steps?: readonly StepLike[];
 };
 
 export type RootSuiteLike = { allTests(): TestLike[] };

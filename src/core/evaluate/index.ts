@@ -6,6 +6,7 @@ export { MUTE_EXPIRY_WARN_DAYS } from './muting.ts';
 export { assessRun, buildOutcome } from './outcome.ts';
 export type { RunAssessment, RunAssessmentInput } from './outcome.ts';
 export { RULES } from './rules.ts';
+export { sourceForKind } from './types.ts';
 export type { Rule } from './rules.ts';
 export type {
   EvaluateOptions,

@@ -28,7 +28,7 @@ const en = {
   declinedTest:
     'Wrap your test object with withPerfFixtures() from {fixture}, or import test from {test} instead of @playwright/test.',
   declinedRun:
-    'Run {thresholds} and commit the pw-perf-thresholds.*.json files, then {test} runs the measurement.',
+    'Run {thresholds} and commit the pw-perf-thresholds*.json files, then {test} runs the measurement.',
   declinedDocs: 'Guide: {url}',
   declinedLater: 'Run {init} any time for the guided setup.',
 
@@ -80,10 +80,16 @@ const en = {
   trialLesson:
     'In warn-only mode regressions are reported but do not fail the run, so you can watch the results for a few weeks before they block builds.',
   warnOnlyQuestion: 'Start in warn-only mode for the first weeks?',
+  stepSteps: 'Test steps',
+  stepsLesson:
+    'Durations of your test.step blocks can be measured too, without changing the tests: each step becomes a key such as "checkout › pay".',
+  stepsPrivacy:
+    'Step titles are sanitized: ids, e-mails, URLs and secrets never reach the keys, also inside quotes.',
+  stepsQuestion: 'Also measure the duration of your test.step blocks (found in {count} files)?',
 
   stepEnvs: 'Environments',
   envsLesson:
-    'Each environment gets its own thresholds files (pw-perf-thresholds.<kind>.<label>.json).',
+    'Each environment gets its own thresholds files (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Do you run against several environments?',
   envLabelsQuestion: 'Environment labels, separated by commas?',
   none: 'none',
@@ -119,7 +125,7 @@ const en = {
   manualSteps: 'Manual steps: {count} (see the warnings above).',
   nextSteps: 'Next steps:',
   nextThresholds:
-    '{command}: derive the thresholds and commit the pw-perf-thresholds.*.json files (derive them on the CI machines for stable values).',
+    '{command}: derive the thresholds and commit the pw-perf-thresholds*.json files (derive them on the CI machines for stable values).',
   nextTest: '{command}: a measurement run that fails on a regression.',
   nextJenkins: 'Create a Pipeline job in Jenkins with the script path {path}.',
   nextAzure: 'Create a pipeline in Azure DevOps from {path}.',
@@ -185,7 +191,7 @@ const pl: Messages = {
   declinedTest:
     'Owiń swój obiekt test w withPerfFixtures() z {fixture} albo importuj test z {test} zamiast z @playwright/test.',
   declinedRun:
-    'Uruchom {thresholds} i zacommituj pliki pw-perf-thresholds.*.json, potem {test} wykonuje pomiar.',
+    'Uruchom {thresholds} i zacommituj pliki pw-perf-thresholds*.json, potem {test} wykonuje pomiar.',
   declinedDocs: 'Przewodnik: {url}',
   declinedLater: 'Konfigurację z przewodnikiem uruchomisz w każdej chwili poleceniem {init}.',
 
@@ -237,9 +243,15 @@ const pl: Messages = {
   trialLesson:
     'W trybie warn-only regresje są zgłaszane, ale przebieg nie kończy się błędem, więc przez kilka tygodni możesz obserwować wyniki, zanim zaczną blokować buildy.',
   warnOnlyQuestion: 'Zacząć w trybie warn-only przez pierwsze tygodnie?',
+  stepSteps: 'Kroki testu',
+  stepsLesson:
+    'Czasy bloków test.step też mogą być mierzone, bez zmian w testach: każdy krok staje się kluczem, np. "checkout › pay".',
+  stepsPrivacy:
+    'Tytuły kroków są sanityzowane: identyfikatory, e-maile, adresy URL i sekrety nie trafiają do kluczy, także w cudzysłowach.',
+  stepsQuestion: 'Mierzyć też czasy bloków test.step (znalezione w {count} plikach)?',
 
   stepEnvs: 'Środowiska',
-  envsLesson: 'Każde środowisko ma własne pliki progów (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'Każde środowisko ma własne pliki progów (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Czy testujesz kilka środowisk?',
   envLabelsQuestion: 'Etykiety środowisk, oddzielone przecinkami?',
   none: 'brak',
@@ -275,7 +287,7 @@ const pl: Messages = {
   manualSteps: 'Kroki ręczne: {count} (zobacz ostrzeżenia powyżej).',
   nextSteps: 'Następne kroki:',
   nextThresholds:
-    '{command}: wyznacz progi i zacommituj pliki pw-perf-thresholds.*.json (wyznaczaj je na maszynach CI, żeby wartości były stabilne).',
+    '{command}: wyznacz progi i zacommituj pliki pw-perf-thresholds*.json (wyznaczaj je na maszynach CI, żeby wartości były stabilne).',
   nextTest: '{command}: pomiar, który kończy się błędem przy regresji.',
   nextJenkins: 'Utwórz w Jenkinsie job typu Pipeline ze ścieżką skryptu {path}.',
   nextAzure: 'Utwórz w Azure DevOps pipeline z pliku {path}.',
@@ -338,7 +350,7 @@ const es: Messages = {
   declinedTest:
     'Envuelve tu objeto test con withPerfFixtures() de {fixture}, o importa test de {test} en lugar de @playwright/test.',
   declinedRun:
-    'Ejecuta {thresholds} y sube los archivos pw-perf-thresholds.*.json; después {test} ejecuta la medición.',
+    'Ejecuta {thresholds} y sube los archivos pw-perf-thresholds*.json; después {test} ejecuta la medición.',
   declinedDocs: 'Guía: {url}',
   declinedLater: 'Ejecuta {init} cuando quieras para la configuración guiada.',
 
@@ -390,10 +402,17 @@ const es: Messages = {
   trialLesson:
     'En modo warn-only las regresiones se notifican pero no hacen fallar la ejecución, así puedes observar los resultados unas semanas antes de que bloqueen los builds.',
   warnOnlyQuestion: '¿Empezar en modo warn-only las primeras semanas?',
+  stepSteps: 'Pasos del test',
+  stepsLesson:
+    'También se puede medir la duración de tus bloques test.step sin cambiar los tests: cada paso se convierte en una clave como "checkout › pay".',
+  stepsPrivacy:
+    'Los títulos de los pasos se sanean: ids, correos, URL y secretos nunca llegan a las claves, tampoco entre comillas.',
+  stepsQuestion:
+    '¿Medir también la duración de tus bloques test.step (encontrados en {count} archivos)?',
 
   stepEnvs: 'Entornos',
   envsLesson:
-    'Cada entorno tiene sus propios archivos de umbrales (pw-perf-thresholds.<kind>.<label>.json).',
+    'Cada entorno tiene sus propios archivos de umbrales (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: '¿Ejecutas contra varios entornos?',
   envLabelsQuestion: '¿Etiquetas de los entornos, separadas por comas?',
   none: 'ninguno',
@@ -430,7 +449,7 @@ const es: Messages = {
   manualSteps: 'Pasos manuales: {count} (ver las advertencias de arriba).',
   nextSteps: 'Siguientes pasos:',
   nextThresholds:
-    '{command}: calcula los umbrales y sube los archivos pw-perf-thresholds.*.json (calcúlalos en las máquinas de CI para tener valores estables).',
+    '{command}: calcula los umbrales y sube los archivos pw-perf-thresholds*.json (calcúlalos en las máquinas de CI para tener valores estables).',
   nextTest: '{command}: una medición que falla ante una regresión.',
   nextJenkins: 'Crea un job Pipeline en Jenkins con la ruta de script {path}.',
   nextAzure: 'Crea un pipeline en Azure DevOps a partir de {path}.',
@@ -494,7 +513,7 @@ const fr: Messages = {
   declinedTest:
     'Enveloppez votre objet test dans withPerfFixtures() de {fixture}, ou importez test depuis {test} au lieu de @playwright/test.',
   declinedRun:
-    'Lancez {thresholds} et committez les fichiers pw-perf-thresholds.*.json, puis {test} lance la mesure.',
+    'Lancez {thresholds} et committez les fichiers pw-perf-thresholds*.json, puis {test} lance la mesure.',
   declinedDocs: 'Guide : {url}',
   declinedLater: 'Lancez {init} à tout moment pour la configuration guidée.',
 
@@ -546,10 +565,16 @@ const fr: Messages = {
   trialLesson:
     'En mode warn-only, les régressions sont signalées sans faire échouer l’exécution : vous pouvez suivre les résultats quelques semaines avant qu’ils ne bloquent les builds.',
   warnOnlyQuestion: 'Commencer en mode warn-only les premières semaines ?',
+  stepSteps: 'Étapes de test',
+  stepsLesson:
+    'La durée de vos blocs test.step peut aussi être mesurée, sans modifier les tests : chaque étape devient une clé comme "checkout › pay".',
+  stepsPrivacy:
+    'Les titres des étapes sont nettoyés : identifiants, e-mails, URL et secrets n’arrivent jamais dans les clés, même entre guillemets.',
+  stepsQuestion: 'Mesurer aussi la durée de vos blocs test.step (trouvés dans {count} fichiers) ?',
 
   stepEnvs: 'Environnements',
   envsLesson:
-    'Chaque environnement a ses propres fichiers de seuils (pw-perf-thresholds.<kind>.<label>.json).',
+    'Chaque environnement a ses propres fichiers de seuils (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Testez-vous plusieurs environnements ?',
   envLabelsQuestion: 'Libellés des environnements, séparés par des virgules ?',
   none: 'aucun',
@@ -586,7 +611,7 @@ const fr: Messages = {
   manualSteps: 'Étapes manuelles : {count} (voir les avertissements ci-dessus).',
   nextSteps: 'Étapes suivantes :',
   nextThresholds:
-    '{command} : calculez les seuils et committez les fichiers pw-perf-thresholds.*.json (calculez-les sur les machines CI pour des valeurs stables).',
+    '{command} : calculez les seuils et committez les fichiers pw-perf-thresholds*.json (calculez-les sur les machines CI pour des valeurs stables).',
   nextTest: '{command} : une mesure qui échoue en cas de régression.',
   nextJenkins: 'Créez dans Jenkins un job Pipeline avec le chemin de script {path}.',
   nextAzure: 'Créez un pipeline dans Azure DevOps à partir de {path}.',
@@ -651,7 +676,7 @@ const it: Messages = {
   declinedTest:
     'Avvolgi il tuo oggetto test con withPerfFixtures() da {fixture}, oppure importa test da {test} invece che da @playwright/test.',
   declinedRun:
-    'Esegui {thresholds} e fai commit dei file pw-perf-thresholds.*.json, poi {test} esegue la misurazione.',
+    'Esegui {thresholds} e fai commit dei file pw-perf-thresholds*.json, poi {test} esegue la misurazione.',
   declinedDocs: 'Guida: {url}',
   declinedLater: 'Esegui {init} in qualsiasi momento per la configurazione guidata.',
 
@@ -703,9 +728,15 @@ const it: Messages = {
   trialLesson:
     'In modalità warn-only le regressioni vengono segnalate ma non fanno fallire l’esecuzione, così puoi osservare i risultati per qualche settimana prima che blocchino le build.',
   warnOnlyQuestion: 'Iniziare in modalità warn-only per le prime settimane?',
+  stepSteps: 'Step dei test',
+  stepsLesson:
+    'Si può misurare anche la durata dei blocchi test.step, senza modificare i test: ogni step diventa una chiave come "checkout › pay".',
+  stepsPrivacy:
+    'I titoli degli step vengono ripuliti: id, e-mail, URL e segreti non finiscono mai nelle chiavi, nemmeno tra virgolette.',
+  stepsQuestion: 'Misurare anche la durata dei blocchi test.step (trovati in {count} file)?',
 
   stepEnvs: 'Ambienti',
-  envsLesson: 'Ogni ambiente ha i propri file di soglie (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'Ogni ambiente ha i propri file di soglie (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Esegui i test su più ambienti?',
   envLabelsQuestion: 'Etichette degli ambienti, separate da virgole?',
   none: 'nessuno',
@@ -742,7 +773,7 @@ const it: Messages = {
   manualSteps: 'Passi manuali: {count} (vedi gli avvisi sopra).',
   nextSteps: 'Prossimi passi:',
   nextThresholds:
-    '{command}: calcola le soglie e fai commit dei file pw-perf-thresholds.*.json (calcolale sulle macchine CI per valori stabili).',
+    '{command}: calcola le soglie e fai commit dei file pw-perf-thresholds*.json (calcolale sulle macchine CI per valori stabili).',
   nextTest: '{command}: una misurazione che fallisce in caso di regressione.',
   nextJenkins: 'Crea in Jenkins un job Pipeline con il percorso dello script {path}.',
   nextAzure: 'Crea una pipeline in Azure DevOps da {path}.',
@@ -807,7 +838,7 @@ const uk: Messages = {
   declinedTest:
     'Обгорніть свій об’єкт test у withPerfFixtures() з {fixture} або імпортуйте test з {test} замість @playwright/test.',
   declinedRun:
-    'Запустіть {thresholds} і закомітьте файли pw-perf-thresholds.*.json, після цього {test} виконує вимірювання.',
+    'Запустіть {thresholds} і закомітьте файли pw-perf-thresholds*.json, після цього {test} виконує вимірювання.',
   declinedDocs: 'Посібник: {url}',
   declinedLater: 'Запустіть {init} будь-коли для налаштування з підказками.',
 
@@ -859,9 +890,16 @@ const uk: Messages = {
   trialLesson:
     'У режимі warn-only регресії показуються, але запуск не завершується помилкою, тож кілька тижнів можна спостерігати за результатами, перш ніж вони почнуть блокувати збірки.',
   warnOnlyQuestion: 'Почати в режимі warn-only на перші тижні?',
+  stepSteps: 'Кроки тестів',
+  stepsLesson:
+    'Тривалість блоків test.step теж можна вимірювати без змін у тестах: кожен крок стає ключем, наприклад "checkout › pay".',
+  stepsPrivacy:
+    'Заголовки кроків очищуються: ідентифікатори, e-mail, URL і секрети ніколи не потрапляють у ключі, навіть у лапках.',
+  stepsQuestion: 'Також вимірювати тривалість блоків test.step (знайдено у файлах: {count})?',
 
   stepEnvs: 'Середовища',
-  envsLesson: 'Кожне середовище має власні файли порогів (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson:
+    'Кожне середовище має власні файли порогів (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Ви тестуєте кілька середовищ?',
   envLabelsQuestion: 'Мітки середовищ через кому?',
   none: 'немає',
@@ -896,7 +934,7 @@ const uk: Messages = {
   manualSteps: 'Ручні кроки: {count} (див. попередження вище).',
   nextSteps: 'Наступні кроки:',
   nextThresholds:
-    '{command}: обчисліть пороги й закомітьте файли pw-perf-thresholds.*.json (для стабільних значень обчислюйте їх на машинах CI).',
+    '{command}: обчисліть пороги й закомітьте файли pw-perf-thresholds*.json (для стабільних значень обчислюйте їх на машинах CI).',
   nextTest: '{command}: вимірювання, яке завершується помилкою при регресії.',
   nextJenkins: 'Створіть у Jenkins job типу Pipeline зі шляхом до скрипта {path}.',
   nextAzure: 'Створіть pipeline в Azure DevOps з {path}.',
@@ -960,7 +998,7 @@ const ru: Messages = {
   declinedTest:
     'Оберните свой объект test в withPerfFixtures() из {fixture} или импортируйте test из {test} вместо @playwright/test.',
   declinedRun:
-    'Запустите {thresholds} и закоммитьте файлы pw-perf-thresholds.*.json, после этого {test} выполняет измерение.',
+    'Запустите {thresholds} и закоммитьте файлы pw-perf-thresholds*.json, после этого {test} выполняет измерение.',
   declinedDocs: 'Руководство: {url}',
   declinedLater: 'Запустите {init} в любой момент для настройки с подсказками.',
 
@@ -1012,9 +1050,15 @@ const ru: Messages = {
   trialLesson:
     'В режиме warn-only регрессии показываются, но запуск не завершается ошибкой, так что несколько недель можно наблюдать за результатами, прежде чем они начнут блокировать сборки.',
   warnOnlyQuestion: 'Начать в режиме warn-only на первые недели?',
+  stepSteps: 'Шаги тестов',
+  stepsLesson:
+    'Длительность блоков test.step тоже можно измерять без изменений в тестах: каждый шаг становится ключом, например "checkout › pay".',
+  stepsPrivacy:
+    'Заголовки шагов очищаются: идентификаторы, e-mail, URL и секреты никогда не попадают в ключи, даже в кавычках.',
+  stepsQuestion: 'Также измерять длительность блоков test.step (найдено в файлах: {count})?',
 
   stepEnvs: 'Окружения',
-  envsLesson: 'У каждого окружения свои файлы порогов (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'У каждого окружения свои файлы порогов (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Вы тестируете несколько окружений?',
   envLabelsQuestion: 'Метки окружений через запятую?',
   none: 'нет',
@@ -1049,7 +1093,7 @@ const ru: Messages = {
   manualSteps: 'Ручные шаги: {count} (см. предупреждения выше).',
   nextSteps: 'Дальнейшие шаги:',
   nextThresholds:
-    '{command}: вычислите пороги и закоммитьте файлы pw-perf-thresholds.*.json (для стабильных значений вычисляйте их на машинах CI).',
+    '{command}: вычислите пороги и закоммитьте файлы pw-perf-thresholds*.json (для стабильных значений вычисляйте их на машинах CI).',
   nextTest: '{command}: измерение, которое завершается ошибкой при регрессии.',
   nextJenkins: 'Создайте в Jenkins job типа Pipeline с путём к скрипту {path}.',
   nextAzure: 'Создайте pipeline в Azure DevOps из {path}.',

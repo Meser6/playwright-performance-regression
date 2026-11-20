@@ -288,6 +288,13 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   dialog.stepOf(5, 'stepTrial', 'trialLesson');
   const warnOnly = await dialog.confirm(t('warnOnlyQuestion'), true);
 
+  // 5a only when the project has test.step calls (04-REQ-47).
+  let steps = false;
+  if (info.stepFiles > 0) {
+    dialog.step('5a', t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
+    steps = await dialog.confirm(t('stepsQuestion', { count: info.stepFiles }), true);
+  }
+
   dialog.stepOf(6, 'stepEnvs', 'envsLesson');
   let envLabels: string[] = [];
   if (await dialog.confirm(t('envsQuestion'), false)) {
@@ -314,7 +321,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
       true,
     );
   }
-  return { scope, repeatTest, warnOnly, envLabels, addCi };
+  return { scope, repeatTest, warnOnly, steps, envLabels, addCi };
 }
 
 function changeKind(change: FileChange, t: Translate): string {

@@ -178,6 +178,12 @@ function distribution(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   });
 }
 
+/** `file:line` of a step key, a dash without one (11-REQ-47). */
+function locationText(agg: HtmlAggregate): string {
+  const loc = agg.location;
+  return loc == null ? DASH : `${loc.file}:${String(loc.line)}`;
+}
+
 /** TTFB split of an endpoint (11-REQ-33). */
 function ttfbSplit(agg: HtmlAggregate): SafeHtml | null {
   const ttfb = agg.ttfb;
@@ -228,6 +234,10 @@ export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggre
           'Time sources',
           `browser ${String(agg.timeSources.browser)}, node ${String(agg.timeSources.node)}`,
         )
+      : null,
+    kind === 'step' ? fact('Defined at', locationText(agg)) : null,
+    kind === 'step' && (agg.stepErrorsFromFailedTests ?? 0) > 0
+      ? fact('Step errors in failed tests (not counted)', agg.stepErrorsFromFailedTests ?? 0)
       : null,
     kind === 'api'
       ? fact(
@@ -306,6 +316,7 @@ function keyRow(
     html`<td>${s === null ? DASH : percentileCell(s.percentiles['p99'], ev.limits.p99)}</td>`,
     html`<td>${time(s?.max)}</td>`,
     kind === 'api' ? html`<td>${time(agg.ttfb?.p50)}</td>` : null,
+    kind === 'step' ? html`<td>${locationText(agg)}</td>` : null,
     html`<td>${agg.testCount}</td></tr>`,
     html`<tr class="drow"><td colspan="${columns}"><details id="${id}"${group <= 1 ? html` data-v=""` : null}>`,
     html`<summary>Details</summary>`,
@@ -351,13 +362,19 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
     ['p99', 'p99 / limit'],
     ['max', 'Max'],
     ...(kind === 'api' ? [['ttfb', 'TTFB p50'] as [string, string]] : []),
+    ...(kind === 'step' ? [['defined', 'Defined at'] as [string, string]] : []),
     ['tests', 'Tests'],
   ];
   return join(
     keyFilters(kind, keys.length),
     html`<div class="scroll"><table class="keys" id="table-${kind}" data-kind="${kind}" data-level="${ctx.level}">`,
     html`<caption>${title}: ${plural(keys.length, 'key')}, violations first</caption>`,
-    html`<thead><tr>${cols.map(([column, label]) => html`<th scope="col" data-sort="${column}"><button type="button">${label}</button></th>`)}</tr></thead>`,
+    html`<thead><tr>${cols.map(([column, label]) =>
+      // The location is text, not a number to sort by (11-REQ-47).
+      column === 'defined'
+        ? html`<th scope="col">${label}</th>`
+        : html`<th scope="col" data-sort="${column}"><button type="button">${label}</button></th>`,
+    )}</tr></thead>`,
     keys.map((key) => keyRow(ctx, kind, key, aggregates[key] as HtmlAggregate, cols.length)),
     html`</table></div>`,
   );

@@ -5,7 +5,11 @@ const apiUrl = process.env.API_URL ?? 'http://localhost:3001';
 
 export default definePerfConfig({
   keys: { origins: { [apiUrl]: 'api' } },
-  measure: { exclude: [...perfDefaults.measure.exclude, '/api/analytics'] },
+  measure: {
+    exclude: [...perfDefaults.measure.exclude, '/api/analytics'],
+    // Also measure the test.step blocks of the page objects (docs/steps.md).
+    steps: true,
+  },
   // Report violations without failing the run while the thresholds settle.
   gate: { warnOnly: true },
 });

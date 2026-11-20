@@ -47,11 +47,11 @@ Runs `playwright test` in perf mode: every measured test runs several times in o
 backend requests are recorded, compared with the thresholds files of the project, and the run
 fails when an endpoint got slower or returns more errors.
 
-| Option          | Meaning                                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------------------ |
-| `--env <label>` | Environment label: the run uses `pw-perf-thresholds.<kind>.<label>.json`. Overrides `run.env` of the config. |
-| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.test`.                                  |
-| `-h`, `--help`  | Show the help of the command.                                                                                |
+| Option          | Meaning                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `--env <label>` | Environment label: the run uses `pw-perf-thresholds[.steps].<label>.json`. Overrides `run.env` of the config. |
+| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.test`.                                   |
+| `-h`, `--help`  | Show the help of the command.                                                                                 |
 
 Example: measure only the tests tagged `@perf`:
 
@@ -72,7 +72,7 @@ whole workflow.
 
 | Option          | Meaning                                                                                                  |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
-| `--env <label>` | Environment label: the files `pw-perf-thresholds.<kind>.<label>.json` are written. Overrides `run.env`.  |
+| `--env <label>` | Environment label: the files `pw-perf-thresholds[.steps].<label>.json` are written. Overrides `run.env`. |
 | `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.thresholds`.                        |
 | `--prune`       | Remove unlocked entries of keys that were not seen in this run. Not allowed together with a test filter. |
 | `-h`, `--help`  | Show the help of the command.                                                                            |
@@ -333,12 +333,12 @@ In CI, treat 2 as "performance regression" and 3 as "the measurement itself did 
 
 ## Output files
 
-| File                                  | Written by                                              |
-| ------------------------------------- | ------------------------------------------------------- |
-| `pw-perf-results/report.json`         | every run (`report.dir`)                                |
-| `pw-perf-results/report.html`         | every run unless `report.html` is `false`; `report`     |
-| `pw-perf-results/thresholds-diff.md`  | `thresholds`, `thresholds --from`                       |
-| `pw-perf-thresholds.api[.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
+| File                                      | Written by                                              |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `pw-perf-results/report.json`             | every run (`report.dir`)                                |
+| `pw-perf-results/report.html`             | every run unless `report.html` is `false`; `report`     |
+| `pw-perf-results/thresholds-diff.md`      | `thresholds`, `thresholds --from`                       |
+| `pw-perf-thresholds[.steps][.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
 
 Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and

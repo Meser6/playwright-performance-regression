@@ -9,10 +9,24 @@
     },
     "configDir": "/home/user/project",
     "endpoints": {},
+    "steps": {},
     "env": null,
     "evaluation": {
       "counts": {
         "api": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 0,
+          "keys": 0,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0
+        },
+        "step": {
           "blockingViolations": 0,
           "fileEntriesNotEvaluated": 0,
           "fromDefaults": 0,
@@ -40,6 +54,7 @@
     },
     "mode": "test",
     "normalization": "0123456789abcd",
+    "stepNormalization": null,
     "origins": [],
     "playwright": {
       "version": "1.57.0"

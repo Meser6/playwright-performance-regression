@@ -24,7 +24,7 @@ export { buildLink } from './run.ts';
 export { banner } from './overview.ts';
 
 /** Tabs in their order (11-REQ-26); `api-requests` appears with 15 (D-28). */
-export type TabId = 'overview' | 'endpoints' | 'tests' | 'warnings' | 'run';
+export type TabId = 'overview' | 'endpoints' | 'steps' | 'tests' | 'warnings' | 'run';
 
 interface Tab {
   id: TabId;
@@ -50,7 +50,8 @@ function header(report: RunReport): SafeHtml {
 function tabs(ctx: Ctx): Tab[] {
   const report = ctx.report;
   const endpoints = ctx.order.api.length;
-  const empty = endpoints === 0;
+  const steps = ctx.order.step.length;
+  const empty = endpoints === 0 && steps === 0;
   const list: Tab[] = [
     { id: 'overview', label: 'Overview', count: null, content: overview(ctx, DOCS_URL) },
     {
@@ -61,10 +62,19 @@ function tabs(ctx: Ctx): Tab[] {
         endpoints > 0
           ? keyTable(ctx, 'api', 'Endpoints')
           : empty
-            ? html`<p>No requests were recorded. See the <a href="${DOCS_URL}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
+            ? html`<p>No requests or steps were recorded. See the <a href="${DOCS_URL}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
             : html`<p>No backend requests were recorded.</p>`,
     },
   ];
+  // Only a report with step keys has the Steps tab (11-REQ-47).
+  if (steps > 0) {
+    list.push({
+      id: 'steps',
+      label: 'Steps',
+      count: steps,
+      content: keyTable(ctx, 'step', 'Steps'),
+    });
+  }
   list.push(
     {
       id: 'tests',

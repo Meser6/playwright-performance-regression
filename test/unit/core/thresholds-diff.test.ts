@@ -179,12 +179,12 @@ describe('diffThresholds (10, chapter 9)', () => {
     if (content === null || content === undefined) throw new Error('no content');
     const d = diffs({ endpoints: { k: FAST }, runId: 'run-2' }, existing(loadedFile(content)));
     expect(d[0]?.counts.unchanged).toBe(1);
-    const md = formatThresholdsDiffMarkdown(d, ['pw-perf-thresholds.api.json']);
+    const md = formatThresholdsDiffMarkdown(d, ['pw-perf-thresholds.json']);
     expect(md).toBe(
       [
         '# Thresholds diff',
         '',
-        '## pw-perf-thresholds.api.json (unchanged)',
+        '## pw-perf-thresholds.json (unchanged)',
         '',
         '1 unchanged',
         '',

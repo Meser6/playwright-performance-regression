@@ -209,7 +209,7 @@ describe('reporter session in test mode', () => {
 
   test('a blocking violation gives exit code 2 and status failed', async () => {
     writeFileSync(
-      join(dir, 'pw-perf-thresholds.api.json'),
+      join(dir, 'pw-perf-thresholds.json'),
       JSON.stringify({
         schemaVersion: 1,
         kind: 'api',
@@ -228,7 +228,7 @@ describe('reporter session in test mode', () => {
   });
 
   test('an invalid thresholds file is a tool error: exit code 3, never default thresholds', async () => {
-    writeFileSync(join(dir, 'pw-perf-thresholds.api.json'), '{ not json');
+    writeFileSync(join(dir, 'pw-perf-thresholds.json'), '{ not json');
     const outcomeFile = join(dir, 'run.outcome.json');
     const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
     s.begin(fakeConfig(dir), ROOT);
@@ -242,7 +242,7 @@ describe('reporter session in test mode', () => {
 
   test('09-AC-16 with an environment label the file without the label is not used', async () => {
     writeFileSync(
-      join(dir, 'pw-perf-thresholds.api.json'),
+      join(dir, 'pw-perf-thresholds.json'),
       JSON.stringify({ schemaVersion: 1, kind: 'api', generated: null, entries: {} }),
     );
     const s = session(fakeHost(dir), registered({}, { mode: 'test', env: 'qa' }));
@@ -253,11 +253,11 @@ describe('reporter session in test mode', () => {
     expect(report.env).toBe('qa');
     expect(report.thresholdFiles[0]).toMatchObject({
       kind: 'api',
-      path: 'pw-perf-thresholds.api.qa.json',
+      path: 'pw-perf-thresholds.qa.json',
       status: 'missing',
     });
     const missing = report.warnings.find((w) => w.code === 'THRESHOLDS_FILE_MISSING');
-    expect(missing?.hint).toContain('pw-perf-thresholds.api.json exists');
+    expect(missing?.hint).toContain('pw-perf-thresholds.json exists');
   });
 
   test('04-AC-11 failed tests within gate.maxFailedTestShare warn; above it they are a tool error', async () => {
@@ -553,7 +553,7 @@ describe('reporter session: HTML report', () => {
 });
 
 describe('reporter session in thresholds mode', () => {
-  const thresholdsFile = (): string => join(dir, 'pw-perf-thresholds.api.json');
+  const thresholdsFile = (): string => join(dir, 'pw-perf-thresholds.json');
 
   async function derive(
     options: {
@@ -588,7 +588,7 @@ describe('reporter session in thresholds mode', () => {
     // No file of the removed custom kind is written (D-32).
     expect(existsSync(join(dir, 'pw-perf-thresholds.custom.json'))).toBe(false);
     expect(readFileSync(outcome.paths.thresholdsDiff ?? '', 'utf8')).toContain('# Thresholds diff');
-    expect(stdout.indexOf('Thresholds: pw-perf-thresholds.api.json (created)')).toBeGreaterThan(
+    expect(stdout.indexOf('Thresholds: pw-perf-thresholds.json (created)')).toBeGreaterThan(
       stdout.indexOf('PASSED'),
     );
     expect(stdout).toContain(`Diff: ${join(dir, 'pw-perf-results', 'thresholds-diff.md')}\n`);

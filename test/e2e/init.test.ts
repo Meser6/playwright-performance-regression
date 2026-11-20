@@ -91,7 +91,7 @@ describe('pw-perf init', () => {
         expect(run.status, run.stdout + run.stderr).toBe(0);
         expect(run.stderr).toContain('thresholds derived');
         expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
-          'pw-perf-thresholds.api.json',
+          'pw-perf-thresholds.json',
         ]);
       },
       RUN_TIMEOUT,

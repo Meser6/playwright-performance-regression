@@ -33,7 +33,7 @@ function scriptedPrompt(
 }
 
 describe('init wizard', () => {
-  test('04-AC-21 without tests tagged @perf, --yes measures all tests and shows INIT_NO_TAGGED_TESTS as information', async () => {
+  test('04-REQ-38 without tests tagged @perf, --yes measures all tests and shows INIT_NO_TAGGED_TESTS as information', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = fakeCliHost({ cwd: dir, playwright: null });
     expect(await main(['init', '--yes'], fake.host)).toBe(0);

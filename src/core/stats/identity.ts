@@ -1,4 +1,5 @@
 // Test metadata and sample identities (08, chapter 4).
+import type { RawStepSample } from '../steps/index.ts';
 import type { RawRequestSample } from '../types/index.ts';
 
 /** Test metadata the reporter adds to every sample (08-REQ-06 – 08-REQ-08). */
@@ -26,8 +27,14 @@ export interface EnrichedRequestSample extends RawRequestSample {
   ordinal: number;
 }
 
-/** Kind part of a sample identity (08-REQ-08). */
-export type SampleKind = 'request';
+export interface EnrichedStepSample extends RawStepSample {
+  test: TestMeta;
+  /** Position in the array returned by collectSteps for the result, from 0 (06-REQ-27). */
+  ordinal: number;
+}
+
+/** Kind part of a sample identity (08-REQ-08, 08-REQ-40). */
+export type SampleKind = 'request' | 'step';
 
 /** Identity of a test for testCount and topTests; repetitions count once (08-REQ-06). */
 export function testIdentity(project: string, file: string, title: string): string {

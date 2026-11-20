@@ -39,6 +39,7 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 - [init](#init)
 - [Collector](#collector)
 - [Endpoint keys](#endpoint-keys)
+- [Step keys](#step-keys)
 - [Statistics](#statistics)
 - [Run and reporter](#run-and-reporter)
 - [Evaluation](#evaluation)
@@ -72,8 +73,9 @@ config snapshot in a report was edited. Fix the value as shown in the hint.
 allowed values, or inconsistent with another option. Examples: time limits that decrease from
 median to percentile to p99, a lower bound above its upper bound, a percentile level below
 `p50`, a rule with a smaller `minSamples` than the median rule, every rule disabled without
-`gate.warnOnly`, or an `--env` / `--repeat` value (or `PW_PERF_ENV` / `PW_PERF_REPEAT`) out of
-range. The message names the option and the value received.
+`gate.warnOnly`, an `--env` / `--repeat` value (or `PW_PERF_ENV` / `PW_PERF_REPEAT`) out of
+range, or the environment label `steps` or `requests`, which are parts of the thresholds file
+names (`pw-perf-thresholds.steps.json`). The message names the option and the value received.
 
 ### CONFIG_INVALID_REGEX
 
@@ -392,6 +394,36 @@ function. See also [faq.md](faq.md).
 **Warning.** The run has more than 1000 endpoint keys. Check the keys in the report for test data
 and normalize it with `keys.extraIdPatterns`, `keys.dropQueryParams` or `keys.keyBuilder`.
 
+## Step keys
+
+See [steps.md](steps.md) for the step timings.
+
+### STEPS_NONE_FOUND
+
+**Warning.** `measure.steps` is on, but the measured tests gave no step sample. Check that the
+tests or page objects use `test.step`, and that `measure.steps.include`, `exclude` and
+`categories` do not filter out every step.
+
+### STEPS_HIGH_CARDINALITY
+
+**Warning.** Ten or more step keys differ only in one word, which usually means test data in the
+step titles (for example `Open report alpha`, `Open report bravo`, ...). Keep the value out of
+the title, add a pattern to `keys.extraIdPatterns` or exclude the step with
+`measure.steps.exclude`. When the word is in quotes, `measure.steps.redactQuotedValues: true`
+replaces quoted values with `:value`.
+
+### STEPS_TOO_MANY_KEYS
+
+**Warning.** The run has more than 1000 step keys. Keep `measure.steps.categories` at
+`["test.step"]` or lower `measure.steps.maxDepth`.
+
+### STEPS_SECRET_REDACTED
+
+**Warning.** One or more step titles contained a URL or a secret (a JWT, an authentication scheme
+such as `Bearer`, or a pair like `password=...`). The keys show placeholders, and the warning lists
+the rules and up to five `file:line` locations, never the titles. The data still reaches
+Playwright's own reports and traces, so remove it from the step title.
+
 ## Statistics
 
 ### STATS_SAMPLES_WITHOUT_BROWSER_TIMING
@@ -653,7 +685,7 @@ directory describe each format. Hand edits of thresholds files are the usual cau
 ### THRESHOLDS_KIND_MISMATCH
 
 **Error.** A thresholds file has a `kind` that does not match its file name: endpoint limits live
-in `pw-perf-thresholds.api[.<env>].json`. Move the entries to the right file or fix `kind`.
+in `pw-perf-thresholds[.steps][.<env>].json`. Move the entries to the right file or fix `kind`.
 
 ## HTML report
 

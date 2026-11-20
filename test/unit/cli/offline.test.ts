@@ -62,7 +62,7 @@ const readReport = (path: string): RunReport => JSON.parse(readFileSync(path, 'u
 describe('thresholds --from', () => {
   test('04-AC-07 derives the same thresholds files as the reporter in a thresholds run', async () => {
     const report = await reporterRun();
-    const api = join(project, 'pw-perf-thresholds.api.json');
+    const api = join(project, 'pw-perf-thresholds.json');
     const fromReporter = readFileSync(api);
     renameSync(api, join(root, 'reporter.api.json'));
 
@@ -97,7 +97,7 @@ describe('thresholds --from', () => {
     expect(err).toContain('warning CLI_CONFIG_DIR_MISSING');
     expect(err).toContain(`base directory: ${cwd}`);
     // --env wins over the label of the report; the source was a test-mode run.
-    expect(existsSync(join(cwd, 'pw-perf-thresholds.api.ci.json'))).toBe(true);
+    expect(existsSync(join(cwd, 'pw-perf-thresholds.ci.json'))).toBe(true);
     expect(err).toContain('warning THRESHOLDS_ENV_MISMATCH');
     expect(err).toContain('warning THRESHOLDS_SOURCE_TEST_MODE');
   });
@@ -143,7 +143,7 @@ describe('thresholds --from', () => {
     const err = fake.stderr.join('');
     expect(err).toContain(`config: ${join(cwd, 'pw-perf.config.json')}`);
     expect(err).toContain(`base directory: ${cwd}`);
-    expect(existsSync(join(cwd, 'thr', 'pw-perf-thresholds.api.json'))).toBe(true);
+    expect(existsSync(join(cwd, 'thr', 'pw-perf-thresholds.json'))).toBe(true);
     // 01-REQ-31: thresholds.dir is a location, the margin changes the result.
     expect(err).toContain(
       'warning CONFIG_SNAPSHOT_DIFFERS: The package config file differs from the config the report was recorded with: checks.time.median.margin.relative.',
@@ -159,7 +159,7 @@ describe('thresholds --from', () => {
     const fake = cli();
     expect(await main(['thresholds', '--from', report], fake.host)).toBe(0);
     expect(fake.stderr.join('')).toContain(`config: ${join(project, 'pw-perf.config.json')}`);
-    expect(existsSync(join(project, 'thr', 'pw-perf-thresholds.api.json'))).toBe(true);
+    expect(existsSync(join(project, 'thr', 'pw-perf-thresholds.json'))).toBe(true);
   });
 
   test('CLI_WRITE_FAILED when a thresholds file cannot be written', async () => {
@@ -170,7 +170,7 @@ describe('thresholds --from', () => {
     const fake = cli();
     expect(await main(['thresholds', '--from', report], fake.host)).toBe(3);
     expect(fake.stderr.join('')).toContain(
-      `error CLI_WRITE_FAILED: The thresholds file ${join(cwd, 'thr', 'pw-perf-thresholds.api.json')} could not be written`,
+      `error CLI_WRITE_FAILED: The thresholds file ${join(cwd, 'thr', 'pw-perf-thresholds.json')} could not be written`,
     );
   });
 });

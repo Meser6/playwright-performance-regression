@@ -25,6 +25,7 @@ const SKIPPED = new Set(['$schema']);
 /** Descriptions for options the schema leaves without one. */
 const COMMENT_NOTES = {
   'checks.slowShare.t.api': 'Bounds of the derived T for backend request keys.',
+  'checks.slowShare.t.step': 'Bounds of the derived T for test.step keys.',
 };
 
 /** Abbreviations whose period does not end a sentence. */

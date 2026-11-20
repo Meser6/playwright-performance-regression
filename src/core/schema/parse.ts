@@ -9,6 +9,8 @@ import type {
   SampleBatch,
   ThresholdsFile,
 } from '../types/index.ts';
+import { DEFAULT_CONFIG } from '../config/generated/defaults.ts';
+import { expandSteps } from '../config/steps.ts';
 import { child, isRecord, Sink } from './dsl.ts';
 import type { Problem, Schema } from './dsl.ts';
 import { outcomeFile, runReport, sampleBatch, thresholdsFile } from './formats.ts';
@@ -76,7 +78,7 @@ const HINTS: Record<SchemaIssueCode, string> = {
   SCHEMA_VALIDATION_FAILED:
     "Fix the listed fields; the JSON Schemas in the package's schemas/ directory describe the format.",
   THRESHOLDS_KIND_MISMATCH:
-    'Each kind has its own file (pw-perf-thresholds.<kind>…); move the entries to the right file or fix "kind".',
+    'Each kind has its own file (pw-perf-thresholds[.steps]…); move the entries to the right file or fix "kind".',
 };
 
 function describeProblems(problems: Pick<Problem, 'pointer' | 'message'>[], more: boolean): string {
@@ -321,9 +323,53 @@ function withoutCustomOptions(config: unknown): unknown {
 }
 
 /**
+ * Config snapshot with the step options of version 3 (02-REQ-33): measure.steps off and the
+ * default step limits and T (06-REQ-30); options a sparse snapshot lacks stay absent.
+ */
+function withStepOptions(config: unknown): unknown {
+  if (!isRecord(config)) return config;
+  const out: JsonObject = { ...config };
+  if (isRecord(config.measure) && !Object.hasOwn(config.measure, 'steps')) {
+    out.measure = { ...config.measure, steps: expandSteps(false) };
+  }
+  if (isRecord(config.checks)) {
+    const defaults = DEFAULT_CONFIG.checks as unknown as JsonObject;
+    const withStep = (value: unknown, fallback: unknown): unknown =>
+      isRecord(value) && !Object.hasOwn(value, 'step') && isRecord(fallback)
+        ? { ...value, step: structuredClone(fallback.step) }
+        : value;
+    out.checks = Object.fromEntries(
+      Object.entries(config.checks).map(([group, rules]) => {
+        const groupDefaults = defaults[group];
+        if (!isRecord(rules) || !isRecord(groupDefaults)) return [group, rules];
+        if (group === 'errors') {
+          return [group, { ...rules, limit: withStep(rules.limit, groupDefaults.limit) }];
+        }
+        return [
+          group,
+          Object.fromEntries(
+            Object.entries(rules).map(([name, rule]) => {
+              const ruleDefaults = groupDefaults[name];
+              if (group === 'slowShare' && name === 't')
+                return [name, withStep(rule, ruleDefaults)];
+              if (!isRecord(rule) || !isRecord(ruleDefaults)) return [name, rule];
+              if (!Object.hasOwn(rule, 'limit')) return [name, rule];
+              return [name, { ...rule, limit: withStep(rule.limit, ruleDefaults.limit) }];
+            }),
+          ),
+        ];
+      }),
+    );
+  }
+  return out;
+}
+
+/**
  * Run report v2 → v3 (02-REQ-33, 02-D-18): custom measurements were removed (D-32). Drops
  * `custom`, `evaluation.counts.custom`, thresholdFiles entries of kind custom and the custom
  * options of the config snapshot, without a warning. Warnings with CUSTOM_* codes stay as text.
+ * Adds the step fields of version 3: `steps: {}`, `stepNormalization: null`, zero
+ * `evaluation.counts.step` and the step options of the config snapshot.
  */
 export function migrateRunReportV2(document: JsonObject): JsonObject {
   const { custom: _custom, ...rest } = document;
@@ -332,12 +378,17 @@ export function migrateRunReportV2(document: JsonObject): JsonObject {
   const files = document.thresholdFiles;
   return {
     ...rest,
-    config: withoutCustomOptions(document.config),
+    stepNormalization: null,
+    steps: {},
+    config: withStepOptions(withoutCustomOptions(document.config)),
     evaluation:
       isRecord(evaluation) && isRecord(counts)
         ? {
             ...evaluation,
-            counts: Object.fromEntries(Object.entries(counts).filter(([k]) => k !== 'custom')),
+            counts: {
+              ...Object.fromEntries(Object.entries(counts).filter(([k]) => k !== 'custom')),
+              step: Object.fromEntries(Object.keys(counts.api ?? {}).map((name) => [name, 0])),
+            },
           }
         : evaluation,
     thresholdFiles: Array.isArray(files)

@@ -5,7 +5,8 @@ A project closer to a real suite:
 - a `setup` project that logs in once and saves the session, and a teardown project; both run
   once and are not measured;
 - its own `tests/fixtures.ts` with a page object, wrapped in `withPerfFixtures()`;
-- `pw-perf.config.ts` with an origin label for the API, an extra exclude and a warn-only start;
+- `pw-perf.config.ts` with an origin label for the API, an extra exclude, step timings and a
+  warn-only start;
 - only tests tagged `@perf` are measured (`--grep @perf` in the scripts).
 
 The tests run against the demo app of this repository, which Playwright starts on ports 3000 and 3001.
@@ -18,9 +19,10 @@ cd examples/with-setup
 npm install
 npx playwright install chromium
 
-npm run perf:thresholds   # writes pw-perf-thresholds.api.json
+npm run perf:thresholds   # writes pw-perf-thresholds.json and pw-perf-thresholds.steps.json
 npm run perf:test
 ```
 
 Endpoint keys of the API origin carry it after the method (for example `GET api/api/prices`); keys of the
-page origin have no label.
+page origin have no label. The `test.step` in the page object of `tests/fixtures.ts` gives the step
+key `open shop`.

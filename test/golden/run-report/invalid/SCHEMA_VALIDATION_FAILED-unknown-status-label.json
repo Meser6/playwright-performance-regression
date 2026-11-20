@@ -52,7 +52,19 @@
           "2xx",
           "3xx"
         ],
-        "pendingTimeoutMs": 2000
+        "pendingTimeoutMs": 2000,
+        "steps": {
+          "enabled": false,
+          "include": [],
+          "exclude": [],
+          "maxDepth": 3,
+          "categories": [
+            "test.step"
+          ],
+          "groupBy": "step",
+          "normalizeTitles": true,
+          "redactQuotedValues": false
+        }
       },
       "keys": {
         "origins": {},
@@ -80,7 +92,8 @@
               "smallSampleRelative": 0.8
             },
             "limit": {
-              "api": 2000
+              "api": 2000,
+              "step": 10000
             }
           },
           "percentile": {
@@ -88,7 +101,8 @@
             "minSamples": 20,
             "level": "p95",
             "limit": {
-              "api": 2000
+              "api": 2000,
+              "step": 15000
             },
             "margin": {
               "relative": 0.4,
@@ -105,7 +119,8 @@
               "minGapRelative": 0.1
             },
             "limit": {
-              "api": 4000
+              "api": 4000,
+              "step": 30000
             }
           }
         },
@@ -114,6 +129,11 @@
             "api": {
               "min": 500,
               "max": 2000,
+              "medianFactor": 2
+            },
+            "step": {
+              "min": 1000,
+              "max": 10000,
               "medianFactor": 2
             }
           },
@@ -125,7 +145,8 @@
               "smallSampleAbsolute": 0.1
             },
             "limit": {
-              "api": 0.85
+              "api": 0.85,
+              "step": 0.85
             }
           },
           "wilson": {
@@ -139,7 +160,8 @@
               "smallSampleMin": 0.1
             },
             "limit": {
-              "api": 0.05
+              "api": 0.05,
+              "step": 0.05
             }
           }
         },
@@ -152,7 +174,8 @@
             "PENDING"
           ],
           "limit": {
-            "api": 0.05
+            "api": 0.05,
+            "step": 0.05
           },
           "margin": {
             "factor": 1.5,
@@ -345,6 +368,7 @@
         "hints": []
       }
     },
+    "steps": {},
     "env": "qa",
     "evaluation": {
       "counts": {
@@ -360,6 +384,19 @@
           "tooFewSamples": 0,
           "unseenThresholdEntries": 0,
           "violations": 1
+        },
+        "step": {
+          "blockingViolations": 0,
+          "fileEntriesNotEvaluated": 0,
+          "fromDefaults": 0,
+          "fromFile": 0,
+          "keys": 0,
+          "medianOnly": 0,
+          "muted": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0
         }
       },
       "gateEnabled": true,
@@ -376,6 +413,7 @@
     },
     "mode": "test",
     "normalization": "0123456789abcd",
+    "stepNormalization": null,
     "origins": [
       {
         "label": "",

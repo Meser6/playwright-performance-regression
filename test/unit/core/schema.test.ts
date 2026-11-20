@@ -171,16 +171,12 @@ describe('thresholds file (02-REQ-22, 02-REQ-29)', () => {
   });
 
   test('02-AC-12 parseThresholdsFile rejects a date that does not exist (2026-02-30)', () => {
-    const result = parseThresholdsFile(
-      text(muted('2026-02-30')),
-      'pw-perf-thresholds.api.json',
-      'api',
-    );
+    const result = parseThresholdsFile(text(muted('2026-02-30')), 'pw-perf-thresholds.json', 'api');
     expect(!result.ok && result.issues[0]).toEqual({
       code: 'SCHEMA_VALIDATION_FAILED',
-      source: 'pw-perf-thresholds.api.json',
+      source: 'pw-perf-thresholds.json',
       message:
-        'pw-perf-thresholds.api.json: thresholds file does not match the format: /entries/GET ~1api~1tickets/until must be an existing calendar date',
+        'pw-perf-thresholds.json: thresholds file does not match the format: /entries/GET ~1api~1tickets/until must be an existing calendar date',
       problems: [
         {
           pointer: '/entries/GET ~1api~1tickets/until',
@@ -521,7 +517,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const v1Text = raw('thresholds', 'v1', 'generated-api-file.json');
     const v1 = JSON.parse(v1Text) as Json;
     expect(v1['schemaVersion']).toBe(1);
-    const result = parseThresholdsFile(v1Text, 'pw-perf-thresholds.api.json', 'api');
+    const result = parseThresholdsFile(v1Text, 'pw-perf-thresholds.json', 'api');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     expect(result.value.migratedFrom).toBe(1);
     expect(result.value.file).toEqual({ ...v1, schemaVersion: 2 });
@@ -533,7 +529,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     ) as Json;
     expect(v1).toMatchObject({ schemaVersion: 1, kind: 'custom' });
     for (const doc of [v1, { ...v1, schemaVersion: 2 }]) {
-      const result = parseThresholdsFile(text(doc), 'pw-perf-thresholds.api.json', 'api');
+      const result = parseThresholdsFile(text(doc), 'pw-perf-thresholds.json', 'api');
       expect(!result.ok && result.issues[0]).toMatchObject({
         code: 'SCHEMA_VALIDATION_FAILED',
         problems: [{ pointer: '/kind' }],

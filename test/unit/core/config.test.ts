@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import {
   DEFAULT_CONFIG,
+  expandSteps,
   definePerfConfig,
   perfDefaults,
   resolveConfig,
@@ -30,16 +31,27 @@ function issues(input: unknown, overrides: ConfigOverrides = {}): ConfigIssue[] 
 
 const codes = (list: ConfigIssue[]): string[] => list.map((i) => i.code);
 
+/** The snapshot of an empty config: the schema defaults with measure.steps expanded (03-REQ-18). */
+const DEFAULT_SNAPSHOT = {
+  ...DEFAULT_CONFIG,
+  measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+};
+
 describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
   test('03-AC-01 resolveConfig(undefined, {}) equals DEFAULT_CONFIG', () => {
     const { config, snapshot, warnings } = resolved(undefined);
-    expect(snapshot).toEqual(DEFAULT_CONFIG);
-    expect(config).toEqual({
+    // measure.steps: the schema default false becomes the full object (03-REQ-18).
+    const expected = {
       ...DEFAULT_CONFIG,
+      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+    };
+    expect(snapshot).toEqual(expected);
+    expect(config).toEqual({
+      ...expected,
       keys: { ...DEFAULT_CONFIG.keys, keyBuilder: undefined },
     });
     expect(warnings).toEqual([]);
-    expect(resolved({}).snapshot).toEqual(DEFAULT_CONFIG);
+    expect(resolved({}).snapshot).toEqual(expected);
   });
 
   test('the result shares no objects with DEFAULT_CONFIG or the input', () => {
@@ -60,7 +72,7 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
     });
     expect(snapshot.measure.exclude).toEqual(['intercom.io']);
     expect(snapshot.measure.resourceTypes).toEqual(['fetch']);
-    expect(snapshot.checks.time.percentile.limit).toEqual({ api: 2500 });
+    expect(snapshot.checks.time.percentile.limit).toEqual({ api: 2500, step: 15000 });
     expect(snapshot.checks.time.percentile.level).toBe(DEFAULT_CONFIG.checks.time.percentile.level);
     expect(snapshot.measure.include).toEqual(DEFAULT_CONFIG.measure.include);
   });
@@ -80,13 +92,13 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
 
   test('properties set to undefined count as not set', () => {
     expect(resolved({ run: { env: undefined }, keys: { keyBuilder: undefined } }).snapshot).toEqual(
-      DEFAULT_CONFIG,
+      DEFAULT_SNAPSHOT,
     );
   });
 
   test('$schema of a JSON file is accepted and not part of the effective config', () => {
     const { snapshot } = resolved({ $schema: './node_modules/x/schemas/config.schema.json' });
-    expect(snapshot).toEqual(DEFAULT_CONFIG);
+    expect(snapshot).toEqual(DEFAULT_SNAPSHOT);
   });
 
   test('03-AC-06 environment overrides win over the config (03-REQ-07)', () => {
@@ -460,8 +472,8 @@ describe('removed custom measurements (03-REQ-19, D-32)', () => {
   test('03-AC-13 perfDefaults and DEFAULT_CONFIG have no custom keys', () => {
     expect(JSON.stringify(perfDefaults)).not.toContain('"custom"');
     expect(JSON.stringify(DEFAULT_CONFIG)).not.toContain('"custom"');
-    expect(Object.keys(perfDefaults.checks.time.median.limit)).toEqual(['api']);
-    expect(Object.keys(perfDefaults.checks.slowShare.t)).toEqual(['api']);
+    expect(Object.keys(perfDefaults.checks.time.median.limit)).toEqual(['api', 'step']);
+    expect(Object.keys(perfDefaults.checks.slowShare.t)).toEqual(['api', 'step']);
   });
 
   test('an option named custom outside the checks still gets the usual hint', () => {
@@ -476,4 +488,76 @@ test('the package entry point exports definePerfConfig and perfDefaults', async 
   const entry = await import('../../../src/entries/index.ts');
   expect(Object.keys(entry).sort()).toEqual(['definePerfConfig', 'perfDefaults']);
   expect(entry.perfDefaults).toBe(perfDefaults);
+});
+
+describe('step settings (03-REQ-18, 03-REQ-22)', () => {
+  test('03-REQ-18 false, true and an object become the full settings', () => {
+    expect(resolved({}).snapshot.measure.steps).toEqual({
+      enabled: false,
+      include: [],
+      exclude: [],
+      maxDepth: 3,
+      categories: ['test.step'],
+      groupBy: 'step',
+      normalizeTitles: true,
+      redactQuotedValues: false,
+    });
+    expect(resolved({ measure: { steps: true } }).snapshot.measure.steps.enabled).toBe(true);
+    const object = resolved({ measure: { steps: { maxDepth: 2, include: [/^login/u] } } });
+    expect(object.snapshot.measure.steps).toMatchObject({
+      enabled: true,
+      maxDepth: 2,
+      include: [{ regex: '^login', flags: 'u' }],
+    });
+    expect(object.config.measure.steps.include[0]).toBeInstanceOf(RegExp);
+    expect(
+      resolved({ measure: { steps: { enabled: false, maxDepth: 2 } } }).snapshot.measure.steps
+        .enabled,
+    ).toBe(false);
+    expect(perfDefaults.measure.steps.categories).toEqual(['test.step']);
+  });
+
+  test('03-AC-13 redactQuotedValues is false by default and keepQuotedValues was renamed', () => {
+    expect(resolved({ measure: { steps: {} } }).snapshot.measure.steps.redactQuotedValues).toBe(
+      false,
+    );
+    expect(
+      resolved({ measure: { steps: { redactQuotedValues: true } } }).snapshot.measure.steps
+        .redactQuotedValues,
+    ).toBe(true);
+    const [found] = issues({ measure: { steps: { keepQuotedValues: true } } });
+    expect(found).toMatchObject({
+      code: 'CONFIG_UNKNOWN_OPTION',
+      path: 'measure.steps.keepQuotedValues',
+    });
+    expect(found?.hint).toContain('renamed to redactQuotedValues with the opposite meaning');
+  });
+
+  test('03-REQ-18 invalid step settings', () => {
+    const codes = (input: unknown) => issues(input).map((i) => [i.code, i.path]);
+    expect(codes({ measure: { steps: { maxDepth: 11 } } })).toEqual([
+      ['CONFIG_INVALID_VALUE', 'measure.steps.maxDepth'],
+    ]);
+    expect(codes({ measure: { steps: { categories: [] } } })[0]?.[0]).toBe('CONFIG_INVALID_VALUE');
+    expect(codes({ measure: { steps: { categories: ['test.attach'] } } })[0]?.[0]).toBe(
+      'CONFIG_INVALID_VALUE',
+    );
+    expect(codes({ measure: { steps: { exclude: [{ regex: '(' }] } } })).toEqual([
+      ['CONFIG_INVALID_REGEX', 'measure.steps.exclude[0]'],
+    ]);
+    expect(issues({ measure: { steps: { maxDept: 2 } } })[0]?.message).toContain(
+      'Did you mean "measure.steps.maxDepth"?',
+    );
+  });
+
+  test('03-REQ-22 the environment labels steps and requests are reserved', () => {
+    for (const label of ['steps', 'requests']) {
+      expect(issues({ run: { env: label } })[0]).toMatchObject({
+        code: 'CONFIG_INVALID_VALUE',
+        path: 'run.env',
+      });
+      expect(issues({}, { env: label })[0]?.code).toBe('CONFIG_INVALID_VALUE');
+    }
+    expect(resolved({ run: { env: 'steps-env' } }).snapshot.run.env).toBe('steps-env');
+  });
 });

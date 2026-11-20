@@ -10,7 +10,7 @@ import type {
   Kind,
   ThresholdFileInfo,
 } from '../types/index.ts';
-import { CLI_COMMAND } from '../types/index.ts';
+import { CLI_COMMAND, KINDS } from '../types/index.ts';
 import {
   compareText,
   fileInfo,
@@ -24,9 +24,8 @@ import { defaultLimits, entryLimits } from './limits.ts';
 import { dayOf, isMuteActive, keyMuting, mutingWarnings } from './muting.ts';
 import type { MutedKey } from './muting.ts';
 import { TIME_RULES, runRules } from './rules.ts';
+import { sourceForKind } from './types.ts';
 import type { EvaluateOptions, Evaluation, EvaluationStatus, LoadedThresholds } from './types.ts';
-
-const KINDS: readonly Kind[] = ['api'];
 
 /**
  * Number of keys with qualified violations that is still tolerated (09-REQ-13, step 5): the
@@ -148,8 +147,9 @@ function evaluationStatus(
   perKey: Record<Kind, Record<string, EvaluatedKey>>,
   thresholds: LoadedThresholds,
   fatalToolError: boolean,
+  kinds: readonly Kind[],
 ): EvaluationStatus {
-  if (fatalToolError || KINDS.some((kind) => thresholds[kind].status === 'invalid')) {
+  if (fatalToolError || kinds.some((kind) => thresholds[kind].status === 'invalid')) {
     return 'error';
   }
   const checks = KINDS.flatMap((kind) => Object.values(perKey[kind])).flatMap((e) => e.checks);
@@ -163,7 +163,7 @@ function evaluationStatus(
  * the reporter reads the files (09-REQ-01) and passes the result in `thresholds`.
  */
 export function evaluate(
-  aggregates: Pick<Aggregates, 'endpoints'>,
+  aggregates: Pick<Aggregates, 'endpoints'> & Partial<Pick<Aggregates, 'steps'>>,
   thresholds: LoadedThresholds,
   cfg: ResolvedConfig,
   opts: EvaluateOptions,
@@ -171,8 +171,9 @@ export function evaluate(
   const runDay = dayOf(opts.startedAt);
   const byKind: Record<Kind, Record<string, AggregateStats>> = {
     api: aggregates.endpoints,
+    step: aggregates.steps ?? {},
   };
-  const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {} };
+  const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {}, step: {} };
   for (const kind of KINDS) {
     for (const key of Object.keys(byKind[kind]).sort(compareText)) {
       const stats = byKind[kind][key];
@@ -186,8 +187,10 @@ export function evaluate(
   const warnings: Issue[] = [];
   const toolErrors: Issue[] = [];
   const thresholdFiles: ThresholdFileInfo[] = [];
-  const unseenCount: Record<Kind, number> = { api: 0 };
-  for (const kind of KINDS) {
+  const unseenCount: Record<Kind, number> = { api: 0, step: 0 };
+  // The step file is not read while measure.steps is off, even when it exists (09-REQ-31).
+  const activeKinds = KINDS.filter((kind) => kind !== 'step' || cfg.measure.steps.enabled);
+  for (const kind of activeKinds) {
     const file = thresholds[kind];
     if (file.kind !== kind) {
       throw new Error(`evaluate: thresholds.${kind} has kind "${file.kind}"`);
@@ -205,7 +208,13 @@ export function evaluate(
       }
       if (file.file.generated !== null) {
         warnings.push(
-          ...generatedWarnings(file.path, file.file.generated, cfg, opts.env, opts.source),
+          ...generatedWarnings(
+            file.path,
+            file.file.generated,
+            cfg,
+            opts.env,
+            sourceForKind(opts.source, kind),
+          ),
         );
       }
       // A key is seen when it has an aggregate, even with n = 0 (09-REQ-05).
@@ -220,6 +229,7 @@ export function evaluate(
 
   const counts: Record<Kind, EvaluationCounts> = {
     api: countKind(perKey.api, unseenCount.api),
+    step: countKind(perKey.step, unseenCount.step),
   };
 
   if (KINDS.every((kind) => Object.keys(byKind[kind]).length === 0)) {
@@ -247,7 +257,7 @@ export function evaluate(
   warnings.push(...mutingWarnings(mutedKeys, runDay));
 
   return {
-    status: evaluationStatus(perKey, thresholds, opts.fatalToolError),
+    status: evaluationStatus(perKey, thresholds, opts.fatalToolError, activeKinds),
     gateEnabled: opts.mode === 'test',
     counts,
     perKey,

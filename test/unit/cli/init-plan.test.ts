@@ -48,6 +48,7 @@ const ANSWERS: InitAnswers = {
   scope: 'all',
   repeatTest: 5,
   warnOnly: true,
+  steps: false,
   envLabels: [],
   addCi: false,
 };
@@ -166,7 +167,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(hints).toContain('withPerfFixtures(mergeTests(a, b))');
   });
 
-  test('04-AC-21 @perf with environments qa and staging: scripts per label, run.env unchanged, existing script kept', () => {
+  test('04-REQ-42 (scripts until WP-22) @perf with environments qa and staging: scripts per label, run.env unchanged, existing script kept', () => {
     const info = detectProject(
       files({
         'package.json': `${JSON.stringify({ scripts: { 'perf:test:qa': 'echo own' } }, null, 2)}\n`,
@@ -491,5 +492,38 @@ describe('CI templates', () => {
     expect(jenkins?.text).toBe(
       CI_TEMPLATES.jenkins.replace(CI_COMMAND, `${CI_COMMAND} --env prod`),
     );
+  });
+});
+
+describe('04-REQ-47 step 5a', () => {
+  test('counts the source files with test.step( and answers yes by default only then', () => {
+    const files = new Map([
+      ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],
+      [
+        'tests/a.spec.ts',
+        "import { test } from '@playwright/test';\ntest('a', async () => { await test.step('x', async () => {}); });",
+      ],
+      ['pages/login.page.ts', "await test.step('login', async () => {});"],
+      ['tests/b.spec.ts', "import { test } from '@playwright/test';"],
+    ]);
+    const info = detectProject(files);
+    expect(info.stepFiles).toBe(2);
+    expect(defaultAnswers(info).steps).toBe(true);
+    expect(defaultAnswers(detectProject(new Map([['playwright.config.ts', '']]))).steps).toBe(
+      false,
+    );
+  });
+
+  test('a yes writes measure.steps: true as active code', () => {
+    const config = renderPerfConfig({ ...ANSWERS, warnOnly: false, steps: true });
+    const active = config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
+    expect(active).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '  measure: {',
+      '    steps: true,',
+      '  },',
+      '});',
+    ]);
   });
 });

@@ -16,6 +16,7 @@
     "configDir",
     "config",
     "normalization",
+    "stepNormalization",
     "ci",
     "host",
     "playwright",
@@ -27,6 +28,7 @@
     "toolErrors",
     "origins",
     "endpoints",
+    "steps",
     "testBreakdown"
   ],
   "properties": {
@@ -49,6 +51,10 @@
     "normalization": {
       "description": "Normalization fingerprint of this run (07-REQ-21); copied to generated.normalization of derived thresholds files and compared with it (09-REQ-04).",
       "$ref": "common.schema.json#/$defs/fingerprint"
+    },
+    "stepNormalization": {
+      "description": "Step normalization fingerprint (06-REQ-25); null when measure.steps is disabled. Copied to generated.normalization of derived step thresholds files.",
+      "oneOf": [{"$ref": "common.schema.json#/$defs/fingerprint"}, {"type": "null"}]
     },
     "ci": {
       "description": "CI metadata read from well-known environment variables (02-REQ-28); null outside CI or when no known provider is detected and CI is unset.",
@@ -120,7 +126,7 @@
       }
     },
     "evaluation": {
-      "description": "Run-level evaluation summary. Per-key details live in endpoints (02-REQ-15).",
+      "description": "Run-level evaluation summary. Per-key details live in endpoints and steps (02-REQ-15).",
       "type": "object",
       "additionalProperties": false,
       "required": ["status", "gateEnabled", "counts"],
@@ -130,8 +136,8 @@
         "counts": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["api"],
-          "properties": {"api": {"$ref": "#/$defs/evaluationCounts"}}
+          "required": ["api", "step"],
+          "properties": {"api": {"$ref": "#/$defs/evaluationCounts"}, "step": {"$ref": "#/$defs/evaluationCounts"}}
         }
       }
     },
@@ -165,6 +171,12 @@
       "type": "object",
       "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
       "additionalProperties": {"$ref": "#/$defs/aggregate"}
+    },
+    "steps": {
+      "description": "Aggregates of test.step durations by step key (06); empty when measure.steps is disabled.",
+      "type": "object",
+      "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
+      "additionalProperties": {"$ref": "#/$defs/stepAggregate"}
     },
     "testBreakdown": {
       "description": "Per-test costs and the waterfall of the slowest test runs (08-REQ-37, 08-REQ-38); null only in a report migrated from version 1.",
@@ -405,6 +417,270 @@
           "type": "array",
           "maxItems": 3,
           "items": {"$ref": "#/$defs/hint"}
+        }
+      }
+    },
+    "stepAggregate": {
+      "description": "Statistics of all samples of one step key (06-REQ-28): the aggregate fields plus location and stepErrorsFromFailedTests. ttfb is null; time sources count node samples.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "successCount",
+        "errorCount",
+        "fromFailedTests",
+        "testCount",
+        "statuses",
+        "timeSources",
+        "stats",
+        "ttfb",
+        "slowest",
+        "topTests",
+        "samples",
+        "evaluation",
+        "histogram",
+        "hints",
+        "location",
+        "stepErrorsFromFailedTests"
+      ],
+      "properties": {
+        "count": {
+          "description": "All samples, successful or not.",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "successCount": {
+          "description": "Successful samples with browser timing; only these enter time statistics (08-REQ-02).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "errorCount": {
+          "description": "Samples counted as errors: endpoints with a status in checks.errors.statuses (08-REQ-05).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "fromFailedTests": {
+          "description": "Samples that came from tests that did not pass (D-05).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "testCount": {
+          "description": "Distinct tests in which the key occurred; repetitions of the same test count once (08-REQ-06).",
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "statuses": {
+          "description": "Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). The labels ok, error and unfinished are reserved for step outcomes (06) (08-REQ-05).",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING|ok|error|unfinished)$"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "timeSources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "browser",
+            "node"
+          ],
+          "properties": {
+            "browser": {
+              "$ref": "common.schema.json#/$defs/count"
+            },
+            "node": {
+              "$ref": "common.schema.json#/$defs/count"
+            }
+          }
+        },
+        "stats": {
+          "description": "Time statistics of successful samples; null when successCount is 0.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/stats"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ttfb": {
+          "description": "TTFB of successful samples that have it. Null when no sample has TTFB.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "p50",
+                "p95",
+                "otherP50"
+              ],
+              "properties": {
+                "p50": {
+                  "$ref": "common.schema.json#/$defs/ms"
+                },
+                "p95": {
+                  "$ref": "common.schema.json#/$defs/ms"
+                },
+                "otherP50": {
+                  "description": "p50 of max(0, duration - ttfb) over the samples of p50 (08-REQ-35); null only in a report migrated from version 1.",
+                  "oneOf": [
+                    {
+                      "$ref": "common.schema.json#/$defs/ms"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slowest": {
+          "description": "Up to 3 slowest successful samples, slowest first.",
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/slowSample"
+          }
+        },
+        "topTests": {
+          "description": "Up to 5 tests with the most samples of this key (08-REQ-33), most samples first.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "project",
+              "file",
+              "line",
+              "sampleCount"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "project": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "sampleCount": {
+                "description": "Samples of this key from all repetitions of the test.",
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "samples": {
+          "description": "Retained successful durations, used to derive thresholds without rerunning tests (thresholds --from).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "durations",
+            "sampled"
+          ],
+          "properties": {
+            "durations": {
+              "description": "Sorted ascending. At most advanced.maxSamplesPerKey values (08).",
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/ms"
+              }
+            },
+            "sampled": {
+              "description": "True when successCount exceeded the limit and durations is a seeded uniform sample (P-06).",
+              "type": "boolean"
+            }
+          }
+        },
+        "evaluation": {
+          "$ref": "#/$defs/keyEvaluation"
+        },
+        "histogram": {
+          "description": "Histogram of the retained durations on a fixed log scale (08-REQ-34); bin i is [edges[i], edges[i+1]). counts has edges.length - 1 entries that sum to samples.durations.length (checked by the parser). Null when stats is null, or in a report migrated from version 1.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "edges",
+                "counts"
+              ],
+              "properties": {
+                "edges": {
+                  "description": "Bin edges in ms, strictly ascending (checked by the parser); constants of the scale, not rounded to 0.1 ms.",
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 31,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "counts": {
+                  "description": "Retained durations per bin.",
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 30,
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/count"
+                  }
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hints": {
+          "description": "Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.",
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/hint"
+          }
+        },
+        "location": {
+          "description": "Smallest (file, line) location among the key's samples, file relative to configDir with '/'; null when no sample has one (06-REQ-28).",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "file",
+                "line"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "line": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stepErrorsFromFailedTests": {
+          "description": "error and unfinished samples from failed tests; not counted in errorCount or the errors rule (06-REQ-32).",
+          "$ref": "common.schema.json#/$defs/count"
         }
       }
     },

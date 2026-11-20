@@ -73,6 +73,19 @@
         "violations": 1,
         "blockingViolations": 0,
         "muted": 0
+      },
+      "step": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
       }
     },
     "violations": [{"kind":"api","key":"GET /api/reports","rule":"percentile","actual":4500,"limit":2000,"hardLimitExceeded":true,"blocking":false}],

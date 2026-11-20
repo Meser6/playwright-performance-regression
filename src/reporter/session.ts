@@ -14,6 +14,7 @@ import {
 } from '../core/normalize/index.ts';
 import type { KeySample, KeyResult } from '../core/normalize/index.ts';
 import { buildRunReport } from '../core/report/index.ts';
+import { StepRecorder } from './steps.ts';
 import type { RunReportInput } from '../core/report/index.ts';
 import { SCHEMA_VERSIONS, parseSampleBatch, schemaIssueToIssue } from '../core/schema/index.ts';
 import { Aggregator, addKeyedRequest } from '../core/stats/index.ts';
@@ -158,6 +159,7 @@ export class RunSession {
   private normalization: string;
   private aggregator: Aggregator;
   private keyOf: (sample: KeySample) => KeyResult;
+  private readonly steps: StepRecorder;
   /** onBegin failed: the evaluation is not possible. */
   private fatal = false;
   private testsStarted = 0;
@@ -182,6 +184,7 @@ export class RunSession {
     this.normalization = normalizationFingerprint(keys, { baseOrigins: [] });
     this.aggregator = this.createAggregator();
     this.keyOf = createKeyBuilder(keys, { baseOrigins: [] });
+    this.steps = new StepRecorder(settings.config);
   }
 
   private get mode(): 'test' | 'thresholds' {
@@ -277,16 +280,15 @@ export class RunSession {
 
     const bodies = sampleAttachments(result);
     const measured = this.measured.has(projectName(test));
+    const relative = (file: string): string => this.host.io.relativeSlashPath(this.configDir, file);
+    const meta = testMeta(test, result, relative(test.location.file));
+    // Steps come from the result, not from the batch, so they are read without it (06-REQ-16).
+    this.steps.record(this.aggregator, test, result.steps, meta, relative);
     if (bodies.length === 0) {
       // Every test of a measured project has a batch, also an empty one (01-REQ-18).
       if (measured && result.status !== 'skipped') this.notInstrumented += 1;
       return;
     }
-    const meta = testMeta(
-      test,
-      result,
-      this.host.io.relativeSlashPath(this.configDir, test.location.file),
-    );
     if (bodies.length > 1) {
       this.warnings.push({
         code: 'ATTACHMENT_DUPLICATE',
@@ -379,6 +381,7 @@ export class RunSession {
       playwrightVersion: this.playwrightVersion,
       host,
       normalization: this.normalization,
+      stepNormalization: this.steps.fingerprint(),
     };
   }
 
@@ -405,6 +408,7 @@ export class RunSession {
       },
       config: this.settings.snapshot,
       normalization: this.normalization,
+      stepNormalization: this.steps.fingerprint(),
       runConditions: this.conditions,
       tests: this.testsResult(status),
       aggregates,
@@ -454,7 +458,11 @@ export class RunSession {
     const toolErrors = [...this.toolErrors];
 
     const aggregates = this.aggregator.finalize();
-    warnings.push(...aggregates.issues, ...detectKeyExplosion(Object.keys(aggregates.endpoints)));
+    warnings.push(
+      ...aggregates.issues,
+      ...detectKeyExplosion(Object.keys(aggregates.endpoints)),
+      ...this.steps.issues(Object.keys(aggregates.steps)),
+    );
     const pending = this.pendingWarning();
     if (pending !== null) warnings.push(pending);
     const tests = this.testsResult(result.status);
@@ -470,6 +478,7 @@ export class RunSession {
       dir: cfg.thresholds.dir,
       filePrefix: cfg.thresholds.filePrefix,
       env: cfg.run.env,
+      steps: cfg.measure.steps.enabled,
     };
     const loaded = await io.loadThresholds(location);
     const evaluation = evaluate(aggregates, loaded, cfg, {

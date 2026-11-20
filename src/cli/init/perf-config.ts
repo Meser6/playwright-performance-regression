@@ -12,6 +12,8 @@ export interface InitAnswers {
   scope: 'all' | 'tagged';
   repeatTest: number;
   warnOnly: boolean;
+  /** measure.steps (04-REQ-47). */
+  steps: boolean;
   envLabels: string[];
   addCi: boolean;
 }
@@ -31,6 +33,7 @@ export function activeValues(answers: InitAnswers): Map<string, unknown> {
     values.set('run.repeat.test', answers.repeatTest);
   if (answers.warnOnly !== DEFAULT_CONFIG.gate.warnOnly)
     values.set('gate.warnOnly', answers.warnOnly);
+  if (answers.steps) values.set('measure.steps', true);
   return values;
 }
 

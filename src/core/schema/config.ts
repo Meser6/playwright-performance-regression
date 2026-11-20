@@ -19,7 +19,7 @@ export const urlPattern = oneOf(
   ),
 );
 
-const limitByKind = (value: Schema): Schema => obj({ api: value });
+const limitByKind = (value: Schema): Schema => obj({ api: value, step: value });
 
 const relativeMargin = obj({
   relative: factor10,
@@ -62,7 +62,7 @@ const checks = obj({
     p99: obj({ enabled, minSamples, margin: p99Margin, limit: limitByKind(msLimit) }),
   }),
   slowShare: obj({
-    t: obj({ api: tSettings }),
+    t: obj({ api: tSettings, step: tSettings }),
     apdex: obj({ enabled, minSamples, margin: apdexMargin, limit: limitByKind(ratio) }),
     wilson: obj({ enabled, minSamples, margin: wilsonMargin, limit: limitByKind(ratio) }),
   }),
@@ -131,6 +131,22 @@ export const packageConfig = obj({
         uniqueItems: true,
         minItems: 1,
       },
+    ),
+    steps: oneOf(
+      bool,
+      obj({
+        enabled: bool,
+        include: arr(urlPattern),
+        exclude: arr(urlPattern),
+        maxDepth: int({ minimum: 1, maximum: 10 }),
+        categories: arr(enumOf(['test.step', 'expect', 'pw:api', 'fixture', 'hook']), {
+          minItems: 1,
+          uniqueItems: true,
+        }),
+        groupBy: enumOf(['step', 'test']),
+        normalizeTitles: bool,
+        redactQuotedValues: bool,
+      }),
     ),
     pendingTimeoutMs: int({ minimum: 0, maximum: 60000 }),
   }),

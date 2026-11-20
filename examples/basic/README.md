@@ -14,7 +14,7 @@ cd examples/basic
 npm install
 npx playwright install chromium
 
-npm run perf:thresholds   # measure and write pw-perf-thresholds.api.json
+npm run perf:thresholds   # measure and write pw-perf-thresholds.json
 npm run perf:test         # measure again and compare with the thresholds
 ```
 
