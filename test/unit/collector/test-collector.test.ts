@@ -37,10 +37,9 @@ describe('TestCollector', () => {
     await empty.drain();
     const emptyBatch = empty.batch();
     expect(emptyBatch).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       collector: { name: 'playwright-js', version: '1.2.3', browserName: null },
       requests: [],
-      custom: [],
       diagnostics: [],
     });
     const full = collector({ measure: noWait });
@@ -53,13 +52,9 @@ describe('TestCollector', () => {
     finish(context, ok);
     failed.failureValue = { errorText: '' };
     context.emit('requestfailed', failed);
-    full.api.start('open');
-    await full.api.measure('step', () => undefined);
-    full.api.end('missing');
     await full.drain();
     const fullBatch = full.batch();
     expect(fullBatch.requests.map((s) => s.status)).toEqual([200, 'FAILED', 'PENDING']);
-    expect(fullBatch.custom.map((s) => s.outcome)).toEqual(['ok', 'unfinished']);
     for (const batch of [emptyBatch, fullBatch]) {
       expect(validateBatch(batch), JSON.stringify(validateBatch.errors)).toBe(true);
       expect(parseSampleBatch(JSON.stringify(batch), 'test').ok).toBe(true);

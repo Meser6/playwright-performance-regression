@@ -16,8 +16,7 @@
         "errors": {
           "enabled": true,
           "limit": {
-            "api": 0.05,
-            "custom": 0.05
+            "api": 0.05
           },
           "margin": {
             "add": 0.02,
@@ -35,8 +34,7 @@
           "apdex": {
             "enabled": true,
             "limit": {
-              "api": 0.85,
-              "custom": 0.85
+              "api": 0.85
             },
             "margin": {
               "absolute": 0.05,
@@ -49,18 +47,12 @@
               "max": 2000,
               "medianFactor": 2,
               "min": 500
-            },
-            "custom": {
-              "max": 10000,
-              "medianFactor": 2,
-              "min": 1000
             }
           },
           "wilson": {
             "enabled": true,
             "limit": {
-              "api": 0.05,
-              "custom": 0.05
+              "api": 0.05
             },
             "margin": {
               "add": 0.02,
@@ -76,8 +68,7 @@
           "median": {
             "enabled": true,
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             },
             "margin": {
               "minMs": 100,
@@ -89,8 +80,7 @@
           "p99": {
             "enabled": true,
             "limit": {
-              "api": 4000,
-              "custom": 10000
+              "api": 4000
             },
             "margin": {
               "minGapMs": 50,
@@ -103,8 +93,7 @@
             "enabled": true,
             "level": "p95",
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             },
             "margin": {
               "minMs": 100,
@@ -201,254 +190,6 @@
       }
     },
     "configDir": "/work/app",
-    "custom": {
-      "checkout": {
-        "count": 20,
-        "errorCount": 0,
-        "evaluation": {
-          "checks": [
-            {
-              "actual": 3500,
-              "blocking": false,
-              "hardLimitExceeded": false,
-              "limit": 5000,
-              "n": 20,
-              "observed": null,
-              "passed": true,
-              "rule": "median",
-              "usage": 0.7
-            },
-            {
-              "actual": 3500,
-              "blocking": true,
-              "hardLimitExceeded": false,
-              "limit": 3000,
-              "n": 20,
-              "observed": null,
-              "passed": false,
-              "rule": "percentile",
-              "usage": 1.1667
-            },
-            {
-              "actual": 0,
-              "blocking": false,
-              "hardLimitExceeded": false,
-              "limit": 0.05,
-              "n": 20,
-              "observed": 0,
-              "passed": true,
-              "rule": "errors",
-              "usage": 0
-            }
-          ],
-          "limits": {
-            "maxErrorRate": 0.05,
-            "maxWilson": null,
-            "median": 5000,
-            "minApdex": null,
-            "p99": 10000,
-            "percentile": 3000,
-            "t": null
-          },
-          "muted": null,
-          "reason": null,
-          "result": "fail",
-          "thresholdSource": "file"
-        },
-        "fromFailedTests": 0,
-        "samples": {
-          "durations": [
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500,
-            3500
-          ],
-          "sampled": false
-        },
-        "slowest": [
-          {
-            "duration": 3500,
-            "startedAt": "2026-11-18T10:00:00.000Z",
-            "test": {
-              "file": "tests/checkout.spec.ts",
-              "line": 31,
-              "project": "chromium",
-              "repeatEachIndex": 0,
-              "title": "checkout › pay"
-            }
-          }
-        ],
-        "stats": {
-          "avg": 3500,
-          "max": 3500,
-          "min": 3500,
-          "percentiles": {
-            "p50": 3500,
-            "p90": 3500,
-            "p95": 3500,
-            "p99": 3500
-          }
-        },
-        "statuses": {
-          "200": 20
-        },
-        "successCount": 20,
-        "testCount": 1,
-        "timeSources": {
-          "browser": 20,
-          "node": 0
-        },
-        "topTests": [],
-        "ttfb": null,
-        "histogram": {
-          "edges": [
-            3481,
-            3652
-          ],
-          "counts": [
-            20
-          ]
-        },
-        "hints": [
-          {
-            "code": "HINT_TAIL",
-            "params": {
-              "usage": 1.1667,
-              "medianUsage": 0.7
-            }
-          }
-        ]
-      },
-      "login": {
-        "count": 20,
-        "errorCount": 0,
-        "evaluation": {
-          "checks": [
-            {
-              "actual": 800,
-              "blocking": false,
-              "hardLimitExceeded": false,
-              "limit": 5000,
-              "n": 20,
-              "observed": null,
-              "passed": true,
-              "rule": "median",
-              "usage": 0.16
-            },
-            {
-              "actual": 800,
-              "blocking": false,
-              "hardLimitExceeded": false,
-              "limit": 5000,
-              "n": 20,
-              "observed": null,
-              "passed": true,
-              "rule": "percentile",
-              "usage": 0.16
-            },
-            {
-              "actual": 0,
-              "blocking": false,
-              "hardLimitExceeded": false,
-              "limit": 0.05,
-              "n": 20,
-              "observed": 0,
-              "passed": true,
-              "rule": "errors",
-              "usage": 0
-            }
-          ],
-          "limits": {
-            "maxErrorRate": 0.05,
-            "maxWilson": null,
-            "median": 5000,
-            "minApdex": null,
-            "p99": 10000,
-            "percentile": 5000,
-            "t": null
-          },
-          "muted": null,
-          "reason": null,
-          "result": "pass",
-          "thresholdSource": "default"
-        },
-        "fromFailedTests": 0,
-        "samples": {
-          "durations": [
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800,
-            800
-          ],
-          "sampled": false
-        },
-        "slowest": [],
-        "stats": {
-          "avg": 800,
-          "max": 800,
-          "min": 800,
-          "percentiles": {
-            "p50": 800,
-            "p90": 800,
-            "p95": 800,
-            "p99": 800
-          }
-        },
-        "statuses": {
-          "200": 20
-        },
-        "successCount": 20,
-        "testCount": 1,
-        "timeSources": {
-          "browser": 20,
-          "node": 0
-        },
-        "topTests": [],
-        "ttfb": null,
-        "histogram": {
-          "edges": [
-            786.7,
-            825.4
-          ],
-          "counts": [
-            20
-          ]
-        },
-        "hints": []
-      }
-    },
     "endpoints": {
       "GET /api/<img src=x onerror=alert(1)>": {
         "count": 100,
@@ -2048,19 +1789,6 @@
           "tooFewSamples": 1,
           "unseenThresholdEntries": 3,
           "violations": 7
-        },
-        "custom": {
-          "blockingViolations": 1,
-          "fileEntriesNotEvaluated": 0,
-          "fromDefaults": 1,
-          "fromFile": 1,
-          "keys": 2,
-          "medianOnly": 0,
-          "muted": 0,
-          "notEvaluated": 0,
-          "tooFewSamples": 0,
-          "unseenThresholdEntries": 0,
-          "violations": 1
         }
       },
       "gateEnabled": true,
@@ -2097,7 +1825,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 127,
@@ -2117,13 +1845,6 @@
           "GET /api/legacy",
           "GET /api/legacy/:id"
         ]
-      },
-      {
-        "generated": null,
-        "kind": "custom",
-        "path": "pw-perf-thresholds.custom.qa.json",
-        "status": "loaded",
-        "unseenKeys": []
       }
     ],
     "tool": {

@@ -25,13 +25,29 @@ changes and are always listed with migration steps:
 After upgrading, run `npx pw-perf thresholds --from <a recent report.json>` and review the diff
 before committing anything.
 
+### From 0.1.0-next.1 to 0.1.0-next.2: custom measurements removed
+
+Custom measurements are gone. To upgrade:
+
+1. Remove the calls of `perf.measure()`, `perf.start()`, `perf.end()`, `perf.sampleStart()` and
+   `perf.sampleEnd()` from your tests and fixtures. Only `perf.track(context)` is left on the
+   `perf` fixture; the old calls no longer type-check, and in JavaScript they throw a `TypeError`.
+   Keep the measured code and drop only the wrapper call. To time a user-visible step, wrap it in
+   `test.step()` and turn on `measure.steps`.
+2. Delete `pw-perf-thresholds.custom.json` (and `pw-perf-thresholds.custom.<env>.json`). The
+   package no longer reads or writes these files.
+3. Remove `custom` from `checks.*.*.limit`, `checks.errors.limit` and `checks.slowShare.t` in
+   `pw-perf.config.*`; the option now fails with `CONFIG_UNKNOWN_OPTION`.
+4. Nothing to do for the other files: thresholds files of version 1 and run reports of versions 1
+   and 2 are still read (custom keys in old reports are dropped). Sample attachments are written
+   and read by the same run, so they need no migration.
+
 ## Uninstalling
 
 1. Undo the import swap: in the test files replace `playwright-performance-regression/test` with
    `@playwright/test`.
-2. Remove `withPerfFixtures(...)` around your test objects and `trackContext()` / `perf.track()`
-   calls, and any `perf.measure()` / `perf.start()` / `perf.end()` calls (or keep the measured code
-   and drop only the wrapper call).
+2. Remove `withPerfFixtures(...)` around your test objects and the `trackContext()` /
+   `perf.track()` calls.
 3. In `playwright.config` remove `withPerf(...)` around the config and the `pw-perf.config`
    import.
 4. Delete `pw-perf.config.*`, the `pw-perf-thresholds.*.json` files, the `perf:test` and

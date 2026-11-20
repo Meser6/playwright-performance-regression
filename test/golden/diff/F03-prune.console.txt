@@ -12,8 +12,6 @@ Thresholds: pw-perf-thresholds.api.json (updated)
   ! GET /api/muted-expired muted (expired 2026-11-15)
 
   1 entry not seen in this run was kept because it is locked.
-Thresholds: pw-perf-thresholds.custom.json (not written)
-  no entries
 
 Review the changes and commit the thresholds files.
 Diff: pw-perf-results/thresholds-diff.md

@@ -5,9 +5,9 @@
   "description": "Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "collector", "requests", "custom", "diagnostics"],
+  "required": ["schemaVersion", "collector", "requests", "diagnostics"],
   "properties": {
-    "schemaVersion": {"const": 1},
+    "schemaVersion": {"const": 2},
     "collector": {
       "description": "Collector that produced the batch.",
       "type": "object",
@@ -31,13 +31,8 @@
       "type": "array",
       "items": {"$ref": "#/$defs/requestSample"}
     },
-    "custom": {
-      "description": "Custom measurement samples in the order they finished.",
-      "type": "array",
-      "items": {"$ref": "#/$defs/customSample"}
-    },
     "diagnostics": {
-      "description": "Collector and custom-measurement diagnostics caught during the test (01-REQ-13, 05 §9, 06 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.",
+      "description": "Collector diagnostics caught during the test (01-REQ-13, 05 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.",
       "type": "array",
       "items": {"$ref": "common.schema.json#/$defs/issue"}
     }
@@ -134,36 +129,6 @@
           }
         }
       ]
-    },
-    "customSample": {
-      "description": "One custom measurement (06).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "outcome", "duration", "endTime"],
-      "properties": {
-        "name": {
-          "description": "Measurement name given by the user (06-REQ-03): 1–200 characters, no leading or trailing whitespace, no control characters.",
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200,
-          "pattern": "^[^\\s\\u0000-\\u001F\\u007F](?:[^\\u0000-\\u001F\\u007F]*[^\\s\\u0000-\\u001F\\u007F])?$"
-        },
-        "outcome": {
-          "description": "ok: finished normally; error: the measured function threw; unfinished: started but never ended before test end. Meaning of each outcome for statistics: 06, 08.",
-          "enum": ["ok", "error", "unfinished"]
-        },
-        "duration": {
-          "description": "Measured duration (performance.now()). Null for unfinished.",
-          "$ref": "common.schema.json#/$defs/msOrNull"
-        },
-        "endTime": {
-          "description": "Wall-clock end time. Null for unfinished.",
-          "oneOf": [{"$ref": "common.schema.json#/$defs/epochMs"}, {"type": "null"}]
-        }
-      },
-      "if": {"properties": {"outcome": {"const": "unfinished"}}},
-      "then": {"properties": {"duration": {"type": "null"}, "endTime": {"type": "null"}}},
-      "else": {"properties": {"duration": {"type": "number"}, "endTime": {"type": "integer"}}}
     }
   }
 }

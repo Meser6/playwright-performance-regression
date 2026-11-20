@@ -11,8 +11,7 @@
         "errors": {
           "enabled": true,
           "limit": {
-            "api": 0.05,
-            "custom": 0.05
+            "api": 0.05
           },
           "margin": {
             "add": 0.02,
@@ -30,8 +29,7 @@
           "apdex": {
             "enabled": true,
             "limit": {
-              "api": 0.85,
-              "custom": 0.85
+              "api": 0.85
             },
             "margin": {
               "absolute": 0.05,
@@ -44,18 +42,12 @@
               "max": 2000,
               "medianFactor": 2,
               "min": 500
-            },
-            "custom": {
-              "max": 10000,
-              "medianFactor": 2,
-              "min": 1000
             }
           },
           "wilson": {
             "enabled": true,
             "limit": {
-              "api": 0.05,
-              "custom": 0.05
+              "api": 0.05
             },
             "margin": {
               "add": 0.02,
@@ -71,8 +63,7 @@
           "median": {
             "enabled": true,
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             },
             "margin": {
               "minMs": 100,
@@ -84,8 +75,7 @@
           "p99": {
             "enabled": true,
             "limit": {
-              "api": 4000,
-              "custom": 10000
+              "api": 4000
             },
             "margin": {
               "minGapMs": 50,
@@ -98,8 +88,7 @@
             "enabled": true,
             "level": "p95",
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             },
             "margin": {
               "minMs": 100,
@@ -196,7 +185,6 @@
       }
     },
     "configDir": "/work/app",
-    "custom": {},
     "endpoints": {
       "GET /api/users": {
         "count": 20,
@@ -389,19 +377,6 @@
           "tooFewSamples": 0,
           "unseenThresholdEntries": 0,
           "violations": 0
-        },
-        "custom": {
-          "blockingViolations": 0,
-          "fileEntriesNotEvaluated": 0,
-          "fromDefaults": 0,
-          "fromFile": 0,
-          "keys": 0,
-          "medianOnly": 0,
-          "muted": 0,
-          "notEvaluated": 0,
-          "tooFewSamples": 0,
-          "unseenThresholdEntries": 0,
-          "violations": 0
         }
       },
       "gateEnabled": true,
@@ -452,13 +427,6 @@
         "generated": null,
         "kind": "api",
         "path": "pw-perf-thresholds.api.json",
-        "status": "loaded",
-        "unseenKeys": []
-      },
-      {
-        "generated": null,
-        "kind": "custom",
-        "path": "pw-perf-thresholds.custom.json",
         "status": "loaded",
         "unseenKeys": []
       }

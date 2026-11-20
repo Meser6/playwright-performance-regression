@@ -1,19 +1,11 @@
 {
-  "name": "custom measurement name with trailing space",
+  "name": "schemaVersion 3 (02-AC-13)",
   "input": {
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
       "version": "0.1.0"
     },
-    "custom": [
-      {
-        "duration": 1,
-        "endTime": 1,
-        "name": "open ",
-        "outcome": "ok"
-      }
-    ],
     "diagnostics": [],
     "requests": [
       {
@@ -54,12 +46,9 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 1
+    "schemaVersion": 3
   },
   "expected": {
-    "code": "SCHEMA_VALIDATION_FAILED",
-    "pointers": [
-      "/custom/0/name"
-    ]
+    "code": "SCHEMA_VERSION_MISMATCH"
   }
 }

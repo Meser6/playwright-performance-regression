@@ -27,7 +27,7 @@ export const SCOPES = [
   'config',
   'collector',
   'fixture',
-  'custom',
+  'steps',
   'normalize',
   'stats',
   'evaluate',

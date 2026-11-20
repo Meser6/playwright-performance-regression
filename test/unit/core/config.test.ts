@@ -60,10 +60,7 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
     });
     expect(snapshot.measure.exclude).toEqual(['intercom.io']);
     expect(snapshot.measure.resourceTypes).toEqual(['fetch']);
-    expect(snapshot.checks.time.percentile.limit).toEqual({
-      api: 2500,
-      custom: DEFAULT_CONFIG.checks.time.percentile.limit.custom,
-    });
+    expect(snapshot.checks.time.percentile.limit).toEqual({ api: 2500 });
     expect(snapshot.checks.time.percentile.level).toBe(DEFAULT_CONFIG.checks.time.percentile.level);
     expect(snapshot.measure.include).toEqual(DEFAULT_CONFIG.measure.include);
   });
@@ -313,10 +310,7 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
   });
 
   test('03-AC-03 limits must not decrease from median to percentile to p99', () => {
-    const list = issues({
-      checks: { time: { median: { limit: { api: 3000 } }, p99: { limit: { custom: 1000 } } } },
-    });
-    expect(list).toEqual([
+    expect(issues({ checks: { time: { median: { limit: { api: 3000 } } } } })).toEqual([
       {
         code: 'CONFIG_INVALID_VALUE',
         path: 'checks.time.median.limit.api',
@@ -324,11 +318,13 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
           'checks.time.median.limit.api: must be <= checks.time.percentile.limit.api (2000), got 3000',
         hint: expect.stringContaining('must not decrease') as string,
       },
+    ]);
+    expect(issues({ checks: { time: { p99: { limit: { api: 1000 } } } } })).toEqual([
       {
         code: 'CONFIG_INVALID_VALUE',
-        path: 'checks.time.p99.limit.custom',
+        path: 'checks.time.p99.limit.api',
         message:
-          'checks.time.p99.limit.custom: must be >= checks.time.percentile.limit.custom (5000), got 1000',
+          'checks.time.p99.limit.api: must be >= checks.time.percentile.limit.api (2000), got 1000',
         hint: expect.stringContaining('must not decrease') as string,
       },
     ]);
@@ -342,14 +338,13 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
     const list = issues({
       checks: {
         slowShare: {
-          t: { api: { min: 2500 }, custom: { min: 3000, max: 2000 } },
+          t: { api: { min: 2500 } },
           wilson: { margin: { min: 0.2 } },
         },
       },
     });
     expect(list.map((i) => [i.code, i.path])).toEqual([
       ['CONFIG_INVALID_VALUE', 'checks.slowShare.t.api.min'],
-      ['CONFIG_INVALID_VALUE', 'checks.slowShare.t.custom.max'],
       ['CONFIG_INVALID_VALUE', 'checks.slowShare.wilson.margin.min'],
     ]);
     expect(list[0]?.message).toBe(
@@ -434,6 +429,46 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
     ) as unknown;
     expect(codes(issues(input))).toEqual(['CONFIG_UNKNOWN_OPTION', 'CONFIG_UNKNOWN_OPTION']);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+});
+
+describe('removed custom measurements (03-REQ-19, D-32)', () => {
+  test('03-AC-13 a custom limit or a custom T gives CONFIG_UNKNOWN_OPTION with a hint about measure.steps', () => {
+    const inputs = [
+      { checks: { time: { median: { limit: { custom: 5000 } } } } },
+      { checks: { slowShare: { t: { custom: { min: 500 } } } } },
+      { checks: { errors: { limit: { custom: 0.05 } } } },
+    ];
+    const paths = [
+      'checks.time.median.limit.custom',
+      'checks.slowShare.t.custom',
+      'checks.errors.limit.custom',
+    ];
+    inputs.forEach((input, i) => {
+      const found = issues(input);
+      expect(found).toHaveLength(1);
+      expect(found[0]).toEqual({
+        code: 'CONFIG_UNKNOWN_OPTION',
+        path: paths[i],
+        message: `${paths[i]}: unknown option`,
+        hint: expect.stringContaining('measure.steps'),
+      });
+      expect(found[0]?.hint).toContain('custom measurements were removed in 0.1.0-next.2');
+    });
+  });
+
+  test('03-AC-13 perfDefaults and DEFAULT_CONFIG have no custom keys', () => {
+    expect(JSON.stringify(perfDefaults)).not.toContain('"custom"');
+    expect(JSON.stringify(DEFAULT_CONFIG)).not.toContain('"custom"');
+    expect(Object.keys(perfDefaults.checks.time.median.limit)).toEqual(['api']);
+    expect(Object.keys(perfDefaults.checks.slowShare.t)).toEqual(['api']);
+  });
+
+  test('an option named custom outside the checks still gets the usual hint', () => {
+    expect(issues({ measure: { custom: true } })[0]).toMatchObject({
+      code: 'CONFIG_UNKNOWN_OPTION',
+      hint: expect.not.stringContaining('measure.steps'),
+    });
   });
 });
 

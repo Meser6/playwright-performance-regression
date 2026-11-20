@@ -27,11 +27,10 @@
     "toolErrors",
     "origins",
     "endpoints",
-    "custom",
     "testBreakdown"
   ],
   "properties": {
-    "schemaVersion": {"const": 2},
+    "schemaVersion": {"const": 3},
     "tool": {"$ref": "common.schema.json#/$defs/tool"},
     "runId": {"$ref": "common.schema.json#/$defs/runId"},
     "mode": {"$ref": "common.schema.json#/$defs/mode"},
@@ -121,7 +120,7 @@
       }
     },
     "evaluation": {
-      "description": "Run-level evaluation summary. Per-key details live in endpoints/custom (02-REQ-15).",
+      "description": "Run-level evaluation summary. Per-key details live in endpoints (02-REQ-15).",
       "type": "object",
       "additionalProperties": false,
       "required": ["status", "gateEnabled", "counts"],
@@ -131,8 +130,8 @@
         "counts": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["api", "custom"],
-          "properties": {"api": {"$ref": "#/$defs/evaluationCounts"}, "custom": {"$ref": "#/$defs/evaluationCounts"}}
+          "required": ["api"],
+          "properties": {"api": {"$ref": "#/$defs/evaluationCounts"}}
         }
       }
     },
@@ -143,7 +142,7 @@
     },
     "warnings": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/issue"}},
     "toolErrors": {
-      "description": "Problems that make the run result incomplete or untrustworthy; non-empty means exit code 3 (09-REQ-23). Collector and custom measurement diagnostics go to warnings.",
+      "description": "Problems that make the run result incomplete or untrustworthy; non-empty means exit code 3 (09-REQ-23). Collector diagnostics go to warnings.",
       "type": "array",
       "items": {"$ref": "common.schema.json#/$defs/issue"}
     },
@@ -163,12 +162,6 @@
     },
     "endpoints": {
       "description": "Aggregates of backend endpoints by normalized key.",
-      "type": "object",
-      "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
-      "additionalProperties": {"$ref": "#/$defs/aggregate"}
-    },
-    "custom": {
-      "description": "Aggregates of custom measurements by name.",
       "type": "object",
       "propertyNames": {"$ref": "common.schema.json#/$defs/key"},
       "additionalProperties": {"$ref": "#/$defs/aggregate"}
@@ -289,11 +282,11 @@
       "properties": {
         "count": {"description": "All samples, successful or not.", "$ref": "common.schema.json#/$defs/count"},
         "successCount": {
-          "description": "Successful samples with browser timing (endpoints) or outcome ok (custom); only these enter time statistics (08-REQ-02).",
+          "description": "Successful samples with browser timing; only these enter time statistics (08-REQ-02).",
           "$ref": "common.schema.json#/$defs/count"
         },
         "errorCount": {
-          "description": "Samples counted as errors: endpoints with a status in checks.errors.statuses, custom measurements with outcome error or unfinished (08-REQ-05).",
+          "description": "Samples counted as errors: endpoints with a status in checks.errors.statuses (08-REQ-05).",
           "$ref": "common.schema.json#/$defs/count"
         },
         "fromFailedTests": {
@@ -305,7 +298,7 @@
           "$ref": "common.schema.json#/$defs/count"
         },
         "statuses": {
-          "description": "Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). Custom: ok, error, unfinished (08-REQ-05).",
+          "description": "Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). The labels ok, error and unfinished are reserved for step outcomes (06) (08-REQ-05).",
           "type": "object",
           "propertyNames": {"pattern": "^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING|ok|error|unfinished)$"},
           "additionalProperties": {"type": "integer", "minimum": 1}
@@ -321,7 +314,7 @@
           "oneOf": [{"$ref": "#/$defs/stats"}, {"type": "null"}]
         },
         "ttfb": {
-          "description": "TTFB of successful samples that have it. Null for custom measurements and when no sample has TTFB.",
+          "description": "TTFB of successful samples that have it. Null when no sample has TTFB.",
           "oneOf": [
             {
               "type": "object",
@@ -588,7 +581,7 @@
       "properties": {
         "duration": {"$ref": "common.schema.json#/$defs/ms"},
         "startedAt": {
-          "description": "Start of the request (startTime) or of the custom measurement (endTime - duration), UTC.",
+          "description": "Start of the request (startTime), UTC.",
           "$ref": "common.schema.json#/$defs/timestamp"
         },
         "test": {"$ref": "#/$defs/testRef"},

@@ -2,6 +2,7 @@
 // (02, chapters 5 and 9.1). Errors are values (01-REQ-04).
 import type {
   Issue,
+  Kind,
   OutcomeFile,
   Result,
   RunReport,
@@ -35,12 +36,13 @@ export const MAX_PROBLEMS = 5;
 
 /**
  * Current schemaVersion of every format. 02-REQ-11 applies from the first release: the run
- * report is at version 2 (02-REQ-30), the other formats are still at version 1.
+ * report went to version 2 (02-REQ-30); removing custom measurements (D-32) moved the sample
+ * batch to 2, the thresholds file to 2 and the run report to 3 (02-REQ-33).
  */
 export const SCHEMA_VERSIONS = {
-  samples: 1,
-  runReport: 2,
-  thresholds: 1,
+  samples: 2,
+  runReport: 3,
+  thresholds: 2,
   outcome: 1,
 } as const;
 
@@ -74,7 +76,7 @@ const HINTS: Record<SchemaIssueCode, string> = {
   SCHEMA_VALIDATION_FAILED:
     "Fix the listed fields; the JSON Schemas in the package's schemas/ directory describe the format.",
   THRESHOLDS_KIND_MISMATCH:
-    'Each kind has its own file (pw-perf-thresholds.api… and pw-perf-thresholds.custom…); move the entries to the right file or fix "kind".',
+    'Each kind has its own file (pw-perf-thresholds.<kind>…); move the entries to the right file or fix "kind".',
 };
 
 function describeProblems(problems: Pick<Problem, 'pointer' | 'message'>[], more: boolean): string {
@@ -290,6 +292,60 @@ export function migrateRunReportV1(document: JsonObject): JsonObject {
   };
 }
 
+/** Config snapshot without the custom limits and T (02-REQ-33); other values unchanged. */
+function withoutCustomOptions(config: unknown): unknown {
+  if (!isRecord(config) || !isRecord(config.checks)) return config;
+  const drop = (value: unknown): unknown => {
+    if (!isRecord(value)) return value;
+    const { custom: _removed, ...rest } = value;
+    return rest;
+  };
+  const checks = Object.fromEntries(
+    Object.entries(config.checks).map(([group, rules]) => {
+      if (!isRecord(rules)) return [group, rules];
+      // checks.errors is a rule itself; the other groups hold rules.
+      if (group === 'errors') return [group, { ...rules, limit: drop(rules.limit) }];
+      return [
+        group,
+        Object.fromEntries(
+          Object.entries(rules).map(([name, rule]) => {
+            if (group === 'slowShare' && name === 't') return [name, drop(rule)];
+            if (!isRecord(rule) || !Object.hasOwn(rule, 'limit')) return [name, rule];
+            return [name, { ...rule, limit: drop(rule.limit) }];
+          }),
+        ),
+      ];
+    }),
+  );
+  return { ...config, checks };
+}
+
+/**
+ * Run report v2 → v3 (02-REQ-33, 02-D-18): custom measurements were removed (D-32). Drops
+ * `custom`, `evaluation.counts.custom`, thresholdFiles entries of kind custom and the custom
+ * options of the config snapshot, without a warning. Warnings with CUSTOM_* codes stay as text.
+ */
+export function migrateRunReportV2(document: JsonObject): JsonObject {
+  const { custom: _custom, ...rest } = document;
+  const evaluation = document.evaluation;
+  const counts = isRecord(evaluation) ? evaluation.counts : undefined;
+  const files = document.thresholdFiles;
+  return {
+    ...rest,
+    config: withoutCustomOptions(document.config),
+    evaluation:
+      isRecord(evaluation) && isRecord(counts)
+        ? {
+            ...evaluation,
+            counts: Object.fromEntries(Object.entries(counts).filter(([k]) => k !== 'custom')),
+          }
+        : evaluation,
+    thresholdFiles: Array.isArray(files)
+      ? files.filter((file: unknown) => !(isRecord(file) && file.kind === 'custom'))
+      : files,
+  };
+}
+
 /** Sum of the numbers of an array; NaN when an item is not a number. */
 function sum(values: unknown[]): number {
   return values.reduce<number>((total, v) => total + (typeof v === 'number' ? v : Number.NaN), 0);
@@ -302,7 +358,7 @@ function sum(values: unknown[]): number {
  * omitted equal to requestCount. Runs only on a document that passed the schema.
  */
 export function checkRunReport(document: JsonObject, sink: Sink): void {
-  for (const kind of ['endpoints', 'custom']) {
+  for (const kind of ['endpoints']) {
     const map = document[kind] as Record<string, Record<string, unknown>>;
     for (const [name, aggregate] of Object.entries(map)) {
       const histogram = aggregate.histogram as { edges: number[]; counts: number[] } | null;
@@ -345,7 +401,7 @@ export const RUN_REPORT_FORMAT: VersionedFormat = {
   name: 'run report',
   schemaFile: 'run-report.schema.json',
   current: SCHEMA_VERSIONS.runReport,
-  migrations: { 1: migrateRunReportV1 },
+  migrations: { 1: migrateRunReportV1, 2: migrateRunReportV2 },
   schema: runReport,
   extraChecks: checkRunReport,
 };
@@ -354,7 +410,8 @@ export const THRESHOLDS_FORMAT: VersionedFormat = {
   name: 'thresholds file',
   schemaFile: 'thresholds.schema.json',
   current: SCHEMA_VERSIONS.thresholds,
-  migrations: {},
+  // v1 → v2 changes no content (02-REQ-33): a v1 file of kind custom fails validation after it.
+  migrations: { 1: (document) => document },
   schema: thresholdsFile,
   extraChecks(document, sink) {
     const entries = document.entries as Record<string, Record<string, unknown>>;
@@ -393,7 +450,7 @@ export function parseRunReport(text: string, source: string): Result<RunReport, 
 export function parseThresholdsFile(
   text: string,
   source: string,
-  expectedKind: 'api' | 'custom',
+  expectedKind: Kind,
 ): Result<{ file: ThresholdsFile; migratedFrom: number | null }, SchemaIssue> {
   const parsed = parseVersioned(text, source, THRESHOLDS_FORMAT);
   if (!parsed.ok) return parsed;

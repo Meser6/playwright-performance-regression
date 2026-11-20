@@ -81,7 +81,7 @@ describe('test and sample identity (08-REQ-06, 08-REQ-07, 08-REQ-08)', () => {
     const id = resultId('abc123-def', 2, 1);
     expect(id).toBe('abc123-def\u00002\u00001');
     expect(sampleId(id, 'request', 0)).toBe('abc123-def\u00002\u00001\u0000request\u00000');
-    expect(sampleId(id, 'custom', 12)).toBe('abc123-def\u00002\u00001\u0000custom\u000012');
+    expect(sampleId(id, 'request', 12)).toBe('abc123-def\u00002\u00001\u0000request\u000012');
   });
 
   test('test identity is project, file and title without repeatEachIndex', () => {

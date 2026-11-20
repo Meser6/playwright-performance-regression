@@ -105,7 +105,7 @@ export function thresholdsFile(
   entries: Record<string, ThresholdsEntry>,
   generated: ThresholdsFile['generated'] = null,
 ): ThresholdsFile {
-  return { schemaVersion: 1, kind, generated, entries };
+  return { schemaVersion: 2, kind, generated, entries };
 }
 
 export function loaded(
@@ -148,21 +148,18 @@ export function invalid(kind: Kind): LoadedThresholdsFile {
   };
 }
 
-export function both(
-  api: LoadedThresholdsFile = loaded('api'),
-  custom: LoadedThresholdsFile = loaded('custom'),
-): LoadedThresholds {
-  return { api, custom };
+/** The thresholds files of every kind. */
+export function files(api: LoadedThresholdsFile = loaded('api')): LoadedThresholds {
+  return { api };
 }
 
 export function aggregates(
   endpoints: Record<string, AggregateSpec>,
-  custom: Record<string, AggregateSpec> = {},
   level = 'p95',
-): { endpoints: Record<string, AggregateStats>; custom: Record<string, AggregateStats> } {
+): { endpoints: Record<string, AggregateStats> } {
   const expand = (specs: Record<string, AggregateSpec>) =>
     Object.fromEntries(Object.entries(specs).map(([key, s]) => [key, aggregate(s, level)]));
-  return { endpoints: expand(endpoints), custom: expand(custom) };
+  return { endpoints: expand(endpoints) };
 }
 
 /** One golden case of test/golden/evaluate/ (12-REQ-15). */
@@ -174,7 +171,7 @@ export interface EvaluateGoldenCase {
     config: PerfConfigInput;
     options: Partial<EvaluateOptions>;
     thresholds: LoadedThresholds;
-    aggregates: { endpoints: Record<string, AggregateSpec>; custom: Record<string, AggregateSpec> };
+    aggregates: { endpoints: Record<string, AggregateSpec> };
   };
   expected: EvaluationSummary;
 }
@@ -206,7 +203,7 @@ export function runGoldenCase(c: EvaluateGoldenCase): {
 
 function evaluateInput(c: EvaluateGoldenCase, cfg: ResolvedConfig, level: string): Evaluation {
   return evaluate(
-    aggregates(c.input.aggregates.endpoints, c.input.aggregates.custom, level),
+    aggregates(c.input.aggregates.endpoints, level),
     c.input.thresholds,
     cfg,
     options(c.input.options),
@@ -233,7 +230,7 @@ export interface EvaluationSummary {
 }
 
 export function summarize(evaluation: Evaluation): EvaluationSummary {
-  const kinds: Kind[] = ['api', 'custom'];
+  const kinds: Kind[] = ['api'];
   return {
     status: evaluation.status,
     gateEnabled: evaluation.gateEnabled,

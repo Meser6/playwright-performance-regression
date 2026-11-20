@@ -3,7 +3,9 @@ import { CLI_COMMAND } from '../core/types/index.ts';
 import type { RunReport } from '../core/types/index.ts';
 import {
   DASH,
+  KIND_COLUMN,
   KIND_LABEL,
+  KIND_NAME,
   KIND_ORDER,
   LINK_KINDS,
   aggregatesOf,
@@ -39,13 +41,13 @@ const EXPENSIVE_TESTS = 5;
 export type BannerStatus = 'ERROR' | 'FAILED' | 'PASSED WITH WARNINGS' | 'PASSED';
 
 function sum(report: RunReport, field: keyof RunReport['evaluation']['counts']['api']): number {
-  return report.evaluation.counts.api[field] + report.evaluation.counts.custom[field];
+  return LINK_KINDS.reduce((total, kind) => total + report.evaluation.counts[kind][field], 0);
 }
 
 /** Failed checks that block, over all keys. */
 function blockingChecks(report: RunReport): number {
   let n = 0;
-  for (const agg of [...Object.values(report.endpoints), ...Object.values(report.custom)]) {
+  for (const agg of Object.values(report.endpoints)) {
     n += agg.evaluation.checks.filter((c) => !c.passed && c.blocking).length;
   }
   return n;
@@ -156,7 +158,6 @@ function tile(label: string, value: string, note: string): SafeHtml {
 export function kpis(ctx: Ctx): SafeHtml {
   const r = ctx.report;
   const endpoints = Object.values(r.endpoints);
-  const customCount = Object.keys(r.custom).length;
   const requests = endpoints.reduce((n, a) => n + a.count, 0);
   const failedRequests = endpoints.reduce((n, a) => n + a.errorCount, 0);
   const measured = r.runConditions.projects.filter((p) => p.role === 'measured');
@@ -166,7 +167,8 @@ export function kpis(ctx: Ctx): SafeHtml {
   const t = r.tests;
   return join(
     html`<section class="kpis" aria-label="Key figures">`,
-    tile('Endpoints', String(endpoints.length), `+ ${String(customCount)} custom`),
+    // Other kinds are added as "+ N <kind>" once they exist; zero parts are left out (11-REQ-28).
+    tile('Endpoints', String(endpoints.length), ''),
     tile(
       'Violations',
       String(sum(r, 'violations')),
@@ -392,7 +394,7 @@ function rankingsSection(ctx: Ctx): SafeHtml | null {
       ? null
       : html`<div class="chips js-only" role="group" aria-label="Kinds in the rankings" data-kinds="" hidden>${present.map(
           (k) =>
-            html`<button type="button" class="chip" aria-pressed="true" data-k="${k}">${k === 'api' ? 'Endpoints' : 'Custom'}</button>`,
+            html`<button type="button" class="chip" aria-pressed="true" data-k="${k}">${KIND_NAME[k]}</button>`,
         )}</div>`,
     html`<div class="ranks">${rankings(ctx).map((r) => rankingList(ctx, r))}</div></section>`,
   );
@@ -425,7 +427,7 @@ function mutedSection(ctx: Ctx): SafeHtml | null {
       if (!muted.expired) active++;
       rows.push(
         join(
-          html`<tr><th scope="row" class="key">${keyLink(ctx, kind, key, key)}</th><td>${kind === 'api' ? 'API' : 'Custom'}</td><td>${muted.until}</td>`,
+          html`<tr><th scope="row" class="key">${keyLink(ctx, kind, key, key)}</th><td>${KIND_COLUMN[kind]}</td><td>${muted.until}</td>`,
           html`<td>${muted.expired ? pill('p-exp', 'expired') : 'active'}</td>`,
           html`<td>${evaluation.result === 'fail' ? 'yes' : 'no'}</td>`,
           html`<td>${muted.note}</td></tr>`,
@@ -459,25 +461,25 @@ const COUNTERS: [keyof RunReport['evaluation']['counts']['api'], string][] = [
 ];
 
 function counters(report: RunReport): SafeHtml {
-  const { api, custom } = report.evaluation.counts;
+  const counts = report.evaluation.counts;
   return join(
     html`<section aria-labelledby="counts-h"><details><summary><h3 id="counts-h">Evaluation counts</h3></summary>`,
     html`<div class="scroll" tabindex="0" role="region" aria-label="Evaluation counts table"><table class="counts"><caption>Keys per kind</caption>`,
-    html`<thead><tr><th scope="col">Counter</th><th scope="col">API</th><th scope="col">Custom</th></tr></thead>`,
+    html`<thead><tr><th scope="col">Counter</th>${LINK_KINDS.map((k) => html`<th scope="col">${KIND_COLUMN[k]}</th>`)}</tr></thead>`,
     html`<tbody>${COUNTERS.map(
       ([field, label]) =>
-        html`<tr><th scope="row">${label}</th><td>${api[field]}</td><td>${custom[field]}</td></tr>`,
+        html`<tr><th scope="row">${label}</th>${LINK_KINDS.map((k) => html`<td>${counts[k][field]}</td>`)}</tr>`,
     )}</tbody></table></div></details></section>`,
   );
 }
 
 /** Content of the Overview tab (11-REQ-29). */
 export function overview(ctx: Ctx, docsUrl: string): SafeHtml {
-  const empty = ctx.order.api.length === 0 && ctx.order.custom.length === 0;
+  const empty = LINK_KINDS.every((kind) => ctx.order[kind].length === 0);
   return join(
     verdict(ctx.report),
     empty
-      ? html`<p>No requests or custom measurements were recorded. See the <a href="${docsUrl}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
+      ? html`<p>No requests were recorded. See the <a href="${docsUrl}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
       : null,
     violations(ctx),
     rankingsSection(ctx),

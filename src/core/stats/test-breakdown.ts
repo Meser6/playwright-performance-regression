@@ -1,6 +1,5 @@
 // Per-test costs and the waterfall of the slowest test runs (08, chapter 7.1: 08-REQ-37,
-// 08-REQ-38, 08-REQ-39). Only api request samples count; custom measurements have another
-// time source and meaning (P-04, 08-D-18).
+// 08-REQ-38, 08-REQ-39). Only api request samples count (P-04, 08-D-18).
 import type { TestCost, Waterfall } from '../types/index.ts';
 import type { TestMeta } from './identity.ts';
 

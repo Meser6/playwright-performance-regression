@@ -1,4 +1,4 @@
-// Aggregator: per-key statistics of request and custom samples (08).
+// Aggregator: per-key statistics of request samples (08).
 import { describe, expect, test } from 'vitest';
 import { resolveConfig } from '../../../src/core/config/index.ts';
 import type { PerfConfigInput, ResolvedConfig } from '../../../src/core/config/index.ts';
@@ -24,7 +24,6 @@ import {
 import type {
   AggregatorOptions,
   Aggregates,
-  EnrichedCustomSample,
   EnrichedRequestSample,
   TestMeta,
 } from '../../../src/core/stats/index.ts';
@@ -110,20 +109,6 @@ function req(
   };
 }
 
-function custom(
-  input: Partial<Omit<EnrichedCustomSample, 'test'>> & { test?: TestMeta } = {},
-): EnrichedCustomSample {
-  return {
-    name: 'render list',
-    outcome: 'ok',
-    duration: 100,
-    endTime: START + 1000,
-    ordinal: 0,
-    ...input,
-    test: input.test ?? meta(),
-  };
-}
-
 const ORIGIN = 'https://app.example';
 const KEY = 'GET /api/tickets/:id';
 
@@ -164,11 +149,13 @@ function demoDuration(random: () => number): number {
   return Math.round((40 + 400 * u * u * u + 30 * random()) * 10) / 10;
 }
 
-type Op =
-  | { kind: 'request'; key: string; sample: EnrichedRequestSample; origin: string | null }
-  | { kind: 'custom'; name: string; sample: EnrichedCustomSample };
+interface Op {
+  key: string;
+  sample: EnrichedRequestSample;
+  origin: string | null;
+}
 
-/** A seeded run: several tests and keys, mixed statuses, time sources and outcomes. */
+/** A seeded run: several tests and keys, mixed statuses and time sources. */
 function demoRun(seed: number, samplesPerResult = 40): Op[] {
   const random = rng(seed);
   const ops: Op[] = [];
@@ -186,7 +173,6 @@ function demoRun(seed: number, samplesPerResult = 40): Op[] {
       for (let i = 0; i < samplesPerResult; i++) {
         const status = statuses[Math.floor(random() * statuses.length)] ?? 200;
         ops.push({
-          kind: 'request',
           key: keys[Math.floor(random() * keys.length)] ?? KEY,
           origin: random() < 0.1 ? null : ORIGIN,
           sample: req({
@@ -203,20 +189,6 @@ function demoRun(seed: number, samplesPerResult = 40): Op[] {
           }),
         });
       }
-      for (let i = 0; i < 5; i++) {
-        const outcome = (['ok', 'ok', 'ok', 'error', 'unfinished'] as const)[i] ?? 'ok';
-        ops.push({
-          kind: 'custom',
-          name: i % 2 === 0 ? 'render list' : 'open dialog',
-          sample: custom({
-            test,
-            ordinal: i,
-            outcome,
-            duration: outcome === 'unfinished' ? null : demoDuration(random),
-            endTime: outcome === 'unfinished' ? null : START + Math.floor(random() * 100000),
-          }),
-        });
-      }
     }
   }
   return ops;
@@ -227,11 +199,7 @@ function run(ops: readonly Op[], opts: AggregatorOptions = options()): Aggregate
   const results = new Map<string, TestMeta>();
   for (const op of ops) {
     results.set(op.sample.test.resultId, op.sample.test);
-    if (op.kind === 'request') {
-      agg.addRequest(op.key, op.sample, op.origin, op.origin === null ? null : '', 'chromium');
-    } else {
-      agg.addCustom(op.name, op.sample);
-    }
+    agg.addRequest(op.key, op.sample, op.origin, op.origin === null ? null : '', 'chromium');
   }
   // Each test result is closed after its samples (08-REQ-36).
   for (const meta of results.values()) agg.endResult(meta);
@@ -351,27 +319,6 @@ describe('Aggregator: classification and counters (08, chapter 3)', () => {
       samples: { durations: [], sampled: false },
     });
     expect(a?.topTests).toHaveLength(1);
-  });
-
-  test('custom outcomes: ok enters statistics, error and unfinished are errors (08-REQ-04)', () => {
-    const agg = new Aggregator(options());
-    agg.addCustom('render list', custom({ duration: 50 }));
-    agg.addCustom('render list', custom({ ordinal: 1, outcome: 'error', duration: 9000 }));
-    agg.addCustom(
-      'render list',
-      custom({ ordinal: 2, outcome: 'unfinished', duration: null, endTime: null }),
-    );
-    const a = agg.finalize().custom['render list'];
-    expect(a).toMatchObject({
-      count: 3,
-      successCount: 1,
-      errorCount: 2,
-      statuses: { ok: 1, error: 1, unfinished: 1 },
-      timeSources: { browser: 0, node: 3 },
-      ttfb: null,
-      samples: { durations: [50], sampled: false },
-    });
-    expect(a?.stats?.max).toBe(50);
   });
 
   test('percentiles include the evaluated level when it is another one (08-REQ-10)', () => {
@@ -528,24 +475,14 @@ describe('Aggregator: tests, slowest and origins (08, chapters 4 and 7)', () => 
     expect(a?.stats?.max).toBe(500);
   });
 
-  test('08-AC-11 slowest custom sample starts at endTime − duration rounded to whole ms', () => {
-    const agg = new Aggregator(options());
-    agg.addCustom('render list', custom({ duration: 123.4, endTime: START + 1000 }));
-    const slowest = agg.finalize().custom['render list']?.slowest;
-    expect(slowest?.[0]?.startedAt).toBe(new Date(START + 877).toISOString());
-    expect(slowest?.[0]?.startedAt).toBe('2026-11-18T10:00:00.877Z');
-  });
-
-  test('slowest[].url only for endpoints and only with rawUrls', () => {
+  test('slowest[].url only with rawUrls', () => {
     const off = new Aggregator(options());
     add(off, req());
     expect(off.finalize().endpoints[KEY]?.slowest[0]).not.toHaveProperty('url');
     const on = new Aggregator(options({ rawUrls: true }));
     add(on, req());
-    on.addCustom('render list', custom());
     const result = on.finalize();
     expect(result.endpoints[KEY]?.slowest[0]?.url).toBe('https://app.example/api/tickets/1');
-    expect(result.custom['render list']?.slowest[0]).not.toHaveProperty('url');
   });
 
   test('origins: request count per origin with its label, sorted; unknown origin excluded (08-REQ-33)', () => {
@@ -553,13 +490,13 @@ describe('Aggregator: tests, slowest and origins (08, chapters 4 and 7)', () => 
     agg.addRequest('GET api /v1', req(), 'https://api.example', 'api', 'chromium');
     agg.addRequest(KEY, req({ ordinal: 1, status: 500 }), ORIGIN, '', 'chromium');
     agg.addRequest(KEY, req({ ordinal: 2 }), ORIGIN, '', 'chromium');
-    agg.addRequest('custom key', req({ ordinal: 3 }), null, null, 'chromium');
+    agg.addRequest('unparsed key', req({ ordinal: 3 }), null, null, 'chromium');
     const result = agg.finalize();
     expect(result.origins).toEqual([
       { origin: 'https://api.example', label: 'api', requestCount: 1 },
       { origin: 'https://app.example', label: '', requestCount: 2 },
     ]);
-    expect(result.endpoints['custom key']?.count).toBe(1);
+    expect(result.endpoints['unparsed key']?.count).toBe(1);
   });
 
   test('addKeyedRequest adds a sample under the key built by normalize and skips skipped URLs', () => {
@@ -585,18 +522,16 @@ describe('Aggregator: run-level warnings (08-REQ-31, 08-REQ-32)', () => {
     const setup = meta({ project: 'setup', title: 'log in' });
     add(agg, req({ test: setup }), 'POST /api/login');
     add(agg, req({ test: setup, ordinal: 1 }), KEY);
-    agg.addCustom('login', custom({ test: setup }));
     add(agg, req({ ordinal: 2 }), KEY);
     const result = agg.finalize();
     expect(Object.keys(result.endpoints)).toEqual([KEY]);
     expect(result.endpoints[KEY]?.count).toBe(1);
-    expect(result.custom).toEqual({});
     expect(result.origins).toEqual([{ origin: ORIGIN, label: '', requestCount: 1 }]);
     const warnings = result.issues.filter(
       (i) => i.code === 'STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS',
     );
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]?.message).toMatch(/^3 samples /);
+    expect(warnings[0]?.message).toMatch(/^2 samples /);
     expect(warnings[0]?.message).toContain('setup');
   });
 
@@ -623,7 +558,6 @@ describe('Aggregator: sampling and determinism (08, chapters 6, 7 and 9)', () =>
   /** Reference bottom-k: the k smallest (priority, sampleId) of all usable samples. */
   function referenceRetained(ops: readonly Op[], key: string, k: number, seed: number): number[] {
     const usable = ops.flatMap((op) =>
-      op.kind === 'request' &&
       op.key === key &&
       typeof op.sample.status === 'number' &&
       op.sample.status < 400 &&
@@ -654,9 +588,9 @@ describe('Aggregator: sampling and determinism (08, chapters 6, 7 and 9)', () =>
   });
 
   test('08-AC-04 samples of another key do not change the retained samples of a key', () => {
-    const ops = demoRun(12).filter((op) => op.kind === 'request');
+    const ops = demoRun(12);
     const opts = options({ advanced: { maxSamplesPerKey: 10, seed: 1 } });
-    const only = ops.filter((op) => op.kind === 'request' && op.key === KEY);
+    const only = ops.filter((op) => op.key === KEY);
     const alone = run(only, opts).endpoints[KEY];
     const mixed = run(ops, opts).endpoints[KEY];
     expect(alone?.samples.sampled).toBe(true);
@@ -781,7 +715,7 @@ describe('Aggregator: sampling and determinism (08, chapters 6, 7 and 9)', () =>
     expect(() => add(agg, req())).toThrow(/finalize/);
   });
 
-  test('keys of endpoints and custom are sorted by UTF-16 code units (08-REQ-26)', () => {
+  test('keys of endpoints are sorted by UTF-16 code units (08-REQ-26)', () => {
     const agg = new Aggregator(options());
     for (const [i, key] of ['b', 'B', 'a', 'é'].entries()) add(agg, req({ ordinal: i }), key);
     expect(Object.keys(agg.finalize().endpoints)).toEqual(['B', 'a', 'b', 'é']);
@@ -824,9 +758,8 @@ describe('Aggregator output fits buildRunReport (02, chapter 9.1)', () => {
     const aggregates: RunReportAggregates = run(demoRun(16), options({ rawUrls: true }));
     const perKey = (record: Record<string, unknown>) =>
       Object.fromEntries(Object.keys(record).map((key) => [key, evaluation]));
-    const { endpoints, custom: customAggregates, evaluation: summary, ...rest } = report;
+    const { endpoints, evaluation: summary, ...rest } = report;
     void endpoints;
-    void customAggregates;
     const built = buildRunReport({
       meta: rest,
       config: { ...report.config, report: { ...report.config.report, rawUrls: true } },
@@ -836,7 +769,7 @@ describe('Aggregator output fits buildRunReport (02, chapter 9.1)', () => {
       aggregates,
       evaluation: {
         ...summary,
-        perKey: { api: perKey(aggregates.endpoints), custom: perKey(aggregates.custom) },
+        perKey: { api: perKey(aggregates.endpoints) },
         thresholdFiles: report.thresholdFiles,
       },
       warnings: [],

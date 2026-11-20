@@ -315,9 +315,6 @@ export class RunSession {
           this.pending.set(keyed.key, (this.pending.get(keyed.key) ?? 0) + 1);
         }
       });
-      batch.custom.forEach((sample, ordinal) => {
-        this.aggregator.addCustom(sample.name, { ...sample, test: meta, ordinal });
-      });
     }
     // Closes the run for the per-test data and the waterfall, also after an empty batch; the
     // aggregator ignores results of projects that are not measured (08-REQ-36).

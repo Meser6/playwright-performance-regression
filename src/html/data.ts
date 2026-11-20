@@ -7,9 +7,8 @@ export type HtmlAggregate = Omit<Aggregate, 'samples'> & {
 };
 
 /** Data embedded in the page: the run report without retained durations (11-REQ-05, 11-D-01). */
-export type HtmlReportData = Omit<RunReport, 'endpoints' | 'custom'> & {
+export type HtmlReportData = Omit<RunReport, 'endpoints'> & {
   endpoints: Record<string, HtmlAggregate>;
-  custom: Record<string, HtmlAggregate>;
 };
 
 function withoutDurations(aggregates: Record<string, Aggregate>): Record<string, HtmlAggregate> {
@@ -29,7 +28,6 @@ export function toHtmlReportData(report: RunReport): HtmlReportData {
   return {
     ...report,
     endpoints: withoutDurations(report.endpoints),
-    custom: withoutDurations(report.custom),
   };
 }
 

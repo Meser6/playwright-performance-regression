@@ -6,12 +6,7 @@ import type { ResolvedConfig } from '../config/index.ts';
 import type { AggregateStats, Issue, RunReport, SlowSample } from '../types/index.ts';
 import { compileStatusMatcher, requestStatusLabel } from './classification.ts';
 import { sampleId } from './identity.ts';
-import type {
-  EnrichedCustomSample,
-  EnrichedRequestSample,
-  SampleKind,
-  TestMeta,
-} from './identity.ts';
+import type { EnrichedRequestSample, SampleKind, TestMeta } from './identity.ts';
 import { histogram } from './histogram.ts';
 import { percentile, percentileNames } from './percentile.ts';
 import { BottomK } from './sampling.ts';
@@ -40,7 +35,6 @@ export type StatsIssue = Issue & { code: StatsIssueCode };
 
 export interface Aggregates {
   endpoints: Record<string, AggregateStats>;
-  custom: Record<string, AggregateStats>;
   /** Request count per known origin, sorted by origin (08-REQ-33). */
   origins: RunReport['origins'];
   /** Run-level STATS_* warnings, each at most once, in catalog order (08, chapter 13). */
@@ -164,7 +158,7 @@ class KeyState {
 
 /**
  * Aggregates the samples of one run per key (08). The result of finalize() does not depend on
- * the order of addRequest()/addCustom() calls (08-REQ-26). Not thread-safe; finalize() may be
+ * the order of addRequest() calls (08-REQ-26). Not thread-safe; finalize() may be
  * called once.
  */
 export class Aggregator {
@@ -173,7 +167,6 @@ export class Aggregator {
   private readonly isError: (label: string) => boolean;
   private readonly percentiles: [string, number][];
   private readonly endpoints = new Map<string, KeyState>();
-  private readonly custom = new Map<string, KeyState>();
   /** Interned resultIds: the heap stores an index instead of the text (08-REQ-29). */
   private readonly resultIndex = new Map<string, number>();
   private readonly resultIds: string[] = [];
@@ -255,21 +248,6 @@ export class Aggregator {
     });
   }
 
-  /** Adds a custom measurement sample under its name (08-REQ-04). */
-  addCustom(name: string, sample: EnrichedCustomSample): void {
-    if (!this.accept(sample.test)) return;
-    const state = this.state(this.custom, 'custom', name);
-    state.countSample(sample.outcome, sample.test, sample.outcome !== 'ok');
-    // Custom measurements are timed in Node (08-REQ-04).
-    state.node += 1;
-    if (sample.outcome !== 'ok' || sample.duration === null || sample.endTime === null) return;
-    this.addTime(state, name, sample.test, sample.ordinal, {
-      duration: sample.duration,
-      ttfb: null,
-      startedAt: Math.round(sample.endTime - sample.duration),
-    });
-  }
-
   /**
    * Closes one test result after all its samples were added (08-REQ-36); also for a result with
    * an empty batch. Results of projects that are not measured are ignored (08-REQ-31).
@@ -286,7 +264,6 @@ export class Aggregator {
     this.finalized = true;
     return {
       endpoints: this.build(this.endpoints),
-      custom: this.build(this.custom),
       origins: [...this.origins.keys()].sort(compareText).map((origin) => {
         const entry = this.origins.get(origin) ?? { label: '', requestCount: 0 };
         return { origin, label: entry.label, requestCount: entry.requestCount };

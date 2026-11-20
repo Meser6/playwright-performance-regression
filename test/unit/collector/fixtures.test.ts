@@ -1,5 +1,5 @@
 import type { BrowserContext, TestInfo } from '@playwright/test';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { trackContext, withPerfFixtures } from '../../../src/collector/fixtures.ts';
 import type { PerfApi } from '../../../src/collector/perf-api.ts';
 import { resolveConfig } from '../../../src/core/config/index.ts';
@@ -97,7 +97,7 @@ describe('withPerfFixtures', () => {
     vi.stubEnv('PW_PERF_MODE', '');
     const wrapped = wrap(fakeTest());
     expect(wrapped.fixtures.map((f) => Object.keys(f))).toEqual([['perf']]);
-    // 06-REQ-10: the same API, measuring without recording.
+    // 05-REQ-32: the same API; track() does nothing.
     let api: PerfApi | undefined;
     await fixture(wrapped, 'perf')(
       {},
@@ -106,11 +106,9 @@ describe('withPerfFixtures', () => {
       },
       {} as TestInfo,
     );
-    api?.start('a');
-    expect(typeof api?.end('a')).toBe('number');
-    await expect(api?.measure('b', () => 7)).resolves.toBe(7);
-    expect(() => api?.start(' bad')).toThrow(/CUSTOM_INVALID_NAME/u);
-    expect(() => api?.track(new FakeContext().asContext())).not.toThrow();
+    const context = new FakeContext();
+    expect(() => api?.track(context.asContext())).not.toThrow();
+    expect(context.listenerCount()).toBe(0);
   });
 
   test('in perf mode adds _perfBuffer (auto), context, page and perf', () => {
@@ -150,8 +148,9 @@ describe('withPerfFixtures', () => {
     const wrapped = wrap(fakeTest());
     const attach = await runBuffer(wrapped, 'setup', async (buffer) => {
       expect(buffer.collector).toBeNull();
-      buffer.api.start('a');
-      expect(typeof buffer.api.end('a')).toBe('number');
+      const context = new FakeContext();
+      buffer.api.track(context.asContext());
+      expect(context.listenerCount()).toBe(0);
       expect(activeCollector()).toBeUndefined();
     });
     expect(attach).not.toHaveBeenCalled();
@@ -169,6 +168,70 @@ describe('withPerfFixtures', () => {
       expect(buffer.collector).not.toBeNull();
     });
     expect(attach).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the perf fixture (05-REQ-32, D-32)', () => {
+  /** The perf fixture value of a test in the given mode. */
+  async function perfApi(mode: string): Promise<PerfApi> {
+    vi.stubEnv('PW_PERF_MODE', mode);
+    let api: PerfApi | undefined;
+    await fixture(wrap(fakeTest()), 'perf')(
+      {},
+      async (value) => {
+        api = value as PerfApi;
+      },
+      {} as TestInfo,
+    );
+    if (api === undefined) throw new Error('no perf value');
+    return api;
+  }
+
+  test('05-AC-23 PerfApi has only track; calling a removed method does not type-check', async () => {
+    expectTypeOf<keyof PerfApi>().toEqualTypeOf<'track'>();
+    const api = await perfApi('');
+    expect(Object.keys(api)).toEqual(['track']);
+    // @ts-expect-error -- perf.measure was removed (D-32)
+    expect(api.measure).toBeUndefined();
+  });
+
+  test('05-AC-23 in JavaScript a removed method gives a TypeError in both modes', async () => {
+    const removed = (api: PerfApi): void => {
+      const loose = api as unknown as Record<string, () => unknown>;
+      for (const name of ['measure', 'start', 'end', 'sampleStart', 'sampleEnd']) {
+        expect(() => (loose[name] as () => unknown)(), name).toThrow(TypeError);
+      }
+    };
+    removed(await perfApi(''));
+    vi.stubEnv('PW_PERF_MODE', 'test');
+    register(['chromium']);
+    await runBuffer(wrap(fakeTest()), 'chromium', async ({ api }) => {
+      removed(api);
+    });
+  });
+
+  test('05-AC-23 perf.track in a test-scoped fixture measures the context in perf mode', async () => {
+    vi.stubEnv('PW_PERF_MODE', 'test');
+    register(['chromium']);
+    const context = new FakeContext();
+    const attach = await runBuffer(wrap(fakeTest()), 'chromium', async ({ api }) => {
+      // What a fixture such as adminPage does with its own context.
+      api.track(context.asContext());
+      const request = new FakeRequest('http://app.test/api/admin');
+      context.emit('request', request);
+      finish(context, request);
+    });
+    const body = JSON.parse(attach.mock.calls[0]?.[1].body ?? '{}') as {
+      requests: { url: string }[];
+    };
+    expect(body.requests.map((r) => r.url)).toEqual(['http://app.test/api/admin']);
+  });
+
+  test('05-AC-23 perf.track does nothing outside perf mode', async () => {
+    const api = await perfApi('');
+    const context = new FakeContext();
+    api.track(context.asContext());
+    expect(context.listenerCount()).toBe(0);
   });
 });
 

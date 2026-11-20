@@ -16,19 +16,19 @@ export interface ThresholdsLocation {
   env: string | null;
 }
 
-const KINDS: readonly Kind[] = ['api', 'custom'];
+const KINDS: readonly Kind[] = ['api'];
 
 /** `<prefix>.<kind>[.<env>].json` (02, chapter 8.1). */
 export function thresholdsFileName(prefix: string, kind: Kind, env: string | null): string {
   return `${prefix}.${kind}${env === null ? '' : `.${env}`}.json`;
 }
 
-/** Absolute paths of the thresholds files of both kinds for the label of the run. */
+/** Absolute paths of the thresholds files of every kind for the label of the run. */
 export function thresholdsFilePaths(location: ThresholdsLocation): Record<Kind, string> {
   const dir = resolvePath(location.configDir, location.dir);
   const path = (kind: Kind): string =>
     resolvePath(dir, thresholdsFileName(location.filePrefix, kind, location.env));
-  return { api: path('api'), custom: path('custom') };
+  return Object.fromEntries(KINDS.map((kind) => [kind, path(kind)])) as Record<Kind, string>;
 }
 
 async function loadFile(location: ThresholdsLocation, kind: Kind): Promise<LoadedThresholdsFile> {
@@ -80,10 +80,14 @@ async function loadFile(location: ThresholdsLocation, kind: Kind): Promise<Loade
 }
 
 /**
- * Reads the thresholds files of both kinds (09-REQ-01, 09-REQ-02): `loaded`, `missing` or
- * `invalid`. Paths in the result are relative to configDir with forward slashes.
+ * Reads the thresholds files of every kind (09-REQ-01, 09-REQ-02): `loaded`, `missing` or
+ * `invalid`. Paths in the result are relative to configDir with forward slashes. Files of
+ * removed kinds (pw-perf-thresholds.custom…, D-32) are not looked for.
  */
 export async function loadThresholds(location: ThresholdsLocation): Promise<LoadedThresholds> {
-  const [api, custom] = await Promise.all(KINDS.map((kind) => loadFile(location, kind)));
-  return { api: api as LoadedThresholdsFile, custom: custom as LoadedThresholdsFile };
+  const files = await Promise.all(KINDS.map((kind) => loadFile(location, kind)));
+  return Object.fromEntries(KINDS.map((kind, i) => [kind, files[i]])) as Record<
+    Kind,
+    LoadedThresholdsFile
+  >;
 }

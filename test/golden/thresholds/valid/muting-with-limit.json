@@ -6,8 +6,8 @@
       "GET /api/tickets": {
         "gate": "warn",
         "note": "Known slow, JIRA-1",
-        "until": "2026-12-31",
-        "percentile": 900
+        "percentile": 900,
+        "until": "2026-12-31"
       }
     },
     "generated": {
@@ -75,7 +75,7 @@
       }
     },
     "kind": "api",
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "ok": true

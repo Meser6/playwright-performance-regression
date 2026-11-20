@@ -24,7 +24,7 @@ export { buildLink } from './run.ts';
 export { banner } from './overview.ts';
 
 /** Tabs in their order (11-REQ-26); `api-requests` appears with 15 (D-28). */
-export type TabId = 'overview' | 'endpoints' | 'custom' | 'tests' | 'warnings' | 'run';
+export type TabId = 'overview' | 'endpoints' | 'tests' | 'warnings' | 'run';
 
 interface Tab {
   id: TabId;
@@ -50,8 +50,7 @@ function header(report: RunReport): SafeHtml {
 function tabs(ctx: Ctx): Tab[] {
   const report = ctx.report;
   const endpoints = ctx.order.api.length;
-  const custom = ctx.order.custom.length;
-  const empty = endpoints === 0 && custom === 0;
+  const empty = endpoints === 0;
   const list: Tab[] = [
     { id: 'overview', label: 'Overview', count: null, content: overview(ctx, DOCS_URL) },
     {
@@ -62,18 +61,10 @@ function tabs(ctx: Ctx): Tab[] {
         endpoints > 0
           ? keyTable(ctx, 'api', 'Endpoints')
           : empty
-            ? html`<p>No requests or custom measurements were recorded. See the <a href="${DOCS_URL}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
+            ? html`<p>No requests were recorded. See the <a href="${DOCS_URL}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
             : html`<p>No backend requests were recorded.</p>`,
     },
   ];
-  if (custom > 0) {
-    list.push({
-      id: 'custom',
-      label: 'Custom',
-      count: custom,
-      content: keyTable(ctx, 'custom', 'Custom measurements'),
-    });
-  }
   list.push(
     {
       id: 'tests',

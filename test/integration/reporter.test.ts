@@ -130,7 +130,7 @@ describe('reporter with real Playwright', () => {
       });
       expect(report.endpoints['GET /api/cart']?.count).toBe(15);
       expect(report.endpoints['GET /api/items/:id']?.testCount).toBe(3);
-      expect(report.custom['checkout:submit']?.count).toBe(5);
+      expect(report.endpoints['GET /api/orders']?.count).toBe(5);
       expect(report.runConditions).toMatchObject({
         workers: 1,
         projects: [{ name: 'chromium', role: 'measured', repeatEach: 5, retries: 0 }],
@@ -153,14 +153,8 @@ describe('reporter with real Playwright', () => {
       const dir = join(scratch, 'thresholds');
       const derived = await runPlaywright({ PW_PERF_MODE: 'thresholds', THRESHOLDS_DIR: dir });
       expect(derived.status, derived.output).toBe(0);
-      expect(readdirSync(dir).sort()).toEqual([
-        'pw-perf-thresholds.api.json',
-        'pw-perf-thresholds.custom.json',
-      ]);
-      expect(derived.outcome?.paths.thresholds).toEqual([
-        join(dir, 'pw-perf-thresholds.api.json'),
-        join(dir, 'pw-perf-thresholds.custom.json'),
-      ]);
+      expect(readdirSync(dir).sort()).toEqual(['pw-perf-thresholds.api.json']);
+      expect(derived.outcome?.paths.thresholds).toEqual([join(dir, 'pw-perf-thresholds.api.json')]);
       const diff = derived.outcome?.paths.thresholdsDiff ?? '';
       expect(readFileSync(diff, 'utf8')).toContain('# Thresholds diff');
       expect(derived.output.indexOf('Thresholds: ')).toBeGreaterThan(
@@ -169,7 +163,7 @@ describe('reporter with real Playwright', () => {
 
       const evaluated = await runPlaywright({ PW_PERF_MODE: 'test', THRESHOLDS_DIR: dir });
       expect(evaluated.status, evaluated.output).toBe(0);
-      expect(evaluated.report?.thresholdFiles.map((f) => f.status)).toEqual(['loaded', 'loaded']);
+      expect(evaluated.report?.thresholdFiles.map((f) => f.status)).toEqual(['loaded']);
       const keys = Object.keys(evaluated.report?.endpoints ?? {});
       expect(keys).toContain('GET /api/cart');
       expect(evaluated.report?.evaluation.counts.api.fromFile).toBe(keys.length);

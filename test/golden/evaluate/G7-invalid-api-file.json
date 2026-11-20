@@ -1,6 +1,6 @@
 {
   "name": "G7-invalid-api-file",
-  "description": "G7: default gate, no violations, the api thresholds file is invalid: api keys are not evaluated (thresholds-error), the 40 custom keys are evaluated; error.",
+  "description": "G7: default gate, no violations, the api thresholds file is invalid: api keys are not evaluated (thresholds-error); error.",
   "input": {
     "config": {},
     "options": {},
@@ -17,59 +17,9 @@
             "problems": []
           }
         ]
-      },
-      "custom": {
-        "status": "loaded",
-        "kind": "custom",
-        "path": "pw-perf-thresholds.custom.json",
-        "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
       }
     },
-    "aggregates": {
-      "endpoints": {"GET /api/tickets":{"durations":[[20,300]]},"POST /api/orders":{"durations":[[20,300]]}},
-      "custom": {
-        "measure-filler-01": {"durations":[[20,300]]},
-        "measure-filler-02": {"durations":[[20,300]]},
-        "measure-filler-03": {"durations":[[20,300]]},
-        "measure-filler-04": {"durations":[[20,300]]},
-        "measure-filler-05": {"durations":[[20,300]]},
-        "measure-filler-06": {"durations":[[20,300]]},
-        "measure-filler-07": {"durations":[[20,300]]},
-        "measure-filler-08": {"durations":[[20,300]]},
-        "measure-filler-09": {"durations":[[20,300]]},
-        "measure-filler-10": {"durations":[[20,300]]},
-        "measure-filler-11": {"durations":[[20,300]]},
-        "measure-filler-12": {"durations":[[20,300]]},
-        "measure-filler-13": {"durations":[[20,300]]},
-        "measure-filler-14": {"durations":[[20,300]]},
-        "measure-filler-15": {"durations":[[20,300]]},
-        "measure-filler-16": {"durations":[[20,300]]},
-        "measure-filler-17": {"durations":[[20,300]]},
-        "measure-filler-18": {"durations":[[20,300]]},
-        "measure-filler-19": {"durations":[[20,300]]},
-        "measure-filler-20": {"durations":[[20,300]]},
-        "measure-filler-21": {"durations":[[20,300]]},
-        "measure-filler-22": {"durations":[[20,300]]},
-        "measure-filler-23": {"durations":[[20,300]]},
-        "measure-filler-24": {"durations":[[20,300]]},
-        "measure-filler-25": {"durations":[[20,300]]},
-        "measure-filler-26": {"durations":[[20,300]]},
-        "measure-filler-27": {"durations":[[20,300]]},
-        "measure-filler-28": {"durations":[[20,300]]},
-        "measure-filler-29": {"durations":[[20,300]]},
-        "measure-filler-30": {"durations":[[20,300]]},
-        "measure-filler-31": {"durations":[[20,300]]},
-        "measure-filler-32": {"durations":[[20,300]]},
-        "measure-filler-33": {"durations":[[20,300]]},
-        "measure-filler-34": {"durations":[[20,300]]},
-        "measure-filler-35": {"durations":[[20,300]]},
-        "measure-filler-36": {"durations":[[20,300]]},
-        "measure-filler-37": {"durations":[[20,300]]},
-        "measure-filler-38": {"durations":[[20,300]]},
-        "measure-filler-39": {"durations":[[20,300]]},
-        "measure-filler-40": {"durations":[[20,300]]}
-      }
-    }
+    "aggregates": {"endpoints":{"GET /api/tickets":{"durations":[[20,300]]},"POST /api/orders":{"durations":[[20,300]]}}}
   },
   "expected": {
     "status": "error",
@@ -80,19 +30,6 @@
         "fromFile": 0,
         "fromDefaults": 0,
         "notEvaluated": 2,
-        "tooFewSamples": 0,
-        "fileEntriesNotEvaluated": 0,
-        "medianOnly": 0,
-        "unseenThresholdEntries": 0,
-        "violations": 0,
-        "blockingViolations": 0,
-        "muted": 0
-      },
-      "custom": {
-        "keys": 40,
-        "fromFile": 0,
-        "fromDefaults": 40,
-        "notEvaluated": 0,
         "tooFewSamples": 0,
         "fileEntriesNotEvaluated": 0,
         "medianOnly": 0,

@@ -10,9 +10,9 @@ for (const id of [1, 2, 3]) {
   });
 }
 
-test('checkout', async ({ page, perf }) => {
+test('checkout', async ({ page }) => {
   await page.goto('/page');
-  await perf.measure('checkout:submit', () => call(page, '/api/orders'));
+  await call(page, '/api/orders');
   const failing = Number(process.env.FAIL_REPEATS ?? 0);
   expect(test.info().repeatEachIndex >= failing, 'failure requested by FAIL_REPEATS').toBe(true);
 });

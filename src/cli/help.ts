@@ -50,8 +50,8 @@ const GENERAL = [
 const TEST = [
   `Usage: ${CLI_COMMAND} test [--env <label>] [--repeat <n>] [playwright test arguments]`,
   '',
-  'Runs the tests in perf mode, measures the backend requests and custom measurements, evaluates',
-  'them against the thresholds files and fails on a regression.',
+  'Runs the tests in perf mode, measures the backend requests, evaluates them against the',
+  'thresholds files and fails on a regression.',
   '',
   'Options:',
   '  --env <label>   Environment label; selects pw-perf-thresholds.<kind>.<label>.json (overrides run.env)',

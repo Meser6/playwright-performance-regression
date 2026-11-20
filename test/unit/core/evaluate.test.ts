@@ -19,7 +19,7 @@ import {
   NO_TEST_BREAKDOWN,
   SOURCE,
   aggregates,
-  both,
+  files,
   config,
   invalid,
   loadEvaluateCases,
@@ -39,7 +39,7 @@ function golden(prefix: string): Evaluation {
 }
 
 function failed(e: Evaluation): (EvaluatedCheck & { kind: Kind; key: string })[] {
-  return (['api', 'custom'] as const).flatMap((kind) =>
+  return (['api'] as const).flatMap((kind) =>
     Object.entries(e.perKey[kind]).flatMap(([key, k]) =>
       k.checks.filter((c) => !c.passed).map((c) => ({ ...c, kind, key })),
     ),
@@ -50,7 +50,7 @@ function failed(e: Evaluation): (EvaluatedCheck & { kind: Kind; key: string })[]
 function one(spec: AggregateSpec, entry?: ThresholdsEntry, cfg = config()): EvaluatedKey {
   const e = evaluate(
     aggregates({ [KEY]: spec }),
-    both(loaded('api', entry === undefined ? {} : { [KEY]: entry })),
+    files(loaded('api', entry === undefined ? {} : { [KEY]: entry })),
     cfg,
     options(),
   );
@@ -142,7 +142,7 @@ describe('gate policy (09, chapter 6)', () => {
     const cfg = config({ gate: { tolerance: '100%' } });
     const e = evaluate(
       aggregates({ 'GET /a': { durations: [[20, 1500]] }, 'GET /b': { durations: [[20, 4100]] } }),
-      both(loaded('api', { 'GET /a': { percentile: 1400 }, 'GET /b': { percentile: 2000 } })),
+      files(loaded('api', { 'GET /a': { percentile: 1400 }, 'GET /b': { percentile: 2000 } })),
       cfg,
       options(),
     );
@@ -192,7 +192,7 @@ describe('gate policy (09, chapter 6)', () => {
   test('fatalToolError gives status error', () => {
     const e = evaluate(
       aggregates({ [KEY]: { durations: [[20, 100]] } }),
-      both(),
+      files(),
       config(),
       options({ fatalToolError: true }),
     );
@@ -392,10 +392,9 @@ describe('rules (09, chapter 5.2)', () => {
             ],
           },
         },
-        {},
         'p90',
       ),
-      both(),
+      files(),
       cfg,
       options(),
     );
@@ -441,10 +440,10 @@ describe('limits and results (09, chapter 5)', () => {
   });
 
   test('02-AC-14 hand-written entries are completed from the config', () => {
-    const custom = config({
+    const handSet = config({
       checks: { errors: { limit: { api: 0.1 } }, time: { p99: { limit: { api: 5000 } } } },
     });
-    expect(one({ durations: [[20, 100]] }, { t: 400, percentile: 900 }, custom).limits).toEqual({
+    expect(one({ durations: [[20, 100]] }, { t: 400, percentile: 900 }, handSet).limits).toEqual({
       t: 400,
       median: 2000,
       percentile: 900,
@@ -495,10 +494,10 @@ describe('limits and results (09, chapter 5)', () => {
     expect(k.checks.map((c) => [c.rule, c.actual])).toEqual([['errors', 0]]);
   });
 
-  test('09-AC-05 invalid api file: api keys thresholds-error, custom keys evaluated, status error', () => {
+  test('09-AC-05 invalid api file: api keys thresholds-error, status error', () => {
     const e = evaluate(
-      aggregates({ [KEY]: { durations: [[20, 9000]] } }, { checkout: { durations: [[20, 6000]] } }),
-      both(invalid('api'), loaded('custom', { checkout: { percentile: 5000 } })),
+      aggregates({ [KEY]: { durations: [[20, 9000]] } }),
+      files(invalid('api')),
       config(),
       options(),
     );
@@ -518,7 +517,6 @@ describe('limits and results (09, chapter 5)', () => {
       checks: [],
       muted: null,
     });
-    expect(e.perKey.custom['checkout']?.result).toBe('fail');
     expect(e.status).toBe('error');
     expect(e.toolErrors).toEqual([
       {
@@ -529,7 +527,6 @@ describe('limits and results (09, chapter 5)', () => {
     ]);
     expect(e.thresholdFiles.map((f) => [f.kind, f.status, f.unseenKeys])).toEqual([
       ['api', 'invalid', []],
-      ['custom', 'loaded', []],
     ]);
   });
 });
@@ -559,7 +556,7 @@ describe('counters (09, chapter 7)', () => {
         'GET /d': { durations: [[3, 100]] },
         'GET /e': { durations: [[30, 3000]] },
       }),
-      both(
+      files(
         loaded('api', {
           'GET /a': { percentile: 1400 },
           'GET /c': { percentile: 1400 },
@@ -590,7 +587,7 @@ describe('counters (09, chapter 7)', () => {
   test('09-AC-17 unseen entries: sorted, locked included, one warning, n = 0 is seen', () => {
     const e = evaluate(
       aggregates({ 'GET /seen': { errors: 2 } }),
-      both(
+      files(
         loaded('api', {
           'GET /z': { percentile: 1 },
           'GET /seen': { percentile: 1 },
@@ -610,18 +607,14 @@ describe('counters (09, chapter 7)', () => {
   });
 
   test('unseen entries count 0 for missing and invalid files', () => {
-    const e = evaluate(
-      aggregates({}),
-      both(missing('api'), invalid('custom')),
-      config(),
-      options(),
-    );
+    const e = evaluate(aggregates({}), files(missing('api')), config(), options());
     expect(e.counts.api.unseenThresholdEntries).toBe(0);
-    expect(e.counts.custom.unseenThresholdEntries).toBe(0);
+    const broken = evaluate(aggregates({}), files(invalid('api')), config(), options());
+    expect(broken.counts.api.unseenThresholdEntries).toBe(0);
   });
 
   test('a run without aggregates passes with EVAL_NO_SAMPLES', () => {
-    const e = evaluate(aggregates({}), both(), config(), options());
+    const e = evaluate(aggregates({}), files(), config(), options());
     expect(e.status).toBe('passed');
     expect(codes(e)).toEqual(['EVAL_NO_SAMPLES']);
   });
@@ -631,7 +624,7 @@ describe('thresholds files (09, chapter 4)', () => {
   test('09-AC-16 env qa with only the file without label: missing, defaults, hint names it', () => {
     const e = evaluate(
       aggregates({ [KEY]: { durations: [[20, 100]] } }),
-      both(missing('api', true, 'qa'), missing('custom', false, 'qa')),
+      files(missing('api', true, 'qa')),
       config(),
       options({ env: 'qa' }),
     );
@@ -641,38 +634,21 @@ describe('thresholds files (09, chapter 4)', () => {
     expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.api.qa.json');
     expect(e.warnings[0]?.hint).toContain('npx pw-perf thresholds');
     expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.api.json exists');
-    expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([
-      ['missing', null],
-      ['missing', null],
-    ]);
+    expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([['missing', null]]);
   });
 
   test('09-AC-23 THRESHOLDS_FILE_MISSING only for kinds with keys in the run', () => {
     const apiOnly = evaluate(
       aggregates({ [KEY]: { durations: [[20, 100]] } }),
-      both(missing('api'), missing('custom')),
+      files(missing('api')),
       config(),
       options(),
     );
     expect(codes(apiOnly)).toEqual(['THRESHOLDS_FILE_MISSING']);
     expect(apiOnly.warnings[0]?.message).toContain('pw-perf-thresholds.api.json');
-    // A custom key with n = 0 is a key of the run (09-REQ-05): the custom file is missing too.
-    const withCustom = evaluate(
-      aggregates({ [KEY]: { durations: [[20, 100]] } }, { checkout: { durations: [] } }),
-      both(missing('api'), missing('custom')),
-      config(),
-      options(),
-    );
-    expect(codes(withCustom)).toEqual(['THRESHOLDS_FILE_MISSING', 'THRESHOLDS_FILE_MISSING']);
-    expect(withCustom.warnings[1]?.message).toContain('pw-perf-thresholds.custom.json');
-    expect(withCustom.warnings[1]?.hint).not.toContain('exists');
+    expect(apiOnly.warnings[0]?.hint).not.toContain('exists');
     // No keys at all: EVAL_NO_SAMPLES says it all.
-    const none = evaluate(
-      aggregates({}),
-      both(missing('api'), missing('custom')),
-      config(),
-      options(),
-    );
+    const none = evaluate(aggregates({}), files(missing('api')), config(), options());
     expect(codes(none)).toEqual(['EVAL_NO_SAMPLES']);
   });
 
@@ -697,7 +673,7 @@ describe('thresholds files (09, chapter 4)', () => {
   function withGenerated(g: Generated | null, env: string | null = 'qa'): Evaluation {
     return evaluate(
       aggregates({ [KEY]: { durations: [[20, 1500]] } }),
-      both(loaded('api', { [KEY]: { percentile: 1400 } }, g)),
+      files(loaded('api', { [KEY]: { percentile: 1400 } }, g)),
       config(),
       options({ env }),
     );
@@ -745,7 +721,7 @@ describe('thresholds files (09, chapter 4)', () => {
     const file = loaded('api');
     const e = evaluate(
       aggregates({}),
-      both({ ...file, migratedFrom: 0 } as typeof file),
+      files({ ...file, migratedFrom: 0 } as typeof file),
       config(),
       options(),
     );
@@ -763,7 +739,7 @@ describe('muting (09, chapter 6.5)', () => {
   function run(until: string, startedAt = '2026-11-18T23:59:59.000Z'): Evaluation {
     return evaluate(
       aggregates({ [KEY]: { durations: [[20, 3000]] }, 'GET /other': { durations: [[20, 100]] } }),
-      both(loaded('api', { [KEY]: muted(until) })),
+      files(loaded('api', { [KEY]: muted(until) })),
       config(),
       options({ startedAt }),
     );
@@ -807,7 +783,7 @@ describe('muting (09, chapter 6.5)', () => {
         'GET /b': { durations: [[2, 100]] },
         'GET /c': { durations: [[20, 100]] },
       }),
-      both(
+      files(
         loaded('api', {
           'GET /a': muted('2027-01-31'),
           'GET /b': muted('2027-01-31'),
@@ -826,7 +802,7 @@ describe('muting (09, chapter 6.5)', () => {
   test('an entry with muting only uses config limits with source file', () => {
     const e = evaluate(
       aggregates({ [KEY]: { durations: [[20, 100]] } }),
-      both(loaded('api', { [KEY]: { gate: 'warn', note: 'n', until: '2026-12-31' } })),
+      files(loaded('api', { [KEY]: { gate: 'warn', note: 'n', until: '2026-12-31' } })),
       config(),
       options(),
     );
@@ -853,18 +829,14 @@ describe('run report', () => {
       (c) => c.dir === 'valid' && c.file === 'full-run.json',
     );
     const base = structuredClone(found?.input) as RunReport;
-    const aggs = aggregates(
-      { [KEY]: { durations: [[20, 1500]] }, 'GET /b': { errors: 5 } },
-      { checkout: { durations: [[3, 100]] } },
-    );
+    const aggs = aggregates({ [KEY]: { durations: [[20, 1500]] }, 'GET /b': { errors: 5 } });
     const e = evaluate(
       aggs,
-      both(
+      files(
         loaded('api', {
           [KEY]: { percentile: 1400, gate: 'warn', note: 'n', until: '2026-12-31' },
           'GET /gone': {},
         }),
-        missing('custom'),
       ),
       config(),
       options(),
@@ -894,7 +866,7 @@ describe('run report', () => {
 describe('determinism', () => {
   test('evaluate is deterministic and does not modify its input', () => {
     const input = aggregates({ [KEY]: { durations: [[20, 1500]] } });
-    const thresholds = both(loaded('api', { [KEY]: { percentile: 1400 } }));
+    const thresholds = files(loaded('api', { [KEY]: { percentile: 1400 } }));
     const before = structuredClone({ input, thresholds });
     const a = evaluate(input, thresholds, config(), options());
     const b = evaluate(input, thresholds, config(), options());

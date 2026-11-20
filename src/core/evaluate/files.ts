@@ -13,7 +13,7 @@ export function plural(n: number, word: string, many = `${word}s`): string {
   return `${n} ${n === 1 ? word : many}`;
 }
 
-const KIND_NOUN: Record<Kind, string> = { api: 'endpoint', custom: 'custom measurement' };
+const KIND_NOUN: Record<Kind, string> = { api: 'endpoint' };
 
 /** Path of the file without the environment label: <prefix>.<kind>.<env>.json → <prefix>.<kind>.json. */
 function envlessPath(path: string, env: string): string {

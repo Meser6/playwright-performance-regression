@@ -10,13 +10,16 @@ import type { HtmlValue, SafeHtml } from './escape.ts';
 const DEFAULT_PERCENTILE = 'p95';
 
 /** Kind of a key in links and deep links (11-REQ-38); `request` is reserved for 15. */
-export type LinkKind = 'api' | 'custom';
-export const LINK_KINDS: readonly LinkKind[] = ['api', 'custom'];
+export type LinkKind = 'api';
+export const LINK_KINDS: readonly LinkKind[] = ['api'];
 /** Order of the kinds in rankings and ties (11-REQ-31). */
-export const KIND_ORDER: Record<LinkKind, number> = { api: 0, custom: 2 };
-export const KIND_LABEL: Record<LinkKind, string> = { api: 'endpoint', custom: 'custom' };
+export const KIND_ORDER: Record<LinkKind, number> = { api: 0 };
+export const KIND_LABEL: Record<LinkKind, string> = { api: 'endpoint' };
 /** Tab of each kind (11-REQ-26). */
-export const KIND_TAB: Record<LinkKind, string> = { api: 'endpoints', custom: 'custom' };
+export const KIND_TAB: Record<LinkKind, string> = { api: 'endpoints' };
+/** Name of each kind in filter chips and table columns. */
+export const KIND_NAME: Record<LinkKind, string> = { api: 'Endpoints' };
+export const KIND_COLUMN: Record<LinkKind, string> = { api: 'API' };
 
 export const DASH = '—';
 
@@ -94,7 +97,8 @@ export interface Ctx {
 }
 
 export function aggregatesOf(data: HtmlReportData, kind: LinkKind): Record<string, HtmlAggregate> {
-  return kind === 'api' ? data.endpoints : data.custom;
+  const byKind: Record<LinkKind, Record<string, HtmlAggregate>> = { api: data.endpoints };
+  return byKind[kind];
 }
 
 export function context(report: RunReport): Ctx {
@@ -102,7 +106,6 @@ export function context(report: RunReport): Ctx {
   const level = report.config.checks?.time?.percentile?.level ?? DEFAULT_PERCENTILE;
   const order = {
     api: defaultOrder(data.endpoints, level),
-    custom: defaultOrder(data.custom, level),
   };
   const positions = (keys: string[]) => new Map(keys.map((key, i) => [key, i + 1]));
   return {
@@ -111,7 +114,7 @@ export function context(report: RunReport): Ctx {
     level,
     migrated: report.testBreakdown === null,
     order,
-    position: { api: positions(order.api), custom: positions(order.custom) },
+    position: { api: positions(order.api) },
   };
 }
 

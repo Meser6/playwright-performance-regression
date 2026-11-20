@@ -28,7 +28,7 @@
         "kind": "api",
         "path": "pw-perf-thresholds.api.json",
         "file": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -66,7 +66,7 @@
               "locked": true,
               "note": "Hand-tuned after incident 42"
             },
-            "GET /api/incomplete": {"percentile":3000,"note":"Custom budget"},
+            "GET /api/incomplete": {"percentile":3000,"note":"Hand-set budget"},
             "GET /api/muted-only": {"gate":"warn","note":"Backend migration","until":"2026-12-31"},
             "GET /api/close": {"t":500,"median":230,"percentile":350,"p99":500,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
             "GET /api/tightened": {"t":500,"median":220,"percentile":600,"p99":800,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
@@ -102,8 +102,7 @@
             "GET /api/small-n": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05}
           }
         }
-      },
-      "custom": null
+      }
     }
   },
   "expected": {
@@ -112,7 +111,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -140,7 +139,7 @@
           },
           "entries": {
             "GET /api/close": {"t":500,"median":230,"percentile":350,"p99":500,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
-            "GET /api/incomplete": {"percentile":3000,"note":"Custom budget"},
+            "GET /api/incomplete": {"percentile":3000,"note":"Hand-set budget"},
             "GET /api/locked": {
               "t": 500,
               "median": 220,
@@ -188,8 +187,7 @@
           }
         },
         "changed": true
-      },
-      {"kind":"custom","content":null,"changed":false}
+      }
     ],
     "warnings": [{"code":"THRESHOLDS_LOOSENED_MUCH","message":"1 entry has a time limit that grew by more than 50% in this derivation."}]
   }

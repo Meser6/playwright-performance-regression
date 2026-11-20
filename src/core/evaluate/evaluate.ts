@@ -26,7 +26,7 @@ import type { MutedKey } from './muting.ts';
 import { TIME_RULES, runRules } from './rules.ts';
 import type { EvaluateOptions, Evaluation, EvaluationStatus, LoadedThresholds } from './types.ts';
 
-const KINDS: readonly Kind[] = ['api', 'custom'];
+const KINDS: readonly Kind[] = ['api'];
 
 /**
  * Number of keys with qualified violations that is still tolerated (09-REQ-13, step 5): the
@@ -163,7 +163,7 @@ function evaluationStatus(
  * the reporter reads the files (09-REQ-01) and passes the result in `thresholds`.
  */
 export function evaluate(
-  aggregates: Pick<Aggregates, 'endpoints' | 'custom'>,
+  aggregates: Pick<Aggregates, 'endpoints'>,
   thresholds: LoadedThresholds,
   cfg: ResolvedConfig,
   opts: EvaluateOptions,
@@ -171,9 +171,8 @@ export function evaluate(
   const runDay = dayOf(opts.startedAt);
   const byKind: Record<Kind, Record<string, AggregateStats>> = {
     api: aggregates.endpoints,
-    custom: aggregates.custom,
   };
-  const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {}, custom: {} };
+  const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {} };
   for (const kind of KINDS) {
     for (const key of Object.keys(byKind[kind]).sort(compareText)) {
       const stats = byKind[kind][key];
@@ -187,7 +186,7 @@ export function evaluate(
   const warnings: Issue[] = [];
   const toolErrors: Issue[] = [];
   const thresholdFiles: ThresholdFileInfo[] = [];
-  const unseenCount: Record<Kind, number> = { api: 0, custom: 0 };
+  const unseenCount: Record<Kind, number> = { api: 0 };
   for (const kind of KINDS) {
     const file = thresholds[kind];
     if (file.kind !== kind) {
@@ -195,8 +194,8 @@ export function evaluate(
     }
     let unseen: string[] = [];
     if (file.status === 'missing') {
-      // Only for a kind with keys in the run: a project without custom measurements does not
-      // need the custom file (09-REQ-02, 09-D-17).
+      // Only for a kind with keys in the run: a kind without keys does not need its file
+      // (09-REQ-02, 09-D-17).
       if (Object.keys(byKind[kind]).length > 0) warnings.push(missingFileWarning(file, opts.env));
     } else if (file.status === 'invalid') {
       toolErrors.push(...file.issues.map(schemaIssueToIssue));
@@ -221,7 +220,6 @@ export function evaluate(
 
   const counts: Record<Kind, EvaluationCounts> = {
     api: countKind(perKey.api, unseenCount.api),
-    custom: countKind(perKey.custom, unseenCount.custom),
   };
 
   if (KINDS.every((kind) => Object.keys(byKind[kind]).length === 0)) {
@@ -232,7 +230,7 @@ export function evaluate(
     });
   }
 
-  const notEvaluated = counts.api.fileEntriesNotEvaluated + counts.custom.fileEntriesNotEvaluated;
+  const notEvaluated = KINDS.reduce((sum, kind) => sum + counts[kind].fileEntriesNotEvaluated, 0);
   if (notEvaluated > 0) {
     warnings.push({
       code: 'THRESHOLDS_ENTRIES_NOT_EVALUATED',

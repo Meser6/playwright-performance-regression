@@ -1,11 +1,10 @@
-// The collector of one test in a measured project (05, chapter 6): its trackers, custom
-// timer, diagnostics, the single end-of-test drain and the sample batch attachment.
+// The collector of one test in a measured project (05, chapter 6): its trackers, diagnostics,
+// the single end-of-test drain and the sample batch attachment.
 import type { BrowserContext, Page, TestInfo } from '@playwright/test';
 import type { ResolvedConfig } from '../core/config/index.ts';
 import { SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { RawRequestSample, SampleBatch } from '../core/types/index.ts';
 import { COLLECTOR_NAME, SAMPLE_LIMIT_PER_TEST } from './constants.ts';
-import { CustomTimer } from './custom-timer.ts';
 import { createDiagnostics, errorText } from './diagnostics.ts';
 import { createPerfApi } from './perf-api.ts';
 import type { PerfApi } from './perf-api.ts';
@@ -29,7 +28,6 @@ export class TestCollector {
   readonly api: PerfApi;
   readonly #opts: TestCollectorOptions;
   readonly #diag = createDiagnostics();
-  readonly #timer: CustomTimer;
   readonly #trackers = new Map<BrowserContext, RequestTracker>();
   readonly #requests: RawRequestSample[] = [];
   readonly #pending: RawRequestSample[] = [];
@@ -42,11 +40,7 @@ export class TestCollector {
 
   constructor(opts: TestCollectorOptions) {
     this.#opts = opts;
-    this.#timer = new CustomTimer(
-      { now: opts.now, wallNow: opts.wallNow, record: true },
-      this.#diag,
-    );
-    this.api = createPerfApi(this.#timer, (context) => {
+    this.api = createPerfApi((context) => {
       this.track(context);
     });
     const keep = (list: RawRequestSample[], sample: RawRequestSample): void => {
@@ -140,7 +134,6 @@ export class TestCollector {
 
   /** The sample batch of the test (05-REQ-15); call after drain(). */
   batch(): SampleBatch {
-    const custom = this.#timer.finish();
     if (this.#dropped > 0) {
       this.#diag.add({
         code: 'COLLECTOR_SAMPLE_LIMIT_REACHED',
@@ -151,14 +144,13 @@ export class TestCollector {
       this.#dropped = 0;
     }
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       collector: {
         name: COLLECTOR_NAME,
         version: this.#opts.version,
         browserName: this.#browserName ?? null,
       },
       requests: [...this.#requests, ...this.#pending],
-      custom,
       diagnostics: this.#diag.list(),
     };
   }

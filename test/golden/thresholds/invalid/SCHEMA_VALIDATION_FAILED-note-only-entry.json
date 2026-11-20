@@ -4,8 +4,8 @@
   "input": {
     "entries": {
       "GET /api/tickets": {
-        "note": "x",
-        "locked": true
+        "locked": true,
+        "note": "x"
       }
     },
     "generated": {
@@ -73,7 +73,7 @@
       }
     },
     "kind": "api",
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

@@ -54,7 +54,6 @@ export function reportAggregate(spec: ReportAggregateSpec, level = 'p95'): Aggre
 
 export interface ReportSpec {
   endpoints?: Record<string, ReportAggregateSpec>;
-  custom?: Record<string, ReportAggregateSpec>;
   level?: string;
   runId?: string;
   startedAt?: string;
@@ -96,7 +95,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     muted: 0,
   };
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     tool: { name: 'playwright-performance-regression', version: '0.1.0' },
     runId: spec.runId ?? 'run-1',
     mode: spec.mode ?? 'thresholds',
@@ -126,14 +125,13 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     evaluation: {
       status: 'passed',
       gateEnabled: false,
-      counts: { api: { ...counts }, custom: { ...counts } },
+      counts: { api: { ...counts } },
     },
     thresholdFiles: [],
     warnings: [],
     toolErrors: spec.toolErrors ?? [],
     origins: [],
     endpoints: expand(spec.endpoints),
-    custom: expand(spec.custom),
     testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }
@@ -182,7 +180,7 @@ export function file(
     status: 'loaded',
     kind,
     path: `pw-perf-thresholds.${kind}.json`,
-    file: { schemaVersion: 1, kind, generated: gen, entries },
+    file: { schemaVersion: 2, kind, generated: gen, entries },
   };
 }
 
@@ -195,11 +193,8 @@ export function absent(kind: Kind): LoadedThresholdsFile {
   };
 }
 
-export function existing(
-  api: LoadedThresholdsFile = absent('api'),
-  custom: LoadedThresholdsFile = absent('custom'),
-): LoadedThresholds {
-  return { api, custom };
+export function existing(api: LoadedThresholdsFile = absent('api')): LoadedThresholds {
+  return { api };
 }
 
 export function cfg(input: PerfConfigInput = {}): ResolvedConfig {
@@ -215,7 +210,7 @@ export interface ThresholdsGoldenCase {
     config: PerfConfigInput;
     options: Partial<DeriveOptions>;
     report: ReportSpec;
-    existing: { api: LoadedThresholdsFile | null; custom: LoadedThresholdsFile | null };
+    existing: { api: LoadedThresholdsFile | null };
   };
   expected: unknown;
 }
@@ -234,10 +229,7 @@ export function loadThresholdsCases(dir: string): ThresholdsGoldenCase[] {
 }
 
 export function goldenExisting(c: ThresholdsGoldenCase): LoadedThresholds {
-  return existing(
-    c.input.existing.api ?? absent('api'),
-    c.input.existing.custom ?? absent('custom'),
-  );
+  return existing(c.input.existing.api ?? absent('api'));
 }
 
 /** A loaded thresholds file with the given content, e.g. the result of an earlier derivation. */

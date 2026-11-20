@@ -4,8 +4,8 @@
   "input": {
     "config": {},
     "options": {},
-    "report": {"endpoints":{"GET /api/a":{"durations":[[4,100]]},"GET /api/b":{"errors":30}},"custom":{"flow":{"durations":[[1,1000]]}}},
-    "existing": {"api":null,"custom":null}
+    "report": {"endpoints":{"GET /api/a":{"durations":[[4,100]]},"GET /api/b":{"errors":30}}},
+    "existing": {"api":null}
   },
   "expected": {
     "ok": false,

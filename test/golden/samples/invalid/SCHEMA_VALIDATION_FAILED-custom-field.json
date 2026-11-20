@@ -1,5 +1,5 @@
 {
-  "name": "finished custom measurement without endTime",
+  "name": "sample batch v2 with the removed custom array (02-AC-18)",
   "input": {
     "collector": {
       "browserName": "chromium",
@@ -8,10 +8,16 @@
     },
     "custom": [
       {
-        "duration": 10,
+        "duration": 15,
+        "endTime": 1763460001000,
+        "name": "save ticket",
+        "outcome": "error"
+      },
+      {
+        "duration": null,
         "endTime": null,
-        "name": "x",
-        "outcome": "ok"
+        "name": "Zapisz zgłoszenie ż",
+        "outcome": "unfinished"
       }
     ],
     "diagnostics": [],
@@ -54,12 +60,12 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",
     "pointers": [
-      "/custom/0/endTime"
+      ""
     ]
   }
 }

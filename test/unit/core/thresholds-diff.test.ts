@@ -156,9 +156,9 @@ describe('diffThresholds (10, chapter 9)', () => {
     });
   });
 
-  test('fileStatus: created, updated, unchanged and not-written', () => {
+  test('fileStatus: created, updated and unchanged', () => {
     const first = diffs({ endpoints: { k: FAST } });
-    expect(first.map((d) => d.fileStatus)).toEqual(['created', 'not-written']);
+    expect(first.map((d) => d.fileStatus)).toEqual(['created']);
     expect(first[0]?.level).toBe('p95');
     const report = runReport({ endpoints: { k: FAST } });
     const derived = deriveThresholds(report, cfg(), existing(), deriveOptions());
@@ -166,7 +166,7 @@ describe('diffThresholds (10, chapter 9)', () => {
     const content = derived.value.files[0]?.content;
     if (content === null || content === undefined) throw new Error('no content');
     const again = diffs({ endpoints: { k: FAST }, runId: 'run-2' }, existing(loadedFile(content)));
-    expect(again.map((d) => d.fileStatus)).toEqual(['unchanged', 'not-written']);
+    expect(again.map((d) => d.fileStatus)).toEqual(['unchanged']);
     const updated = diffs({ endpoints: { k: FAST, k2: FAST } }, existing(loadedFile(content)));
     expect(updated[0]?.fileStatus).toBe('updated');
   });
@@ -179,10 +179,7 @@ describe('diffThresholds (10, chapter 9)', () => {
     if (content === null || content === undefined) throw new Error('no content');
     const d = diffs({ endpoints: { k: FAST }, runId: 'run-2' }, existing(loadedFile(content)));
     expect(d[0]?.counts.unchanged).toBe(1);
-    const md = formatThresholdsDiffMarkdown(d, [
-      'pw-perf-thresholds.api.json',
-      'pw-perf-thresholds.custom.json',
-    ]);
+    const md = formatThresholdsDiffMarkdown(d, ['pw-perf-thresholds.api.json']);
     expect(md).toBe(
       [
         '# Thresholds diff',
@@ -191,17 +188,11 @@ describe('diffThresholds (10, chapter 9)', () => {
         '',
         '1 unchanged',
         '',
-        '## pw-perf-thresholds.custom.json (not written)',
-        '',
-        'no entries',
-        '',
       ].join('\n'),
     );
-    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a.json', 'c.json'] })).toBe(
+    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a.json'] })).toBe(
       [
         'Thresholds: a.json (unchanged)',
-        'Thresholds: c.json (not written)',
-        '  no entries',
         '',
         'The thresholds files are up to date.',
         'Diff: pw-perf-results/thresholds-diff.md',
@@ -222,15 +213,13 @@ describe('diffThresholds (10, chapter 9)', () => {
     expect(keyDiff(much[0], 'k').changes).toEqual([
       { limit: 'percentile', before: 228, after: 364, direction: 'looser', large: true },
     ]);
-    expect(formatThresholdsDiff(much, { ...CONSOLE, paths: ['a', 'c'] })).toContain(
+    expect(formatThresholdsDiff(much, { ...CONSOLE, paths: ['a'] })).toContain(
       '  ↑! k                               p95 228 → 364',
     );
-    expect(formatThresholdsDiffMarkdown(much, ['a', 'c'])).toContain(
-      '| ↑! | `k` | p95 228 | p95 364 |',
-    );
+    expect(formatThresholdsDiffMarkdown(much, ['a'])).toContain('| ↑! | `k` | p95 228 | p95 364 |');
     const little = at(1.4);
     expect(keyDiff(little[0], 'k').changes[0]?.large).toBeUndefined();
-    expect(formatThresholdsDiff(little, { ...CONSOLE, paths: ['a', 'c'] })).not.toContain('!');
+    expect(formatThresholdsDiff(little, { ...CONSOLE, paths: ['a'] })).not.toContain('!');
   });
 
   test('10-AC-18 KeyDiff.muted is relative to the source startedAt; an expired muting has its own line', () => {
@@ -258,11 +247,11 @@ describe('diffThresholds (10, chapter 9)', () => {
     expect(keyDiff(d[0], 'active').muted).toEqual({ until: '2026-11-18', expired: false });
     expect(keyDiff(d[0], 'expired').muted).toEqual({ until: '2026-11-17', expired: true });
     expect(keyDiff(d[0], 'plain').muted).toBeUndefined();
-    const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a', 'c'] });
+    const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] });
     expect(text).toContain('  ! expired muted (expired 2026-11-17)');
     expect(text).toContain('(muted until 2026-11-18)');
     expect(text).not.toContain('active muted (expired');
-    const md = formatThresholdsDiffMarkdown(d, ['a', 'c']);
+    const md = formatThresholdsDiffMarkdown(d, ['a']);
     expect(md).toContain('- `expired` muted (expired 2026-11-17)');
     expect(md).not.toContain('- `active` muted');
   });
@@ -276,17 +265,17 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
 
   test('at most 30 rows per file in the console; every row in thresholds-diff.md', () => {
     const d = diffs({ endpoints: many(35) });
-    const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['api.json', 'custom.json'] });
+    const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['api.json'] });
     expect(text.split('\n').filter((l) => l.startsWith('  + ')).length).toBe(30);
     expect(text).toContain('  … and 5 more\n');
-    const md = formatThresholdsDiffMarkdown(d, ['api.json', 'custom.json']);
+    const md = formatThresholdsDiffMarkdown(d, ['api.json']);
     expect(md.split('\n').filter((l) => l.startsWith('| + |')).length).toBe(35);
   });
 
   test('long keys are shortened in the middle to the terminal width, at least 30 columns', () => {
     const key = `GET /api/${'x'.repeat(100)}/end`;
     const d = diffs({ endpoints: { [key]: FAST } });
-    const text = formatThresholdsDiff(d, { ...CONSOLE, width: 80, paths: ['a', 'c'] });
+    const text = formatThresholdsDiff(d, { ...CONSOLE, width: 80, paths: ['a'] });
     const row = text.split('\n').find((l) => l.startsWith('  + '));
     expect(row).toMatch(/^ {2}\+ GET \/api\/x+…x+\/end {2}t 500/u);
     expect(row?.indexOf('t 500')).toBe(2 + 1 + 1 + 30 + 2);
@@ -295,26 +284,26 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
   test('the unseen hint mentions --prune, or locked entries after --prune', () => {
     const files = existing(file('api', { gone: { ...FRESH }, kept: { ...FRESH, locked: true } }));
     const d = diffs({ endpoints: { k: FAST } }, files);
-    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a', 'c'] })).toContain(
+    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] })).toContain(
       '  2 entries were not seen in this run and were kept. Use --prune to remove them.',
     );
     const p = diffs({ endpoints: { k: FAST } }, files, cfg(), true);
-    expect(formatThresholdsDiff(p, { ...CONSOLE, prune: true, paths: ['a', 'c'] })).toContain(
+    expect(formatThresholdsDiff(p, { ...CONSOLE, prune: true, paths: ['a'] })).toContain(
       '  1 entry not seen in this run was kept because it is locked.',
     );
   });
 
   test('colors only when requested', () => {
     const d = diffs({ endpoints: { k: FAST } });
-    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a', 'c'] })).not.toContain('\u001b[');
-    expect(formatThresholdsDiff(d, { ...CONSOLE, color: true, paths: ['a', 'c'] })).toContain(
+    expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] })).not.toContain('\u001b[');
+    expect(formatThresholdsDiff(d, { ...CONSOLE, color: true, paths: ['a'] })).toContain(
       '\u001b[32m+\u001b[0m',
     );
   });
 
   test('Markdown escapes pipes and backticks of keys', () => {
     const d = diffs({ endpoints: { 'GET /a|b': FAST, 'GET /`x`': FAST } });
-    const md = formatThresholdsDiffMarkdown(d, ['a', 'c']);
+    const md = formatThresholdsDiffMarkdown(d, ['a']);
     expect(md).toContain('| + | `GET /a\\|b` |');
     expect(md).toContain('| + | GET /`x` |');
   });

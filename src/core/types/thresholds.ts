@@ -2,7 +2,7 @@
 // names of the limits shared by the console and the Markdown diff (10, chapter 9.1).
 import type { Entry as ThresholdsEntry, Issue, ThresholdsFile } from './generated/formats.ts';
 
-type Kind = 'api' | 'custom';
+type Kind = 'api';
 
 export type LimitName =
   't' | 'median' | 'percentile' | 'p99' | 'minApdex' | 'maxWilson' | 'maxErrorRate';
@@ -50,7 +50,7 @@ export interface DerivedFile {
 }
 
 export interface DerivedThresholds {
-  /** api first, then custom. */
+  /** In kind order (api first). */
   files: DerivedFile[];
   warnings: Issue[];
 }

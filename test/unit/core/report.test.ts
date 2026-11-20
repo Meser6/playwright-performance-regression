@@ -45,7 +45,6 @@ function inputOf(report: RunReport): RunReportInput {
     return { stats, perKey };
   };
   const endpoints = split(report.endpoints);
-  const custom = split(report.custom);
   return {
     meta: {
       tool: report.tool,
@@ -65,13 +64,12 @@ function inputOf(report: RunReport): RunReportInput {
     tests: report.tests,
     aggregates: {
       endpoints: endpoints.stats,
-      custom: custom.stats,
       origins: report.origins,
       testBreakdown: breakdownStats(report),
     },
     evaluation: {
       ...report.evaluation,
-      perKey: { api: endpoints.perKey, custom: custom.perKey },
+      perKey: { api: endpoints.perKey },
       thresholdFiles: report.thresholdFiles,
     },
     warnings: report.warnings,
@@ -170,7 +168,6 @@ describe('buildRunReport (02, chapter 9.1)', () => {
       { origin: 'https://a.example', label: '', requestCount: 2 },
     ];
     input.evaluation.thresholdFiles = [
-      { kind: 'custom', path: 'c.json', status: 'missing', generated: null, unseenKeys: [] },
       {
         kind: 'api',
         path: 'a.json',
@@ -190,7 +187,7 @@ describe('buildRunReport (02, chapter 9.1)', () => {
     expect(agg?.topTests.map((t) => t.title)).toEqual(['z', 'a', 'b']);
     expect(agg?.samples.durations).toEqual([1, 2, 3]);
     expect(built.origins.map((o) => o.origin)).toEqual(['https://a.example', 'https://b.example']);
-    expect(built.thresholdFiles.map((f) => f.kind)).toEqual(['api', 'custom']);
+    expect(built.thresholdFiles.map((f) => f.kind)).toEqual(['api']);
     expect(built.thresholdFiles[0]?.unseenKeys).toEqual(['B', 'a', 'b']);
   });
 

@@ -4,8 +4,8 @@
   "input": {
     "entries": {
       "GET /api/a": {
-        "t": 400,
-        "percentile": 900
+        "percentile": 900,
+        "t": 400
       },
       "GET /api/b": {
         "percentile": 900
@@ -13,7 +13,7 @@
     },
     "generated": null,
     "kind": "api",
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "ok": true

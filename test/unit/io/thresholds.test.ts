@@ -18,17 +18,16 @@ afterEach(() => {
 });
 
 const file = (kind: string, entries: object = {}): string =>
-  JSON.stringify({ schemaVersion: 1, kind, generated: null, entries });
+  JSON.stringify({ schemaVersion: 2, kind, generated: null, entries });
 
 describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
   test('file names follow 02 chapter 8.1 and thresholds.dir is relative to configDir', () => {
     expect(thresholdsFileName('pw-perf-thresholds', 'api', null)).toBe(
       'pw-perf-thresholds.api.json',
     );
-    expect(thresholdsFileName('p', 'custom', 'qa')).toBe('p.custom.qa.json');
+    expect(thresholdsFileName('p', 'api', 'qa')).toBe('p.api.qa.json');
     const paths = thresholdsFilePaths({ configDir: dir, dir: 'perf', filePrefix: 'p', env: 'qa' });
-    expect(paths.api).toBe(join(dir, 'perf', 'p.api.qa.json'));
-    expect(paths.custom).toBe(join(dir, 'perf', 'p.custom.qa.json'));
+    expect(paths).toEqual({ api: join(dir, 'perf', 'p.api.qa.json') });
   });
 
   test('loaded, missing and invalid files with paths relative to configDir', async () => {
@@ -41,23 +40,40 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
       env: null,
     });
     expect(loaded.api).toMatchObject({ status: 'loaded', kind: 'api', path: 'perf/p.api.json' });
-    expect(loaded.custom).toEqual({
-      status: 'missing',
-      kind: 'custom',
-      path: 'perf/p.custom.json',
-      envlessFileExists: false,
-    });
 
-    writeFileSync(join(dir, 'perf', 'p.custom.json'), file('api'));
+    writeFileSync(join(dir, 'perf', 'p.api.json'), '{');
     const invalid = await loadThresholds({
       configDir: dir,
       dir: 'perf',
       filePrefix: 'p',
       env: null,
     });
-    expect(invalid.custom).toMatchObject({ status: 'invalid', path: 'perf/p.custom.json' });
-    if (invalid.custom.status !== 'invalid') throw new Error('unreachable');
-    expect(invalid.custom.issues[0]?.code).toBe('THRESHOLDS_KIND_MISMATCH');
+    expect(invalid.api).toMatchObject({ status: 'invalid', path: 'perf/p.api.json' });
+    if (invalid.api.status !== 'invalid') throw new Error('unreachable');
+    expect(invalid.api.issues[0]?.code).toBe('SCHEMA_INVALID_JSON');
+
+    rmSync(join(dir, 'perf', 'p.api.json'));
+    const missing = await loadThresholds({
+      configDir: dir,
+      dir: 'perf',
+      filePrefix: 'p',
+      env: null,
+    });
+    expect(missing).toEqual({
+      api: { status: 'missing', kind: 'api', path: 'perf/p.api.json', envlessFileExists: false },
+    });
+  });
+
+  test('09-AC-23 an existing file of the removed custom kind is not read (D-32)', async () => {
+    writeFileSync(join(dir, 'pw-perf-thresholds.custom.json'), file('custom', { flow: {} }));
+    const loaded = await loadThresholds({
+      configDir: dir,
+      dir: '.',
+      filePrefix: 'pw-perf-thresholds',
+      env: null,
+    });
+    expect(Object.keys(loaded)).toEqual(['api']);
+    expect(loaded.api.status).toBe('missing');
   });
 
   test('09-AC-16 with an environment label the file without the label is not used', async () => {
@@ -74,7 +90,6 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
       path: 'pw-perf-thresholds.api.qa.json',
       envlessFileExists: true,
     });
-    expect(loaded.custom).toMatchObject({ status: 'missing', envlessFileExists: false });
   });
 
   test('a path that cannot be read is invalid, never a fallback to defaults', async () => {

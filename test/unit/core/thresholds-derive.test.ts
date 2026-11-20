@@ -23,7 +23,6 @@ import type {
 import { GOLDEN_DIR } from '../../contract/golden.ts';
 import { options } from './evaluate-helpers.ts';
 import {
-  absent,
   cfg,
   deriveOptions,
   existing,
@@ -149,15 +148,6 @@ describe('derived entry formulas (10, chapter 5)', () => {
     expect(t({ p50: 1900, p90: 2500, p95: 2600, p99: 2700 })).toBe(2000);
     expect(t({ p50: 2000, p90: 2500, p95: 2600, p99: 2700 })).toBe(2000);
     expect(t({ p50: 2000.1, p90: 2500, p95: 2600, p99: 2700 })).toBeNull();
-  });
-
-  test('custom measurements use checks.slowShare.t.custom', () => {
-    const stats = reportAggregate({
-      durations: [[30, 3000]],
-      percentiles: { p50: 3000, p90: 3500, p95: 3600, p99: 3700 },
-    });
-    expect(deriveEntry(stats, 'custom', cfg()).t).toBe(3500);
-    expect(deriveEntry(stats, 'api', cfg()).t).toBeNull();
   });
 
   test('small sample margins apply below thresholds.smallSampleN only', () => {
@@ -304,7 +294,7 @@ describe('derived entry formulas (10, chapter 5)', () => {
       for (const config of configs) {
         const level = config.checks.time.percentile.level;
         const stats = reportAggregate(randomSpec(seed), level);
-        for (const kind of ['api', 'custom'] as const) {
+        for (const kind of ['api'] as const) {
           const e = deriveEntry(stats, kind, config);
           expect(e.median).toBeLessThanOrEqual(e.percentile);
           expect(e.percentile).toBeLessThan(e.p99);
@@ -320,8 +310,8 @@ describe('derived entry formulas (10, chapter 5)', () => {
     const d = derive({ endpoints: { [KEY]: { durations: [[200, 2600]] } } });
     expect(entryOf(d)).toMatchObject({ t: null, minApdex: null, maxWilson: null });
     const evaluation = evaluate(
-      { endpoints: report.endpoints, custom: report.custom },
-      existing(file('api', content(d).entries), file('custom')),
+      { endpoints: report.endpoints },
+      existing(file('api', content(d).entries)),
       cfg(),
       options(),
     );
@@ -353,8 +343,7 @@ function goldenReports(): { name: string; report: RunReport }[] {
   const random = Array.from({ length: 50 }, (_, i) => ({
     name: `random-${i + 1}`,
     report: runReport({
-      endpoints: { a: randomSpec(i + 1), b: randomSpec(i + 101) },
-      custom: { c: randomSpec(i + 201) },
+      endpoints: { a: randomSpec(i + 1), b: randomSpec(i + 101), c: randomSpec(i + 201) },
     }),
   }));
   return [...reports, ...derived, ...random];
@@ -376,9 +365,9 @@ describe('self-consistency (10-REQ-05)', () => {
     let evaluated = 0;
     for (const { name, report } of goldenReports()) {
       for (const config of [cfg(), allOn]) {
-        const entries: Record<Kind, Record<string, ThresholdsEntry>> = { api: {}, custom: {} };
-        for (const kind of ['api', 'custom'] as const) {
-          const aggregates = kind === 'api' ? report.endpoints : report.custom;
+        const entries: Record<Kind, Record<string, ThresholdsEntry>> = { api: {} };
+        for (const kind of ['api'] as const) {
+          const aggregates = report.endpoints;
           for (const [key, stats] of Object.entries(aggregates)) {
             if (stats.stats === null) continue;
             const entry = deriveEntry(stats, kind, config);
@@ -387,12 +376,12 @@ describe('self-consistency (10-REQ-05)', () => {
           }
         }
         const evaluation = evaluate(
-          { endpoints: report.endpoints, custom: report.custom },
-          existing(file('api', entries.api), file('custom', entries.custom)),
+          { endpoints: report.endpoints },
+          existing(file('api', entries.api)),
           config,
           options(),
         );
-        for (const kind of ['api', 'custom'] as const) {
+        for (const kind of ['api'] as const) {
           for (const [key, e] of Object.entries(evaluation.perKey[kind])) {
             // Keys without a derived entry (no successful samples) use default thresholds.
             if (entries[kind][key] === undefined) continue;
@@ -433,7 +422,6 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
   test('first derivation adds every key with enough samples and writes the generated block', () => {
     const d = derive({
       endpoints: { [KEY]: EXAMPLE_1, 'GET /api/rare': { durations: [[4, 100]] } },
-      custom: { 'checkout flow': { durations: [[10, 3000]] } },
       projects: [
         { name: 'webkit', role: 'measured', browserName: 'webkit', repeatEach: 10, retries: 0 },
         { name: 'chromium', role: 'measured', browserName: 'chromium', repeatEach: 10, retries: 0 },
@@ -447,10 +435,7 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
         { name: 'setup', role: 'dependency', browserName: 'firefox', repeatEach: 1, retries: 0 },
       ],
     });
-    expect(d.files.map((f) => [f.kind, f.changed])).toEqual([
-      ['api', true],
-      ['custom', true],
-    ]);
+    expect(d.files.map((f) => [f.kind, f.changed])).toEqual([['api', true]]);
     const api = content(d);
     expect(Object.keys(api.entries)).toEqual([KEY]);
     expect(api.generated).toEqual(
@@ -461,11 +446,7 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
         browsers: ['chromium', 'webkit'],
       }),
     );
-    expect(content(d, 'custom').generated?.derivation.t).toEqual({
-      min: 1000,
-      max: 10000,
-      medianFactor: 2,
-    });
+    expect(api.generated?.derivation.t).toEqual({ min: 500, max: 2000, medianFactor: 2 });
     for (const f of d.files) {
       const parsed = parseThresholdsFile(stringifyStable(f.content), 'x', f.kind);
       expect(parsed.ok).toBe(true);
@@ -546,8 +527,7 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
 
   test('a report without any key with enough samples gives THRESHOLDS_NOTHING_TO_DERIVE', () => {
     const report = runReport({
-      endpoints: { a: { durations: [[4, 100]] }, b: { errors: 20 } },
-      custom: { c: { durations: [[1, 100]] } },
+      endpoints: { a: { durations: [[4, 100]] }, b: { errors: 20 }, c: { durations: [[1, 100]] } },
     });
     expect(refused(report).map((i) => i.code)).toEqual(['THRESHOLDS_NOTHING_TO_DERIVE']);
   });
@@ -580,14 +560,14 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
   });
 
   test('an invalid existing thresholds file stops the derivation of every kind with its schema code', () => {
-    const files = existing(absent('api'), {
+    const files = existing({
       status: 'invalid',
-      kind: 'custom',
-      path: 'pw-perf-thresholds.custom.json',
+      kind: 'api',
+      path: 'pw-perf-thresholds.api.json',
       issues: [
         {
           code: 'SCHEMA_INVALID_JSON',
-          source: 'pw-perf-thresholds.custom.json',
+          source: 'pw-perf-thresholds.api.json',
           message: 'bad',
           problems: [],
         },
@@ -786,18 +766,6 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
       note: old.note,
       until: '2026-11-01',
     });
-  });
-
-  test('a kind without any key with enough samples is not written; THRESHOLDS_KIND_SKIPPED when it has keys', () => {
-    const d = derive(
-      { ...SPEC, custom: { flow: { durations: [[2, 100]] } } },
-      existing(absent('api'), file('custom', { flow: { median: 1 } })),
-    );
-    expect(d.files[1]).toEqual({ kind: 'custom', content: null, changed: false });
-    expect(codes(d)).toEqual(['THRESHOLDS_KIND_SKIPPED']);
-    const none = derive(SPEC);
-    expect(none.files[1]).toEqual({ kind: 'custom', content: null, changed: false });
-    expect(codes(none)).toEqual([]);
   });
 
   test('warnings of the source: env mismatch, failed tests, test mode, manual file', () => {

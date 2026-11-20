@@ -95,7 +95,7 @@ describe('console summary golden files', () => {
     const text = formatSummary(report('failed-run'), { width: 120, color: false });
     const markers = text
       .split('\n')
-      .filter((l) => /^ {2}[✖!] (?:api|custom) /u.test(l))
+      .filter((l) => /^ {2}[✖!] api /u.test(l))
       .map((l) => l.slice(2, 3));
     expect(markers.indexOf('!')).toBeGreaterThan(markers.lastIndexOf('✖'));
     const many = formatSummary(report('thresholds-mode-warn-only'), {
@@ -147,7 +147,7 @@ describe('console summary golden files', () => {
     expect(row('GET /api/health')).toMatch(new RegExp(`^${ESC}\\[31m  ✖ api `, 'u'));
     expect(row('file  MUTED')).toMatch(new RegExp(`^${ESC}\\[33m  ! api `, 'u'));
     // Verdict badge: bold on a colored background.
-    expect(colored).toContain(`${ESC}[1;97;41m ✖ FAILED ${ESC}[0m 6 blocking violations`);
+    expect(colored).toContain(`${ESC}[1;97;41m ✖ FAILED ${ESC}[0m 5 blocking violations`);
     const errors = formatSummary(report('tool-error'), { width: 120, color: true });
     expect(errors).toContain(`${ESC}[1mErrors:${ESC}[0m`);
     expect(errors).toContain(`${ESC}[31m✖ SCHEMA_INVALID_JSON${ESC}[0m: `);
@@ -189,7 +189,8 @@ describe('console summary golden files', () => {
     expect(failed).toContain(
       'Endpoints: 9 keys · 7 from file · 1 on default thresholds · 1 skipped (too few samples) · 1 checked by median only (few samples) · 3 file entries not seen\n',
     );
-    expect(failed).toContain('Custom:    2 keys · 1 from file · 1 on default thresholds\n');
+    // Only endpoints have a counter line since custom measurements were removed (D-32).
+    expect(failed).not.toContain('Custom:');
     expect(formatSummary(report('tool-error'), { width: 120, color: false })).toContain(
       'Endpoints: 1 key · 1 not evaluated\n',
     );

@@ -20,13 +20,14 @@ import { isComplete, loosenedMuch, withinHysteresis } from './entries.ts';
 import { deriveEntry, derivationSettings, isDerivable, minDeriveSamples } from './formulas.ts';
 import type { DeriveOptions, DerivedFile, DerivedThresholds } from './types.ts';
 
-const KINDS: readonly Kind[] = ['api', 'custom'];
+const KINDS: readonly Kind[] = ['api'];
 
-const KIND_NOUN: Record<Kind, string> = { api: 'endpoint', custom: 'custom measurement' };
+const KIND_NOUN: Record<Kind, string> = { api: 'endpoint' };
 
 /** Aggregates of one kind in the report. */
 export function aggregatesOf(report: RunReport, kind: Kind): Record<string, AggregateStats> {
-  return kind === 'api' ? report.endpoints : report.custom;
+  const byKind: Record<Kind, Record<string, AggregateStats>> = { api: report.endpoints };
+  return byKind[kind];
 }
 
 /** Fingerprint of the source report compared with `generated` (09-REQ-04, 10-REQ-11). */
@@ -290,8 +291,9 @@ export function deriveThresholds(
   opts: DeriveOptions,
 ): Result<DerivedThresholds, Issue> {
   for (const kind of KINDS) {
-    if (existing[kind].kind !== kind) {
-      throw new Error(`deriveThresholds: existing.${kind} has kind "${existing[kind].kind}"`);
+    const found: string = existing[kind].kind;
+    if (found !== kind) {
+      throw new Error(`deriveThresholds: existing.${kind} has kind "${found}"`);
     }
   }
   const refused = refusal(report, cfg, existing);

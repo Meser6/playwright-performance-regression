@@ -106,7 +106,6 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
     const none = noThresholds();
     for (const agg of Object.values(none.endpoints)) agg.evaluation.result = 'not-evaluated';
     none.evaluation.counts.api.fromDefaults = 0;
-    none.evaluation.counts.custom.fromDefaults = 0;
     expect(banner(none).sentence).toBe(
       'No key was evaluated (too few samples or no applicable rules).',
     );
@@ -130,7 +129,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
     const requests = endpoints.reduce((n, a) => n + a.count, 0);
     const errors = endpoints.reduce((n, a) => n + a.errorCount, 0);
     expect(tiles).toEqual([
-      ['Endpoints', '2', '+ 1 custom'],
+      ['Endpoints', String(endpoints.length), ''],
       ['Violations', '1', '1 blocking · 1 muted'],
       ['Error rate', formatPercent(errors / requests), `${errors} of ${requests} requests`],
       ['Run duration', '1 h 02 min', '2026-11-18 10:00:00 UTC'],
@@ -144,19 +143,17 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
 });
 
 describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
-  /** Endpoints and custom keys with ties in every ranking. */
+  /** Endpoint keys with ties in every ranking. */
   function rankingReport(): RunReport {
     const report = fullRun();
     const api = report.endpoints['GET /api/tickets/:id'] as RunReport['endpoints'][string];
-    const custom = report.custom['checkout:load-cart'] as RunReport['custom'][string];
     report.endpoints['GET /api/b'] = structuredClone(api);
     report.endpoints['GET /api/a'] = structuredClone(api);
     const passing = structuredClone(api);
     passing.evaluation.muted = null;
     passing.evaluation.checks = passing.evaluation.checks.map((c) => ({ ...c, usage: 0.95 }));
-    report.custom['render:b'] = structuredClone(passing);
     report.endpoints['GET /api/near'] = passing;
-    report.custom['render:a'] = structuredClone(custom);
+    report.endpoints['GET /api/near-2'] = structuredClone(passing);
     return report;
   }
 
@@ -171,10 +168,7 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     const report = rankingReport();
     const html = page(report);
     const data = toHtmlReportData(report);
-    const all = [
-      ...Object.entries(data.endpoints).map(([key, a]) => ({ kind: 'api', key, a })),
-      ...Object.entries(data.custom).map(([key, a]) => ({ kind: 'custom', key, a })),
-    ];
+    const all = [...Object.entries(data.endpoints).map(([key, a]) => ({ kind: 'api', key, a }))];
     const tie = (x: (typeof all)[number], y: (typeof all)[number]) =>
       (x.kind === y.kind ? 0 : x.kind === 'api' ? -1 : 1) ||
       (x.key < y.key ? -1 : x.key > y.key ? 1 : 0);
@@ -202,14 +196,9 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
 
   test('11-AC-19 a ranking holds the first 10 of every kind; entries after the first 10 are hidden', () => {
     const report = largeReport(15, 10);
-    const cart = fullRun().custom['checkout:load-cart'] as RunReport['custom'][string];
-    for (let i = 0; i < 12; i++)
-      report.custom[`render:${String(i).padStart(2, '0')}`] = structuredClone(cart);
     const rows = ranking(page(report), 'called');
     expect(rows.filter(([k]) => k.startsWith('api:'))).toHaveLength(10);
-    expect(rows.filter(([k]) => k.startsWith('custom:'))).toHaveLength(10);
     expect(rows.filter(([, hidden]) => !hidden)).toHaveLength(10);
-    expect(rows.slice(10).every(([, hidden]) => hidden)).toBe(true);
   });
 
   test('11-AC-18 Closest to limit lists only passing keys, by headroom descending, ties by kind and key', () => {
@@ -218,7 +207,7 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     const rows = ranking(html, 'closest').map((r) => r[0]);
     expect(rows).toEqual([
       'api:GET /api/near',
-      'custom:render:b',
+      'api:GET /api/near-2',
       'api:GET /api/a',
       'api:GET /api/b',
       'api:GET /api/tickets/:id',

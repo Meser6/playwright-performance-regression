@@ -61,7 +61,7 @@ function sha256(text: string): string {
 
 function withoutDurations(report: RunReport): unknown {
   const copy = JSON.parse(JSON.stringify(report)) as Record<string, Record<string, unknown>>;
-  for (const kind of ['endpoints', 'custom']) {
+  for (const kind of ['endpoints']) {
     for (const agg of Object.values(copy[kind] ?? {}) as { samples: Record<string, unknown> }[]) {
       const durations = agg.samples['durations'] as number[];
       agg.samples = { retained: durations.length, sampled: agg.samples['sampled'] };
@@ -171,7 +171,7 @@ describe('renderHtmlReport', () => {
     const report = markupCase();
     const order = defaultOrder(toHtmlReportData(report).endpoints, 'p95');
     const page = renderHtmlReport(report);
-    const table = page.slice(page.indexOf('id="table-api"'), page.indexOf('id="tab-custom"'));
+    const table = page.slice(page.indexOf('id="table-api"'), page.indexOf('id="tab-tests"'));
     const rendered = [
       ...table.matchAll(
         /<tbody data-g="(\d)".*?<details id="key-api-(\d+)".*?<code class="fk">(.*?)<\/code>/gsu,
@@ -203,9 +203,9 @@ describe('renderHtmlReport', () => {
     expect(row).toContain(
       '<td>0 / 5</td><td>5</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>',
     );
-    const custom = rowOf(page, 'checkout:load-cart');
-    expect(custom).toContain('not evaluated');
-    expect(custom).toContain('<small>too few samples</small>');
+    const rare = rowOf(renderHtmlReport(markupCase()), 'GET /api/rare');
+    expect(rare).toContain('not evaluated');
+    expect(rare).toContain('<small>too few samples</small>');
   });
 
   test('11-REQ-21 report values are escaped; 11-REQ-22 raw URLs are text, never links', () => {
@@ -297,7 +297,7 @@ describe('renderHtmlReport', () => {
         '|API|2026-12-31|active|yes|Depends on report service, tracked in backlog|',
       ],
     ]);
-    const active = report.evaluation.counts.api.muted + report.evaluation.counts.custom.muted;
+    const active = report.evaluation.counts.api.muted;
     expect(section).toContain(`<p>${active} active muting, 1 expired muting.</p>`);
     expect(page).toContain('>mute expired<');
     expect(page).toContain('>muted until 2026-12-31<');
@@ -325,10 +325,9 @@ describe('renderHtmlReport', () => {
 
   test('11 chapter 12: an empty run shows a message instead of tables and rankings', () => {
     const page = renderHtmlReport(readCase(join(RUN_REPORTS, 'empty-run.json')).input);
-    expect(page).toContain('No requests or custom measurements were recorded.');
+    expect(page).toContain('No requests were recorded.');
     expect(page).not.toContain('<table class="keys"');
     expect(page).not.toContain('id="rank-h"');
-    expect(page).not.toContain('id="tab-custom"');
     expect(page).toContain('No test made backend requests in measured projects.');
   });
 

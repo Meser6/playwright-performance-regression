@@ -10,7 +10,7 @@
         "GET /api/reports/:id/export": {"durations":[[11,2600]],"errors":1,"percentiles":{"p50":2600,"p90":3900,"p95":4100,"p99":4300}}
       }
     },
-    "existing": {"api":null,"custom":null}
+    "existing": {"api":null}
   },
   "expected": {
     "ok": true,
@@ -18,7 +18,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -50,8 +50,7 @@
           }
         },
         "changed": true
-      },
-      {"kind":"custom","content":null,"changed":false}
+      }
     ],
     "warnings": []
   }

@@ -34,11 +34,10 @@ interface TestData {
 
 interface ReportData {
   endpoints: Record<string, AggregateData>;
-  custom: Record<string, AggregateData>;
   testBreakdown: { tests: TestData[] } | null;
 }
 
-type Kind = 'api' | 'custom';
+type Kind = 'api';
 type Direction = 'ascending' | 'descending';
 
 const doc = document;
@@ -46,10 +45,9 @@ const dataText = doc.getElementById('report-data')?.textContent ?? '{}';
 const data = JSON.parse(dataText) as Partial<ReportData>;
 const aggregates: Record<Kind, Record<string, AggregateData>> = {
   api: data.endpoints ?? {},
-  custom: data.custom ?? {},
 };
 const testData: TestData[] = data.testBreakdown?.tests ?? [];
-const KIND_TAB: Record<Kind, string> = { api: 'endpoints', custom: 'custom' };
+const KIND_TAB: Record<Kind, string> = { api: 'endpoints' };
 
 doc.documentElement.classList.add('js');
 
@@ -123,12 +121,17 @@ if (tabList !== null) {
 
 const rows: Record<Kind, Map<string, HTMLTableSectionElement>> = {
   api: new Map(),
-  custom: new Map(),
 };
+
+/** Kind of a key table from its data-kind attribute. */
+function tableKind(table: HTMLTableElement | null | undefined): Kind {
+  const kind = table?.dataset['kind'] ?? 'api';
+  return own(KIND_TAB, kind) ? (kind as Kind) : 'api';
+}
 /** The full key of a row: the text of its details header (`.fk`), compared exactly. */
 const keyOfRow = new Map<HTMLTableSectionElement, string>();
 for (const table of all<HTMLTableElement>('table.keys')) {
-  const kind: Kind = table.dataset['kind'] === 'custom' ? 'custom' : 'api';
+  const kind = tableKind(table);
   for (const body of Array.from(table.tBodies)) {
     const key = body.querySelector('.fk')?.textContent ?? '';
     keyOfRow.set(body, key);
@@ -137,7 +140,7 @@ for (const table of all<HTMLTableElement>('table.keys')) {
 }
 
 function kindOf(body: HTMLTableSectionElement): Kind {
-  return body.closest('table')?.dataset['kind'] === 'custom' ? 'custom' : 'api';
+  return tableKind(body.closest('table'));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -230,7 +233,7 @@ function route(hash: string, from: HTMLElement | null = null): void {
     return;
   }
   let body: HTMLTableSectionElement | undefined;
-  match = /^#key=(api|request|custom):(.*)$/su.exec(hash);
+  match = /^#key=(api|request):(.*)$/su.exec(hash);
   if (match !== null) {
     let key: string | null;
     try {
@@ -241,7 +244,7 @@ function route(hash: string, from: HTMLElement | null = null): void {
     const kind = match[1] as Kind;
     if (key !== null && own(rows, kind)) body = rows[kind].get(key);
   } else {
-    match = /^#key-(api|custom)-(\d+)$/u.exec(hash);
+    match = /^#key-api-(\d+)$/u.exec(hash);
     if (match === null) return;
     body = doc.getElementById(hash.slice(1))?.closest('tbody') ?? undefined;
   }
@@ -446,7 +449,7 @@ function showViolations(): void {
 }
 
 for (const table of all<HTMLTableElement>('table.keys')) {
-  const kind: Kind = table.dataset['kind'] === 'custom' ? 'custom' : 'api';
+  const kind = tableKind(table);
   const level = table.dataset['level'] ?? 'p95';
   const bodies = Array.from(table.tBodies);
   const items = bodies.map((body) => {

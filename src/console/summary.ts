@@ -27,7 +27,16 @@ export const MAX_SLOWEST_LINES = 5;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
 
-const KINDS: readonly Kind[] = ['api', 'custom'];
+const KINDS: readonly Kind[] = ['api'];
+/** Label of the counter line of each kind (09-REQ-28). */
+const KIND_LABEL: Record<Kind, string> = { api: 'Endpoints:' };
+const ALWAYS_SHOWN: ReadonlySet<Kind> = new Set<Kind>(['api']);
+
+/** Aggregates of one kind in the report. */
+function aggregatesOf(report: RunReport, kind: Kind): RunReport['endpoints'] {
+  const byKind: Record<Kind, RunReport['endpoints']> = { api: report.endpoints };
+  return byKind[kind];
+}
 const RULE_ORDER: readonly Check['rule'][] = [
   'median',
   'percentile',
@@ -72,7 +81,7 @@ interface Violation {
 function violations(report: RunReport): Violation[] {
   const list: Violation[] = [];
   for (const kind of KINDS) {
-    const aggregates = kind === 'api' ? report.endpoints : report.custom;
+    const aggregates = aggregatesOf(report, kind);
     for (const [key, aggregate] of Object.entries(aggregates)) {
       for (const check of aggregate.evaluation.checks) {
         if (!check.passed) {
@@ -150,8 +159,10 @@ function label(text: string, paint: Paint): string {
 /** Counters per kind (09-REQ-28): the number of keys, then only the non-zero counters. */
 function counterLines(report: RunReport, paint: Paint): string[] {
   const counts = report.evaluation.counts;
+  // Endpoints always; another kind only when it has keys or unseen file entries.
   const shown = KINDS.filter(
-    (kind) => kind === 'api' || counts.custom.keys > 0 || counts.custom.unseenThresholdEntries > 0,
+    (kind) =>
+      ALWAYS_SHOWN.has(kind) || counts[kind].keys > 0 || counts[kind].unseenThresholdEntries > 0,
   );
   const percentileOff = report.config.checks?.time?.percentile?.enabled === false;
   const medianOnly = `checked by median only (${percentileOff ? 'percentile rule off' : 'few samples'})`;
@@ -169,14 +180,14 @@ function counterLines(report: RunReport, paint: Paint): string[] {
       const value = c.value(kind);
       if (value !== 0) cells.push(`${value} ${c.text}`);
     }
-    return label(kind === 'api' ? 'Endpoints:' : 'Custom:', paint) + cells.join(' · ');
+    return label(KIND_LABEL[kind], paint) + cells.join(' · ');
   });
 }
 
 function mutedLines(report: RunReport, paint: Paint): string[] {
   const lines: string[] = [];
   for (const kind of KINDS) {
-    const aggregates = kind === 'api' ? report.endpoints : report.custom;
+    const aggregates = aggregatesOf(report, kind);
     for (const key of Object.keys(aggregates).sort(compareText)) {
       const muted = aggregates[key]?.evaluation.muted;
       if (muted === undefined || muted === null || muted.expired) continue;
@@ -290,7 +301,7 @@ function slowestLines(report: RunReport, list: Violation[]): string[] {
     const id = `${v.kind}\u0000${v.key}`;
     if (seen.has(id)) continue;
     seen.add(id);
-    const aggregate = (v.kind === 'api' ? report.endpoints : report.custom)[v.key];
+    const aggregate = aggregatesOf(report, v.kind)[v.key];
     const slowest = aggregate?.slowest[0];
     if (slowest === undefined) continue;
     const t = slowest.test;
@@ -324,7 +335,7 @@ function errorCauses(report: RunReport): string[] {
 function resultLine(report: RunReport, paint: Paint): string {
   const counts = report.evaluation.counts;
   const sum = (field: 'violations' | 'blockingViolations' | 'keys' | 'notEvaluated'): number =>
-    counts.api[field] + counts.custom[field];
+    KINDS.reduce((total, kind) => total + counts[kind][field], 0);
   const gate = report.config.gate;
   const policy =
     gate?.warnOnly === true

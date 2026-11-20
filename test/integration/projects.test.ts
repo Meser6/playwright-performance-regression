@@ -45,7 +45,7 @@ describe('import-swap', () => {
   });
 
   test(
-    '03-AC-08 12-AC-03 swapping the imports to the package test measures requests and custom timings',
+    '03-AC-08 12-AC-03 swapping the imports to the package test measures requests',
     async () => {
       const run = await harness.run(dir, { env: PERF });
       expectStatus(run, 0);
@@ -60,7 +60,7 @@ describe('import-swap', () => {
         'GET /page',
       ]);
       expect(sampleCount(run, 'GET /api/products')).toBe(2);
-      expect(run.report?.custom.search?.count).toBe(2);
+      expect(sampleCount(run, 'GET /api/search?q')).toBe(2);
     },
     RUN_TIMEOUT,
   );
