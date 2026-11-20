@@ -57,6 +57,8 @@ jobs:
     name: CI
     needs: prepare
     uses: ./.github/workflows/ci.yml
+    with:
+      full: true
 
   perf:
     name: Performance
