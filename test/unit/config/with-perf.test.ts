@@ -11,6 +11,10 @@ const EMPTY: PlaywrightTestConfig = {};
 
 function clearRegistry(): void {
   Reflect.deleteProperty(globalThis, REGISTRY_KEY);
+  Reflect.deleteProperty(
+    globalThis,
+    Symbol.for('playwright-performance-regression.mainProcessSetup'),
+  );
 }
 
 function thrown(run: () => unknown): ConfigError {
@@ -28,6 +32,9 @@ beforeEach(() => {
   for (const name of ['PW_PERF_MODE', 'PW_PERF_REPEAT', 'PW_PERF_ENV', 'PW_PERF_PRUNE', 'CI']) {
     vi.stubEnv(name, undefined);
   }
+  // As in a worker: the main-process setup of the environment mode is tested on its own below.
+  vi.stubEnv('TEST_WORKER_INDEX', '0');
+  vi.stubEnv('PW_PERF_RUN_ID', undefined);
 });
 
 afterEach(() => {
@@ -184,5 +191,58 @@ describe('the config entry point', () => {
     });
     const typed = defineConfig<{ account: string }>({ use: { account: 'a' } });
     expectTypeOf(withPerf(typed)).toEqualTypeOf(typed);
+  });
+});
+
+describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
+  const argv = process.argv;
+  beforeEach(() => {
+    vi.stubEnv('PW_PERF_MODE', 'test');
+    vi.stubEnv('TEST_WORKER_INDEX', undefined);
+  });
+  afterEach(() => {
+    process.argv = argv;
+  });
+
+  test('04-AC-40 sets PW_PERF_RUN_ID for the workers once, and not through the CLI', () => {
+    process.argv = ['node', 'playwright', 'test'];
+    withPerf(EMPTY);
+    const runId = process.env.PW_PERF_RUN_ID;
+    expect(runId).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-[0-9a-f]{4}$/u);
+    expect(getRegistered()?.mode.runId).toBe(runId);
+    withPerf(EMPTY);
+    expect(process.env.PW_PERF_RUN_ID).toBe(runId);
+
+    clearRegistry();
+    vi.stubEnv('PW_PERF_RUN_ID', undefined);
+    vi.stubEnv('PW_PERF_OUTCOME_FILE', '/tmp/x.json');
+    withPerf(EMPTY);
+    expect(process.env.PW_PERF_RUN_ID).toBeUndefined();
+  });
+
+  test('04-AC-40 RUN_REPORTER_FLAG on stderr only, RUN_UNSUPPORTED_FLAG also in the report', () => {
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      process.argv = ['node', 'playwright', 'test', '--reporter=junit', '--ui'];
+      withPerf(EMPTY);
+      const text = write.mock.calls.map((c) => String(c[0])).join('');
+      expect(text).toContain('RUN_REPORTER_FLAG');
+      expect(text).toContain('RUN_UNSUPPORTED_FLAG');
+      expect(getRegistered()?.warnings.map((w) => w.code)).toEqual(['RUN_UNSUPPORTED_FLAG']);
+
+      clearRegistry();
+      write.mockClear();
+      process.argv = [
+        'node',
+        'playwright',
+        'test',
+        '--reporter',
+        'line,playwright-performance-regression/reporter',
+      ];
+      withPerf(EMPTY);
+      expect(write.mock.calls.map((c) => String(c[0])).join('')).not.toContain('RUN_REPORTER_FLAG');
+    } finally {
+      write.mockRestore();
+    }
   });
 });

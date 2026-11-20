@@ -1,6 +1,6 @@
 // The package reporter with an explicit --reporter flag (04-REQ-15, V-05). Pure.
 import type { CliIssue, Result } from '../core/types/index.ts';
-import { scanPlaywrightArgs } from './playwright-args.ts';
+import { scanPlaywrightArgs } from '../mode/playwright-args.ts';
 
 /**
  * Appends the package reporter to the value of the LAST --reporter flag: Playwright uses only the

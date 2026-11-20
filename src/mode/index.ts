@@ -160,3 +160,10 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
 export function isCiEnv(env: ModeEnv): boolean {
   return read(env, 'CI') !== undefined;
 }
+
+export { argvWarnings } from './argv-warnings.ts';
+export type { ArgvWarnings } from './argv-warnings.ts';
+export { testArgsFromArgv, testFilters } from './playwright-args.ts';
+
+/** Name of the run id variable, for the main process of the environment mode (04-REQ-60). */
+export const RUN_ID_ENV = RUN_ID;

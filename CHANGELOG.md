@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Environment mode as the recommended way to run: `PW_PERF_MODE=test npm run e2e` (or `thresholds`)
+  runs your own test command in perf mode. The reporter writes the exact result to
+  `pw-perf-results/outcome.json` (exit code 0, 2 or 3; the old file is removed when the run starts)
+  and prints an `Outcome:` line; Playwright keeps its own exit code. `withPerf()` gives the workers
+  the run id and warns about `--reporter` (`RUN_REPORTER_FLAG`) and `--ui`/`--debug`
+  (`RUN_UNSUPPORTED_FLAG`); `PW_PERF_PRUNE=1` with a test filter writes the files without pruning
+  (`RUN_PRUNE_SKIPPED`). See the new section of `docs/cli.md`.
+
 - Step timings: with `measure: { steps: true }` the durations of the existing `test.step` blocks
   become keys of kind `step` (for example `login › submit`), checked and derived like endpoints,
   with their own thresholds file `pw-perf-thresholds.steps.json`, a `Steps:` line in the console

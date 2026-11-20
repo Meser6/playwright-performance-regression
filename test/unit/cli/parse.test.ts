@@ -6,7 +6,7 @@ import {
   playwrightConfigArg,
   scanPlaywrightArgs,
   testFilters,
-} from '../../../src/cli/playwright-args.ts';
+} from '../../../src/mode/playwright-args.ts';
 
 function parsed(argv: string[]): ParsedCommand {
   const result = parseArgs(argv);

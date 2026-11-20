@@ -2,6 +2,7 @@
 // package name; errors and warnings with their code and a hint. Colors by the rules of
 // 04-REQ-44 (colorEnabled). Pure.
 import { colorEnabled, paint as paintText } from '../console/color.ts';
+import { TESTS_TEXT, performanceText } from '../console/outcome-line.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome } from '../core/types/index.ts';
 
@@ -44,33 +45,6 @@ export function formatIssues(
   opts: OutputStyle,
 ): string {
   return issues.map((issue) => formatIssue(issue, level, opts)).join('');
-}
-
-const TESTS_TEXT: Record<Outcome['tests']['status'], string> = {
-  passed: 'tests passed',
-  failed: 'tests failed',
-  timedout: 'tests timed out',
-  interrupted: 'tests interrupted',
-};
-
-const EVALUATION_TEXT: Record<Outcome['evaluation']['status'], string> = {
-  passed: 'performance passed',
-  warned: 'performance passed with warnings',
-  failed: 'performance failed',
-  error: 'performance not evaluated',
-};
-
-/** The performance part of the result line (04-REQ-30). */
-function performanceText(outcome: Outcome): string {
-  if (outcome.mode === 'thresholds') {
-    return outcome.exitCode === 0 ? 'thresholds derived' : 'thresholds not written';
-  }
-  // Exit code 3 with an evaluation: the result is not trustworthy (e.g. TESTS_FAILED_TOO_MANY),
-  // so the evaluation does not decide (09-REQ-25).
-  if (outcome.exitCode === 3 && outcome.evaluation.status !== 'error') {
-    return 'performance result not trustworthy';
-  }
-  return EVALUATION_TEXT[outcome.evaluation.status];
 }
 
 /**

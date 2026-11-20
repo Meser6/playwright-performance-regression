@@ -1,7 +1,13 @@
 // Reading files and file paths for the reporter and the CLI (01, chapter 4.7). The reporter may
 // not import node:* itself (01, chapter 5), so the path helpers it needs live here too.
+import { rmSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
+
+/** Removes a file if it exists; synchronous, for Reporter.onBegin (04-REQ-62). */
+export function removeFileSync(path: string): void {
+  rmSync(path, { force: true });
+}
 
 function isNotFound(error: unknown): boolean {
   return (

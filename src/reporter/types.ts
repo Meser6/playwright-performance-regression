@@ -64,6 +64,8 @@ export interface ReporterIo {
   resolvePath(base: string, path: string): string;
   directoryOf(path: string): string;
   relativeSlashPath(from: string, path: string): string;
+  /** Removes a file if it exists (04-REQ-62). */
+  removeFileSync(path: string): void;
 }
 
 /** Output stream as the reporter sees it. */
@@ -80,6 +82,8 @@ export interface ReporterHost {
   stdout: OutputLike;
   stderr: OutputLike;
   cwd: string;
+  /** process.argv of the main Playwright process (04-REQ-35, 04-REQ-61). */
+  argv: readonly string[];
   /** Wall clock. */
   now(): Date;
   /** Uniform random number in [0, 1), for a run id without the CLI. */
