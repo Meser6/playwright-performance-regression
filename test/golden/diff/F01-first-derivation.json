@@ -13,14 +13,13 @@
         "GET /api/rare": {"durations":[[3,200]]},
         "GET /api/always-failing": {"errors":12}
       },
-      "custom": {"checkout › pay":{"durations":[[10,2400],[5,3100]]},"login":{"durations":[[2,900]]}},
       "projects": [
         {"name":"webkit","role":"measured","browserName":"webkit","repeatEach":10,"retries":0},
         {"name":"chromium","role":"measured","browserName":"chromium","repeatEach":10,"retries":0},
         {"name":"setup","role":"dependency","browserName":"chromium","repeatEach":1,"retries":0}
       ]
     },
-    "existing": {"api":null,"custom":null}
+    "existing": {"api":null}
   },
   "expected": [
     {
@@ -50,21 +49,6 @@
         }
       ],
       "counts": {"added":3,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":2}
-    },
-    {
-      "kind": "custom",
-      "fileStatus": "created",
-      "level": "p95",
-      "keys": [
-        {
-          "key": "checkout › pay",
-          "category": "added",
-          "changes": [],
-          "limits": {"t":3100,"median":4320,"percentile":5580,"p99":6138,"minApdex":0.9,"maxWilson":0.1,"maxErrorRate":0.05}
-        },
-        {"key":"login","category":"skipped","changes":[]}
-      ],
-      "counts": {"added":1,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":1}
     }
   ]
 }

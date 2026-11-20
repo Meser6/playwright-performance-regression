@@ -24,14 +24,14 @@
     "mode": { "description": "Perf mode of the run: 'test' (measurement run) or 'thresholds' (thresholds derivation run).", "enum": ["test", "thresholds"] },
     "envLabel": { "description": "Environment label (D-18). Lowercase letters, digits and hyphens.", "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 32 },
     "envLabelOrNull": { "description": "Environment label, or null when not set.", "oneOf": [{ "$ref": "#/$defs/envLabel" }, { "type": "null" }] },
-    "kind": { "description": "Sample category: 'api' (backend endpoints) or 'custom' (custom measurements).", "enum": ["api", "custom"] },
+    "kind": { "description": "Sample category: 'api' (backend endpoints).", "enum": ["api"] },
     "percentileName": {
       "description": "Percentile name: 'p' followed by a number greater than 0 and less than 100 with at most one decimal, e.g. p50, p95, p99.9.",
       "type": "string",
       "pattern": "^p(?:[1-9][0-9]?)(?:\\.[0-9])?$"
     },
     "key": {
-      "description": "Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.",
+      "description": "Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.",
       "type": "string",
       "minLength": 1,
       "maxLength": 2000

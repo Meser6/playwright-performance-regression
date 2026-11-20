@@ -137,20 +137,20 @@ export function createKeyBuilder(
     let key: string | undefined;
 
     if (keyBuilder !== undefined) {
-      let custom: unknown;
+      let built: unknown;
       try {
-        custom = keyBuilder({ method, url: sample.url, resourceType: sample.resourceType });
+        built = keyBuilder({ method, url: sample.url, resourceType: sample.resourceType });
       } catch (error) {
         issues.push({
           code: 'NORMALIZE_KEY_BUILDER_THREW',
           message: `keys.keyBuilder threw an exception: ${error instanceof Error ? error.message : String(error)}. The built-in normalization was used instead.`,
           hint: 'Fix the keyBuilder function; it must not throw.',
         });
-        custom = undefined;
+        built = undefined;
       }
-      if (typeof custom === 'string' && custom.trim() !== '') {
-        key = custom;
-      } else if (custom !== undefined) {
+      if (typeof built === 'string' && built.trim() !== '') {
+        key = built;
+      } else if (built !== undefined) {
         issues.push({
           code: 'NORMALIZE_KEY_BUILDER_INVALID',
           message:

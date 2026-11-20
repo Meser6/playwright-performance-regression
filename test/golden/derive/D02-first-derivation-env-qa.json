@@ -1,6 +1,6 @@
 {
-  "name": "D02-first-derivation-both-kinds",
-  "description": "First derivation with environment qa: every key with n ≥ checks.time.median.minSamples is added; keys with fewer successes get no entry; both files are created; browsers of measured projects only.",
+  "name": "D02-first-derivation-env-qa",
+  "description": "First derivation with environment qa: every key with n ≥ checks.time.median.minSamples is added; keys with fewer successes get no entry; the file is created; browsers of measured projects only.",
   "input": {
     "config": {},
     "options": {"env":"qa"},
@@ -13,14 +13,13 @@
         "GET /api/rare": {"durations":[[3,200]]},
         "GET /api/always-failing": {"errors":12}
       },
-      "custom": {"checkout › pay":{"durations":[[10,2400],[5,3100]]},"login":{"durations":[[2,900]]}},
       "projects": [
         {"name":"webkit","role":"measured","browserName":"webkit","repeatEach":10,"retries":0},
         {"name":"chromium","role":"measured","browserName":"chromium","repeatEach":10,"retries":0},
         {"name":"setup","role":"dependency","browserName":"chromium","repeatEach":1,"retries":0}
       ]
     },
-    "existing": {"api":null,"custom":null}
+    "existing": {"api":null}
   },
   "expected": {
     "ok": true,
@@ -28,7 +27,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -59,39 +58,6 @@
             "GET /api/tickets": {"t":500,"median":280,"percentile":376,"p99":510,"minApdex":0.945,"maxWilson":0.035,"maxErrorRate":0.05},
             "POST /api/orders": {"t":868,"median":896,"percentile":1820,"p99":2002,"minApdex":0.9,"maxWilson":0.15,"maxErrorRate":0.075}
           }
-        },
-        "changed": true
-      },
-      {
-        "kind": "custom",
-        "content": {
-          "schemaVersion": 1,
-          "kind": "custom",
-          "generated": {
-            "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
-            "env": "qa",
-            "sourceRunId": "run-1",
-            "sourceRunStartedAt": "2026-11-18T10:00:00.000Z",
-            "sourceSampleCount": 17,
-            "evaluatedPercentile": "p95",
-            "derivation": {
-              "t": {"min":1000,"max":10000,"medianFactor":2},
-              "smallSampleN": 20,
-              "margins": {
-                "median": {"relative":0.4,"minMs":100,"smallSampleRelative":0.8},
-                "percentile": {"relative":0.4,"minMs":100,"smallSampleRelative":0.8},
-                "p99": {"relative":0.2,"minGapMs":50,"minGapRelative":0.1},
-                "apdex": {"absolute":0.05,"smallSampleAbsolute":0.1},
-                "wilson": {"factor":1.5,"add":0.02,"min":0.03,"max":0.15,"smallSampleMin":0.1},
-                "errors": {"factor":1.5,"add":0.02,"min":0.05}
-              }
-            },
-            "browsers": ["chromium","webkit"],
-            "playwrightVersion": "1.57.0",
-            "host": {"platform":"linux","arch":"x64","ci":true,"cpuCount":4,"cpuModel":"AMD EPYC 7763"},
-            "normalization": "0a3f9c21d47b6e"
-          },
-          "entries": {"checkout › pay":{"t":3100,"median":4320,"percentile":5580,"p99":6138,"minApdex":0.9,"maxWilson":0.1,"maxErrorRate":0.05}}
         },
         "changed": true
       }

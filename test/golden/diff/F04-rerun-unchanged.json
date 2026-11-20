@@ -18,7 +18,7 @@
         "kind": "api",
         "path": "pw-perf-thresholds.api.json",
         "file": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -49,8 +49,7 @@
             "GET /api/tickets": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05}
           }
         }
-      },
-      "custom": null
+      }
     }
   },
   "expected": [
@@ -63,13 +62,6 @@
         {"key":"GET /api/tickets","category":"unchanged","changes":[]}
       ],
       "counts": {"added":0,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":2,"locked":0,"unseen":0,"skipped":0}
-    },
-    {
-      "kind": "custom",
-      "fileStatus": "not-written",
-      "level": "p95",
-      "keys": [],
-      "counts": {"added":0,"removed":0,"loosened":0,"tightened":0,"mixed":0,"unchanged":0,"locked":0,"unseen":0,"skipped":0}
     }
   ]
 }

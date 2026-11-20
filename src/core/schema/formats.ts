@@ -108,36 +108,9 @@ const requestSample = obj(
   },
 );
 
-const customSample = obj(
-  {
-    name: str({
-      minLength: 1,
-      maxLength: 200,
-      // Same pattern as the schema: no control characters (06-REQ-03).
-      // eslint-disable-next-line no-control-regex
-      pattern: /^[^\s\u0000-\u001F\u007F](?:[^\u0000-\u001F\u007F]*[^\s\u0000-\u001F\u007F])?$/u,
-    }),
-    outcome: enumOf(['ok', 'error', 'unfinished']),
-    duration: msOrNull,
-    endTime: oneOf(epochMs, nul),
-  },
-  {
-    required: ['name', 'outcome', 'duration', 'endTime'],
-    refine(value, pointer, sink) {
-      const unfinished = !Object.hasOwn(value, 'outcome') || value.outcome === 'unfinished';
-      present(
-        value,
-        pointer,
-        sink,
-        unfinished ? { duration: nul, endTime: nul } : { duration: num(), endTime: int() },
-      );
-    },
-  },
-);
-
 export const sampleBatch = obj(
   {
-    schemaVersion: constant(1),
+    schemaVersion: constant(2),
     collector: obj(
       {
         name: str({ pattern: /^[a-z0-9-]+$/u }),
@@ -147,10 +120,9 @@ export const sampleBatch = obj(
       { required: ['name', 'version', 'browserName'] },
     ),
     requests: arr(requestSample),
-    custom: arr(customSample),
     diagnostics: arr(issue),
   },
-  { required: ['schemaVersion', 'collector', 'requests', 'custom', 'diagnostics'] },
+  { required: ['schemaVersion', 'collector', 'requests', 'diagnostics'] },
 );
 
 // ---- thresholds.schema.json -----------------------------------------------------------------
@@ -223,7 +195,7 @@ const thresholdsGenerated = obj(
 
 export const thresholdsFile = obj(
   {
-    schemaVersion: constant(1),
+    schemaVersion: constant(2),
     kind,
     generated: oneOf(thresholdsGenerated, nul),
     entries: record(key, thresholdsEntry),
@@ -549,7 +521,7 @@ const aggregate = obj(
 
 export const runReport = obj(
   {
-    schemaVersion: constant(2),
+    schemaVersion: constant(3),
     tool,
     runId,
     mode,
@@ -616,10 +588,7 @@ export const runReport = obj(
       {
         status: evaluationStatus,
         gateEnabled: bool,
-        counts: obj(
-          { api: evaluationCounts, custom: evaluationCounts },
-          { required: ['api', 'custom'] },
-        ),
+        counts: obj({ api: evaluationCounts }, { required: ['api'] }),
       },
       { required: ['status', 'gateEnabled', 'counts'] },
     ),
@@ -633,7 +602,6 @@ export const runReport = obj(
       ),
     ),
     endpoints: record(key, aggregate),
-    custom: record(key, aggregate),
     testBreakdown,
   },
   {
@@ -659,7 +627,6 @@ export const runReport = obj(
       'toolErrors',
       'origins',
       'endpoints',
-      'custom',
       'testBreakdown',
     ],
   },

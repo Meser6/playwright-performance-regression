@@ -1,6 +1,5 @@
 {
-  "name": "custom measurements file",
-  "expectedKind": "custom",
+  "name": "kind custom, removed in schemaVersion 2 (02-AC-18)",
   "input": {
     "entries": {
       "checkout:load-cart": {
@@ -9,9 +8,12 @@
     },
     "generated": null,
     "kind": "custom",
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
-    "ok": true
+    "code": "SCHEMA_VALIDATION_FAILED",
+    "pointers": [
+      "/kind"
+    ]
   }
 }

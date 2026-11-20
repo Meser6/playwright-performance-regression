@@ -14,7 +14,6 @@ const PREFIXES = [
   'CLI',
   'COLLECTOR',
   'CONFIG',
-  'CUSTOM',
   'EVAL',
   'HTML',
   'INIT',

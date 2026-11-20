@@ -19,7 +19,7 @@ export const urlPattern = oneOf(
   ),
 );
 
-const limitByKind = (value: Schema): Schema => obj({ api: value, custom: value });
+const limitByKind = (value: Schema): Schema => obj({ api: value });
 
 const relativeMargin = obj({
   relative: factor10,
@@ -62,7 +62,7 @@ const checks = obj({
     p99: obj({ enabled, minSamples, margin: p99Margin, limit: limitByKind(msLimit) }),
   }),
   slowShare: obj({
-    t: obj({ api: tSettings, custom: tSettings }),
+    t: obj({ api: tSettings }),
     apdex: obj({ enabled, minSamples, margin: apdexMargin, limit: limitByKind(ratio) }),
     wilson: obj({ enabled, minSamples, margin: wilsonMargin, limit: limitByKind(ratio) }),
   }),

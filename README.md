@@ -96,24 +96,6 @@ do not fit CI. See [Thresholds](docs/thresholds.md).
 The result is printed in the terminal and written to `pw-perf-results/report.json` and
 `pw-perf-results/report.html`.
 
-## Custom measurements
-
-Time a user-visible step that spans several requests, or anything else in the test:
-
-```ts
-test('checkout', async ({ page, perf }) => {
-  await page.goto('/cart');
-  await perf.measure('checkout:load-cart', async () => {
-    await page.getByRole('button', { name: 'Checkout' }).click();
-    await page.getByText('Order summary').waitFor();
-  });
-});
-```
-
-`perf.start(name)` and `perf.end(name)` do the same without a callback. Custom measurements get
-their own thresholds file and checks. Coming from `playwright-performance`? `perf.sampleStart()`
-and `perf.sampleEnd()` are aliases of `start()` and `end()`.
-
 ## CI
 
 A GitHub Actions job that measures pull requests and runs every night:

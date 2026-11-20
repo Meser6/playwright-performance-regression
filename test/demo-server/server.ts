@@ -48,9 +48,9 @@ interface State {
 
 const CORS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'x-custom, content-type',
+  'access-control-allow-headers': 'x-demo, content-type',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE',
-  // No preflight cache: every cross-origin call with a custom header needs a preflight.
+  // No preflight cache: every cross-origin call with a non-safelisted header needs a preflight.
   'access-control-max-age': '0',
 };
 

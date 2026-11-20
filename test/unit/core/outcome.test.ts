@@ -9,7 +9,7 @@ import { loadCases } from '../../contract/golden.ts';
 import {
   NO_TEST_BREAKDOWN,
   aggregates,
-  both,
+  files,
   config,
   invalid,
   loaded,
@@ -54,7 +54,7 @@ function run(r: Run = {}): { report: RunReport; outcome: Outcome } {
   const aggs = aggregates({ [KEY]: r.spec ?? { durations: [[20, 100]] } });
   const evaluation = evaluate(
     aggs,
-    r.thresholds ?? both(loaded('api', { [KEY]: { percentile: 1400 } })),
+    r.thresholds ?? files(loaded('api', { [KEY]: { percentile: 1400 } })),
     cfg,
     options({ mode }),
   );
@@ -160,7 +160,7 @@ describe('assessRun (09-REQ-24)', () => {
 
 describe('buildOutcome (09-REQ-25, 02-REQ-26)', () => {
   test('09-AC-05 an invalid api thresholds file gives exit code 3', () => {
-    const { report, outcome } = run({ thresholds: both(invalid('api')) });
+    const { report, outcome } = run({ thresholds: files(invalid('api')) });
     expect(report.evaluation.status).toBe('error');
     expect(outcome.exitCode).toBe(3);
     expect(codes(outcome.toolErrors)).toEqual(['SCHEMA_INVALID_JSON']);
@@ -176,7 +176,7 @@ describe('buildOutcome (09-REQ-25, 02-REQ-26)', () => {
   test('warned gives exit code 0', () => {
     const { report, outcome } = run({
       spec: BLOCKING,
-      thresholds: both(
+      thresholds: files(
         loaded('api', {
           [KEY]: { percentile: 1400, gate: 'warn', note: 'n', until: '2026-12-31' },
         }),

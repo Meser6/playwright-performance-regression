@@ -17,7 +17,6 @@ function sourceFiles(dir: string): string[] {
 /** Default values distinctive enough not to appear in src/ for another reason. */
 const DEFAULT_LITERALS = [
   /\b5000\b/u,
-  /\b10000\b/u,
   /\b4000\b/u,
   /\b0\.85\b/u,
   /socket\.io/u,

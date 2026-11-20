@@ -1,4 +1,4 @@
-// Collector and custom measurements in one browser (05, 06). The assertions on the samples are
+// Collector in one browser (05). The assertions on the samples are
 // in test/integration/collector.test.ts; the tests here only drive the browser.
 import {
   DEMO_API_URL,
@@ -14,7 +14,8 @@ import {
 } from './fixtures.ts';
 
 test('no browser', async ({ perf }) => {
-  expect(await perf.measure('compute', () => 21 * 2)).toBe(42);
+  // perf has only track() (05-REQ-32); the test uses no page or context.
+  expect(Object.keys(perf)).toEqual(['track']);
 });
 
 test('popup and second tab', async ({ page, context }) => {
@@ -54,7 +55,7 @@ test('errors and aborts', async ({ page }) => {
 test('cors preflight', async ({ page }) => {
   await page.goto('/page');
   await call(page, `${DEMO_API_URL}/api/delay?ms=100&preflightMs=300&k=preflight`, {
-    headers: { 'x-custom': '1' },
+    headers: { 'x-demo': '1' },
   });
 });
 
@@ -124,33 +125,4 @@ twiceTest('twice wrapped', async ({ page }) => {
 derivedTest('derived and wrapped again', async ({ page }) => {
   await page.goto('/page');
   await call(page, '/api/delay?ms=0&k=wrap');
-});
-
-test.describe('custom measurements', () => {
-  test.beforeEach(async ({ perf }) => {
-    await perf.measure('hook:before-each', () => new Promise((r) => setTimeout(r, 20)));
-  });
-
-  test('measure, start and end', async ({ page, perf }) => {
-    const title = await perf.measure('demo:load', async () => {
-      await page.goto('/page');
-      return page.title();
-    });
-    expect(title).toBe('demo');
-    perf.start('demo:call');
-    await call(page, '/api/delay?ms=100');
-    const duration = perf.end('demo:call');
-    expect(duration).toBeGreaterThanOrEqual(100);
-    perf.sampleStart('demo:alias');
-    expect(typeof perf.sampleEnd('demo:alias')).toBe('number');
-    const error = new Error('step failed');
-    await expect(perf.measure('demo:error', () => Promise.reject(error))).rejects.toBe(error);
-    expect(() => perf.start(' bad')).toThrow(TypeError);
-  });
-
-  test('timeout during measure', async ({ perf }) => {
-    test.info().expectedStatus = 'timedOut';
-    test.setTimeout(500);
-    await perf.measure('demo:slow', () => new Promise((r) => setTimeout(r, 3000)));
-  });
 });

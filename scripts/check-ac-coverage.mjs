@@ -6,7 +6,12 @@
 // in test titles under test/. Fails when:
 //   - a test title contains an AC ID that is not in spec-ids.json (stale or mistyped ID);
 //   - scripts/ac-manual.json or scripts/ac-scope.json names an ID that is not in spec-ids.json;
-//   - an AC that is in scope has no test and is not listed in scripts/ac-manual.json.
+//   - an AC that is in scope has no test and is not listed in scripts/ac-manual.json;
+//   - a test title or scripts/ac-manual.json names a withdrawn AC (12-REQ-21).
+//
+// Withdrawn criteria. spec-ids.json marks criteria that no longer apply with "withdrawn": true.
+// They never need a test, also with --all or a spec file prefix in scope, and no test may
+// keep naming them, so that the tests of a removed feature do not stay in the repository.
 //
 // Scope. The package is implemented work package by work package, so most ACs have no code
 // yet. scripts/ac-scope.json lists what is in scope; every entry is either
@@ -79,6 +84,7 @@ export function acIdsInTitles(source) {
  * @typedef {object} CoverageResult
  * @property {string[]} missing      in-scope ACs without a test or a manual entry
  * @property {Array<{ id: string, where: string }>} unknown  IDs not in spec-ids.json
+ * @property {Array<{ id: string, where: string }>} withdrawn  withdrawn IDs still named
  * @property {number} inScope        number of in-scope ACs
  * @property {number} covered        number of in-scope ACs with a test or a manual entry
  */
@@ -89,22 +95,26 @@ export function acIdsInTitles(source) {
  */
 export function checkAcCoverage({ root, all = false }) {
   const specIds = readJson(join(root, 'spec-ids.json'));
+  /** @type {{ id: string, kind: string, withdrawn?: boolean }[]} */
+  const entries = specIds.ids.filter((/** @type {{kind: string}} */ e) => e.kind === 'AC');
   /** @type {Set<string>} */
-  const acs = new Set(
-    specIds.ids
-      .filter((/** @type {{kind: string}} */ e) => e.kind === 'AC')
-      .map((/** @type {{id: string}} */ e) => e.id),
-  );
+  const acs = new Set(entries.filter((e) => e.withdrawn !== true).map((e) => e.id));
+  /** @type {Set<string>} */
+  const withdrawnIds = new Set(entries.filter((e) => e.withdrawn === true).map((e) => e.id));
   const manual = readJson(join(root, 'scripts/ac-manual.json'));
   const scope = readJson(join(root, 'scripts/ac-scope.json'));
 
   /** @type {Array<{ id: string, where: string }>} */
   const unknown = [];
+  /** @type {Array<{ id: string, where: string }>} */
+  const withdrawn = [];
 
   /** @type {Set<string>} */
   const manualIds = new Set();
   for (const entry of manual.criteria) {
     if (acs.has(entry.id) || SUCCESS_CRITERION.test(entry.id)) manualIds.add(entry.id);
+    else if (withdrawnIds.has(entry.id))
+      withdrawn.push({ id: entry.id, where: 'scripts/ac-manual.json' });
     else unknown.push({ id: entry.id, where: 'scripts/ac-manual.json' });
   }
 
@@ -115,6 +125,7 @@ export function checkAcCoverage({ root, all = false }) {
   for (const entry of scope.inScope) {
     if (SPEC_FILE.test(entry)) scopeFiles.add(entry);
     else if (acs.has(entry)) scopeIds.add(entry);
+    else if (withdrawnIds.has(entry)) withdrawn.push({ id: entry, where: 'scripts/ac-scope.json' });
     else unknown.push({ id: entry, where: 'scripts/ac-scope.json' });
   }
 
@@ -122,9 +133,11 @@ export function checkAcCoverage({ root, all = false }) {
   const tested = new Set();
   const testDir = join(root, 'test');
   for (const file of existsSync(testDir) ? listTestFiles(testDir) : []) {
+    const where = relative(root, file).split('\\').join('/');
     for (const id of acIdsInTitles(readFileSync(file, 'utf8'))) {
       if (acs.has(id)) tested.add(id);
-      else unknown.push({ id, where: relative(root, file).split('\\').join('/') });
+      else if (withdrawnIds.has(id)) withdrawn.push({ id, where });
+      else unknown.push({ id, where });
     }
   }
 
@@ -132,7 +145,13 @@ export function checkAcCoverage({ root, all = false }) {
     (id) => all || scopeIds.has(id) || scopeFiles.has(id.slice(0, 2)),
   );
   const missing = inScope.filter((id) => !tested.has(id) && !manualIds.has(id));
-  return { missing, unknown, inScope: inScope.length, covered: inScope.length - missing.length };
+  return {
+    missing,
+    unknown,
+    withdrawn,
+    inScope: inScope.length,
+    covered: inScope.length - missing.length,
+  };
 }
 
 function main() {
@@ -151,8 +170,13 @@ function main() {
   for (const { id, where } of result.unknown) {
     console.error(`check-ac-coverage: ${id} in ${where} is not an AC in spec-ids.json`);
   }
+  for (const { id, where } of result.withdrawn) {
+    console.error(
+      `check-ac-coverage: ${id} in ${where} is withdrawn; remove it together with the removed feature`,
+    );
+  }
   const summary = `${result.covered}/${result.inScope} acceptance criteria ${all ? '' : 'in scope '}covered`;
-  if (result.missing.length > 0 || result.unknown.length > 0) {
+  if (result.missing.length > 0 || result.unknown.length > 0 || result.withdrawn.length > 0) {
     console.error(`check-ac-coverage: failed, ${summary}`);
     process.exit(1);
   }

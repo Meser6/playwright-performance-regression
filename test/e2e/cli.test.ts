@@ -163,7 +163,7 @@ describe('pw-perf test and thresholds', () => {
         `${PACKAGE_NAME}: tests passed · thresholds derived · exit code 0`,
       );
       const files = readdirSync(thresholds).sort();
-      expect(files).toEqual(['pw-perf-thresholds.api.json', 'pw-perf-thresholds.custom.json']);
+      expect(files).toEqual(['pw-perf-thresholds.api.json']);
 
       // From another directory: the config file is found in the configDir of the report.
       const again = join(scratch, 'from thresholds');

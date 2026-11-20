@@ -16,7 +16,7 @@ export const envLabel = str({
   format: 'a label of lowercase letters, digits and "-", like "staging"',
 });
 export const envLabelOrNull = nullable(envLabel);
-export const kind = enumOf(['api', 'custom']);
+export const kind = enumOf(['api']);
 export const percentileName = str({
   pattern: /^p(?:[1-9][0-9]?)(?:\.[0-9])?$/u,
   format: 'a percentile name like "p95" or "p99.9"',

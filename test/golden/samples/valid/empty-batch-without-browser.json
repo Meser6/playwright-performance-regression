@@ -6,10 +6,9 @@
       "name": "playwright-js",
       "version": "0.1.0"
     },
-    "custom": [],
     "diagnostics": [],
     "requests": [],
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "ok": true

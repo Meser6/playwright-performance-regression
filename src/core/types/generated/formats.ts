@@ -339,10 +339,6 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
-          /**
-           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
-           */
-          custom?: number;
         };
       };
       /**
@@ -369,10 +365,6 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
-          /**
-           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
-           */
-          custom?: number;
         };
         /**
          * Headroom added to the source run value when deriving this limit (10, chapter 5).
@@ -429,10 +421,6 @@ export interface PackageConfig {
            * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
            */
           api?: number;
-          /**
-           * Threshold limit in whole milliseconds, rounded up (02-REQ-08).
-           */
-          custom?: number;
         };
       };
     };
@@ -445,20 +433,6 @@ export interface PackageConfig {
        */
       t?: {
         api?: {
-          /**
-           * Lower clamp of derived T.
-           */
-          min?: number;
-          /**
-           * Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13).
-           */
-          max?: number;
-          /**
-           * Derived T is at most medianFactor × p50.
-           */
-          medianFactor?: number;
-        };
-        custom?: {
           /**
            * Lower clamp of derived T.
            */
@@ -506,10 +480,6 @@ export interface PackageConfig {
            * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
            */
           api?: number;
-          /**
-           * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
-           */
-          custom?: number;
         };
       };
       /**
@@ -557,10 +527,6 @@ export interface PackageConfig {
            * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
            */
           api?: number;
-          /**
-           * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
-           */
-          custom?: number;
         };
       };
     };
@@ -577,7 +543,7 @@ export interface PackageConfig {
        */
       minSamples?: number;
       /**
-       * Request statuses counted as errors by the 'errors' rule (08, 09): a class like '5xx', an exact code like '429', FAILED (request failed without a response, not aborted), ABORTED (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end). Custom measurements: outcomes error and unfinished are always errors.
+       * Request statuses counted as errors by the 'errors' rule (08, 09): a class like '5xx', an exact code like '429', FAILED (request failed without a response, not aborted), ABORTED (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end).
        */
       statuses?: string[];
       /**
@@ -588,10 +554,6 @@ export interface PackageConfig {
          * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
          */
         api?: number;
-        /**
-         * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
-         */
-        custom?: number;
       };
       /**
        * Headroom added to the source run value when deriving this limit (10, chapter 5).
@@ -710,7 +672,7 @@ export interface PackageConfig {
  * Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
  */
 export interface SampleBatch {
-  schemaVersion: 1;
+  schemaVersion: 2;
   /**
    * Collector that produced the batch.
    */
@@ -733,34 +695,9 @@ export interface SampleBatch {
    */
   requests: RequestSample[];
   /**
-   * Custom measurement samples in the order they finished.
-   */
-  custom: CustomSample[];
-  /**
-   * Collector and custom-measurement diagnostics caught during the test (01-REQ-13, 05 §9, 06 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.
+   * Collector diagnostics caught during the test (01-REQ-13, 05 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.
    */
   diagnostics: Issue[];
-}
-/**
- * One custom measurement (06).
- */
-export interface CustomSample {
-  /**
-   * Measurement name given by the user (06-REQ-03): 1–200 characters, no leading or trailing whitespace, no control characters.
-   */
-  name: string;
-  /**
-   * ok: finished normally; error: the measured function threw; unfinished: started but never ended before test end. Meaning of each outcome for statistics: 06, 08.
-   */
-  outcome: 'ok' | 'error' | 'unfinished';
-  /**
-   * Measured duration (performance.now()). Null for unfinished.
-   */
-  duration: number | null;
-  /**
-   * Wall-clock end time. Null for unfinished.
-   */
-  endTime: number | null;
 }
 /**
  * Diagnostic entry: warning, tool error or collector diagnostic (P-12).
@@ -787,7 +724,7 @@ export interface Issue {
  * Result of one perf-mode run. Written by the reporter in onEnd; read by the CLI (thresholds --from, report) and rendered to HTML (11). Everything the HTML report shows must be here (01-REQ-22).
  */
 export interface RunReport {
-  schemaVersion: 2;
+  schemaVersion: 3;
   tool: Tool;
   /**
    * Run identifier, generated by the CLI or by the reporter.
@@ -906,7 +843,7 @@ export interface RunReport {
     skipped: number;
   };
   /**
-   * Run-level evaluation summary. Per-key details live in endpoints/custom (02-REQ-15).
+   * Run-level evaluation summary. Per-key details live in endpoints (02-REQ-15).
    */
   evaluation: {
     /**
@@ -919,7 +856,6 @@ export interface RunReport {
     gateEnabled: boolean;
     counts: {
       api: EvaluationCounts;
-      custom: EvaluationCounts;
     };
   };
   /**
@@ -928,7 +864,7 @@ export interface RunReport {
   thresholdFiles: ThresholdFileInfo[];
   warnings: Issue[];
   /**
-   * Problems that make the run result incomplete or untrustworthy; non-empty means exit code 3 (09-REQ-23). Collector and custom measurement diagnostics go to warnings.
+   * Problems that make the run result incomplete or untrustworthy; non-empty means exit code 3 (09-REQ-23). Collector diagnostics go to warnings.
    */
   toolErrors: Issue[];
   /**
@@ -952,12 +888,6 @@ export interface RunReport {
    * Aggregates of backend endpoints by normalized key.
    */
   endpoints: {
-    [k: string]: Aggregate;
-  };
-  /**
-   * Aggregates of custom measurements by name.
-   */
-  custom: {
     [k: string]: Aggregate;
   };
   /**
@@ -1067,9 +997,9 @@ export interface EvaluationCounts {
 }
 export interface ThresholdFileInfo {
   /**
-   * Sample category: 'api' (backend endpoints) or 'custom' (custom measurements).
+   * Sample category: 'api' (backend endpoints).
    */
-  kind: 'api' | 'custom';
+  kind: 'api';
   /**
    * Path relative to configDir, with forward slashes.
    */
@@ -1085,7 +1015,7 @@ export interface ThresholdFileInfo {
   /**
    * Keys present in the file but not seen in the run, sorted.
    *
-   * Items: Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Items: Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   unseenKeys: string[];
 }
@@ -1114,7 +1044,7 @@ export interface Aggregate {
    */
   testCount: number;
   /**
-   * Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). Custom: ok, error, unfinished (08-REQ-05).
+   * Sample count per status. Endpoints: HTTP code, FAILED (failed without response), ABORTED (cancelled by the browser), PENDING (in flight at test end). The labels ok, error and unfinished are reserved for step outcomes (06) (08-REQ-05).
    */
   statuses: {
     [k: string]: number;
@@ -1134,7 +1064,7 @@ export interface Aggregate {
    */
   stats: Stats | null;
   /**
-   * TTFB of successful samples that have it. Null for custom measurements and when no sample has TTFB.
+   * TTFB of successful samples that have it. Null when no sample has TTFB.
    */
   ttfb: {
     /**
@@ -1396,7 +1326,7 @@ export interface SlowSample {
    */
   duration: number;
   /**
-   * Start of the request (startTime) or of the custom measurement (endTime - duration), UTC.
+   * Start of the request (startTime), UTC.
    */
   startedAt: string;
   test: TestRef;
@@ -1579,7 +1509,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1595,7 +1525,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1609,7 +1539,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1625,7 +1555,7 @@ export interface TestCost {
     | [
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1639,7 +1569,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1653,7 +1583,7 @@ export interface TestCost {
         },
         {
           /**
-           * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+           * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
            */
           key: string;
           /**
@@ -1671,7 +1601,7 @@ export interface TestCost {
    *
    * @maxItems 10
    *
-   * Items: Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Items: Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   violatedKeys:
     | []
@@ -1731,7 +1661,7 @@ export interface WaterfallRequest {
    */
   duration: number | null;
   /**
-   * Aggregate key: normalized endpoint key (07) or custom measurement name (06). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
+   * Aggregate key: normalized endpoint key (07). The package limits keys to 2000 UTF-16 code units (07-REQ-18); maxLength here counts code points, so every key the package writes satisfies it.
    */
   key: string;
   /**
@@ -1743,11 +1673,11 @@ export interface WaterfallRequest {
  * Committed thresholds for one category (kind) and optionally one environment. Written by the thresholds generator (10) or by hand; read by the reporter and the CLI.
  */
 export interface ThresholdsFile {
-  schemaVersion: 1;
+  schemaVersion: 2;
   /**
-   * Sample category: 'api' (backend endpoints) or 'custom' (custom measurements).
+   * Sample category: 'api' (backend endpoints).
    */
-  kind: 'api' | 'custom';
+  kind: 'api';
   /**
    * How the file was derived. Null for a file written entirely by hand. Contains no wall-clock time of generation, so deriving twice from the same report gives identical files (S-04).
    */

@@ -6,7 +6,6 @@ A project closer to a real suite:
   once and are not measured;
 - its own `tests/fixtures.ts` with a page object, wrapped in `withPerfFixtures()`;
 - `pw-perf.config.ts` with an origin label for the API, an extra exclude and a warn-only start;
-- a custom measurement with `perf.measure()`;
 - only tests tagged `@perf` are measured (`--grep @perf` in the scripts).
 
 The tests run against the demo app of this repository, which Playwright starts on ports 3000 and 3001.
@@ -19,7 +18,7 @@ cd examples/with-setup
 npm install
 npx playwright install chromium
 
-npm run perf:thresholds   # writes pw-perf-thresholds.api.json and pw-perf-thresholds.custom.json
+npm run perf:thresholds   # writes pw-perf-thresholds.api.json
 npm run perf:test
 ```
 

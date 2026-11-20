@@ -16,7 +16,3 @@
 - `GET /api/muted-expired` muted (expired 2026-11-15)
 
 Entries marked with ! loosened a time limit by a large step; check that they do not accept a regression.
-
-## pw-perf-thresholds.custom.json (not written)
-
-no entries

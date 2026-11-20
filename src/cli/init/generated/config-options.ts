@@ -242,12 +242,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 2000,
   },
   {
-    path: 'checks.time.median.limit.custom',
-    description: 'Threshold limit in whole milliseconds, rounded up.',
-    leaf: true,
-    default: 5000,
-  },
-  {
     path: 'checks.time.percentile',
     description: 'The percentile chosen in level must not exceed the limit.',
     leaf: false,
@@ -281,12 +275,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     description: 'Threshold limit in whole milliseconds, rounded up.',
     leaf: true,
     default: 2000,
-  },
-  {
-    path: 'checks.time.percentile.limit.custom',
-    description: 'Threshold limit in whole milliseconds, rounded up.',
-    leaf: true,
-    default: 5000,
   },
   {
     path: 'checks.time.percentile.margin',
@@ -354,12 +342,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 4000,
   },
   {
-    path: 'checks.time.p99.limit.custom',
-    description: 'Threshold limit in whole milliseconds, rounded up.',
-    leaf: true,
-    default: 10000,
-  },
-  {
     path: 'checks.slowShare',
     description: 'Rules on the share of slow responses, relative to the Apdex threshold T.',
     leaf: false,
@@ -389,30 +371,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.slowShare.t.api.medianFactor',
-    description: 'Derived T is at most medianFactor × p50.',
-    leaf: true,
-    default: 2,
-  },
-  {
-    path: 'checks.slowShare.t.custom',
-    description: 'Bounds of the derived T for custom measurement keys.',
-    leaf: false,
-  },
-  {
-    path: 'checks.slowShare.t.custom.min',
-    description: 'Lower clamp of derived T.',
-    leaf: true,
-    default: 1000,
-  },
-  {
-    path: 'checks.slowShare.t.custom.max',
-    description:
-      'Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.',
-    leaf: true,
-    default: 10000,
-  },
-  {
-    path: 'checks.slowShare.t.custom.medianFactor',
     description: 'Derived T is at most medianFactor × p50.',
     leaf: true,
     default: 2,
@@ -458,12 +416,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.slowShare.apdex.limit.api',
-    description: 'Value between 0 and 1 inclusive.',
-    leaf: true,
-    default: 0.85,
-  },
-  {
-    path: 'checks.slowShare.apdex.limit.custom',
     description: 'Value between 0 and 1 inclusive.',
     leaf: true,
     default: 0.85,
@@ -534,12 +486,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 0.05,
   },
   {
-    path: 'checks.slowShare.wilson.limit.custom',
-    description: 'Value between 0 and 1 inclusive.',
-    leaf: true,
-    default: 0.05,
-  },
-  {
     path: 'checks.errors',
     description: 'Error rate must not exceed the limit (lower Wilson bound compared).',
     leaf: false,
@@ -565,12 +511,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.errors.limit.api',
-    description: 'Value between 0 and 1 inclusive.',
-    leaf: true,
-    default: 0.05,
-  },
-  {
-    path: 'checks.errors.limit.custom',
     description: 'Value between 0 and 1 inclusive.',
     leaf: true,
     default: 0.05,

@@ -1,5 +1,5 @@
 {
-  "name": "endpoints, custom measurements, CI metadata, thresholds files and warnings",
+  "name": "endpoints, CI metadata, thresholds files and warnings",
   "input": {
     "ci": {
       "branch": "main",
@@ -80,8 +80,7 @@
               "smallSampleRelative": 0.8
             },
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             }
           },
           "percentile": {
@@ -89,8 +88,7 @@
             "minSamples": 20,
             "level": "p95",
             "limit": {
-              "api": 2000,
-              "custom": 5000
+              "api": 2000
             },
             "margin": {
               "relative": 0.4,
@@ -107,8 +105,7 @@
               "minGapRelative": 0.1
             },
             "limit": {
-              "api": 4000,
-              "custom": 10000
+              "api": 4000
             }
           }
         },
@@ -117,11 +114,6 @@
             "api": {
               "min": 500,
               "max": 2000,
-              "medianFactor": 2
-            },
-            "custom": {
-              "min": 1000,
-              "max": 10000,
               "medianFactor": 2
             }
           },
@@ -133,8 +125,7 @@
               "smallSampleAbsolute": 0.1
             },
             "limit": {
-              "api": 0.85,
-              "custom": 0.85
+              "api": 0.85
             }
           },
           "wilson": {
@@ -148,8 +139,7 @@
               "smallSampleMin": 0.1
             },
             "limit": {
-              "api": 0.05,
-              "custom": 0.05
+              "api": 0.05
             }
           }
         },
@@ -162,8 +152,7 @@
             "PENDING"
           ],
           "limit": {
-            "api": 0.05,
-            "custom": 0.05
+            "api": 0.05
           },
           "margin": {
             "factor": 1.5,
@@ -201,132 +190,6 @@
       }
     },
     "configDir": "/home/user/project",
-    "custom": {
-      "checkout:load-cart": {
-        "count": 12,
-        "errorCount": 1,
-        "evaluation": {
-          "checks": [],
-          "limits": {
-            "maxErrorRate": 0.05,
-            "maxWilson": 0.05,
-            "median": 900,
-            "minApdex": 0.85,
-            "p99": 2100,
-            "percentile": 1400,
-            "t": 500
-          },
-          "muted": null,
-          "reason": "too-few-samples",
-          "result": "not-evaluated",
-          "thresholdSource": "default"
-        },
-        "fromFailedTests": 0,
-        "samples": {
-          "durations": [
-            150.1,
-            160,
-            170.5,
-            175,
-            180.2,
-            182.4,
-            190,
-            200,
-            210.3,
-            250
-          ],
-          "sampled": false
-        },
-        "slowest": [
-          {
-            "duration": 250,
-            "startedAt": "2026-11-18T10:01:00.123Z",
-            "test": {
-              "file": "tests/tickets.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 3,
-              "title": "tickets › opens a ticket"
-            }
-          },
-          {
-            "duration": 210.3,
-            "startedAt": "2026-11-18T10:01:01.000Z",
-            "test": {
-              "file": "tests/tickets.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 1,
-              "title": "tickets › opens a ticket"
-            }
-          }
-        ],
-        "stats": {
-          "avg": 186.9,
-          "max": 250,
-          "min": 150.1,
-          "percentiles": {
-            "p50": 180.2,
-            "p90": 210.3,
-            "p95": 250,
-            "p99": 250
-          }
-        },
-        "statuses": {
-          "ok": 10,
-          "error": 1,
-          "unfinished": 1
-        },
-        "successCount": 10,
-        "testCount": 2,
-        "timeSources": {
-          "browser": 12,
-          "node": 0
-        },
-        "topTests": [
-          {
-            "file": "tests/tickets.spec.ts",
-            "line": 12,
-            "project": "chromium",
-            "sampleCount": 10,
-            "title": "tickets › opens a ticket"
-          }
-        ],
-        "ttfb": null,
-        "histogram": {
-          "edges": [
-            146.8,
-            154,
-            161.6,
-            169.5,
-            177.8,
-            186.6,
-            195.7,
-            205.4,
-            215.4,
-            226,
-            237.1,
-            248.8,
-            261
-          ],
-          "counts": [
-            1,
-            1,
-            0,
-            2,
-            2,
-            1,
-            1,
-            1,
-            0,
-            0,
-            0,
-            1
-          ]
-        },
-        "hints": []
-      }
-    },
     "endpoints": {
       "GET /api/tickets/:id": {
         "count": 12,
@@ -576,19 +439,6 @@
           "tooFewSamples": 0,
           "unseenThresholdEntries": 0,
           "violations": 1
-        },
-        "custom": {
-          "blockingViolations": 0,
-          "fileEntriesNotEvaluated": 0,
-          "fromDefaults": 0,
-          "fromFile": 0,
-          "keys": 1,
-          "medianOnly": 0,
-          "muted": 0,
-          "notEvaluated": 1,
-          "tooFewSamples": 1,
-          "unseenThresholdEntries": 0,
-          "violations": 0
         }
       },
       "gateEnabled": true,
@@ -629,7 +479,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [
       {
@@ -703,13 +553,6 @@
         "unseenKeys": [
           "GET /api/legacy"
         ]
-      },
-      {
-        "generated": null,
-        "kind": "custom",
-        "path": "pw-perf-thresholds.custom.qa.json",
-        "status": "missing",
-        "unseenKeys": []
       }
     ],
     "toolErrors": [],

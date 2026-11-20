@@ -1,5 +1,5 @@
 // Test metadata and sample identities (08, chapter 4).
-import type { RawCustomSample, RawRequestSample } from '../types/index.ts';
+import type { RawRequestSample } from '../types/index.ts';
 
 /** Test metadata the reporter adds to every sample (08-REQ-06 – 08-REQ-08). */
 export interface TestMeta {
@@ -26,13 +26,8 @@ export interface EnrichedRequestSample extends RawRequestSample {
   ordinal: number;
 }
 
-export interface EnrichedCustomSample extends RawCustomSample {
-  test: TestMeta;
-  /** Position in the batch's custom array, from 0 (08-REQ-08). */
-  ordinal: number;
-}
-
-export type SampleKind = 'request' | 'custom';
+/** Kind part of a sample identity (08-REQ-08). */
+export type SampleKind = 'request';
 
 /** Identity of a test for testCount and topTests; repetitions count once (08-REQ-06). */
 export function testIdentity(project: string, file: string, title: string): string {

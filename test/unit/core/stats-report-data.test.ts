@@ -92,7 +92,6 @@ function req(
 interface Result {
   meta: TestMeta;
   requests: { key: string; sample: EnrichedRequestSample }[];
-  custom?: number;
 }
 
 /** Feeds results to an aggregator the way the reporter does: samples, then endResult. */
@@ -100,16 +99,6 @@ function aggregate(results: readonly Result[], opts = options()) {
   const agg = new Aggregator(opts);
   for (const r of results) {
     for (const { key, sample } of r.requests) agg.addRequest(key, sample, ORIGIN, '', 'chromium');
-    for (let i = 0; i < (r.custom ?? 0); i++) {
-      agg.addCustom('render', {
-        name: 'render',
-        outcome: 'ok',
-        endTime: r.meta.startTime + 30,
-        duration: 30,
-        ordinal: i,
-        test: r.meta,
-      });
-    }
     agg.endResult(r.meta);
   }
   return agg.finalize();
@@ -191,7 +180,7 @@ describe('histogram (08-REQ-34)', () => {
     let checked = 0;
     for (const c of cases) {
       const report = c.input as RunReport;
-      for (const agg of [...Object.values(report.endpoints), ...Object.values(report.custom)]) {
+      for (const agg of Object.values(report.endpoints)) {
         if (agg.stats === null) {
           expect(agg.histogram).toBeNull();
           continue;
@@ -201,7 +190,7 @@ describe('histogram (08-REQ-34)', () => {
         checked++;
       }
     }
-    expect(checked).toBeGreaterThan(2);
+    expect(checked).toBeGreaterThanOrEqual(2);
   });
 
   test('08-AC-18 the aggregator gives the histogram of the retained durations, null without stats', () => {
@@ -272,8 +261,8 @@ describe('per-test costs (08-REQ-37)', () => {
         ],
       });
     }
-    // A test with custom measurements only has no entry.
-    results.push({ meta: meta({ title: 'custom only' }), requests: [], custom: 2 });
+    // A test without requests has no entry.
+    results.push({ meta: meta({ title: 'no requests' }), requests: [] });
     const { testBreakdown } = aggregate(results);
     expect(testBreakdown.omitted).toBe(0);
     expect(testBreakdown.tests.map((t) => t.title)).toEqual(['a', 'b']);

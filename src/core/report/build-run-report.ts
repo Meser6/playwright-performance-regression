@@ -22,7 +22,6 @@ import { collapseIssues } from './issues.ts';
 /** The parts of the aggregation result (08) the report needs. */
 export interface RunReportAggregates {
   endpoints: Record<string, AggregateStats>;
-  custom: Record<string, AggregateStats>;
   origins: RunReport['origins'];
   /** 08-REQ-37, 08-REQ-38; null only when rebuilding a report migrated from version 1. */
   testBreakdown: TestBreakdownStats | null;
@@ -212,7 +211,7 @@ function buildTestBreakdown(
 export function buildRunReport(input: RunReportInput): RunReport {
   const { meta, aggregates, evaluation } = input;
   const rawUrls = input.config.report?.rawUrls === true;
-  const kindOrder: Record<Kind, number> = { api: 0, custom: 1 };
+  const kindOrder: Record<Kind, number> = { api: 0 };
   // The snapshot is complete in a real run; a sparse one falls back to the defaults (03).
   const hintOptions: HintOptions = {
     errorStatuses: input.config.checks?.errors?.statuses ?? perfDefaults.checks.errors.statuses,
@@ -262,13 +261,6 @@ export function buildRunReport(input: RunReportInput): RunReport {
       .map((o) => ({ ...o }))
       .sort((a, b) => compareText(a.origin, b.origin)),
     endpoints,
-    custom: buildAggregates(
-      'custom',
-      aggregates.custom,
-      evaluation.perKey.custom,
-      rawUrls,
-      hintOptions,
-    ),
     testBreakdown: buildTestBreakdown(aggregates.testBreakdown, endpoints),
   };
 }

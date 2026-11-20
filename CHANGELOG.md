@@ -9,7 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- The run report (`report.json`, format version 2) holds more data for the HTML report: a
+- The run report (`report.json`) holds more data for the HTML report: a
   histogram of the retained durations per key, the median time outside TTFB
   (`ttfb.otherP50`), the part of each limit a check uses (`usage`), up to three rule-based hints
   per key, and `testBreakdown`: the backend cost of the 500 most expensive tests and a request
@@ -18,7 +18,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The HTML report is redesigned: a verdict banner and key figures on top, tabs (Overview,
-  Endpoints, Custom, Tests, Warnings, Run & config), a side panel with the details of a key and
+  Endpoints, Tests, Warnings, Run & config), a side panel with the details of a key and
   links to it (`#key=api:<key>`, `#tab=tests`), search and filter chips, rankings (slowest, most
   called, highest error rate, closest to the limit), a histogram per key, the split of TTFB and
   the rest of the time, hints that explain a violation, the headroom to every limit, the backend
@@ -26,6 +26,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   works without JavaScript, prints and adapts to the dark theme and small screens.
 - `report.json` files written by `0.1.0-next.1` or earlier are migrated when read (`thresholds
 --from`, `report`); the new fields are empty in them.
+- Breaking: new format versions. The sample attachment is version 2 (without `custom`), the
+  thresholds file version 2 (`kind` is `api`) and `report.json` version 3 (without `custom` and
+  `evaluation.counts.custom`). Thresholds files of version 1 and run reports of versions 1 and 2
+  are migrated when read; the package writes the new versions. A thresholds file of kind
+  `custom` is rejected with `SCHEMA_VALIDATION_FAILED`.
 
 - Breaking: every file and directory the package creates now starts with `pw-perf`. The default
   thresholds files are `pw-perf-thresholds.<kind>[.<env>].json` (`thresholds.filePrefix`, was
@@ -54,8 +59,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   longer prints the `report:` and `thresholds diff:` lines after them.
 - The counters line omits zero counts and says what it counts, e.g. `19 keys · 19 from file ·
 8 checked by median only (few samples) · 2 file entries not seen`.
-- `THRESHOLDS_FILE_MISSING` is reported only for a kind that has keys in the run, so projects
-  without custom measurements no longer get a warning about the custom file.
+- `THRESHOLDS_FILE_MISSING` is reported only for a kind that has keys in the run.
+
+### Removed
+
+- Breaking: custom measurements. `perf.measure()`, `perf.start()`, `perf.end()`,
+  `perf.sampleStart()` and `perf.sampleEnd()` are removed; the `perf` fixture keeps only
+  `perf.track(context)`, so old calls no longer type-check and throw a `TypeError` in JavaScript.
+  The kind `custom` is gone with its thresholds file `pw-perf-thresholds.custom[.<env>].json`
+  (no longer read or written; delete it by hand), the options `checks.*.*.limit.custom`,
+  `checks.errors.limit.custom` and `checks.slowShare.t.custom` (now `CONFIG_UNKNOWN_OPTION` with
+  a hint), the `CUSTOM_*` warnings, the `Custom:` line of the summary, the Custom tab of the HTML
+  report and the migration notes for `playwright-performance`. Time user-visible steps with
+  `test.step()` and `measure.steps: true` instead. See
+  [Upgrading](docs/upgrading.md#from-010-next1-to-010-next2-custom-measurements-removed).
 
 ### Fixed
 

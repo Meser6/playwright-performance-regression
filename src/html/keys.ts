@@ -5,7 +5,16 @@ import type { Check, KeyEvaluation, RunReport } from '../core/types/index.ts';
 import { percentileBar } from './bar.ts';
 import { histogramSvg, ttfbSplitSvg } from './charts.ts';
 import type { Mark } from './charts.ts';
-import { DASH, KIND_LABEL, isBlocking, join, keyAnchor, rowGroup, topCheck } from './context.ts';
+import {
+  DASH,
+  KIND_LABEL,
+  aggregatesOf,
+  isBlocking,
+  join,
+  keyAnchor,
+  rowGroup,
+  topCheck,
+} from './context.ts';
 import type { Ctx, LinkKind } from './context.ts';
 import type { HtmlAggregate } from './data.ts';
 import { html } from './escape.ts';
@@ -329,7 +338,7 @@ function keyFilters(kind: LinkKind, total: number): SafeHtml {
 
 /** The key table of one kind (11, chapter 6.4). */
 export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
-  const aggregates = kind === 'api' ? ctx.data.endpoints : ctx.data.custom;
+  const aggregates = aggregatesOf(ctx.data, kind);
   const keys = ctx.order[kind];
   const cols: [column: string, label: string][] = [
     ['key', 'Key'],

@@ -10,17 +10,11 @@
         "kind": "api",
         "path": "pw-perf-thresholds.api.json",
         "file": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": null,
           "entries": {"POST /api/orders":{"median":2000,"percentile":1400,"p99":4000,"maxErrorRate":0.05}}
         }
-      },
-      "custom": {
-        "status": "loaded",
-        "kind": "custom",
-        "path": "pw-perf-thresholds.custom.json",
-        "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
       }
     },
     "aggregates": {
@@ -65,8 +59,7 @@
         "GET /api/filler-37": {"durations":[[20,300]]},
         "GET /api/filler-38": {"durations":[[20,300]]},
         "GET /api/filler-39": {"durations":[[20,300]]}
-      },
-      "custom": {}
+      }
     }
   },
   "expected": {
@@ -84,19 +77,6 @@
         "unseenThresholdEntries": 0,
         "violations": 1,
         "blockingViolations": 1,
-        "muted": 0
-      },
-      "custom": {
-        "keys": 0,
-        "fromFile": 0,
-        "fromDefaults": 0,
-        "notEvaluated": 0,
-        "tooFewSamples": 0,
-        "fileEntriesNotEvaluated": 0,
-        "medianOnly": 0,
-        "unseenThresholdEntries": 0,
-        "violations": 0,
-        "blockingViolations": 0,
         "muted": 0
       }
     },

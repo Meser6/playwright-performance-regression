@@ -1,0 +1,10 @@
+{
+  "entries": {
+    "checkout:load-cart": {
+      "median": 800
+    }
+  },
+  "generated": null,
+  "kind": "custom",
+  "schemaVersion": 1
+}

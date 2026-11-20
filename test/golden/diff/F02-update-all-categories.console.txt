@@ -11,8 +11,6 @@ Thresholds: pw-perf-thresholds.api.json (updated)
   ! GET /api/muted-expired muted (expired 2026-11-15)
 
   2 entries were not seen in this run and were kept. Use --prune to remove them.
-Thresholds: pw-perf-thresholds.custom.json (not written)
-  no entries
 
 Review the changes and commit the thresholds files.
 Diff: pw-perf-results/thresholds-diff.md

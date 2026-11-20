@@ -1,6 +1,6 @@
 # Thresholds
 
-Thresholds are the limits each endpoint key and custom measurement is checked against. They live
+Thresholds are the limits each endpoint key is checked against. They live
 in JSON files in your repository and are reviewed and committed like code.
 
 - [Files](#files)
@@ -19,11 +19,10 @@ in JSON files in your repository and are reviewed and committed like code.
 There is one file per kind and environment, in `thresholds.dir` (default: next to
 `playwright.config`):
 
-| File                                | Contents                                                       |
-| ----------------------------------- | -------------------------------------------------------------- |
-| `pw-perf-thresholds.api.json`       | backend requests, one entry per endpoint key                   |
-| `pw-perf-thresholds.custom.json`    | custom measurements (`perf.measure()`, `perf.start()`/`end()`) |
-| `pw-perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging`              |
+| File                                | Contents                                          |
+| ----------------------------------- | ------------------------------------------------- |
+| `pw-perf-thresholds.api.json`       | backend requests, one entry per endpoint key      |
+| `pw-perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging` |
 
 An entry looks like this:
 

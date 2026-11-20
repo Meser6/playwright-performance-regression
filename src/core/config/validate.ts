@@ -19,6 +19,9 @@ export type ConfigIssueCode =
   | 'CONFIG_PERCENTILE_IS_P99';
 
 const SCHEMA_FILE = 'schemas/config.schema.json';
+/** Hint for the options of the removed custom measurements (03-REQ-19, D-32). */
+const REMOVED_CUSTOM_HINT =
+  'custom measurements were removed in 0.1.0-next.2; use measure.steps and limit.step (test.step durations) instead.';
 const MAX_SUGGESTION_DISTANCE = 2;
 /** Validation reports every problem (03-REQ-09); the cap only guards against huge inputs. */
 const MAX_SCHEMA_PROBLEMS = 1000;
@@ -82,6 +85,16 @@ export function suggestOption(parent: readonly Segment[], name: string): string 
   return moved === undefined ? undefined : formatPath(moved);
 }
 
+/**
+ * True for `custom` in a limit object of a rule (checks.<group>.<rule>.limit, checks.errors.limit)
+ * or in checks.slowShare.t: options of the removed custom measurements (03-REQ-19).
+ */
+function isRemovedCustomOption(parent: readonly Segment[], name: string): boolean {
+  if (name !== 'custom' || parent[0] !== 'checks') return false;
+  if (parent.at(-1) === 'limit') return true;
+  return parent.length === 3 && parent[1] === 'slowShare' && parent[2] === 't';
+}
+
 /** Hint with the expected format: the default value as an example, when there is one. */
 function exampleHint(segments: readonly Segment[]): string {
   let example = valueAt(DEFAULT_CONFIG, segments);
@@ -98,6 +111,9 @@ function problemToIssue(problem: Problem, document: unknown): ConfigIssue {
   const segments = pointerSegments(problem.pointer, document);
   if (problem.kind === 'unknown' && problem.property !== undefined) {
     const option = [...segments, problem.property];
+    if (isRemovedCustomOption(segments, problem.property)) {
+      return issue('CONFIG_UNKNOWN_OPTION', option, 'unknown option', REMOVED_CUSTOM_HINT);
+    }
     const suggestion = suggestOption(segments, problem.property);
     return issue(
       'CONFIG_UNKNOWN_OPTION',
@@ -168,7 +184,7 @@ const RULES: readonly (readonly string[])[] = [
   ['checks', 'slowShare', 'wilson'],
   ['checks', 'errors'],
 ];
-const KINDS = ['api', 'custom'] as const;
+const KINDS = ['api'] as const;
 const MIN_PERCENTILE = 50;
 
 function percentileLevel(name: unknown): number | undefined {

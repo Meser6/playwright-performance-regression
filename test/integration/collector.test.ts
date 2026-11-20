@@ -177,7 +177,6 @@ describe('collector in Chromium (perf mode)', () => {
 
   test('the run passes', () => {
     expect(run.status, run.output).toBe(0);
-    expect(result(run, 'timeout during measure').status).toBe('timedOut');
     expect(run.results.length).toBeGreaterThan(15);
   });
 
@@ -213,9 +212,7 @@ describe('collector in Chromium (perf mode)', () => {
     const b = batch(run, 'no browser');
     expect(b.collector.browserName).toBeNull();
     expect(b.requests).toEqual([]);
-    expect(b.custom).toEqual([
-      { name: 'compute', outcome: 'ok', duration: expect.any(Number), endTime: expect.any(Number) },
-    ]);
+    expect(b).not.toHaveProperty('custom');
   });
 
   test('05-AC-03 requests from a popup and a second tab are measured', () => {
@@ -354,29 +351,6 @@ describe('collector in Chromium (perf mode)', () => {
     // The fixture context itself needs no auto-tracking.
     expect(batch(run, 'single wrap').diagnostics).toEqual([]);
   });
-
-  test('custom measurements in the test, in beforeEach and at a timeout (06, chapter 11)', () => {
-    const b = batch(run, 'measure, start and end');
-    expect(b.custom.map((s) => [s.name, s.outcome])).toEqual([
-      ['hook:before-each', 'ok'],
-      ['demo:load', 'ok'],
-      ['demo:call', 'ok'],
-      ['demo:alias', 'ok'],
-      ['demo:error', 'error'],
-    ]);
-    const call = b.custom.find((s) => s.name === 'demo:call');
-    expect(call?.duration).toBeGreaterThanOrEqual(100);
-    const timedOut = result(run, 'timeout during measure');
-    expect(timedOut.status).toBe('timedOut');
-    const t = batch(run, 'timeout during measure');
-    expect(t.custom.map((s) => [s.name, s.outcome])).toEqual([
-      ['hook:before-each', 'ok'],
-      ['demo:slow', 'unfinished'],
-    ]);
-    expect(t.diagnostics).toEqual([
-      expect.objectContaining({ code: 'CUSTOM_UNFINISHED', count: 1 }),
-    ]);
-  });
 });
 
 describe('collector in Chromium: requests in flight at test end', () => {
@@ -445,7 +419,7 @@ describe('collector in Chromium: requests in flight at test end', () => {
 
 describe('collector in Chromium: perf mode off', () => {
   test(
-    '05-AC-01 06-AC-04 without perf mode the tests behave the same and have no attachment',
+    '05-AC-01 without perf mode the tests behave the same and have no attachment',
     async () => {
       const run = await runPlaywright({}, MAIN_FILES);
       expect(run.status, run.output).toBe(0);
@@ -455,12 +429,8 @@ describe('collector in Chromium: perf mode off', () => {
           r.attachments.filter((a) => a.name === SAMPLES_ATTACHMENT_NAME),
           r.title,
         ).toEqual([]);
-        expect(r.status, r.title).toBe(
-          r.title === 'timeout during measure' ? 'timedOut' : 'passed',
-        );
+        expect(r.status, r.title).toBe('passed');
       }
-      // perf.measure ran its function and perf.end returned a duration (asserted in the test).
-      expect(result(run, 'measure, start and end').status).toBe('passed');
       expect(result(run, 'no browser').status).toBe('passed');
     },
     RUN_TIMEOUT,

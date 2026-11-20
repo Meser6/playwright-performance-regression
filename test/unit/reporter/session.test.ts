@@ -88,7 +88,7 @@ describe('reporter session in test mode', () => {
       { name: 'chromium', role: 'measured', browserName: 'chromium', repeatEach: 5, retries: 0 },
     ]);
     expect(report.runConditions.overriddenSettings).toEqual(['trace']);
-    // No custom keys in this run: no warning about the custom file (09-D-17).
+    // Only the endpoint thresholds file is looked for (09-D-17, D-32).
     expect(codes(report.warnings)).toEqual(['THRESHOLDS_FILE_MISSING']);
     expect(report.toolErrors).toEqual([]);
 
@@ -346,7 +346,7 @@ describe('reporter session in test mode', () => {
     s.testBegin();
     s.testEnd(
       fakeTest(dir, { title: 'broken' }),
-      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 2 as 1 }))]),
+      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 3 as 2 }))]),
     );
     await s.end({ status: 'passed' });
     const report = readReport();
@@ -585,6 +585,7 @@ describe('reporter session in thresholds mode', () => {
     };
     expect(Object.keys(file.entries).sort()).toEqual(['GET /api/cart', 'GET /api/items/:id']);
     expect(file.generated.sourceRunId).toBe('run-t');
+    // No file of the removed custom kind is written (D-32).
     expect(existsSync(join(dir, 'pw-perf-thresholds.custom.json'))).toBe(false);
     expect(readFileSync(outcome.paths.thresholdsDiff ?? '', 'utf8')).toContain('# Thresholds diff');
     expect(stdout.indexOf('Thresholds: pw-perf-thresholds.api.json (created)')).toBeGreaterThan(

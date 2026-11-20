@@ -24,7 +24,7 @@ export interface GoldenCase {
   name: string;
   input?: unknown;
   inputText?: string;
-  expectedKind?: 'api' | 'custom';
+  expectedKind?: 'api';
   schemaVerdict?: 'valid';
   expected: { ok: true } | { code: string; pointers?: string[] };
 }

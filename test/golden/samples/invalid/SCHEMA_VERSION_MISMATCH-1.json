@@ -1,5 +1,5 @@
 {
-  "name": "schemaVersion 2 (02-AC-13)",
+  "name": "sample batch v1 with custom measurements (02-AC-13, 02-AC-18)",
   "input": {
     "collector": {
       "browserName": "chromium",
@@ -8,10 +8,16 @@
     },
     "custom": [
       {
-        "duration": 812.3,
+        "duration": 15,
         "endTime": 1763460001000,
-        "name": "checkout:load-cart",
-        "outcome": "ok"
+        "name": "save ticket",
+        "outcome": "error"
+      },
+      {
+        "duration": null,
+        "endTime": null,
+        "name": "Zapisz zgłoszenie ż",
+        "outcome": "unfinished"
       }
     ],
     "diagnostics": [],
@@ -54,7 +60,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 1
   },
   "expected": {
     "code": "SCHEMA_VERSION_MISMATCH"

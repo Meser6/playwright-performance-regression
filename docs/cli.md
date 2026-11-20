@@ -44,8 +44,8 @@ pw-perf test [--env <label>] [--repeat <n>] [playwright test arguments]
 ```
 
 Runs `playwright test` in perf mode: every measured test runs several times in one worker, the
-backend requests and custom measurements are recorded, compared with the thresholds files of the
-project, and the run fails when an endpoint got slower or returns more errors.
+backend requests are recorded, compared with the thresholds files of the project, and the run
+fails when an endpoint got slower or returns more errors.
 
 | Option          | Meaning                                                                                                      |
 | --------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -333,12 +333,12 @@ In CI, treat 2 as "performance regression" and 3 as "the measurement itself did 
 
 ## Output files
 
-| File                                                                            | Written by                                              |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `pw-perf-results/report.json`                                                   | every run (`report.dir`)                                |
-| `pw-perf-results/report.html`                                                   | every run unless `report.html` is `false`; `report`     |
-| `pw-perf-results/thresholds-diff.md`                                            | `thresholds`, `thresholds --from`                       |
-| `pw-perf-thresholds.api[.<env>].json`, `pw-perf-thresholds.custom[.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
+| File                                  | Written by                                              |
+| ------------------------------------- | ------------------------------------------------------- |
+| `pw-perf-results/report.json`         | every run (`report.dir`)                                |
+| `pw-perf-results/report.html`         | every run unless `report.html` is `false`; `report`     |
+| `pw-perf-results/thresholds-diff.md`  | `thresholds`, `thresholds --from`                       |
+| `pw-perf-thresholds.api[.<env>].json` | `thresholds`, `thresholds --from` (in `thresholds.dir`) |
 
 Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and

@@ -117,7 +117,7 @@ export function largeReport(keys: number, retained: number): RunReport {
       },
     };
   }
-  return { ...base, endpoints, custom: {} };
+  return { ...base, endpoints };
 }
 
 const REFERENCE_KEY = (i: number): string =>

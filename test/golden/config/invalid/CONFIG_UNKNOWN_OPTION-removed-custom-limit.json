@@ -1,0 +1,5 @@
+{
+  "name": "limit of the removed custom measurements (03-REQ-19)",
+  "input": { "checks": { "time": { "median": { "limit": { "api": 2000, "custom": 5000 } } } } },
+  "expected": { "code": "CONFIG_UNKNOWN_OPTION", "paths": ["checks.time.median.limit.custom"] }
+}

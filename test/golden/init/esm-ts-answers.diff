@@ -112,7 +112,7 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,319 @@
+@@ -0,0 +1,298 @@
 +// Configuration of playwright-performance-regression, written by "npx pw-perf init".
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
@@ -218,8 +218,6 @@
 +  //       limit: {
 +  //         // Threshold limit in whole milliseconds, rounded up.
 +  //         api: 2000,
-+  //         // Threshold limit in whole milliseconds, rounded up.
-+  //         custom: 5000,
 +  //       },
 +  //     },
 +  //     // The percentile chosen in level must not exceed the limit.
@@ -235,8 +233,6 @@
 +  //       limit: {
 +  //         // Threshold limit in whole milliseconds, rounded up.
 +  //         api: 2000,
-+  //         // Threshold limit in whole milliseconds, rounded up.
-+  //         custom: 5000,
 +  //       },
 +  //       // Headroom added to the source run value when deriving this limit.
 +  //       margin: {
@@ -267,8 +263,6 @@
 +  //       limit: {
 +  //         // Threshold limit in whole milliseconds, rounded up.
 +  //         api: 4000,
-+  //         // Threshold limit in whole milliseconds, rounded up.
-+  //         custom: 10000,
 +  //       },
 +  //     },
 +  //   },
@@ -282,15 +276,6 @@
 +  //         min: 500,
 +  //         // Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.
 +  //         max: 2000,
-+  //         // Derived T is at most medianFactor × p50.
-+  //         medianFactor: 2,
-+  //       },
-+  //       // Bounds of the derived T for custom measurement keys.
-+  //       custom: {
-+  //         // Lower clamp of derived T.
-+  //         min: 1000,
-+  //         // Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.
-+  //         max: 10000,
 +  //         // Derived T is at most medianFactor × p50.
 +  //         medianFactor: 2,
 +  //       },
@@ -312,8 +297,6 @@
 +  //       limit: {
 +  //         // Value between 0 and 1 inclusive.
 +  //         api: 0.85,
-+  //         // Value between 0 and 1 inclusive.
-+  //         custom: 0.85,
 +  //       },
 +  //     },
 +  //     // Share of samples slower than T must not exceed the limit (lower Wilson bound compared).
@@ -339,8 +322,6 @@
 +  //       limit: {
 +  //         // Value between 0 and 1 inclusive.
 +  //         api: 0.05,
-+  //         // Value between 0 and 1 inclusive.
-+  //         custom: 0.05,
 +  //       },
 +  //     },
 +  //   },
@@ -358,8 +339,6 @@
 +  //     limit: {
 +  //       // Value between 0 and 1 inclusive.
 +  //       api: 0.05,
-+  //       // Value between 0 and 1 inclusive.
-+  //       custom: 0.05,
 +  //     },
 +  //     // Headroom added to the source run value when deriving this limit.
 +  //     margin: {

@@ -6,14 +6,6 @@
       "name": "playwright-js",
       "version": "0.1.0"
     },
-    "custom": [
-      {
-        "duration": 812.3,
-        "endTime": 1763460001000,
-        "name": "checkout:load-cart",
-        "outcome": "ok"
-      }
-    ],
     "diagnostics": [],
     "requests": [
       {
@@ -30,7 +22,7 @@
         "url": "https://app.example/api/orders"
       }
     ],
-    "schemaVersion": 1
+    "schemaVersion": 2
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

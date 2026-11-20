@@ -37,7 +37,7 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 - [Configuration and perf mode](#configuration-and-perf-mode)
 - [CLI](#cli)
 - [init](#init)
-- [Collector and custom measurements](#collector-and-custom-measurements)
+- [Collector](#collector)
 - [Endpoint keys](#endpoint-keys)
 - [Statistics](#statistics)
 - [Run and reporter](#run-and-reporter)
@@ -310,7 +310,7 @@ hand. [adoption.md](adoption.md) lists the layouts `init` changes by itself.
 **Error (exit code 3).** A file could not be written while applying the changes. Check the
 permissions of the file and its directory, then run `init` again.
 
-## Collector and custom measurements
+## Collector
 
 Collector problems never change a test result. Diagnostics travel with the samples and appear as
 warnings in the report.
@@ -356,35 +356,11 @@ the most of them. Typical sources are long polling, streaming responses and serv
 Exclude such URLs with `measure.exclude` (this also removes the wait at test end), or raise
 `measure.pendingTimeoutMs` for slow but finite requests.
 
-### CUSTOM_INVALID_NAME
-
-**Test error.** `perf.measure()`, `perf.start()` or `perf.end()` got an invalid name and threw a
-`TypeError`. A name has 1 to 200 characters, no control characters and no leading or trailing
-whitespace, for example `"checkout:load-cart"`.
-
-### CUSTOM_ALREADY_STARTED
-
-**Warning.** `perf.start(name)` was called while a measurement with the same name was still
-running. The earlier one is recorded as `unfinished`. Call `perf.end(name)` before starting it
-again, or use `perf.measure(name, fn)`.
-
-### CUSTOM_END_WITHOUT_START
-
-**Warning.** `perf.end(name)` was called without a matching `perf.start(name)` in the same test.
-Check the name, and that `start` ran (for example it was not skipped by an early return).
-
-### CUSTOM_UNFINISHED
-
-**Warning.** Custom measurements were still running when the test ended (the message lists their
-names). They are recorded with the outcome `unfinished`, which counts as an error of that
-measurement. End every `perf.start()` with `perf.end()`, or use `perf.measure()`, which always
-ends.
-
 ## Endpoint keys
 
 ### NORMALIZE_KEY_BUILDER_THREW
 
-**Warning.** The custom `keys.keyBuilder` function threw an exception for a request; the built-in
+**Warning.** Your `keys.keyBuilder` function threw an exception for a request; the built-in
 normalization was used for it. Fix the function so it never throws; return `undefined` to use the
 built-in rules.
 
@@ -523,10 +499,9 @@ percentile. Derive the thresholds again after changing the level.
 
 ### THRESHOLDS_FILE_MISSING
 
-**Warning.** The thresholds file for a kind (endpoints or custom measurements) and the current
-environment label was not found, so those keys are evaluated with the default limits from
-`checks.*.limit`. It is reported only for a kind that has keys in the run: a project without
-custom measurements gets no warning about the custom file. Derive thresholds with `npx pw-perf thresholds` and commit the file. When an
+**Warning.** The thresholds file for a kind (endpoints) and the current environment label was not
+found, so those keys are evaluated with the default limits from `checks.*.limit`. It is reported
+only for a kind that has keys in the run. Derive thresholds with `npx pw-perf thresholds` and commit the file. When an
 environment label is set, a file without the label is not used for it; the hint says so when such
 a file exists. See [thresholds.md](thresholds.md).
 
@@ -604,8 +579,8 @@ tests are probably not measured: check the integration as for
 
 ### THRESHOLDS_KIND_SKIPPED
 
-**Warning.** One kind (endpoints or custom measurements) has no key with enough samples, so its
-file was not written; the other kind was. Run more repetitions if you need that file.
+**Warning.** One kind of keys has no key with enough samples, so its file was not written; the
+files of the other kinds were. Run more repetitions if you need that file.
 
 ### THRESHOLDS_MANUAL_FILE
 
@@ -678,8 +653,7 @@ directory describe each format. Hand edits of thresholds files are the usual cau
 ### THRESHOLDS_KIND_MISMATCH
 
 **Error.** A thresholds file has a `kind` that does not match its file name: endpoint limits live
-in `pw-perf-thresholds.api[.<env>].json`, custom measurements in
-`pw-perf-thresholds.custom[.<env>].json`. Move the entries to the right file or fix `kind`.
+in `pw-perf-thresholds.api[.<env>].json`. Move the entries to the right file or fix `kind`.
 
 ## HTML report
 

@@ -26,7 +26,7 @@ import { createAjv, validator } from './schemas.ts';
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
-function parse(format: Format, text: string, kind: 'api' | 'custom'): Result<unknown, SchemaIssue> {
+function parse(format: Format, text: string, kind: 'api'): Result<unknown, SchemaIssue> {
   switch (format) {
     case 'samples':
       return parseSampleBatch(text, 'golden');
@@ -48,8 +48,12 @@ const VERSIONED: Record<Format, VersionedFormat> = {
   outcome: OUTCOME_FORMAT,
 };
 
-/** The document after the migrations the parser applies to an older schemaVersion. */
+/**
+ * The document after the migrations the parser applies to an older schemaVersion. The sample
+ * batch is never migrated (02-REQ-13).
+ */
 function migrated(format: Format, document: Json): Json {
+  if (format === 'samples') return document;
   const { current, migrations } = VERSIONED[format];
   if (document === null || typeof document !== 'object' || Array.isArray(document)) return document;
   const version = document['schemaVersion'];
@@ -69,7 +73,7 @@ function extraChecksPass(format: Format, document: unknown): boolean {
   extra(document as Record<string, unknown>, sink);
   return sink.problems.length === 0;
 }
-const kindOf = (c: GoldenCase): 'api' | 'custom' => c.expectedKind ?? 'api';
+const kindOf = (c: GoldenCase): 'api' => c.expectedKind ?? 'api';
 
 describe('02-AC-01 core/schema and Ajv agree on the golden files', () => {
   describe.each(Object.keys(FORMATS) as Format[])('golden files: %s', (format) => {

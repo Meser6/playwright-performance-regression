@@ -112,10 +112,7 @@ describe('thresholds --from', () => {
     expect(await main(['thresholds', '--from', 'failed.json'], failed.host)).toBe(0);
     expect(failed.stderr.join('')).toContain('warning CLI_REPORT_TESTS_FAILED');
 
-    writeFileSync(
-      join(cwd, 'empty.json'),
-      JSON.stringify({ ...source, endpoints: {}, custom: {} }),
-    );
+    writeFileSync(join(cwd, 'empty.json'), JSON.stringify({ ...source, endpoints: {} }));
     const empty = cli();
     expect(await main(['thresholds', '--from', 'empty.json'], empty.host)).toBe(3);
     expect(empty.stderr.join('')).toContain('error THRESHOLDS_EMPTY_REPORT');
@@ -377,9 +374,9 @@ describe('report', () => {
     ).toBe(0);
     expect(readFileSync(join(cwd, 'in', 'report.html'), 'utf8')).toBe('<html>run-src</html>');
 
-    const custom = cli();
+    const explicit = cli();
     expect(
-      await main(['report', '--input', 'in/report.json', '--output', 'out/r.html'], custom.host, {
+      await main(['report', '--input', 'in/report.json', '--output', 'out/r.html'], explicit.host, {
         renderHtml: () => 'x',
       }),
     ).toBe(0);

@@ -37,13 +37,9 @@ const failedRequest = {
   ttfb: null,
 };
 const samples = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   collector: { name: 'playwright', version: '0.1.0', browserName: 'chromium' },
   requests: [requestSample, failedRequest],
-  custom: [
-    { name: 'open ticket', outcome: 'ok', duration: 812.3, endTime: 1_763_460_001_000 },
-    { name: 'save ticket', outcome: 'unfinished', duration: null, endTime: null },
-  ],
   diagnostics: [],
 };
 
@@ -60,7 +56,7 @@ const derivation = {
   },
 };
 const thresholds = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kind: 'api',
   generated: null,
   entries: {
@@ -91,7 +87,7 @@ const counts = {
 };
 function runReport(): { [key: string]: Json } {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     tool,
     runId: 'run-1',
     mode: 'test',
@@ -112,13 +108,12 @@ function runReport(): { [key: string]: Json } {
       overriddenSettings: [],
     },
     tests: { status: 'passed', expected: 3, unexpected: 0, flaky: 0, skipped: 0 },
-    evaluation: { status: 'passed', gateEnabled: true, counts: { api: counts, custom: counts } },
+    evaluation: { status: 'passed', gateEnabled: true, counts: { api: counts } },
     thresholdFiles: [],
     warnings: [],
     toolErrors: [],
     origins: [],
     endpoints: {},
-    custom: {},
     testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }
@@ -187,15 +182,10 @@ describe('schemas', () => {
     expect(validate({ ...samples, requests: [okWithFailureText] })).toBe(false);
     expect(validate({ ...samples, requests: [{ ...requestSample, method: 'get' }] })).toBe(false);
 
-    const unfinishedWithDuration = {
-      name: 'x',
-      outcome: 'unfinished',
-      duration: 10,
-      endTime: null,
-    };
-    expect(validate({ ...samples, custom: [unfinishedWithDuration] })).toBe(false);
+    // The custom measurements array was removed in version 2 (D-32).
+    expect(validate({ ...samples, custom: [] })).toBe(false);
 
-    expect(validate({ ...samples, schemaVersion: 2 })).toBe(false);
+    expect(validate({ ...samples, schemaVersion: 1 })).toBe(false);
   });
 
   test('run report: valid report passes, broken reports are rejected', () => {

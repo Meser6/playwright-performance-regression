@@ -16,7 +16,6 @@ export { ConfigError } from './common.ts';
 import type {
   Aggregate,
   Check,
-  CustomSample,
   Entry,
   KeyEvaluation,
   OutcomeFile,
@@ -37,8 +36,7 @@ export type EvaluatedCheck = Omit<Check, 'usage'>;
 export type EvaluatedKey = Omit<KeyEvaluation, 'checks'> & { checks: EvaluatedCheck[] };
 export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
-export type RawCustomSample = CustomSample;
-export type Kind = 'api' | 'custom';
+export type Kind = 'api';
 export {
   DIFF_CATEGORIES,
   LIMIT_NAMES,

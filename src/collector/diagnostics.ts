@@ -1,5 +1,4 @@
-// Diagnostics of one test: collector and custom-measurement issues, collapsed by code and
-// message (05-REQ-19, 06-REQ-13).
+// Diagnostics of one test: collector issues, collapsed by code and message (05-REQ-19).
 import type { Diagnostics, Issue } from '../core/types/index.ts';
 
 /**

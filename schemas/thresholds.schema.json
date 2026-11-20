@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "kind", "generated", "entries"],
   "properties": {
-    "schemaVersion": {"const": 1},
+    "schemaVersion": {"const": 2},
     "kind": {"$ref": "common.schema.json#/$defs/kind"},
     "generated": {
       "description": "How the file was derived. Null for a file written entirely by hand. Contains no wall-clock time of generation, so deriving twice from the same report gives identical files (S-04).",

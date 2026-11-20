@@ -41,7 +41,7 @@ export class ConfigError extends Error {
   }
 }
 
-/** Sink for collector and custom-measurement diagnostics, collapsed by code. */
+/** Sink for collector diagnostics, collapsed by code. */
 export interface Diagnostics {
   add(issue: Issue): void;
   list(): Issue[];

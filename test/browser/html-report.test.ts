@@ -14,7 +14,7 @@ import { fullRun, largeReport, markupCase, referenceReport } from '../unit/html/
 
 const URL = 'http://report.test/report.html';
 const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
-const TABS = ['overview', 'endpoints', 'custom', 'tests', 'warnings', 'run'];
+const TABS = ['overview', 'endpoints', 'tests', 'warnings', 'run'];
 
 let browser: Browser;
 
@@ -63,7 +63,7 @@ async function open(
 }
 
 /** Keys of the visible rows of a key table, in their order. */
-async function rowKeys(page: Page, kind: 'api' | 'custom'): Promise<string[]> {
+async function rowKeys(page: Page, kind: 'api'): Promise<string[]> {
   return page
     .locator(`#table-${kind} > tbody`)
     .evaluateAll((bodies) =>
@@ -171,7 +171,6 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await pw(page.locator('.card .status')).toHaveText(['passed', 'failed', 'none']);
     const data = toHtmlReportData(report);
     expect(await rowKeys(page, 'api')).toEqual(defaultOrder(data.endpoints, 'p95'));
-    expect(await rowKeys(page, 'custom')).toEqual(defaultOrder(data.custom, 'p95'));
     await pw(page.locator('#table-api details')).toHaveCount(Object.keys(report.endpoints).length);
     const timed = page.locator('#table-api > tbody').nth(1);
     await timed.locator('summary').click();
@@ -185,7 +184,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.context().close();
   });
 
-  test('11-AC-14 tabs: one panel; arrows, Home and End; #tab= links; counts; Custom only with custom keys', async () => {
+  test('11-AC-14 tabs: one panel; arrows, Home and End; #tab= links; counts; no Custom tab', async () => {
     const { page } = await open(fullRun());
     const visible = async () =>
       page
@@ -216,9 +215,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await pw(tests.page.locator('#tab-overview')).toBeHidden();
     await tests.page.context().close();
 
-    const noCustom = fullRun();
-    noCustom.custom = {};
-    const plain = await open(noCustom);
+    const plain = await open(fullRun());
     await pw(plain.page.locator('[data-tab="custom"]')).toHaveCount(0);
     await pw(plain.page.locator('[data-tab="api-requests"]')).toHaveCount(0);
     await plain.page.context().close();
@@ -271,10 +268,13 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await big.page.context().close();
 
     // Deep links when the page opens.
-    const custom = await open(fullRun(), {}, '#key=custom:checkout%3Aload-cart');
-    await pw(custom.page.locator('#tab-custom')).toBeVisible();
-    await pw(custom.page.locator('#drawer-title')).toHaveText('checkout:load-cart');
-    await custom.page.context().close();
+    const known = await open(fullRun(), {}, '#key=api:GET%20%2Fapi%2Ftickets%2F%3Aid');
+    await pw(known.page.locator('#drawer-title')).toHaveText('GET /api/tickets/:id');
+    await known.page.context().close();
+    // Links of the removed custom kind open the overview (D-32).
+    const removed = await open(fullRun(), {}, '#key=custom:checkout%3Aload-cart');
+    await pw(removed.page.locator('#tab-overview')).toBeVisible();
+    await removed.page.context().close();
     const unknown = await open(fullRun(), {}, '#key=api:GET%20%2Fnope');
     await pw(unknown.page.locator('#tab-overview')).toBeVisible();
     await pw(unknown.page.getByRole('status').first()).toHaveText('Key not found in this report');
@@ -327,23 +327,6 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     );
     expect((await rowKeys(page, 'api')).sort()).toEqual(keys.filter((k) => groupOf(k) <= 1).sort());
     await page.context().close();
-
-    // Ranking kinds: only custom keys after switching endpoints off.
-    const mixed = largeReport(15, 10);
-    const cart = fullRun().custom['checkout:load-cart'] as RunReport['custom'][string];
-    for (let i = 0; i < 12; i++)
-      mixed.custom[`render:${String(i).padStart(2, '0')}`] = structuredClone(cart);
-    const ranks = await open(mixed);
-    const visibleKinds = () =>
-      ranks.page
-        .locator('ol[data-rank="called"] li')
-        .evaluateAll((items) =>
-          items.filter((i) => !i.hasAttribute('hidden')).map((i) => i.getAttribute('data-k')),
-        );
-    expect(await visibleKinds()).toHaveLength(10);
-    await ranks.page.locator('[data-kinds] button[data-k="api"]').click();
-    expect(await visibleKinds()).toEqual(new Array(10).fill('custom'));
-    await ranks.page.context().close();
   });
 
   test('11-REQ-12 11-AC-23 sorting key and Tests tables by a header, reversed by a second click', async () => {
@@ -451,7 +434,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
   test('11-AC-27 at 360 px no tab and no open drawer makes the page scroll sideways', async () => {
     const report = referenceReport(10);
     const { page } = await open(report, { viewport: { width: 360, height: 800 } });
-    for (const tab of TABS.filter((t) => t !== 'custom')) {
+    for (const tab of TABS) {
       await page.evaluate(`location.hash = '#tab=${tab}'`);
       await pw(page.locator(`#tab-${tab}`)).toBeVisible();
       expect(await page.evaluate('document.documentElement.scrollWidth'), tab).toBeLessThanOrEqual(

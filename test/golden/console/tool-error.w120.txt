@@ -6,7 +6,6 @@ Errors:
     Hint: Fix the JSON syntax, or delete the file and let the package write it again.
 
 Endpoints: 1 key · 1 not evaluated
-Custom:    1 key · 1 on default thresholds
 
  ✖ ERROR  1 tool error; the performance result is not trustworthy
 Report: /work/app/pw-perf-results/report.html

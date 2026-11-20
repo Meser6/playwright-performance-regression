@@ -1,5 +1,5 @@
 {
-  "name": "schemaVersion newer than supported (02-AC-03)",
+  "name": "schemaVersion newer than supported (03-AC-03)",
   "expectedKind": "api",
   "input": {
     "entries": {
@@ -92,7 +92,7 @@
       }
     },
     "kind": "api",
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VERSION_TOO_NEW"

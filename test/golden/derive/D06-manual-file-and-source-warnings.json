@@ -19,7 +19,7 @@
         "kind": "api",
         "path": "pw-perf-thresholds.api.qa.json",
         "file": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": null,
           "entries": {
@@ -27,8 +27,7 @@
             "GET /api/legacy": {"percentile":900}
           }
         }
-      },
-      "custom": null
+      }
     }
   },
   "expected": {
@@ -37,7 +36,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 1,
+          "schemaVersion": 2,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -70,8 +69,7 @@
           }
         },
         "changed": true
-      },
-      {"kind":"custom","content":null,"changed":false}
+      }
     ],
     "warnings": [
       {

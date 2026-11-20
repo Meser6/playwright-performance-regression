@@ -263,8 +263,7 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
-                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 5000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000}
                   }
                 }
               }
@@ -293,8 +292,7 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
-                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 5000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000}
                   }
                 },
                 "margin": {
@@ -369,8 +367,7 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 4000},
-                    "custom": {"$ref": "common.schema.json#/$defs/msLimit", "default": 10000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 4000}
                   }
                 }
               }
@@ -406,24 +403,6 @@
                     }
                   },
                   "default": {"min": 500, "max": 2000, "medianFactor": 2}
-                },
-                "custom": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "min": {"$ref": "common.schema.json#/$defs/msLimit", "description": "Lower clamp of derived T."},
-                    "max": {
-                      "$ref": "common.schema.json#/$defs/msLimit",
-                      "description": "Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13)."
-                    },
-                    "medianFactor": {
-                      "type": "number",
-                      "minimum": 1,
-                      "maximum": 10,
-                      "description": "Derived T is at most medianFactor × p50."
-                    }
-                  },
-                  "default": {"min": 1000, "max": 10000, "medianFactor": 2}
                 }
               }
             },
@@ -468,8 +447,7 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85},
-                    "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85}
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85}
                   }
                 }
               }
@@ -536,8 +514,7 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
-                    "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
                   }
                 }
               }
@@ -558,7 +535,7 @@
               "default": 5
             },
             "statuses": {
-              "description": "Request statuses counted as errors by the 'errors' rule (08, 09): a class like '5xx', an exact code like '429', FAILED (request failed without a response, not aborted), ABORTED (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end). Custom measurements: outcomes error and unfinished are always errors.",
+              "description": "Request statuses counted as errors by the 'errors' rule (08, 09): a class like '5xx', an exact code like '429', FAILED (request failed without a response, not aborted), ABORTED (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end).",
               "type": "array",
               "uniqueItems": true,
               "items": {"type": "string", "pattern": "^(?:[1-5]xx|[1-5][0-9]{2}|FAILED|ABORTED|PENDING)$"},
@@ -570,8 +547,7 @@
               "additionalProperties": false,
               "default": {},
               "properties": {
-                "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
-                "custom": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+                "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
               }
             },
             "margin": {

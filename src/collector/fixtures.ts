@@ -10,8 +10,6 @@ import {
   trackedContexts,
   wrappedTests,
 } from '../registry/index.ts';
-import { CustomTimer } from './custom-timer.ts';
-import { createDiagnostics } from './diagnostics.ts';
 import { createPerfApi } from './perf-api.ts';
 import type { PerfApi, PerfFixtures } from './perf-api.ts';
 import { TestCollector } from './test-collector.ts';
@@ -39,15 +37,10 @@ function perfModeOn(): boolean {
   return mode.value !== null;
 }
 
-/** A perf API that measures but records nothing (06-REQ-10). */
-function passiveApi(): PerfApi {
-  return createPerfApi(
-    new CustomTimer({ now, wallNow, record: false }, createDiagnostics()),
-    () => {
-      // Nothing is tracked outside perf mode or in projects that are not measured.
-    },
-  );
-}
+/** A perf API whose track() does nothing (05-REQ-32). */
+const PASSIVE_API: PerfApi = createPerfApi(() => {
+  // Nothing is tracked outside perf mode or in projects that are not measured.
+});
 
 /**
  * The buffer of one test (05-REQ-21): a collector in measured projects, otherwise only the
@@ -57,7 +50,7 @@ function passiveApi(): PerfApi {
 function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer {
   const state = getRegistered();
   if (state !== undefined && !state.measuredProjects.includes(testInfo.project.name)) {
-    return { collector: null, api: passiveApi() };
+    return { collector: null, api: PASSIVE_API };
   }
   const collector = new TestCollector({
     measure: (state?.config ?? perfDefaults).measure,
@@ -75,7 +68,7 @@ function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer 
 /* eslint-disable no-empty-pattern -- Playwright reads fixture dependencies from the pattern. */
 const passiveFixtures = {
   perf: async ({}, use: (api: PerfApi) => Promise<void>): Promise<void> => {
-    await use(passiveApi());
+    await use(PASSIVE_API);
   },
 };
 /* eslint-enable no-empty-pattern */
