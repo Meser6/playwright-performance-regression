@@ -32,7 +32,8 @@ describe('steps project', () => {
       const b = steps['a › b'];
       expect(a?.statuses).toEqual({ ok: 3 });
       expect(b?.statuses).toEqual({ ok: 3 });
-      expect(b?.stats?.min).toBeGreaterThanOrEqual(200);
+      // setTimeout(200) measured with a 1 ms wall clock can end at 199 ms (06-AC-09, 06-REQ-17).
+      expect(b?.stats?.min).toBeGreaterThanOrEqual(198);
       expect(b?.stats?.max).toBeLessThan(400);
       expect(a?.stats?.min).toBeGreaterThanOrEqual(b?.stats?.min ?? 0);
       // Hooks and fixtures are transparent: the keys are the step titles (06-REQ-20).
