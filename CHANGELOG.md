@@ -17,6 +17,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The HTML report is redesigned: a verdict banner and key figures on top, tabs (Overview,
+  Endpoints, Custom, Tests, Warnings, Run & config), a side panel with the details of a key and
+  links to it (`#key=api:<key>`, `#tab=tests`), search and filter chips, rankings (slowest, most
+  called, highest error rate, closest to the limit), a histogram per key, the split of TTFB and
+  the rest of the time, hints that explain a violation, the headroom to every limit, the backend
+  cost of each test and a waterfall of the 5 slowest test runs. It still is one offline file that
+  works without JavaScript, prints and adapts to the dark theme and small screens.
 - `report.json` files written by `0.1.0-next.1` or earlier are migrated when read (`thresholds
 --from`, `report`); the new fields are empty in them.
 

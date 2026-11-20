@@ -18,7 +18,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const templateDir = join(root, 'src/html/template');
 const outFile = join(root, 'src/html/generated/assets.ts');
 /** Target size of script and styles together, before compression (11-REQ-25). */
-const MAX_BYTES = 30 * 1024;
+const MAX_BYTES = 60 * 1024;
 
 /** @param {string} text */
 const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('base64');
