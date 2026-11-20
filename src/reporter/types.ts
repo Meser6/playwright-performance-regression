@@ -11,6 +11,7 @@ import type {
 } from '@playwright/test/reporter';
 import type { LoadedThresholds } from '../core/evaluate/index.ts';
 import type { Kind, RunReport } from '../core/types/index.ts';
+import type { PackageInfo } from '../io/package-info.ts';
 import type { ThresholdsLocation } from '../io/thresholds.ts';
 
 export type ProjectLike = Pick<FullProject, 'name' | 'repeatEach' | 'retries' | 'dependencies'> & {
@@ -66,6 +67,8 @@ export interface ReporterIo {
   relativeSlashPath(from: string, path: string): string;
   /** Removes a file if it exists (04-REQ-62). */
   removeFileSync(path: string): void;
+  /** Nearest package.json scripts and lock files (09-REQ-32). */
+  readPackageInfo(dir: string): PackageInfo;
 }
 
 /** Output stream as the reporter sees it. */

@@ -13,7 +13,8 @@ import {
   normalizationFingerprint,
 } from '../core/normalize/index.ts';
 import type { KeySample, KeyResult } from '../core/normalize/index.ts';
-import { buildRunReport } from '../core/report/index.ts';
+import { buildRunReport, nextHint, suggestCommand } from '../core/report/index.ts';
+import type { CommandContext, PerfMode, WrittenFile } from '../core/report/index.ts';
 import { StepRecorder } from './steps.ts';
 import type { RunReportInput } from '../core/report/index.ts';
 import { SCHEMA_VERSIONS, parseSampleBatch, schemaIssueToIssue } from '../core/schema/index.ts';
@@ -29,7 +30,7 @@ import { CLI_COMMAND, PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/type
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
-import { outcomeLine } from '../console/outcome-line.ts';
+import { nextLine, outcomeLine } from '../console/outcome-line.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import { renderHtmlReport } from '../html/index.ts';
@@ -169,6 +170,9 @@ export class RunSession {
   private retried = 0;
   private withArtifacts = 0;
   private readonly pending = new Map<string, number>();
+  /** Measured projects with a non-skipped test that has a batch, and those with requests. */
+  private readonly instrumentedProjects = new Set<string>();
+  private readonly projectsWithRequests = new Set<string>();
   private playwrightVersion = '';
 
   constructor(host: ReporterHost, settings: RunSettings, options: SessionOptions = {}) {
@@ -263,6 +267,8 @@ export class RunSession {
     }
     const duplicate = duplicateBaseUrlLabels(this.conditions, config, keys);
     if (duplicate !== null) this.warnings.push(duplicate);
+    const empty = emptyBaseUrlWarning(this.conditions, config);
+    if (empty !== null) this.warnings.push(empty);
     if (config.shard !== null) {
       // 04-REQ-34: each shard would evaluate part of the keys and write partial thresholds.
       this.toolErrors.push({
@@ -299,6 +305,10 @@ export class RunSession {
       if (measured && result.status !== 'skipped') this.notInstrumented += 1;
       return;
     }
+    const project = projectName(test);
+    if (measured && result.status !== 'skipped') {
+      this.instrumentedProjects.add(project);
+    }
     if (bodies.length > 1) {
       this.warnings.push({
         code: 'ATTACHMENT_DUPLICATE',
@@ -315,6 +325,7 @@ export class RunSession {
       }
       const batch = parsed.value;
       this.warnings.push(...batch.diagnostics);
+      if (measured && batch.requests.length > 0) this.projectsWithRequests.add(project);
       batch.requests.forEach((sample, ordinal) => {
         const keyed = addKeyedRequest(
           this.aggregator,
@@ -336,6 +347,17 @@ export class RunSession {
   /** Warnings known only at the end of the run (09, chapter 12.1). */
   private runWarnings(): Issue[] {
     const issues: Issue[] = [];
+    // Projects with instrumented tests but no request sample, e.g. API tests (09-REQ-33).
+    const silent = [...this.instrumentedProjects]
+      .filter((p) => !this.projectsWithRequests.has(p))
+      .sort();
+    if (silent.length > 0) {
+      issues.push({
+        code: 'RUN_PROJECT_NO_REQUESTS',
+        message: `Measured ${silent.length === 1 ? 'project' : 'projects'} ${silent.join(', ')} recorded no request sample.`,
+        hint: 'Tests that only use the request fixture (API tests) are not measured: requests made outside the browser are out of scope; remove such projects from run.projects. Otherwise check use.baseURL, withPerfFixtures and measure.include/exclude.',
+      });
+    }
     if (this.notInstrumented > 0) {
       issues.push({
         code: 'TESTS_NOT_INSTRUMENTED',
@@ -460,6 +482,10 @@ export class RunSession {
     if (this.environmentMode && written !== null) {
       this.host.stdout.write(outcomeLine(outcome, written));
     }
+    // The last line of the output (09-REQ-32).
+    if (this.next !== null) {
+      this.host.stdout.write(nextLine(this.next, this.terminal().color));
+    }
     return outcome.exitCode === 0 ? undefined : { status: 'failed' };
   }
 
@@ -577,7 +603,29 @@ export class RunSession {
         }),
       );
     }
+    this.next = nextHint({ report, commands: this.commands(), written: this.written });
     return buildOutcome(report, paths);
+  }
+
+  /** Commands of the project for each mode, for the Next: hint (09-REQ-32). */
+  private commands(): Record<PerfMode, string> {
+    const env = this.host.env;
+    const info = this.host.io.readPackageInfo(this.configDir);
+    const ctx: CommandContext = {
+      viaCli: !this.environmentMode,
+      env: this.settings.config.run.env,
+      lifecycleEvent: env['npm_lifecycle_event'] ?? null,
+      lifecycleScript: env['npm_lifecycle_script'] ?? null,
+      userAgent: env['npm_config_user_agent'] ?? null,
+      lockFiles: info.lockFiles,
+      scripts: info.scripts,
+      platform: this.host.host.platform,
+    };
+    return {
+      test: suggestCommand('test', ctx),
+      thresholds: suggestCommand('thresholds', ctx),
+      check: suggestCommand('check', ctx),
+    };
   }
 
   /**
@@ -645,6 +693,10 @@ export class RunSession {
       try {
         await io.writeJsonStable(absolute[file.kind], file.content);
         paths.thresholds.push(absolute[file.kind]);
+        this.written.push({
+          name: loaded[file.kind].path,
+          entries: Object.keys(file.content.entries).length,
+        });
       } catch (error) {
         toolErrors.push({
           code: 'THRESHOLDS_WRITE_FAILED',
@@ -693,6 +745,11 @@ export class RunSession {
       paths: { reportJson: null, reportHtml: null, thresholds: [], thresholdsDiff: null },
     };
   }
+
+  /** Thresholds files written in this run, for the Next: hint (09-REQ-32). */
+  private readonly written: WrittenFile[] = [];
+  /** Text of the Next: hint, set by finish(). */
+  private next: string | null = null;
 
   /** Whether entries not seen were removed in this run (04-REQ-35). */
   private pruned = false;
@@ -747,4 +804,36 @@ export class RunSession {
       return null;
     }
   }
+}
+
+/**
+ * CONFIG_BASEURL_EMPTY (03-REQ-21): a measured project whose use.baseURL is blank or has a host
+ * label "undefined" or "null", the result of joining an unset variable. An unset baseURL is not
+ * reported here (only by check, 04-REQ-50).
+ */
+function emptyBaseUrlWarning(
+  conditions: RunReport['runConditions'],
+  config: ConfigLike,
+): Issue | null {
+  const names = conditions.projects.flatMap((p, i) => {
+    if (p.role !== 'measured') return [];
+    const baseURL = config.projects[i]?.use.baseURL;
+    if (typeof baseURL !== 'string') return [];
+    if (baseURL.trim() === '') return [p.name];
+    let host: string;
+    try {
+      host = new URL(baseURL).hostname;
+    } catch {
+      return [];
+    }
+    return host.split('.').some((label) => label === 'undefined' || label === 'null')
+      ? [p.name]
+      : [];
+  });
+  if (names.length === 0) return null;
+  return {
+    code: 'CONFIG_BASEURL_EMPTY',
+    message: `Measured ${names.length === 1 ? 'project' : 'projects'} ${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} an empty use.baseURL.`,
+    hint: 'If baseURL comes from environment variables, run the tests through the script that sets them (e.g. PW_PERF_MODE=test npm run e2e:qa, see docs/dynamic-environments.md).',
+  };
 }
