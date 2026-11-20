@@ -5,4 +5,14 @@ export type {
   RunReportEvaluation,
   RunReportInput,
 } from './build-run-report.ts';
+export {
+  MAX_HINTS,
+  NEAR_LIMIT_USAGE,
+  TAIL_MEDIAN_USAGE,
+  checkUsage,
+  keyHeadroom,
+  keyHints,
+  withUsage,
+} from './hints.ts';
+export type { HintFacts, HintOptions } from './hints.ts';
 export { collapseIssues } from './issues.ts';

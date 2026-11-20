@@ -6,7 +6,15 @@ import { buildRunReport } from '../../../src/core/report/index.ts';
 import { parseOutcome } from '../../../src/core/schema/index.ts';
 import type { Outcome, RunReport } from '../../../src/core/types/index.ts';
 import { loadCases } from '../../contract/golden.ts';
-import { aggregates, both, config, invalid, loaded, options } from './evaluate-helpers.ts';
+import {
+  NO_TEST_BREAKDOWN,
+  aggregates,
+  both,
+  config,
+  invalid,
+  loaded,
+  options,
+} from './evaluate-helpers.ts';
 import type { AggregateSpec } from './evaluate-helpers.ts';
 
 const KEY = 'GET /api/tickets';
@@ -60,7 +68,7 @@ function run(r: Run = {}): { report: RunReport; outcome: Outcome } {
     normalization: base.normalization,
     runConditions: base.runConditions,
     tests: r.tests ?? tests(0),
-    aggregates: { ...aggs, origins: [] },
+    aggregates: { ...aggs, origins: [], testBreakdown: NO_TEST_BREAKDOWN },
     evaluation,
     warnings: [...assessment.warnings, ...evaluation.warnings],
     toolErrors: [...assessment.toolErrors, ...evaluation.toolErrors],

@@ -2,6 +2,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Aggregate, Check, RunReport } from '../../../src/core/types/index.ts';
+import { checkUsage } from '../../../src/core/report/index.ts';
+import { histogram } from '../../../src/core/stats/index.ts';
 import { GOLDEN_DIR } from '../../contract/golden.ts';
 
 export const RUN_REPORTS = join(GOLDEN_DIR, 'run-report', 'valid');
@@ -53,6 +55,7 @@ function check(rule: Check['rule'], actual: number, limit: number, passed: boole
     passed,
     hardLimitExceeded: false,
     blocking: !passed,
+    usage: checkUsage({ rule, actual, limit }),
   };
 }
 
@@ -90,6 +93,7 @@ export function largeReport(keys: number, retained: number): RunReport {
       },
       slowest: slowest as Aggregate['slowest'],
       samples: { durations, sampled: false },
+      histogram: histogram(durations) as Aggregate['histogram'],
       evaluation: {
         ...template.evaluation,
         muted: null,

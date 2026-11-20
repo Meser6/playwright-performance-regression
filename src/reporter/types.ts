@@ -43,7 +43,7 @@ export type TestLike = Pick<
   outcome(): ReturnType<TestCase['outcome']>;
 };
 
-export type ResultLike = Pick<TestResult, 'status' | 'retry'> & {
+export type ResultLike = Pick<TestResult, 'status' | 'retry' | 'startTime'> & {
   attachments: { name: string; contentType: string; body?: Buffer | undefined; path?: string }[];
 };
 

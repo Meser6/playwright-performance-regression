@@ -111,6 +111,57 @@ describe('reporter session in test mode', () => {
     expect(out).not.toContain('\u001b[');
   });
 
+  test('08-REQ-36 each result is closed after its batches: executions, offsets from TestResult.startTime', async () => {
+    const s = session(fakeHost(dir), registered({}, { mode: 'test', runId: 'run-1' }));
+    s.begin(fakeConfig(dir), ROOT);
+    const start = Date.UTC(2026, 10, 18, 10, 0, 0, 0);
+    for (let r = 0; r < 3; r++) {
+      const test = fakeTest(dir, { repeatEachIndex: r });
+      s.testBegin();
+      // The third run has an empty batch; it still counts as an execution.
+      const requests =
+        r === 2
+          ? []
+          : [
+              request('/api/cart', 100 + r, { startTime: start + 250 }),
+              request('/api/items/1', 40, { startTime: start + 120 }),
+            ];
+      s.testEnd(test, result([batch(requests)], { startTime: new Date(start + 100 * r) }));
+    }
+    await s.end({ status: 'passed' });
+    const breakdown = readReport().testBreakdown;
+    expect(breakdown?.tests).toEqual([
+      {
+        title: 'cart › adds an item',
+        project: 'chromium',
+        file: 'tests/cart.spec.ts',
+        line: 7,
+        executions: 3,
+        requestCount: 4,
+        errorCount: 0,
+        totalMs: 281,
+        maxRequestMs: 101,
+        keyCount: 2,
+        topKeys: [
+          { key: 'GET /api/cart', count: 2, totalMs: 201 },
+          { key: 'GET /api/items/:id', count: 2, totalMs: 80 },
+        ],
+        violatedKeys: [],
+        violatedKeyCount: 0,
+      },
+    ]);
+    // The slowest run (repeat 1) started 100 ms after the first one.
+    expect(breakdown?.waterfalls.map((w) => [w.test.repeatEachIndex, w.requests])).toEqual([
+      [
+        1,
+        [
+          { offset: 20, duration: 40, key: 'GET /api/items/:id', status: '200' },
+          { offset: 150, duration: 101, key: 'GET /api/cart', status: '200' },
+        ],
+      ],
+    ]);
+  });
+
   test('04-REQ-20 onBegin prints the number of test executions', () => {
     const captured = fakeHost(dir);
     const s = session(captured, registered({}, { mode: 'test' }));

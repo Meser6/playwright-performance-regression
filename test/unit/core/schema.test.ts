@@ -15,6 +15,7 @@ import { migrate, parseVersioned } from '../../../src/core/schema/parse.ts';
 import type { VersionedFormat } from '../../../src/core/schema/parse.ts';
 import { GOLDEN_DIR, loadCases, oldVersionDirs } from '../../contract/golden.ts';
 import type { Format } from '../../contract/golden.ts';
+import { createAjv, validator } from '../../contract/schemas.ts';
 
 const validInput = (format: Format, file: string): Record<string, unknown> => {
   const found = loadCases(format).find((c) => c.dir === 'valid' && c.file === file);
@@ -44,13 +45,13 @@ const fakeFormat: VersionedFormat = {
 };
 
 describe('schemaVersion handling (02-REQ-10)', () => {
-  test('all formats are at version 1 until the first release (02-REQ-13)', () => {
-    expect(SCHEMA_VERSIONS).toEqual({ samples: 1, runReport: 1, thresholds: 1, outcome: 1 });
+  test('the run report is at version 2, the other formats at version 1 (02-REQ-11, 02-REQ-30)', () => {
+    expect(SCHEMA_VERSIONS).toEqual({ samples: 1, runReport: 2, thresholds: 1, outcome: 1 });
   });
 
   test('02-AC-03 a newer schemaVersion gives SCHEMA_VERSION_TOO_NEW for every migrating format', () => {
     const results = [
-      parseRunReport(text({ ...report, schemaVersion: 2 }), 'report.json'),
+      parseRunReport(text({ ...report, schemaVersion: 3 }), 'report.json'),
       parseThresholdsFile(text({ ...thresholds, schemaVersion: 2 }), 't.json', 'api'),
       parseOutcome(text({ ...outcome, schemaVersion: 2 }), 'outcome.json'),
     ];
@@ -84,8 +85,8 @@ describe('schemaVersion handling (02-REQ-10)', () => {
   });
 
   test('02-AC-03 every older version kept in test/golden migrates to a valid current file', () => {
-    // Formats are at version 1, so there are no v<N> directories yet (02-REQ-11 applies from
-    // the first release); the loop picks them up as they are added.
+    // test/golden/run-report/v1/ holds run reports of version 1 (02-REQ-11); the loop picks up
+    // the directories of every format as they are added.
     const parsers = {
       'run-report': (t: string) => parseRunReport(t, 'golden'),
       thresholds: (t: string) => parseThresholdsFile(t, 'golden', 'api'),
@@ -295,5 +296,174 @@ describe('issue messages (02, chapter 10)', () => {
     expect(!other.ok && other.issues[0]?.problems).toEqual([
       { pointer: '/requests/0/status', message: 'must be integer or "FAILED" or "PENDING"' },
     ]);
+  });
+});
+
+type Json = Record<string, unknown>;
+type Aggregate = Json & { evaluation: Json & { checks: Json[] }; ttfb: Json | null };
+
+describe('run report version 2 (02-REQ-30, 02-REQ-31)', () => {
+  const v1Text = readFileSync(join(GOLDEN_DIR, 'run-report', 'v1', 'full-run.json'), 'utf8');
+  const v1 = JSON.parse(v1Text) as Json;
+
+  test('02-AC-16 the v1 golden report migrates to v2 with nulls and empty lists, other fields unchanged', () => {
+    expect(v1['schemaVersion']).toBe(1);
+    const result = parseRunReport(v1Text, 'v1.json');
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    const migrated = result.value as unknown as Json;
+    expect(migrated['schemaVersion']).toBe(2);
+    expect(migrated['testBreakdown']).toBeNull();
+    const aggregates = ['endpoints', 'custom'].flatMap((kind) =>
+      Object.values(migrated[kind] as Record<string, Aggregate>),
+    );
+    expect(aggregates.length).toBeGreaterThan(2);
+    for (const aggregate of aggregates) {
+      expect(aggregate['histogram']).toBeNull();
+      expect(aggregate['hints']).toEqual([]);
+      for (const check of aggregate.evaluation.checks) expect(check['usage']).toBeNull();
+      if (aggregate.ttfb !== null) expect(aggregate.ttfb['otherP50']).toBeNull();
+    }
+    expect(aggregates.some((a) => a.ttfb !== null)).toBe(true);
+    expect(aggregates.some((a) => a.evaluation.checks.length > 0)).toBe(true);
+
+    // Removing the new fields gives the input back.
+    const back = structuredClone(migrated);
+    delete back['testBreakdown'];
+    back['schemaVersion'] = 1;
+    for (const kind of ['endpoints', 'custom']) {
+      for (const aggregate of Object.values(back[kind] as Record<string, Aggregate>)) {
+        delete aggregate['histogram'];
+        delete aggregate['hints'];
+        for (const check of aggregate.evaluation.checks) delete check['usage'];
+        if (aggregate.ttfb !== null) delete aggregate.ttfb['otherP50'];
+      }
+    }
+    expect(back).toEqual(v1);
+  });
+
+  const ajv = createAjv();
+  const schemaAccepts = validator(ajv, 'run-report.schema.json');
+  const golden = validInput('run-report', 'full-run.json');
+  const KEY = 'GET /api/tickets/:id';
+
+  /** The full-run golden with one change; returns [Ajv verdict, parser verdict]. */
+  function verdicts(change: (doc: Json & { endpoints: Record<string, Aggregate> }) => void) {
+    const doc = structuredClone(golden) as Json & { endpoints: Record<string, Aggregate> };
+    change(doc);
+    return [schemaAccepts(doc), parseRunReport(text(doc), 'r.json').ok];
+  }
+  const breakdown = (doc: Json) =>
+    doc['testBreakdown'] as {
+      tests: Json[];
+      waterfalls: (Json & { requests: Json[] })[];
+    };
+
+  test('02-AC-17 the v2 schema accepts the golden report with every new field', () => {
+    const tickets = golden['endpoints'] as Record<string, Aggregate>;
+    expect(tickets[KEY]?.['histogram']).not.toBeNull();
+    expect(breakdown(golden).tests.length).toBeGreaterThan(0);
+    expect(breakdown(golden).waterfalls.length).toBeGreaterThan(0);
+    expect(verdicts(() => undefined)).toEqual([true, true]);
+  });
+
+  test('02-AC-17 the schema rejects 31 bins, 501 tests, 6 waterfalls, 201 requests, 4 hints and unknown hints', () => {
+    const cases: [string, (doc: Json & { endpoints: Record<string, Aggregate> }) => void][] = [
+      [
+        '31 bins',
+        (d) => {
+          const h = d.endpoints[KEY] as Json;
+          h['histogram'] = {
+            edges: Array.from({ length: 32 }, (_, i) => i + 1),
+            counts: Array.from({ length: 31 }, () => 0),
+          };
+        },
+      ],
+      [
+        '501 tests',
+        (d) => {
+          const t = breakdown(d).tests;
+          breakdown(d).tests = Array.from({ length: 501 }, () => structuredClone(t[0] as Json));
+        },
+      ],
+      [
+        '6 waterfalls',
+        (d) => {
+          const w = breakdown(d).waterfalls;
+          breakdown(d).waterfalls = Array.from({ length: 6 }, () => structuredClone(w[0] as never));
+        },
+      ],
+      [
+        '201 requests',
+        (d) => {
+          const w = breakdown(d).waterfalls[0] as Json & { requests: Json[] };
+          w.requests = Array.from({ length: 201 }, () => structuredClone(w.requests[0] as Json));
+          w['requestCount'] = 201;
+          w['omitted'] = 0;
+        },
+      ],
+      [
+        '4 hints',
+        (d) => {
+          (d.endpoints[KEY] as Json)['hints'] = Array.from({ length: 4 }, () => ({
+            code: 'HINT_MUTED',
+            params: {},
+          }));
+        },
+      ],
+      [
+        'unknown hint code',
+        (d) => {
+          (d.endpoints[KEY] as Json)['hints'] = [{ code: 'HINT_OTHER', params: {} }];
+        },
+      ],
+      [
+        'unknown params field',
+        (d) => {
+          (d.endpoints[KEY] as Json)['hints'] = [{ code: 'HINT_MUTED', params: { note: 'x' } }];
+        },
+      ],
+    ];
+    for (const [name, change] of cases) expect(verdicts(change), name).toEqual([false, false]);
+  });
+
+  test('02-AC-17 the parser rejects what the schema cannot express: counts length, descending edges, sums', () => {
+    const cases: [string, (doc: Json & { endpoints: Record<string, Aggregate> }) => void][] = [
+      [
+        'counts not edges.length - 1',
+        (d) => {
+          const h = (d.endpoints[KEY] as Json)['histogram'] as { counts: number[] };
+          h.counts = [...h.counts, 0];
+        },
+      ],
+      [
+        'descending edges',
+        (d) => {
+          const h = (d.endpoints[KEY] as Json)['histogram'] as { edges: number[] };
+          h.edges = [...h.edges].reverse();
+        },
+      ],
+      [
+        'counts do not sum to the retained durations',
+        (d) => {
+          const h = (d.endpoints[KEY] as Json)['histogram'] as { counts: number[] };
+          h.counts = h.counts.map((c, i) => (i === 0 ? c + 1 : c));
+        },
+      ],
+      [
+        'requests + omitted differ from requestCount',
+        (d) => {
+          const w = breakdown(d).waterfalls[0] as Json;
+          w['omitted'] = 1;
+        },
+      ],
+      [
+        'violatedKeys is not min(10, violatedKeyCount) long',
+        (d) => {
+          const t = breakdown(d).tests[0] as Json;
+          t['violatedKeyCount'] = 12;
+        },
+      ],
+    ];
+    for (const [name, change] of cases) expect(verdicts(change), name).toEqual([true, false]);
   });
 });

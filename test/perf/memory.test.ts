@@ -1,10 +1,17 @@
 // 12-PERF-02: memory of the aggregator (NF-02, 08-AC-08). 500 keys get 50,000 successful samples
 // each; the retained samples per key stay at the limit (advanced.maxSamplesPerKey) and the memory
 // growth stays within the budget of 32 bytes per retained sample (08-REQ-29) with 20% tolerance.
+// The per-test data of the HTML report (08, chapter 7.1) for 2000 tests x 30 keys x 10 runs stays
+// within the estimate of 08-REQ-39 with 50% tolerance (08-AC-22).
 // Run with --expose-gc (vitest.perf.config.ts).
 import { describe, expect, test } from 'vitest';
 import { resolveConfig } from '../../src/core/config/index.ts';
-import { Aggregator, resultId, testIdentity } from '../../src/core/stats/index.ts';
+import {
+  Aggregator,
+  TestBreakdownBuilder,
+  resultId,
+  testIdentity,
+} from '../../src/core/stats/index.ts';
 import type { EnrichedRequestSample, TestMeta } from '../../src/core/stats/index.ts';
 import { recordResult } from './helpers.ts';
 
@@ -44,7 +51,9 @@ describe('12-PERF-02 aggregator memory', () => {
         file,
         line: 10,
         repeatEachIndex: Math.floor(i / 10),
+        retry: 0,
         failed: false,
+        startTime: 1_763_460_000_000,
       };
     });
     const keys = Array.from({ length: KEYS }, (_, k) => `GET /api/resource-${k}/:id`);
@@ -60,29 +69,30 @@ describe('12-PERF-02 aggregator memory', () => {
       evaluatedPercentile: config.checks.time.percentile.level,
       rawUrls: false,
     });
-    const ordinals = new Map<string, number>();
-    for (let i = 0; i < SAMPLES_PER_KEY; i++) {
-      const test = tests[i % EXECUTIONS] as TestMeta;
-      for (let k = 0; k < KEYS; k++) {
-        const counter = `${test.resultId}`;
-        const ordinal = ordinals.get(counter) ?? 0;
-        ordinals.set(counter, ordinal + 1);
-        const sample: EnrichedRequestSample = {
-          method: 'GET',
-          url: `https://app.example/api/resource-${k}/${i}`,
-          resourceType: 'fetch',
-          status: 200,
-          startTime: 1_763_460_000_000 + i,
-          duration: 50 + ((i * 7919 + k * 104_729) % 4000) / 10,
-          requestStart: 1,
-          ttfb: 20,
-          timeSource: 'browser',
-          fromServiceWorker: false,
-          ordinal,
-          test,
-        };
-        aggregator.addRequest(keys[k] as string, sample, 'https://app.example', '', 'chromium');
+    // The reporter adds all samples of one test result, then closes it (08-REQ-36).
+    for (let e = 0; e < EXECUTIONS; e++) {
+      const test = tests[e] as TestMeta;
+      let ordinal = 0;
+      for (let i = e; i < SAMPLES_PER_KEY; i += EXECUTIONS) {
+        for (let k = 0; k < KEYS; k++) {
+          const sample: EnrichedRequestSample = {
+            method: 'GET',
+            url: `https://app.example/api/resource-${k}/${i}`,
+            resourceType: 'fetch',
+            status: 200,
+            startTime: 1_763_460_000_000 + i,
+            duration: 50 + ((i * 7919 + k * 104_729) % 4000) / 10,
+            requestStart: 1,
+            ttfb: 20,
+            timeSource: 'browser',
+            fromServiceWorker: false,
+            ordinal: ordinal++,
+            test,
+          };
+          aggregator.addRequest(keys[k] as string, sample, 'https://app.example', '', 'chromium');
+        }
       }
+      aggregator.endResult(test);
     }
     const addMs = performance.now() - started;
     gc();
@@ -103,6 +113,58 @@ describe('12-PERF-02 aggregator memory', () => {
     expect(counts).toHaveLength(KEYS);
     expect(new Set(counts)).toEqual(new Set([limit]));
     expect(Object.values(aggregates.endpoints).every((a) => a.samples.sampled)).toBe(true);
+    expect(growth).toBeLessThan(budget);
+  }, 600_000);
+
+  test('08-AC-22 per-test data of 2000 tests x 30 keys x 10 runs stays within the estimate', () => {
+    const TESTS = 2000;
+    const KEYS_PER_TEST = 30;
+    const RUNS = 10;
+    /** 08-REQ-39: about 50 bytes per (test, key), 50% tolerance. */
+    const budget = TESTS * KEYS_PER_TEST * 50 * 1.5;
+    const keys = Array.from({ length: 300 }, (_, k) => `GET /api/resource-${k}/:id`);
+    const metas = Array.from({ length: TESTS }, (_, t): TestMeta => {
+      const title = `suite › test ${t}`;
+      const file = `tests/t${t % 50}.spec.ts`;
+      return {
+        identity: testIdentity('chromium', file, title),
+        resultId: '',
+        title,
+        project: 'chromium',
+        file,
+        line: 10 + t,
+        repeatEachIndex: 0,
+        retry: 0,
+        failed: false,
+        startTime: 1_763_460_000_000,
+      };
+    });
+    gc();
+    const before = used();
+    const builder = new TestBreakdownBuilder();
+    for (let run = 0; run < RUNS; run++) {
+      metas.forEach((base, t) => {
+        const meta = { ...base, repeatEachIndex: run, resultId: `${t}\u0000${run}\u00000` };
+        for (let k = 0; k < KEYS_PER_TEST; k++) {
+          const key = keys[(t * 7 + k) % keys.length] as string;
+          builder.addRequest(meta, key, '200', false, 500 + ((t + k + run) % 997), 0, k);
+        }
+        builder.endResult(meta);
+      });
+    }
+    gc();
+    const growth = used() - before;
+    const breakdown = builder.build();
+    recordResult('12-PERF-02 test breakdown', {
+      tests: TESTS,
+      keysPerTest: KEYS_PER_TEST,
+      runs: RUNS,
+      memoryGrowthBytes: growth,
+      budgetBytes: budget,
+      bytesPerTestKey: Math.round((growth / (TESTS * KEYS_PER_TEST)) * 10) / 10,
+    });
+    expect(breakdown.tests).toHaveLength(500);
+    expect(breakdown.waterfalls).toHaveLength(5);
     expect(growth).toBeLessThan(budget);
   }, 600_000);
 });

@@ -77,8 +77,13 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
+    "testBreakdown": {
+      "omitted": 0,
+      "tests": [],
+      "waterfalls": []
+    },
     "tests": {
       "expected": 3,
       "flaky": 0,
@@ -172,8 +177,13 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
+    "testBreakdown": {
+      "omitted": 0,
+      "tests": [],
+      "waterfalls": []
+    },
     "tests": {
       "expected": 3,
       "flaky": 0,

@@ -313,6 +313,7 @@ const check = obj(
     passed: bool,
     hardLimitExceeded: bool,
     blocking: bool,
+    usage: nullable(num({ minimum: 0 })),
   },
   {
     required: [
@@ -324,6 +325,7 @@ const check = obj(
       'passed',
       'hardLimitExceeded',
       'blocking',
+      'usage',
     ],
   },
 );
@@ -357,6 +359,137 @@ const keyEvaluation = obj(
   { required: ['result', 'reason', 'thresholdSource', 'limits', 'checks', 'muted'] },
 );
 
+/** Hint codes of 11-REQ-34, in rule priority order. */
+export const HINT_CODES = [
+  'HINT_HARD_LIMIT',
+  'HINT_SLOWDOWN',
+  'HINT_TAIL',
+  'HINT_SHIFT',
+  'HINT_OUTLIERS',
+  'HINT_ERRORS_DOMINANT',
+  'HINT_ERRORS_MIXED',
+  'HINT_APDEX',
+  'HINT_SLOW_SHARE',
+  'HINT_MEDIAN_ONLY',
+  'HINT_MUTED',
+  'HINT_FAILED_TESTS',
+  'HINT_NEAR_LIMIT',
+] as const;
+
+const HINT_PARAMS = [
+  'rule',
+  'usage',
+  'medianUsage',
+  'factor',
+  'max',
+  'rate',
+  'limit',
+  'label',
+  'count',
+  'errors',
+  'label1',
+  'count1',
+  'label2',
+  'count2',
+  'label3',
+  'count3',
+  'apdex',
+  'share',
+  't',
+  'n',
+];
+
+const hint = obj(
+  { code: enumOf(HINT_CODES), params: record(enumOf(HINT_PARAMS), oneOf(str(), num())) },
+  { required: ['code', 'params'] },
+);
+
+const histogram = oneOf(
+  obj(
+    {
+      edges: arr(num({ minimum: 0 }), { minItems: 2, maxItems: 31 }),
+      counts: arr(count, { minItems: 1, maxItems: 30 }),
+    },
+    { required: ['edges', 'counts'] },
+  ),
+  nul,
+);
+
+const testCost = obj(
+  {
+    title: str(),
+    project: str(),
+    file: str(),
+    line: int({ minimum: 1 }),
+    executions: int({ minimum: 1 }),
+    requestCount: int({ minimum: 1 }),
+    errorCount: count,
+    totalMs: ms,
+    maxRequestMs: msOrNull,
+    keyCount: int({ minimum: 1 }),
+    topKeys: arr(
+      obj(
+        { key, count: int({ minimum: 1 }), totalMs: ms },
+        { required: ['key', 'count', 'totalMs'] },
+      ),
+      { maxItems: 3 },
+    ),
+    violatedKeys: arr(key, { maxItems: 10 }),
+    violatedKeyCount: count,
+  },
+  {
+    required: [
+      'title',
+      'project',
+      'file',
+      'line',
+      'executions',
+      'requestCount',
+      'errorCount',
+      'totalMs',
+      'maxRequestMs',
+      'keyCount',
+      'topKeys',
+      'violatedKeys',
+      'violatedKeyCount',
+    ],
+  },
+);
+
+const waterfallRequest = obj(
+  {
+    offset: int({ minimum: 0 }),
+    duration: msOrNull,
+    key,
+    status: str({ pattern: /^(?:[1-5][0-9]{2}|FAILED|ABORTED|PENDING)$/u }),
+  },
+  { required: ['offset', 'duration', 'key', 'status'] },
+);
+
+const waterfall = obj(
+  {
+    test: testRef,
+    totalMs: ms,
+    requestCount: int({ minimum: 1 }),
+    spanMs: ms,
+    requests: arr(waterfallRequest, { maxItems: 200 }),
+    omitted: count,
+  },
+  { required: ['test', 'totalMs', 'requestCount', 'spanMs', 'requests', 'omitted'] },
+);
+
+const testBreakdown = oneOf(
+  obj(
+    {
+      tests: arr(testCost, { maxItems: 500 }),
+      omitted: count,
+      waterfalls: arr(waterfall, { maxItems: 5 }),
+    },
+    { required: ['tests', 'omitted', 'waterfalls'] },
+  ),
+  nul,
+);
+
 const aggregate = obj(
   {
     count,
@@ -370,7 +503,10 @@ const aggregate = obj(
     ),
     timeSources: obj({ browser: count, node: count }, { required: ['browser', 'node'] }),
     stats: oneOf(stats, nul),
-    ttfb: oneOf(obj({ p50: ms, p95: ms }, { required: ['p50', 'p95'] }), nul),
+    ttfb: oneOf(
+      obj({ p50: ms, p95: ms, otherP50: msOrNull }, { required: ['p50', 'p95', 'otherP50'] }),
+      nul,
+    ),
     slowest: arr(slowSample, { maxItems: 3 }),
     topTests: arr(
       obj(
@@ -387,6 +523,8 @@ const aggregate = obj(
     ),
     samples: obj({ durations: arr(ms), sampled: bool }, { required: ['durations', 'sampled'] }),
     evaluation: keyEvaluation,
+    histogram,
+    hints: arr(hint, { maxItems: 3 }),
   },
   {
     required: [
@@ -403,13 +541,15 @@ const aggregate = obj(
       'topTests',
       'samples',
       'evaluation',
+      'histogram',
+      'hints',
     ],
   },
 );
 
 export const runReport = obj(
   {
-    schemaVersion: constant(1),
+    schemaVersion: constant(2),
     tool,
     runId,
     mode,
@@ -494,6 +634,7 @@ export const runReport = obj(
     ),
     endpoints: record(key, aggregate),
     custom: record(key, aggregate),
+    testBreakdown,
   },
   {
     required: [
@@ -519,6 +660,7 @@ export const runReport = obj(
       'origins',
       'endpoints',
       'custom',
+      'testBreakdown',
     ],
   },
 );

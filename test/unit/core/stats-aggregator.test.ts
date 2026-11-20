@@ -66,6 +66,7 @@ interface MetaInput {
   repeatEachIndex?: number;
   retry?: number;
   failed?: boolean;
+  startTime?: number;
 }
 
 function meta(input: MetaInput = {}): TestMeta {
@@ -81,7 +82,9 @@ function meta(input: MetaInput = {}): TestMeta {
     file,
     line: input.line ?? 10,
     repeatEachIndex,
+    retry: input.retry ?? 0,
     failed: input.failed ?? false,
+    startTime: input.startTime ?? Date.UTC(2026, 10, 18, 10, 0, 0, 0),
   };
 }
 
@@ -221,13 +224,17 @@ function demoRun(seed: number, samplesPerResult = 40): Op[] {
 
 function run(ops: readonly Op[], opts: AggregatorOptions = options()): Aggregates {
   const agg = new Aggregator(opts);
+  const results = new Map<string, TestMeta>();
   for (const op of ops) {
+    results.set(op.sample.test.resultId, op.sample.test);
     if (op.kind === 'request') {
       agg.addRequest(op.key, op.sample, op.origin, op.origin === null ? null : '', 'chromium');
     } else {
       agg.addCustom(op.name, op.sample);
     }
   }
+  // Each test result is closed after its samples (08-REQ-36).
+  for (const meta of results.values()) agg.endResult(meta);
   return agg.finalize();
 }
 
@@ -385,7 +392,8 @@ describe('Aggregator: classification and counters (08, chapter 3)', () => {
     add(agg, req({ ordinal: 1, ttfb: null }));
     add(agg, req({ ordinal: 2, ttfb: 30 }));
     add(agg, req({ ordinal: 3, status: 500, ttfb: 999 }));
-    expect(agg.finalize().endpoints[KEY]?.ttfb).toEqual({ p50: 20, p95: 29 });
+    // otherP50 from the same samples: 100 − 10 = 90 and 100 − 30 = 70 (08-REQ-35).
+    expect(agg.finalize().endpoints[KEY]?.ttfb).toEqual({ p50: 20, p95: 29, otherP50: 80 });
   });
 
   test('no usable sample with a TTFB gives ttfb null', () => {

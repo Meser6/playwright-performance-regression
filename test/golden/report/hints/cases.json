@@ -1,0 +1,1710 @@
+[
+  {
+    "name": "HINT_HARD_LIMIT: a blocking time check above the hard limit; the median also gives HINT_SLOWDOWN",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 2500,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": true,
+            "blocking": true
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 2600,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": true,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_HARD_LIMIT",
+        "params": {
+          "rule": "median",
+          "usage": 2.5,
+          "factor": 2
+        }
+      },
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 2.5
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_HARD_LIMIT needs a blocking check: a muted hard-limit percentile gives only HINT_SHIFT and HINT_MUTED",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": {
+          "until": "2026-12-31",
+          "note": "Known",
+          "expired": false
+        },
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 2100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": true,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SHIFT",
+        "params": {
+          "usage": 2.1,
+          "medianUsage": 0.9
+        }
+      },
+      {
+        "code": "HINT_MUTED",
+        "params": {}
+      }
+    ]
+  },
+  {
+    "name": "HINT_SLOWDOWN: the median is over its limit",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 1100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 1200,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 1.1
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_TAIL: u(median) exactly 0.8",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 800,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 1500,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_TAIL",
+        "params": {
+          "usage": 1.5,
+          "medianUsage": 0.8
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_SHIFT: u(median) 0.8001",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 800.1,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 1500,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SHIFT",
+        "params": {
+          "usage": 1.5,
+          "medianUsage": 0.8001
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_OUTLIERS: only p99 is over its limit",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 2500,
+            "observed": null,
+            "limit": 2000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_OUTLIERS",
+        "params": {
+          "usage": 1.25,
+          "max": 3100
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_OUTLIERS needs a passed percentile check: p99 and percentile over give HINT_TAIL only",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 1100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 2500,
+            "observed": null,
+            "limit": 2000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_TAIL",
+        "params": {
+          "usage": 1.1,
+          "medianUsage": 0.5
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_ERRORS_DOMINANT: the largest error label has exactly 50% of the errors",
+    "input": {
+      "count": 100,
+      "errorCount": 10,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 88,
+        "404": 2,
+        "500": 5,
+        "503": 3,
+        "FAILED": 2
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 600,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "errors",
+            "n": 50,
+            "actual": 0.0551,
+            "observed": 0.1,
+            "limit": 0.05,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_ERRORS_DOMINANT",
+        "params": {
+          "rate": 0.1,
+          "limit": 0.05,
+          "label": "500",
+          "count": 5,
+          "errors": 10
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_ERRORS_MIXED: no label has 50%; ties by label",
+    "input": {
+      "count": 100,
+      "errorCount": 10,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 90,
+        "500": 4,
+        "503": 3,
+        "FAILED": 3
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 600,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "errors",
+            "n": 50,
+            "actual": 0.0551,
+            "observed": 0.1,
+            "limit": 0.05,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_ERRORS_MIXED",
+        "params": {
+          "rate": 0.1,
+          "limit": 0.05,
+          "label1": "500",
+          "count1": 4,
+          "label2": "503",
+          "count2": 3,
+          "label3": "FAILED",
+          "count3": 3
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_ERRORS_DOMINANT follows checks.errors.statuses: with ABORTED an error it dominates",
+    "input": {
+      "count": 50,
+      "errorCount": 6,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 44,
+        "500": 2,
+        "ABORTED": 4
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "errors",
+            "n": 50,
+            "actual": 0.07,
+            "observed": 0.12,
+            "limit": 0.05,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      },
+      "options": {
+        "errorStatuses": [
+          "5xx",
+          "FAILED",
+          "PENDING",
+          "ABORTED"
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_ERRORS_DOMINANT",
+        "params": {
+          "rate": 0.12,
+          "limit": 0.05,
+          "label": "ABORTED",
+          "count": 4,
+          "errors": 6
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_APDEX: Apdex below its limit while the time checks pass",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 400,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "apdex",
+            "n": 50,
+            "actual": 0.83,
+            "observed": 0.78,
+            "limit": 0.85,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_APDEX",
+        "params": {
+          "apdex": 0.78,
+          "limit": 0.85,
+          "t": 500
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_APDEX needs passing time checks: with the median over only HINT_SLOWDOWN",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 1100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "apdex",
+            "n": 50,
+            "actual": 0.83,
+            "observed": 0.78,
+            "limit": 0.85,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 1.1
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_SLOW_SHARE: the share of slow responses is above its limit while the time checks pass",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 400,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "wilson",
+            "n": 50,
+            "actual": 0.071,
+            "observed": 0.12,
+            "limit": 0.05,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOW_SHARE",
+        "params": {
+          "share": 0.12,
+          "limit": 0.05,
+          "t": 500
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_MEDIAN_ONLY: a failed key evaluated by the median only",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 8,
+            "actual": 1200,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 1.2
+        }
+      },
+      {
+        "code": "HINT_MEDIAN_ONLY",
+        "params": {
+          "n": 8
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_MUTED: an active muting of a failed key; an expired one gives no hint",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": {
+          "until": "2026-12-31",
+          "note": "Known slow",
+          "expired": false
+        },
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 1100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 1.1
+        }
+      },
+      {
+        "code": "HINT_MUTED",
+        "params": {}
+      }
+    ]
+  },
+  {
+    "name": "HINT_MUTED is not given for an expired muting",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": {
+          "until": "2026-01-31",
+          "note": "Old",
+          "expired": true
+        },
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 1100,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 1.1
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_FAILED_TESTS: half of the samples come from failed tests",
+    "input": {
+      "count": 10,
+      "errorCount": 0,
+      "fromFailedTests": 5,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 600,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_FAILED_TESTS",
+        "params": {
+          "share": 0.5
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_FAILED_TESTS is not given below half",
+    "input": {
+      "count": 10,
+      "errorCount": 0,
+      "fromFailedTests": 4,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 600,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": []
+  },
+  {
+    "name": "HINT_FAILED_TESTS also for a key without checks",
+    "input": {
+      "count": 3,
+      "errorCount": 0,
+      "fromFailedTests": 3,
+      "statuses": {
+        "200": 50
+      },
+      "stats": null,
+      "evaluation": {
+        "result": "not-evaluated",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": []
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_FAILED_TESTS",
+        "params": {
+          "share": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_NEAR_LIMIT: headroom exactly 0.9",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1700,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_NEAR_LIMIT",
+        "params": {
+          "rule": "percentile",
+          "usage": 0.9
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_NEAR_LIMIT is not given at 0.8999",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 500,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 899.9,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 1700,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": []
+  },
+  {
+    "name": "HINT_NEAR_LIMIT: on equal usage the first rule in rule order",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "errors",
+            "n": 50,
+            "actual": 0.045,
+            "observed": 0.01,
+            "limit": 0.05,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 900,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_NEAR_LIMIT",
+        "params": {
+          "rule": "median",
+          "usage": 0.9
+        }
+      }
+    ]
+  },
+  {
+    "name": "HINT_NEAR_LIMIT for an Apdex close to its limit: usage (1 - actual) / (1 - limit)",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 300,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 400,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "apdex",
+            "n": 50,
+            "actual": 0.865,
+            "observed": 0.9,
+            "limit": 0.85,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_NEAR_LIMIT",
+        "params": {
+          "rule": "apdex",
+          "usage": 0.9
+        }
+      }
+    ]
+  },
+  {
+    "name": "a key matching five rules gets the first three in table order",
+    "input": {
+      "count": 10,
+      "errorCount": 6,
+      "fromFailedTests": 6,
+      "statuses": {
+        "200": 4,
+        "500": 6
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "fail",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 9,
+            "actual": 2500,
+            "observed": null,
+            "limit": 1000,
+            "passed": false,
+            "hardLimitExceeded": true,
+            "blocking": true
+          },
+          {
+            "rule": "errors",
+            "n": 50,
+            "actual": 0.4,
+            "observed": 0.6,
+            "limit": 0.05,
+            "passed": false,
+            "hardLimitExceeded": false,
+            "blocking": true
+          }
+        ]
+      }
+    },
+    "expected": [
+      {
+        "code": "HINT_HARD_LIMIT",
+        "params": {
+          "rule": "median",
+          "usage": 2.5,
+          "factor": 2
+        }
+      },
+      {
+        "code": "HINT_SLOWDOWN",
+        "params": {
+          "usage": 2.5
+        }
+      },
+      {
+        "code": "HINT_ERRORS_DOMINANT",
+        "params": {
+          "rate": 0.6,
+          "limit": 0.05,
+          "label": "500",
+          "count": 6,
+          "errors": 6
+        }
+      }
+    ]
+  },
+  {
+    "name": "no matching rule gives no hint",
+    "input": {
+      "count": 50,
+      "errorCount": 0,
+      "fromFailedTests": 0,
+      "statuses": {
+        "200": 50
+      },
+      "stats": {
+        "max": 3100
+      },
+      "evaluation": {
+        "result": "pass",
+        "limits": {
+          "t": 500,
+          "median": 1000,
+          "percentile": 1000,
+          "p99": 2000,
+          "minApdex": 0.85,
+          "maxWilson": 0.05,
+          "maxErrorRate": 0.05
+        },
+        "muted": null,
+        "checks": [
+          {
+            "rule": "median",
+            "n": 50,
+            "actual": 300,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "percentile",
+            "n": 50,
+            "actual": 400,
+            "observed": null,
+            "limit": 1000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          },
+          {
+            "rule": "p99",
+            "n": 50,
+            "actual": 800,
+            "observed": null,
+            "limit": 2000,
+            "passed": true,
+            "hardLimitExceeded": false,
+            "blocking": false
+          }
+        ]
+      }
+    },
+    "expected": []
+  }
+]

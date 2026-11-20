@@ -221,6 +221,38 @@
           "thresholdSource": "default"
         },
         "fromFailedTests": 0,
+        "hints": [],
+        "histogram": {
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ]
+        },
         "samples": {
           "retained": 10,
           "sampled": false
@@ -297,17 +329,19 @@
               "n": 10,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.2002
             },
             {
-              "actual": 0.31,
+              "actual": 0.0149,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 0.05,
               "n": 12,
               "observed": 0.083,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0.298
             }
           ],
           "limits": {
@@ -329,6 +363,38 @@
           "thresholdSource": "file"
         },
         "fromFailedTests": 0,
+        "hints": [],
+        "histogram": {
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ]
+        },
         "samples": {
           "retained": 10,
           "sampled": false
@@ -380,6 +446,7 @@
           }
         ],
         "ttfb": {
+          "otherP50": 59.7,
           "p50": 120.5,
           "p95": 200
         }
@@ -453,8 +520,63 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
+    "testBreakdown": {
+      "omitted": 0,
+      "tests": [
+        {
+          "errorCount": 0,
+          "executions": 5,
+          "file": "tests/tickets.spec.ts",
+          "keyCount": 1,
+          "line": 12,
+          "maxRequestMs": 210.3,
+          "project": "chromium",
+          "requestCount": 10,
+          "title": "tickets › opens a ticket",
+          "topKeys": [
+            {
+              "count": 10,
+              "key": "GET /api/tickets/:id",
+              "totalMs": 1765.9
+            }
+          ],
+          "totalMs": 1765.9,
+          "violatedKeyCount": 0,
+          "violatedKeys": []
+        }
+      ],
+      "waterfalls": [
+        {
+          "omitted": 0,
+          "requestCount": 2,
+          "requests": [
+            {
+              "duration": 180.2,
+              "key": "GET /api/tickets/:id",
+              "offset": 150,
+              "status": "200"
+            },
+            {
+              "duration": 200,
+              "key": "GET /api/tickets/:id",
+              "offset": 273,
+              "status": "200"
+            }
+          ],
+          "spanMs": 473,
+          "test": {
+            "file": "tests/tickets.spec.ts",
+            "line": 12,
+            "project": "chromium",
+            "repeatEachIndex": 2,
+            "title": "tickets › opens a ticket"
+          },
+          "totalMs": 380.2
+        }
+      ]
+    },
     "tests": {
       "expected": 3,
       "flaky": 0,
@@ -778,6 +900,38 @@
           "thresholdSource": "default"
         },
         "fromFailedTests": 0,
+        "hints": [],
+        "histogram": {
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ]
+        },
         "samples": {
           "durations": [
             150.1,
@@ -865,17 +1019,19 @@
               "n": 10,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.2002
             },
             {
-              "actual": 0.31,
+              "actual": 0.0149,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 0.05,
               "n": 12,
               "observed": 0.083,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0.298
             }
           ],
           "limits": {
@@ -897,6 +1053,38 @@
           "thresholdSource": "file"
         },
         "fromFailedTests": 0,
+        "hints": [],
+        "histogram": {
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ]
+        },
         "samples": {
           "durations": [
             150.1,
@@ -959,6 +1147,7 @@
           }
         ],
         "ttfb": {
+          "otherP50": 59.7,
           "p50": 120.5,
           "p95": 200
         }
@@ -1032,8 +1221,63 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
+    "testBreakdown": {
+      "omitted": 0,
+      "tests": [
+        {
+          "errorCount": 0,
+          "executions": 5,
+          "file": "tests/tickets.spec.ts",
+          "keyCount": 1,
+          "line": 12,
+          "maxRequestMs": 210.3,
+          "project": "chromium",
+          "requestCount": 10,
+          "title": "tickets › opens a ticket",
+          "topKeys": [
+            {
+              "count": 10,
+              "key": "GET /api/tickets/:id",
+              "totalMs": 1765.9
+            }
+          ],
+          "totalMs": 1765.9,
+          "violatedKeyCount": 0,
+          "violatedKeys": []
+        }
+      ],
+      "waterfalls": [
+        {
+          "omitted": 0,
+          "requestCount": 2,
+          "requests": [
+            {
+              "duration": 180.2,
+              "key": "GET /api/tickets/:id",
+              "offset": 150,
+              "status": "200"
+            },
+            {
+              "duration": 200,
+              "key": "GET /api/tickets/:id",
+              "offset": 273,
+              "status": "200"
+            }
+          ],
+          "spanMs": 473,
+          "test": {
+            "file": "tests/tickets.spec.ts",
+            "line": 12,
+            "project": "chromium",
+            "repeatEachIndex": 2,
+            "title": "tickets › opens a ticket"
+          },
+          "totalMs": 380.2
+        }
+      ]
+    },
     "tests": {
       "expected": 3,
       "flaky": 0,

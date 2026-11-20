@@ -210,7 +210,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.16
             },
             {
               "actual": 800,
@@ -220,7 +221,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 0.16
             },
             {
               "actual": 0,
@@ -230,7 +232,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -295,7 +298,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            786.7,
+            825.4
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       }
     },
     "endpoints": {
@@ -366,7 +379,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            115.5,
+            121.2
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       }
     },
     "env": null,
@@ -433,7 +456,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 10,
@@ -469,7 +492,12 @@
         "message": "pw-perf-thresholds.api.json: not valid JSON"
       }
     ],
-    "warnings": []
+    "warnings": [],
+    "testBreakdown": {
+      "tests": [],
+      "omitted": 0,
+      "waterfalls": []
+    }
   },
   "name": "tool-error"
 }

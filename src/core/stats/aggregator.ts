@@ -12,8 +12,11 @@ import type {
   SampleKind,
   TestMeta,
 } from './identity.ts';
+import { histogram } from './histogram.ts';
 import { percentile, percentileNames } from './percentile.ts';
 import { BottomK } from './sampling.ts';
+import { TestBreakdownBuilder } from './test-breakdown.ts';
+import type { TestBreakdownStats } from './test-breakdown.ts';
 
 export interface AggregatorOptions {
   advanced: ResolvedConfig['advanced'];
@@ -42,6 +45,11 @@ export interface Aggregates {
   origins: RunReport['origins'];
   /** Run-level STATS_* warnings, each at most once, in catalog order (08, chapter 13). */
   issues: StatsIssue[];
+  /**
+   * Per-test costs and waterfalls (08-REQ-37, 08-REQ-38); tests carry the full sorted key list
+   * instead of violatedKeys, which buildRunReport adds from the evaluation.
+   */
+  testBreakdown: TestBreakdownStats;
 }
 
 /** Number of slowest samples and top tests per key (08-REQ-18, 08-REQ-33). */
@@ -175,6 +183,7 @@ export class Aggregator {
   private outsideSamples = 0;
   private withoutBrowserTiming = 0;
   private readonly keysWithoutBrowserTiming = new Set<string>();
+  private readonly testBreakdown = new TestBreakdownBuilder();
   private finalized = false;
 
   constructor(opts: AggregatorOptions) {
@@ -211,20 +220,33 @@ export class Aggregator {
 
     const state = this.state(this.endpoints, 'request', key);
     const statusLabel = requestStatusLabel(sample);
-    state.countSample(statusLabel, sample.test, this.isError(statusLabel));
+    const isError = this.isError(statusLabel);
+    state.countSample(statusLabel, sample.test, isError);
     if (sample.timeSource === 'node') state.node += 1;
     else state.browser += 1;
 
     // FAILED and PENDING are never successful (08-REQ-01).
-    if (typeof sample.status !== 'number' || !this.isSuccess(statusLabel)) return;
-    if (sample.timeSource === 'node') {
+    const successful = typeof sample.status === 'number' && this.isSuccess(statusLabel);
+    if (successful && sample.timeSource === 'node') {
       this.withoutBrowserTiming += 1;
       this.keysWithoutBrowserTiming.add(key);
     }
     // Usable for time statistics (08-REQ-02).
-    if (sample.timeSource !== 'browser' || sample.fromServiceWorker || sample.duration === null) {
-      return;
-    }
+    const usable =
+      successful &&
+      sample.timeSource === 'browser' &&
+      !sample.fromServiceWorker &&
+      sample.duration !== null;
+    this.testBreakdown.addRequest(
+      sample.test,
+      key,
+      statusLabel,
+      isError,
+      usable && sample.duration !== null ? toTenths(sample.duration) : null,
+      sample.startTime,
+      sample.ordinal,
+    );
+    if (!usable || sample.duration === null) return;
     this.addTime(state, key, sample.test, sample.ordinal, {
       duration: sample.duration,
       ttfb: sample.ttfb,
@@ -248,6 +270,16 @@ export class Aggregator {
     });
   }
 
+  /**
+   * Closes one test result after all its samples were added (08-REQ-36); also for a result with
+   * an empty batch. Results of projects that are not measured are ignored (08-REQ-31).
+   */
+  endResult(meta: TestMeta): void {
+    if (this.finalized) throw new Error('Aggregator: endResult() after finalize().');
+    if (!this.opts.measuredProjects.has(meta.project)) return;
+    this.testBreakdown.endResult(meta);
+  }
+
   /** Builds the aggregates; may be called once. */
   finalize(): Aggregates {
     if (this.finalized) throw new Error('Aggregator.finalize() may be called once.');
@@ -260,6 +292,7 @@ export class Aggregator {
         return { origin, label: entry.label, requestCount: entry.requestCount };
       }),
       issues: this.issues(),
+      testBreakdown: this.testBreakdown.build(),
     };
   }
 
@@ -332,6 +365,7 @@ export class Aggregator {
   private aggregate(state: KeyState): AggregateStats {
     const durations = state.sample.durations().map((t) => t / 10);
     const ttfbs = state.sample.ttfbs().map((t) => t / 10);
+    const others = state.sample.othersThanTtfb().map((t) => t / 10);
     const at = (sorted: number[], p: number): number => roundMs(percentile(sorted, p) ?? 0);
     const statuses: Record<string, number> = {};
     for (const label of [...state.statuses.keys()].sort(compareText)) {
@@ -356,7 +390,10 @@ export class Aggregator {
             ),
           }
         : null,
-      ttfb: ttfbs.length === 0 ? null : { p50: at(ttfbs, 50), p95: at(ttfbs, 95) },
+      ttfb:
+        ttfbs.length === 0
+          ? null
+          : { p50: at(ttfbs, 50), p95: at(ttfbs, 95), otherP50: at(others, 50) },
       slowest: state.slowest.map((s): SlowSample => ({
         duration: s.tenths / 10,
         startedAt: new Date(s.startedAt).toISOString(),
@@ -383,6 +420,8 @@ export class Aggregator {
         durations,
         sampled: state.successCount > this.opts.advanced.maxSamplesPerKey,
       },
+      // Bins of the retained durations; null exactly when stats is null (08-REQ-34).
+      histogram: (usable ? histogram(durations) : null) as AggregateStats['histogram'],
     };
   }
 

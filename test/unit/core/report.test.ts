@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { stringifyStable } from '../../../src/core/format/index.ts';
-import { buildRunReport, collapseIssues } from '../../../src/core/report/index.ts';
+import { buildRunReport, checkUsage, collapseIssues } from '../../../src/core/report/index.ts';
 import type { RunReportInput } from '../../../src/core/report/index.ts';
 import { parseRunReport } from '../../../src/core/schema/index.ts';
-import type { AggregateStats, KeyEvaluation, RunReport } from '../../../src/core/types/index.ts';
+import type { TestBreakdownStats } from '../../../src/core/stats/index.ts';
+import type { AggregateStats, EvaluatedKey, RunReport } from '../../../src/core/types/index.ts';
 import { loadCases } from '../../contract/golden.ts';
 
 function goldenReport(file: string): RunReport {
@@ -12,14 +13,34 @@ function goldenReport(file: string): RunReport {
   return structuredClone(found.input) as RunReport;
 }
 
+/**
+ * Test breakdown as the aggregator gives it: each test with its key list instead of violated*.
+ * The report keeps only the top and violated keys, which is enough to rebuild violatedKeys.
+ */
+function breakdownStats(report: RunReport): TestBreakdownStats | null {
+  const breakdown = report.testBreakdown;
+  if (breakdown === null) return null;
+  return {
+    tests: breakdown.tests.map(({ violatedKeys, violatedKeyCount: _count, ...test }) => ({
+      ...test,
+      keys: [...new Set([...test.topKeys.map((k) => k.key), ...violatedKeys])].sort(),
+    })),
+    omitted: breakdown.omitted,
+    waterfalls: breakdown.waterfalls,
+  };
+}
+
 /** Splits a report into the input buildRunReport gets from the reporter. */
 function inputOf(report: RunReport): RunReportInput {
   const split = (aggregates: RunReport['endpoints']) => {
     const stats: Record<string, AggregateStats> = {};
-    const perKey: Record<string, KeyEvaluation> = {};
-    for (const [key, { evaluation, ...rest }] of Object.entries(aggregates)) {
+    const perKey: Record<string, EvaluatedKey> = {};
+    for (const [key, { evaluation, hints: _hints, ...rest }] of Object.entries(aggregates)) {
       stats[key] = rest;
-      perKey[key] = evaluation;
+      perKey[key] = {
+        ...evaluation,
+        checks: evaluation.checks.map(({ usage: _usage, ...check }) => check),
+      };
     }
     return { stats, perKey };
   };
@@ -42,7 +63,12 @@ function inputOf(report: RunReport): RunReportInput {
     normalization: report.normalization,
     runConditions: report.runConditions,
     tests: report.tests,
-    aggregates: { endpoints: endpoints.stats, custom: custom.stats, origins: report.origins },
+    aggregates: {
+      endpoints: endpoints.stats,
+      custom: custom.stats,
+      origins: report.origins,
+      testBreakdown: breakdownStats(report),
+    },
     evaluation: {
       ...report.evaluation,
       perKey: { api: endpoints.perKey, custom: custom.perKey },
@@ -104,7 +130,7 @@ describe('buildRunReport (02, chapter 9.1)', () => {
       max: 250.04,
       percentiles: { ...aggregate.stats.percentiles, p50: 180.25 },
     };
-    aggregate.ttfb = { p50: 120.55, p95: 199.96 };
+    aggregate.ttfb = { p50: 120.55, p95: 199.96, otherP50: 60.04 };
     aggregate.slowest = aggregate.slowest.map((s) => ({
       ...s,
       duration: s.duration + 0.04,
@@ -117,7 +143,7 @@ describe('buildRunReport (02, chapter 9.1)', () => {
       max: 250,
       percentiles: { p50: 180.3 },
     });
-    expect(built?.ttfb).toEqual({ p50: 120.6, p95: 200 });
+    expect(built?.ttfb).toEqual({ p50: 120.6, p95: 200, otherP50: 60 });
     expect(built?.slowest.map((s) => s.duration)).toEqual([250, 210.3]);
     expect(built?.samples.durations).toEqual([100, 100]);
   });
@@ -236,5 +262,63 @@ describe('collapseIssues', () => {
         { code: 'A', message: 'm', hint: 'second', count: 4 },
       ]),
     ).toEqual([{ code: 'A', message: 'm', hint: 'first', count: 5 }]);
+  });
+});
+
+describe('buildRunReport: data of the HTML report (02-REQ-30)', () => {
+  test('11-AC-18 adds usage to every check and hints per key; the golden reports are rebuilt exactly', () => {
+    const report = goldenReport('full-run.json');
+    const built = buildRunReport(inputOf(report));
+    const checks = Object.values(built.endpoints).flatMap((a) => a.evaluation.checks);
+    expect(checks.length).toBeGreaterThan(0);
+    for (const check of checks) expect(check.usage).toBe(checkUsage(check));
+    expect(built.endpoints['POST /api/orders']?.hints.map((h) => h.code)).toEqual([
+      'HINT_ERRORS_DOMINANT',
+      'HINT_FAILED_TESTS',
+    ]);
+    expect(built).toEqual(report);
+  });
+
+  test('08-AC-20 violatedKeys lists only failed keys, sorted, at most 10; violatedKeyCount counts all', () => {
+    const input = inputOf(goldenReport('full-run.json'));
+    const template = input.aggregates.endpoints['POST /api/orders'];
+    const failed = input.evaluation.perKey.api['POST /api/orders'];
+    const passed = input.evaluation.perKey.api[KEY];
+    if (template === undefined || failed === undefined || passed === undefined) {
+      throw new Error('fixture');
+    }
+    const keys: string[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const key = `GET /api/failing-${String(i).padStart(2, '0')}`;
+      input.aggregates.endpoints[key] = structuredClone(template);
+      input.evaluation.perKey.api[key] = structuredClone(failed);
+      keys.push(key);
+    }
+    const [first] = input.aggregates.testBreakdown?.tests ?? [];
+    if (first === undefined || input.aggregates.testBreakdown == null) throw new Error('fixture');
+    first.keys = [...keys, KEY, 'POST /api/orders'].sort();
+    first.keyCount = first.keys.length;
+    const built = buildRunReport(input).testBreakdown?.tests[0];
+    expect(built?.violatedKeyCount).toBe(13);
+    expect(built?.violatedKeys).toEqual([
+      'GET /api/failing-00',
+      'GET /api/failing-01',
+      'GET /api/failing-02',
+      'GET /api/failing-03',
+      'GET /api/failing-04',
+      'GET /api/failing-05',
+      'GET /api/failing-06',
+      'GET /api/failing-07',
+      'GET /api/failing-08',
+      'GET /api/failing-09',
+    ]);
+    expect(built).not.toHaveProperty('keys');
+    expect(parseRunReport(stringifyStable(buildRunReport(input)), 'r').ok).toBe(true);
+  });
+
+  test('a report migrated from version 1 keeps testBreakdown null when rebuilt', () => {
+    const input = inputOf(goldenReport('full-run.json'));
+    input.aggregates.testBreakdown = null;
+    expect(buildRunReport(input).testBreakdown).toBeNull();
   });
 });
