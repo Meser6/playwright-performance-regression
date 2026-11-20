@@ -211,7 +211,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.505
             },
             {
               "actual": 1010,
@@ -221,7 +222,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.01
             },
             {
               "actual": 0,
@@ -231,7 +233,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -296,7 +299,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1000,
+            1049
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/02": {
         "count": 20,
@@ -311,7 +324,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.51
             },
             {
               "actual": 1020,
@@ -321,7 +335,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.02
             },
             {
               "actual": 0,
@@ -331,7 +346,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -396,7 +412,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1000,
+            1049
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/03": {
         "count": 20,
@@ -411,7 +437,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.515
             },
             {
               "actual": 1030,
@@ -421,7 +448,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.03
             },
             {
               "actual": 0,
@@ -431,7 +459,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -496,7 +525,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1000,
+            1049
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/04": {
         "count": 20,
@@ -511,7 +550,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.52
             },
             {
               "actual": 1040,
@@ -521,7 +561,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.04
             },
             {
               "actual": 0,
@@ -531,7 +572,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -596,7 +638,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1000,
+            1049
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/05": {
         "count": 20,
@@ -611,7 +663,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.525
             },
             {
               "actual": 1050,
@@ -621,7 +674,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.05
             },
             {
               "actual": 0,
@@ -631,7 +685,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -696,7 +751,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/06": {
         "count": 20,
@@ -711,7 +776,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.53
             },
             {
               "actual": 1060,
@@ -721,7 +787,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.06
             },
             {
               "actual": 0,
@@ -731,7 +798,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -796,7 +864,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/07": {
         "count": 20,
@@ -811,7 +889,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.535
             },
             {
               "actual": 1070,
@@ -821,7 +900,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.07
             },
             {
               "actual": 0,
@@ -831,7 +911,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -896,7 +977,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/08": {
         "count": 20,
@@ -911,7 +1002,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.54
             },
             {
               "actual": 1080,
@@ -921,7 +1013,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.08
             },
             {
               "actual": 0,
@@ -931,7 +1024,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -996,7 +1090,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/09": {
         "count": 20,
@@ -1011,7 +1115,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.545
             },
             {
               "actual": 1090,
@@ -1021,7 +1126,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.09
             },
             {
               "actual": 0,
@@ -1031,7 +1137,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1096,7 +1203,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/10": {
         "count": 20,
@@ -1111,7 +1228,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.55
             },
             {
               "actual": 1100,
@@ -1121,7 +1239,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.1
             },
             {
               "actual": 0,
@@ -1131,7 +1250,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1196,7 +1316,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1049,
+            1101
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/11": {
         "count": 20,
@@ -1211,7 +1341,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.555
             },
             {
               "actual": 1110,
@@ -1221,7 +1352,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.11
             },
             {
               "actual": 0,
@@ -1231,7 +1363,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1296,7 +1429,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1101,
+            1155
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/12": {
         "count": 20,
@@ -1311,7 +1454,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.56
             },
             {
               "actual": 1120,
@@ -1321,7 +1465,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.12
             },
             {
               "actual": 0,
@@ -1331,7 +1476,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1396,7 +1542,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1101,
+            1155
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/13": {
         "count": 20,
@@ -1411,7 +1567,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.565
             },
             {
               "actual": 1130,
@@ -1421,7 +1578,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.13
             },
             {
               "actual": 0,
@@ -1431,7 +1589,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1496,7 +1655,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1101,
+            1155
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/14": {
         "count": 20,
@@ -1511,7 +1680,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.57
             },
             {
               "actual": 1140,
@@ -1521,7 +1691,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.14
             },
             {
               "actual": 0,
@@ -1531,7 +1702,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1596,7 +1768,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1101,
+            1155
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/15": {
         "count": 20,
@@ -1611,7 +1793,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.575
             },
             {
               "actual": 1150,
@@ -1621,7 +1804,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.15
             },
             {
               "actual": 0,
@@ -1631,7 +1815,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1696,7 +1881,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1101,
+            1155
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/16": {
         "count": 20,
@@ -1711,7 +1906,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.58
             },
             {
               "actual": 1160,
@@ -1721,7 +1917,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.16
             },
             {
               "actual": 0,
@@ -1731,7 +1928,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1796,7 +1994,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/17": {
         "count": 20,
@@ -1811,7 +2019,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.585
             },
             {
               "actual": 1170,
@@ -1821,7 +2030,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.17
             },
             {
               "actual": 0,
@@ -1831,7 +2041,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1896,7 +2107,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/18": {
         "count": 20,
@@ -1911,7 +2132,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.59
             },
             {
               "actual": 1180,
@@ -1921,7 +2143,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.18
             },
             {
               "actual": 0,
@@ -1931,7 +2154,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -1996,7 +2220,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/19": {
         "count": 20,
@@ -2011,7 +2245,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.595
             },
             {
               "actual": 1190,
@@ -2021,7 +2256,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.19
             },
             {
               "actual": 0,
@@ -2031,7 +2267,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -2096,7 +2333,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/20": {
         "count": 20,
@@ -2111,7 +2358,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.6
             },
             {
               "actual": 1200,
@@ -2121,7 +2369,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.2
             },
             {
               "actual": 0,
@@ -2131,7 +2380,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -2196,7 +2446,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/21": {
         "count": 20,
@@ -2211,7 +2471,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.605
             },
             {
               "actual": 1210,
@@ -2221,7 +2482,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.21
             },
             {
               "actual": 0,
@@ -2231,7 +2493,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -2296,7 +2559,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1155,
+            1212
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/items/22": {
         "count": 20,
@@ -2311,7 +2584,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.61
             },
             {
               "actual": 1220,
@@ -2321,7 +2595,8 @@
               "n": 20,
               "observed": null,
               "passed": false,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 1.22
             },
             {
               "actual": 0,
@@ -2331,7 +2606,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -2396,7 +2672,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            1212,
+            1271
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       }
     },
     "env": null,
@@ -2463,7 +2749,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 40,
@@ -2549,7 +2835,12 @@
         "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
         "message": "Requests still pending at the end of test 11."
       }
-    ]
+    ],
+    "testBreakdown": {
+      "tests": [],
+      "omitted": 0,
+      "waterfalls": []
+    }
   },
   "name": "thresholds-mode-warn-only"
 }

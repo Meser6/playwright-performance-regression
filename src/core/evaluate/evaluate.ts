@@ -6,7 +6,7 @@ import type {
   AggregateStats,
   EvaluationCounts,
   Issue,
-  KeyEvaluation,
+  EvaluatedKey,
   Kind,
   ThresholdFileInfo,
 } from '../types/index.ts';
@@ -51,7 +51,7 @@ function evaluateKey(
   thresholds: LoadedThresholds,
   cfg: ResolvedConfig,
   runDay: string,
-): KeyEvaluation {
+): EvaluatedKey {
   const file = thresholds[kind];
   if (file.status === 'invalid') {
     // Informational limits only; never evaluated with default thresholds (09-REQ-12).
@@ -80,7 +80,7 @@ function evaluateKey(
 }
 
 /** Violations of this key may block the run (09-REQ-13, step 2). */
-function qualifies(evaluation: KeyEvaluation, gate: ResolvedConfig['gate']): boolean {
+function qualifies(evaluation: EvaluatedKey, gate: ResolvedConfig['gate']): boolean {
   if (gate.warnOnly) return false;
   if (evaluation.thresholdSource === 'default' && gate.defaultThresholds === 'warn') return false;
   return !isMuteActive(evaluation.muted);
@@ -88,7 +88,7 @@ function qualifies(evaluation: KeyEvaluation, gate: ResolvedConfig['gate']): boo
 
 /** Sets `blocking` of every check (09-REQ-13, steps 1–6). */
 function applyGate(
-  perKey: Record<Kind, Record<string, KeyEvaluation>>,
+  perKey: Record<Kind, Record<string, EvaluatedKey>>,
   gate: ResolvedConfig['gate'],
 ): void {
   const all = KINDS.flatMap((kind) => Object.values(perKey[kind]));
@@ -106,7 +106,7 @@ function applyGate(
 
 /** evaluation.counts.<kind> (09-REQ-17). */
 function countKind(
-  perKey: Record<string, KeyEvaluation>,
+  perKey: Record<string, EvaluatedKey>,
   unseenThresholdEntries: number,
 ): EvaluationCounts {
   const counts: EvaluationCounts = {
@@ -145,7 +145,7 @@ function countKind(
 
 /** evaluation.status (09-REQ-13, step 7). */
 function evaluationStatus(
-  perKey: Record<Kind, Record<string, KeyEvaluation>>,
+  perKey: Record<Kind, Record<string, EvaluatedKey>>,
   thresholds: LoadedThresholds,
   fatalToolError: boolean,
 ): EvaluationStatus {
@@ -173,7 +173,7 @@ export function evaluate(
     api: aggregates.endpoints,
     custom: aggregates.custom,
   };
-  const perKey: Record<Kind, Record<string, KeyEvaluation>> = { api: {}, custom: {} };
+  const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {}, custom: {} };
   for (const kind of KINDS) {
     for (const key of Object.keys(byKind[kind]).sort(compareText)) {
       const stats = byKind[kind][key];

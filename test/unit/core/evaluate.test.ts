@@ -2,19 +2,21 @@ import { describe, expect, test } from 'vitest';
 import { allowedViolations, evaluate } from '../../../src/core/evaluate/index.ts';
 import type { Evaluation } from '../../../src/core/evaluate/index.ts';
 import { stringifyStable } from '../../../src/core/format/index.ts';
-import { buildRunReport } from '../../../src/core/report/index.ts';
+import { buildRunReport, checkUsage } from '../../../src/core/report/index.ts';
 import { parseRunReport } from '../../../src/core/schema/index.ts';
 import { wilsonBounds } from '../../../src/core/stats/index.ts';
 import type {
   Check,
+  EvaluatedCheck,
+  EvaluatedKey,
   Generated,
-  KeyEvaluation,
   Kind,
   RunReport,
   ThresholdsEntry,
 } from '../../../src/core/types/index.ts';
 import { loadCases } from '../../contract/golden.ts';
 import {
+  NO_TEST_BREAKDOWN,
   SOURCE,
   aggregates,
   both,
@@ -36,7 +38,7 @@ function golden(prefix: string): Evaluation {
   return runGoldenCase(c).evaluation;
 }
 
-function failed(e: Evaluation): (Check & { kind: Kind; key: string })[] {
+function failed(e: Evaluation): (EvaluatedCheck & { kind: Kind; key: string })[] {
   return (['api', 'custom'] as const).flatMap((kind) =>
     Object.entries(e.perKey[kind]).flatMap(([key, k]) =>
       k.checks.filter((c) => !c.passed).map((c) => ({ ...c, kind, key })),
@@ -45,7 +47,7 @@ function failed(e: Evaluation): (Check & { kind: Kind; key: string })[] {
 }
 
 /** Evaluates one api key with the given entry (or none) and config. */
-function one(spec: AggregateSpec, entry?: ThresholdsEntry, cfg = config()): KeyEvaluation {
+function one(spec: AggregateSpec, entry?: ThresholdsEntry, cfg = config()): EvaluatedKey {
   const e = evaluate(
     aggregates({ [KEY]: spec }),
     both(loaded('api', entry === undefined ? {} : { [KEY]: entry })),
@@ -57,7 +59,7 @@ function one(spec: AggregateSpec, entry?: ThresholdsEntry, cfg = config()): KeyE
   return result;
 }
 
-function check(k: KeyEvaluation, rule: Check['rule']): Check | undefined {
+function check(k: EvaluatedKey, rule: Check['rule']): EvaluatedCheck | undefined {
   return k.checks.find((c) => c.rule === rule);
 }
 
@@ -404,7 +406,7 @@ describe('rules (09, chapter 5.2)', () => {
 
 describe('limits and results (09, chapter 5)', () => {
   test('09-AC-11 t null or default thresholds give no apdex and wilson checks', () => {
-    const rules = (k: KeyEvaluation) => k.checks.map((c) => c.rule);
+    const rules = (k: EvaluatedKey) => k.checks.map((c) => c.rule);
     const nullT = one({ durations: [[20, 100]] }, { t: null, percentile: 900 });
     expect(nullT.limits).toMatchObject({ t: null, minApdex: null, maxWilson: null });
     expect(rules(nullT)).toEqual(['median', 'percentile', 'errors']);
@@ -873,7 +875,7 @@ describe('run report', () => {
       normalization: base.normalization,
       runConditions: base.runConditions,
       tests: base.tests,
-      aggregates: { ...aggs, origins: [] },
+      aggregates: { ...aggs, origins: [], testBreakdown: NO_TEST_BREAKDOWN },
       evaluation: e,
       warnings: e.warnings,
       toolErrors: e.toolErrors,
@@ -881,7 +883,11 @@ describe('run report', () => {
     const parsed = parseRunReport(stringifyStable(report), 'report.json');
     expect(parsed.ok).toBe(true);
     expect(report.evaluation).toEqual({ status: e.status, gateEnabled: true, counts: e.counts });
-    expect(report.endpoints[KEY]?.evaluation).toEqual(e.perKey.api[KEY]);
+    // buildRunReport adds usage to the checks of the evaluation (11-REQ-30).
+    expect(report.endpoints[KEY]?.evaluation).toEqual({
+      ...e.perKey.api[KEY],
+      checks: e.perKey.api[KEY]?.checks.map((c) => ({ ...c, usage: checkUsage(c) })),
+    });
   });
 });
 

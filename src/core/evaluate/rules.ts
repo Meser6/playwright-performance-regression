@@ -2,7 +2,7 @@
 import type { ResolvedConfig } from '../config/index.ts';
 import { roundRatio } from '../format/index.ts';
 import { apdex, apdexCounts, exceedingShare, wilsonBounds } from '../stats/index.ts';
-import type { AggregateStats, Check } from '../types/index.ts';
+import type { AggregateStats, Check, EvaluatedCheck } from '../types/index.ts';
 import type { Limits } from './limits.ts';
 
 export type Rule = Check['rule'];
@@ -14,7 +14,7 @@ export const TIME_RULES: ReadonlySet<Rule> = new Set<Rule>(['median', 'percentil
 
 export interface RuleOutcome {
   /** Checks that ran, in RULES order; `blocking` is set later by the gate (09-REQ-13). */
-  checks: Check[];
+  checks: EvaluatedCheck[];
   /** At least one rule was enabled and had all its limits (09-REQ-10). */
   applicable: boolean;
 }
@@ -26,7 +26,7 @@ interface RuleInput {
   hasLimits: boolean;
   /** Sample count compared with minSamples: n, or N for errors (09-REQ-07). */
   count: number;
-  run: () => Omit<Check, 'hardLimitExceeded' | 'blocking'>;
+  run: () => Omit<EvaluatedCheck, 'hardLimitExceeded' | 'blocking'>;
 }
 
 function timeCheck(
@@ -34,7 +34,7 @@ function timeCheck(
   actual: number,
   limit: number,
   m: number,
-): Omit<Check, 'hardLimitExceeded' | 'blocking'> {
+): Omit<EvaluatedCheck, 'hardLimitExceeded' | 'blocking'> {
   // Strict comparison on the value as written in the report (09-REQ-08).
   return { rule, n: m, actual, observed: null, limit, passed: !(actual > limit) };
 }
@@ -141,7 +141,7 @@ export function runRules(
   ];
 
   const hardLimitFactor = cfg.gate.hardLimitFactor;
-  const checks: Check[] = [];
+  const checks: EvaluatedCheck[] = [];
   let applicable = false;
   for (const input of inputs) {
     if (!input.enabled || !input.hasLimits) continue;

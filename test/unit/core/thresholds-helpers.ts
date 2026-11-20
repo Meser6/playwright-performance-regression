@@ -49,7 +49,7 @@ export function reportAggregate(spec: ReportAggregateSpec, level = 'p95'): Aggre
   if (spec.percentiles !== undefined && stats.stats !== null) {
     stats.stats = { ...stats.stats, percentiles: { ...spec.percentiles } };
   }
-  return { ...stats, evaluation: structuredClone(NO_EVALUATION) };
+  return { ...stats, evaluation: structuredClone(NO_EVALUATION), hints: [] };
 }
 
 export interface ReportSpec {
@@ -96,7 +96,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     muted: 0,
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     tool: { name: 'playwright-performance-regression', version: '0.1.0' },
     runId: spec.runId ?? 'run-1',
     mode: spec.mode ?? 'thresholds',
@@ -134,6 +134,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     origins: [],
     endpoints: expand(spec.endpoints),
     custom: expand(spec.custom),
+    testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }
 

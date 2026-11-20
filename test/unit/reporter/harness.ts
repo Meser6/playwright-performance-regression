@@ -190,6 +190,7 @@ export function result(
   return {
     status: 'passed',
     retry: 0,
+    startTime: new Date(Date.UTC(2026, 10, 18, 10, 0, 0, 0)),
     attachments: batches.map((b) => ({
       name: SAMPLES_ATTACHMENT_NAME,
       contentType: 'application/json',

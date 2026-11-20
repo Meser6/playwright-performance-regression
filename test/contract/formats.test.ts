@@ -1,10 +1,19 @@
 import { describe, expect, test } from 'vitest';
+import { Sink } from '../../src/core/schema/dsl.ts';
 import {
   parseOutcome,
   parseRunReport,
   parseSampleBatch,
   parseThresholdsFile,
 } from '../../src/core/schema/index.ts';
+import {
+  OUTCOME_FORMAT,
+  RUN_REPORT_FORMAT,
+  SAMPLES_FORMAT,
+  THRESHOLDS_FORMAT,
+  migrate,
+} from '../../src/core/schema/parse.ts';
+import type { VersionedFormat } from '../../src/core/schema/parse.ts';
 import type { SchemaIssue } from '../../src/core/schema/index.ts';
 import type { Result } from '../../src/core/types/index.ts';
 import { caseText, FORMATS, loadCases } from './golden.ts';
@@ -31,6 +40,35 @@ function parse(format: Format, text: string, kind: 'api' | 'custom'): Result<unk
 }
 
 const ajv = createAjv();
+
+const VERSIONED: Record<Format, VersionedFormat> = {
+  samples: SAMPLES_FORMAT,
+  'run-report': RUN_REPORT_FORMAT,
+  thresholds: THRESHOLDS_FORMAT,
+  outcome: OUTCOME_FORMAT,
+};
+
+/** The document after the migrations the parser applies to an older schemaVersion. */
+function migrated(format: Format, document: Json): Json {
+  const { current, migrations } = VERSIONED[format];
+  if (document === null || typeof document !== 'object' || Array.isArray(document)) return document;
+  const version = document['schemaVersion'];
+  if (typeof version !== 'number' || !Number.isInteger(version)) return document;
+  if (version < 1 || version >= current) return document;
+  return migrate(document, version, current, migrations) as Json;
+}
+
+/**
+ * Verdict of the checks a JSON Schema cannot express (02-AC-17, 02-REQ-29), on a document the
+ * schema accepts: the parser applies them after the schema, so it may reject such a document.
+ */
+function extraChecksPass(format: Format, document: unknown): boolean {
+  const extra = VERSIONED[format].extraChecks;
+  if (extra === undefined) return true;
+  const sink = new Sink(1);
+  extra(document as Record<string, unknown>, sink);
+  return sink.problems.length === 0;
+}
 const kindOf = (c: GoldenCase): 'api' | 'custom' => c.expectedKind ?? 'api';
 
 describe('02-AC-01 core/schema and Ajv agree on the golden files', () => {
@@ -159,7 +197,13 @@ describe('02-AC-01 core/schema and Ajv agree on mutated documents', () => {
         for (const [label, mutant] of mutations(c.input as Json)) {
           const schemaValid = validate(mutant);
           const coreValid = parse(format, JSON.stringify(mutant), kindOf(c)).ok;
-          if (schemaValid !== coreValid) {
+          // An older schemaVersion is migrated first (02-REQ-10), and the parser also applies
+          // the checks the schema cannot express (02-AC-17).
+          const document = migrated(format, mutant);
+          const expected =
+            (document === mutant ? schemaValid : validate(document)) &&
+            extraChecksPass(format, document);
+          if (expected !== coreValid) {
             disagreements.push(`${label}: Ajv ${String(schemaValid)}, core ${String(coreValid)}`);
           }
           verdicts[schemaValid ? 'valid' : 'invalid']++;

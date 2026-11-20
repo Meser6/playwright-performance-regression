@@ -211,7 +211,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.06
             },
             {
               "actual": 120,
@@ -221,7 +222,8 @@
               "n": 20,
               "observed": null,
               "passed": true,
-              "rule": "percentile"
+              "rule": "percentile",
+              "usage": 0.3
             },
             {
               "actual": 0,
@@ -231,7 +233,8 @@
               "n": 20,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -296,7 +299,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            115.5,
+            121.2
+          ],
+          "counts": [
+            20
+          ]
+        },
+        "hints": []
       },
       "GET /api/users/:id": {
         "count": 5,
@@ -311,7 +324,8 @@
               "n": 5,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.045
             },
             {
               "actual": 0,
@@ -321,7 +335,8 @@
               "n": 5,
               "observed": 0,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0
             }
           ],
           "limits": {
@@ -371,7 +386,17 @@
           "node": 0
         },
         "topTests": [],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            86.6,
+            90.85
+          ],
+          "counts": [
+            5
+          ]
+        },
+        "hints": []
       }
     },
     "env": null,
@@ -438,7 +463,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 10,
@@ -468,7 +493,12 @@
       "version": "0.1.0"
     },
     "toolErrors": [],
-    "warnings": []
+    "warnings": [],
+    "testBreakdown": {
+      "tests": [],
+      "omitted": 0,
+      "waterfalls": []
+    }
   },
   "name": "passed"
 }

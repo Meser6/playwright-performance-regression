@@ -292,7 +292,39 @@
             "title": "tickets › opens a ticket"
           }
         ],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": {
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ],
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "hints": []
       }
     },
     "endpoints": {
@@ -309,17 +341,19 @@
               "n": 10,
               "observed": null,
               "passed": true,
-              "rule": "median"
+              "rule": "median",
+              "usage": 0.2002
             },
             {
-              "actual": 0.31,
+              "actual": 0.0149,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 0.05,
               "n": 12,
               "observed": 0.083,
               "passed": true,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 0.298
             }
           ],
           "limits": {
@@ -413,8 +447,41 @@
         ],
         "ttfb": {
           "p50": 120.5,
-          "p95": 200
-        }
+          "p95": 200,
+          "otherP50": 59.7
+        },
+        "histogram": {
+          "edges": [
+            146.8,
+            154,
+            161.6,
+            169.5,
+            177.8,
+            186.6,
+            195.7,
+            205.4,
+            215.4,
+            226,
+            237.1,
+            248.8,
+            261
+          ],
+          "counts": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "hints": []
       },
       "POST /api/orders": {
         "count": 5,
@@ -429,7 +496,8 @@
               "n": 5,
               "observed": 1,
               "passed": false,
-              "rule": "errors"
+              "rule": "errors",
+              "usage": 60
             }
           ],
           "limits": {
@@ -471,7 +539,26 @@
             "title": "tickets › opens a ticket"
           }
         ],
-        "ttfb": null
+        "ttfb": null,
+        "histogram": null,
+        "hints": [
+          {
+            "code": "HINT_ERRORS_DOMINANT",
+            "params": {
+              "rate": 1,
+              "limit": 0.01,
+              "label": "FAILED",
+              "count": 5,
+              "errors": 5
+            }
+          },
+          {
+            "code": "HINT_FAILED_TESTS",
+            "params": {
+              "share": 1
+            }
+          }
+        ]
       }
     },
     "env": "qa",
@@ -542,7 +629,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [
       {
@@ -643,7 +730,75 @@
         "count": 1,
         "message": "1 key is muted."
       }
-    ]
+    ],
+    "testBreakdown": {
+      "tests": [
+        {
+          "title": "tickets › opens a ticket",
+          "project": "chromium",
+          "file": "tests/tickets.spec.ts",
+          "line": 12,
+          "executions": 5,
+          "requestCount": 15,
+          "errorCount": 5,
+          "totalMs": 1765.9,
+          "maxRequestMs": 210.3,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "GET /api/tickets/:id",
+              "count": 10,
+              "totalMs": 1765.9
+            },
+            {
+              "key": "POST /api/orders",
+              "count": 5,
+              "totalMs": 0
+            }
+          ],
+          "violatedKeys": [
+            "POST /api/orders"
+          ],
+          "violatedKeyCount": 1
+        }
+      ],
+      "omitted": 0,
+      "waterfalls": [
+        {
+          "test": {
+            "title": "tickets › opens a ticket",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 12,
+            "repeatEachIndex": 2
+          },
+          "totalMs": 380.2,
+          "requestCount": 3,
+          "spanMs": 473,
+          "requests": [
+            {
+              "offset": 150,
+              "duration": 180.2,
+              "key": "GET /api/tickets/:id",
+              "status": "200"
+            },
+            {
+              "offset": 273,
+              "duration": 200,
+              "key": "GET /api/tickets/:id",
+              "status": "200"
+            },
+            {
+              "offset": 408,
+              "duration": null,
+              "key": "POST /api/orders",
+              "status": "FAILED"
+            }
+          ],
+          "omitted": 0
+        }
+      ]
+    }
   },
   "expected": {
     "ok": true

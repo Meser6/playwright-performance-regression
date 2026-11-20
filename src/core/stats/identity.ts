@@ -12,8 +12,12 @@ export interface TestMeta {
   file: string;
   line: number;
   repeatEachIndex: number;
+  /** TestResult.retry: tie-break of the waterfall (08-REQ-38). */
+  retry: number;
   /** See isFailedTest() (08-REQ-07). */
   failed: boolean;
+  /** TestResult.startTime.getTime(): start of the test run in epoch ms (08-REQ-36). */
+  startTime: number;
 }
 
 export interface EnrichedRequestSample extends RawRequestSample {

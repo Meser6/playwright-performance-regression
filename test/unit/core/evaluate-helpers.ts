@@ -12,7 +12,7 @@ import type {
   LoadedThresholdsFile,
 } from '../../../src/core/evaluate/index.ts';
 import { roundMs } from '../../../src/core/format/index.ts';
-import { percentile, percentileNames } from '../../../src/core/stats/index.ts';
+import { histogram, percentile, percentileNames } from '../../../src/core/stats/index.ts';
 import type {
   AggregateStats,
   Kind,
@@ -69,8 +69,12 @@ export function aggregate(spec: AggregateSpec, level = 'p95'): AggregateStats {
     slowest: [],
     topTests: [],
     samples: { durations, sampled: false },
+    histogram: (n === 0 ? null : histogram(durations)) as AggregateStats['histogram'],
   };
 }
+
+/** testBreakdown of runs without per-test data (08-REQ-37). */
+export const NO_TEST_BREAKDOWN = { tests: [], omitted: 0, waterfalls: [] };
 
 export function config(input: PerfConfigInput = {}): ResolvedConfig {
   const result = resolveConfig(input, {});

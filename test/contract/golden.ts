@@ -36,7 +36,10 @@ export function caseText(c: GoldenCase): string {
 export function loadCases(format: Format): GoldenCase[] {
   const base = join(GOLDEN_DIR, format);
   const cases: GoldenCase[] = [];
-  for (const dir of readdirSync(base).sort()) {
+  // v<N>/ holds raw documents of older versions, not cases (oldVersionDirs).
+  for (const dir of readdirSync(base)
+    .filter((d) => !/^v\d+$/.test(d))
+    .sort()) {
     for (const file of readdirSync(join(base, dir)).sort()) {
       const data = JSON.parse(readFileSync(join(base, dir, file), 'utf8')) as Omit<
         GoldenCase,

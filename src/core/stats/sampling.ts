@@ -70,6 +70,19 @@ export class BottomK {
     return Array.from(this.duration.subarray(0, this.size)).sort((a, b) => a - b);
   }
 
+  /**
+   * max(0, duration − TTFB) of the kept samples with a known TTFB, in tenths of a ms, ascending
+   * (08-REQ-35): the same samples as ttfbs().
+   */
+  othersThanTtfb(): number[] {
+    const out: number[] = [];
+    for (let i = 0; i < this.size; i++) {
+      const ttfb = at(this.ttfb, i);
+      if (ttfb >= 0) out.push(Math.max(0, at(this.duration, i) - ttfb));
+    }
+    return out.sort((a, b) => a - b);
+  }
+
   /** Known TTFB values of the kept samples in tenths of a ms, ascending. */
   ttfbs(): number[] {
     return Array.from(this.ttfb.subarray(0, this.size))

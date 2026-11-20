@@ -4,7 +4,7 @@ import type {
   EvaluationCounts,
   HostFingerprint,
   Issue,
-  KeyEvaluation,
+  EvaluatedKey,
   Kind,
   RunReport,
   ThresholdFileInfo,
@@ -59,7 +59,7 @@ export interface Evaluation {
   status: EvaluationStatus;
   gateEnabled: boolean;
   counts: Record<Kind, EvaluationCounts>;
-  perKey: Record<Kind, Record<string, KeyEvaluation>>;
+  perKey: Record<Kind, Record<string, EvaluatedKey>>;
   thresholdFiles: ThresholdFileInfo[];
   warnings: Issue[];
   /** Issues of invalid thresholds files (09-REQ-02); they belong to the run's toolErrors. */

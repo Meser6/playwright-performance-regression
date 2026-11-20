@@ -10,5 +10,20 @@ export type {
   SampleKind,
   TestMeta,
 } from './identity.ts';
+export {
+  HISTOGRAM_MANTISSAS,
+  HISTOGRAM_MAX_BINS,
+  HISTOGRAM_STEPS_PER_DECADE,
+  histogram,
+  histogramEdge,
+} from './histogram.ts';
+export type { Histogram } from './histogram.ts';
 export { percentile, percentileNames } from './percentile.ts';
 export { BottomK } from './sampling.ts';
+export {
+  MAX_TESTS,
+  MAX_WATERFALLS,
+  MAX_WATERFALL_REQUESTS,
+  TestBreakdownBuilder,
+} from './test-breakdown.ts';
+export type { TestBreakdownStats, TestCostStats } from './test-breakdown.ts';

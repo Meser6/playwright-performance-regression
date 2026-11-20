@@ -352,7 +352,7 @@ describe('renderHtmlReport', () => {
     );
     expect(page).toContain('>p95, p99, max 250 ms</text>');
     expect(page).toContain('>p99 limit 2100 ms</text>');
-    expect(page).not.toMatch(/histogram/iu);
+    expect(page.slice(0, page.indexOf('id="report-data"'))).not.toMatch(/histogram/iu);
   });
 
   test('11-REQ-19 numbers and dates do not depend on the locale', () => {

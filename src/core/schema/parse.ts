@@ -33,10 +33,13 @@ export interface SchemaIssue {
 /** Problems listed per issue (02, chapter 10). */
 export const MAX_PROBLEMS = 5;
 
-/** Current schemaVersion of every format. All formats are at 1 until the first release. */
+/**
+ * Current schemaVersion of every format. 02-REQ-11 applies from the first release: the run
+ * report is at version 2 (02-REQ-30), the other formats are still at version 1.
+ */
 export const SCHEMA_VERSIONS = {
   samples: 1,
-  runReport: 1,
+  runReport: 2,
   thresholds: 1,
   outcome: 1,
 } as const;
@@ -245,12 +248,106 @@ export const SAMPLES_FORMAT: VersionedFormat = {
   schema: sampleBatch,
 };
 
+/**
+ * Run report v1 → v2 (02-REQ-31, 02-D-16): a pure format change that computes nothing. Every
+ * aggregate gets `histogram: null` and `hints: []`, every check `usage: null`, every non-null
+ * `ttfb` `otherP50: null`, and the report `testBreakdown: null`.
+ */
+export function migrateRunReportV1(document: JsonObject): JsonObject {
+  const aggregates = (value: unknown): unknown => {
+    if (!isRecord(value)) return value;
+    return Object.fromEntries(
+      Object.entries(value).map(([name, aggregate]) => {
+        if (!isRecord(aggregate)) return [name, aggregate];
+        const evaluation = aggregate.evaluation;
+        const ttfb = aggregate.ttfb;
+        return [
+          name,
+          {
+            ...aggregate,
+            ttfb: isRecord(ttfb) ? { ...ttfb, otherP50: null } : ttfb,
+            evaluation:
+              isRecord(evaluation) && Array.isArray(evaluation.checks)
+                ? {
+                    ...evaluation,
+                    checks: evaluation.checks.map((check: unknown) =>
+                      isRecord(check) ? { ...check, usage: null } : check,
+                    ),
+                  }
+                : evaluation,
+            histogram: null,
+            hints: [],
+          },
+        ];
+      }),
+    );
+  };
+  return {
+    ...document,
+    endpoints: aggregates(document.endpoints),
+    custom: aggregates(document.custom),
+    testBreakdown: null,
+  };
+}
+
+/** Sum of the numbers of an array; NaN when an item is not a number. */
+function sum(values: unknown[]): number {
+  return values.reduce<number>((total, v) => total + (typeof v === 'number' ? v : Number.NaN), 0);
+}
+
+/**
+ * Checks of the run report v2 that the JSON Schema cannot express (02-REQ-30, 02-AC-17):
+ * histogram edges strictly ascending, counts of length edges.length − 1 that sum to the number of
+ * retained durations; violatedKeys of length min(10, violatedKeyCount); waterfall requests plus
+ * omitted equal to requestCount. Runs only on a document that passed the schema.
+ */
+export function checkRunReport(document: JsonObject, sink: Sink): void {
+  for (const kind of ['endpoints', 'custom']) {
+    const map = document[kind] as Record<string, Record<string, unknown>>;
+    for (const [name, aggregate] of Object.entries(map)) {
+      const histogram = aggregate.histogram as { edges: number[]; counts: number[] } | null;
+      if (histogram === null) continue;
+      const pointer = child(child(`/${kind}`, name), 'histogram');
+      const { edges, counts } = histogram;
+      if (edges.some((edge, i) => i > 0 && edge <= (edges[i - 1] ?? 0))) {
+        sink.add(child(pointer, 'edges'), 'must be strictly ascending');
+      }
+      if (counts.length !== edges.length - 1) {
+        sink.add(child(pointer, 'counts'), 'must have one item fewer than edges');
+      }
+      const retained = (aggregate.samples as { durations: unknown[] }).durations.length;
+      if (sum(counts) !== retained) {
+        sink.add(child(pointer, 'counts'), 'must sum to the number of samples.durations');
+      }
+    }
+  }
+  const breakdown = document.testBreakdown as {
+    tests: { violatedKeys: unknown[]; violatedKeyCount: number }[];
+    waterfalls: { requests: unknown[]; omitted: number; requestCount: number }[];
+  } | null;
+  if (breakdown === null) return;
+  breakdown.tests.forEach((test, i) => {
+    if (test.violatedKeys.length !== Math.min(10, test.violatedKeyCount)) {
+      sink.add(
+        `/testBreakdown/tests/${i}/violatedKeys`,
+        'must have min(10, violatedKeyCount) items',
+      );
+    }
+  });
+  breakdown.waterfalls.forEach((waterfall, i) => {
+    if (waterfall.requests.length + waterfall.omitted !== waterfall.requestCount) {
+      sink.add(`/testBreakdown/waterfalls/${i}`, 'requests plus omitted must equal requestCount');
+    }
+  });
+}
+
 export const RUN_REPORT_FORMAT: VersionedFormat = {
   name: 'run report',
   schemaFile: 'run-report.schema.json',
   current: SCHEMA_VERSIONS.runReport,
-  migrations: {},
+  migrations: { 1: migrateRunReportV1 },
   schema: runReport,
+  extraChecks: checkRunReport,
 };
 
 export const THRESHOLDS_FORMAT: VersionedFormat = {

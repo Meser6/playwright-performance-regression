@@ -15,8 +15,10 @@ export { ConfigError } from './common.ts';
 
 import type {
   Aggregate,
+  Check,
   CustomSample,
   Entry,
+  KeyEvaluation,
   OutcomeFile,
   RequestSample,
 } from './generated/formats.ts';
@@ -24,8 +26,15 @@ import type {
 /** Names used by the spec for generated format types. */
 export type Outcome = OutcomeFile;
 export type RunReportAggregate = Aggregate;
-/** Aggregate as in the run report, without 'evaluation' (added by the evaluation, 09). */
-export type AggregateStats = Omit<Aggregate, 'evaluation'>;
+/**
+ * Aggregate as in the run report, without 'evaluation' (added by the evaluation, 09) and
+ * 'hints' (added by buildRunReport, 11-REQ-34).
+ */
+export type AggregateStats = Omit<Aggregate, 'evaluation' | 'hints'>;
+/** A check as the evaluation produces it; buildRunReport adds `usage` (11-REQ-30). */
+export type EvaluatedCheck = Omit<Check, 'usage'>;
+/** Evaluation of one key as the evaluation produces it (09), checks without `usage`. */
+export type EvaluatedKey = Omit<KeyEvaluation, 'checks'> & { checks: EvaluatedCheck[] };
 export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
 export type RawCustomSample = CustomSample;

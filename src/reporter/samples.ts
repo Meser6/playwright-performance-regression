@@ -34,7 +34,9 @@ export function testMeta(test: TestLike, result: ResultLike, file: string): Test
     file,
     line: test.location.line,
     repeatEachIndex: test.repeatEachIndex,
+    retry: result.retry,
     failed: isFailedTest(result.status, test.expectedStatus),
+    startTime: result.startTime.getTime(),
   };
 }
 

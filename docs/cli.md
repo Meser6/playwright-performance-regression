@@ -117,7 +117,9 @@ pw-perf report [--input <report.json>] [--output <report.html>] [--config <file>
 
 Renders the HTML report again from a run report, without running tests and without Playwright.
 The page is the same as the one the run wrote. It is written also when `report.html` is `false`
-in the config.
+in the config. A `report.json` written by `0.1.0-next.1` or earlier (format version 1) is read
+too: it has no histograms, headroom, hints or per-test data, so the page shows less; run the tests
+again with the current version for the full report.
 
 | Option            | Meaning                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------- |

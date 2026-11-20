@@ -319,6 +319,9 @@ export class RunSession {
         this.aggregator.addCustom(sample.name, { ...sample, test: meta, ordinal });
       });
     }
+    // Closes the run for the per-test data and the waterfall, also after an empty batch; the
+    // aggregator ignores results of projects that are not measured (08-REQ-36).
+    this.aggregator.endResult(meta);
   }
 
   /** Warnings known only at the end of the run (09, chapter 12.1). */

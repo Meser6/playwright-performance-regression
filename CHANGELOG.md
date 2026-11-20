@@ -7,7 +7,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The run report (`report.json`, format version 2) holds more data for the HTML report: a
+  histogram of the retained durations per key, the median time outside TTFB
+  (`ttfb.otherP50`), the part of each limit a check uses (`usage`), up to three rule-based hints
+  per key, and `testBreakdown`: the backend cost of the 500 most expensive tests and a request
+  waterfall of the 5 slowest test runs.
+
 ### Changed
+
+- `report.json` files written by `0.1.0-next.1` or earlier are migrated when read (`thresholds
+--from`, `report`); the new fields are empty in them.
 
 - Breaking: every file and directory the package creates now starts with `pw-perf`. The default
   thresholds files are `pw-perf-thresholds.<kind>[.<env>].json` (`thresholds.filePrefix`, was
