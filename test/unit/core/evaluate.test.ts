@@ -521,7 +521,7 @@ describe('limits and results (09, chapter 5)', () => {
     expect(e.toolErrors).toEqual([
       {
         code: 'SCHEMA_INVALID_JSON',
-        message: 'pw-perf-thresholds.api.json: not valid JSON',
+        message: 'pw-perf-thresholds.json: not valid JSON',
         hint: expect.any(String),
       },
     ]);
@@ -602,7 +602,7 @@ describe('counters (09, chapter 7)', () => {
     expect(e.counts.api.unseenThresholdEntries).toBe(3);
     expect(codes(e).filter((c) => c === 'THRESHOLDS_UNSEEN_ENTRIES')).toHaveLength(1);
     expect(e.warnings[0]?.message).toBe(
-      '3 entries in pw-perf-thresholds.api.json were not seen in this run.',
+      '3 entries in pw-perf-thresholds.json were not seen in this run.',
     );
   });
 
@@ -631,9 +631,9 @@ describe('thresholds files (09, chapter 4)', () => {
     expect(e.perKey.api[KEY]?.thresholdSource).toBe('default');
     expect(e.perKey.api[KEY]?.result).toBe('pass');
     expect(codes(e)).toEqual(['THRESHOLDS_FILE_MISSING']);
-    expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.api.qa.json');
+    expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.qa.json');
     expect(e.warnings[0]?.hint).toContain('npx pw-perf thresholds');
-    expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.api.json exists');
+    expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.json exists');
     expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([['missing', null]]);
   });
 
@@ -645,7 +645,7 @@ describe('thresholds files (09, chapter 4)', () => {
       options(),
     );
     expect(codes(apiOnly)).toEqual(['THRESHOLDS_FILE_MISSING']);
-    expect(apiOnly.warnings[0]?.message).toContain('pw-perf-thresholds.api.json');
+    expect(apiOnly.warnings[0]?.message).toContain('pw-perf-thresholds.json');
     expect(apiOnly.warnings[0]?.hint).not.toContain('exists');
     // No keys at all: EVAL_NO_SAMPLES says it all.
     const none = evaluate(aggregates({}), files(missing('api')), config(), options());
@@ -845,9 +845,10 @@ describe('run report', () => {
       meta: base,
       config: base.config,
       normalization: base.normalization,
+      stepNormalization: null,
       runConditions: base.runConditions,
       tests: base.tests,
-      aggregates: { ...aggs, origins: [], testBreakdown: NO_TEST_BREAKDOWN },
+      aggregates: { steps: {}, ...aggs, origins: [], testBreakdown: NO_TEST_BREAKDOWN },
       evaluation: e,
       warnings: e.warnings,
       toolErrors: e.toolErrors,

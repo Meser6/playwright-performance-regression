@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import {
   DEFAULT_CONFIG,
+  expandSteps,
   definePerfConfig,
   perfDefaults,
   resolveConfig,
@@ -30,16 +31,27 @@ function issues(input: unknown, overrides: ConfigOverrides = {}): ConfigIssue[] 
 
 const codes = (list: ConfigIssue[]): string[] => list.map((i) => i.code);
 
+/** The snapshot of an empty config: the schema defaults with measure.steps expanded (03-REQ-18). */
+const DEFAULT_SNAPSHOT = {
+  ...DEFAULT_CONFIG,
+  measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+};
+
 describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
   test('03-AC-01 resolveConfig(undefined, {}) equals DEFAULT_CONFIG', () => {
     const { config, snapshot, warnings } = resolved(undefined);
-    expect(snapshot).toEqual(DEFAULT_CONFIG);
-    expect(config).toEqual({
+    // measure.steps: the schema default false becomes the full object (03-REQ-18).
+    const expected = {
       ...DEFAULT_CONFIG,
+      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+    };
+    expect(snapshot).toEqual(expected);
+    expect(config).toEqual({
+      ...expected,
       keys: { ...DEFAULT_CONFIG.keys, keyBuilder: undefined },
     });
     expect(warnings).toEqual([]);
-    expect(resolved({}).snapshot).toEqual(DEFAULT_CONFIG);
+    expect(resolved({}).snapshot).toEqual(expected);
   });
 
   test('the result shares no objects with DEFAULT_CONFIG or the input', () => {
@@ -60,7 +72,7 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
     });
     expect(snapshot.measure.exclude).toEqual(['intercom.io']);
     expect(snapshot.measure.resourceTypes).toEqual(['fetch']);
-    expect(snapshot.checks.time.percentile.limit).toEqual({ api: 2500 });
+    expect(snapshot.checks.time.percentile.limit).toEqual({ api: 2500, step: 15000 });
     expect(snapshot.checks.time.percentile.level).toBe(DEFAULT_CONFIG.checks.time.percentile.level);
     expect(snapshot.measure.include).toEqual(DEFAULT_CONFIG.measure.include);
   });
@@ -80,13 +92,13 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
 
   test('properties set to undefined count as not set', () => {
     expect(resolved({ run: { env: undefined }, keys: { keyBuilder: undefined } }).snapshot).toEqual(
-      DEFAULT_CONFIG,
+      DEFAULT_SNAPSHOT,
     );
   });
 
   test('$schema of a JSON file is accepted and not part of the effective config', () => {
     const { snapshot } = resolved({ $schema: './node_modules/x/schemas/config.schema.json' });
-    expect(snapshot).toEqual(DEFAULT_CONFIG);
+    expect(snapshot).toEqual(DEFAULT_SNAPSHOT);
   });
 
   test('03-AC-06 environment overrides win over the config (03-REQ-07)', () => {
@@ -460,8 +472,8 @@ describe('removed custom measurements (03-REQ-19, D-32)', () => {
   test('03-AC-13 perfDefaults and DEFAULT_CONFIG have no custom keys', () => {
     expect(JSON.stringify(perfDefaults)).not.toContain('"custom"');
     expect(JSON.stringify(DEFAULT_CONFIG)).not.toContain('"custom"');
-    expect(Object.keys(perfDefaults.checks.time.median.limit)).toEqual(['api']);
-    expect(Object.keys(perfDefaults.checks.slowShare.t)).toEqual(['api']);
+    expect(Object.keys(perfDefaults.checks.time.median.limit)).toEqual(['api', 'step']);
+    expect(Object.keys(perfDefaults.checks.slowShare.t)).toEqual(['api', 'step']);
   });
 
   test('an option named custom outside the checks still gets the usual hint', () => {

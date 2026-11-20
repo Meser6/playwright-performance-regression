@@ -365,7 +365,7 @@ describe('self-consistency (10-REQ-05)', () => {
     let evaluated = 0;
     for (const { name, report } of goldenReports()) {
       for (const config of [cfg(), allOn]) {
-        const entries: Record<Kind, Record<string, ThresholdsEntry>> = { api: {} };
+        const entries: Record<Kind, Record<string, ThresholdsEntry>> = { api: {}, step: {} };
         for (const kind of ['api'] as const) {
           const aggregates = report.endpoints;
           for (const [key, stats] of Object.entries(aggregates)) {
@@ -563,11 +563,11 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
     const files = existing({
       status: 'invalid',
       kind: 'api',
-      path: 'pw-perf-thresholds.api.json',
+      path: 'pw-perf-thresholds.json',
       issues: [
         {
           code: 'SCHEMA_INVALID_JSON',
-          source: 'pw-perf-thresholds.api.json',
+          source: 'pw-perf-thresholds.json',
           message: 'bad',
           problems: [],
         },

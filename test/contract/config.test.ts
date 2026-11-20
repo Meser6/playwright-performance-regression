@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { DEFAULT_CONFIG, resolveConfig } from '../../src/core/config/index.ts';
+import { DEFAULT_CONFIG, expandSteps, resolveConfig } from '../../src/core/config/index.ts';
 import type { ConfigOverrides, PerfConfigInput } from '../../src/core/config/index.ts';
 import { GOLDEN_DIR } from './golden.ts';
 import { createAjv, validator } from './schemas.ts';
@@ -50,7 +50,10 @@ describe('config defaults and snapshot follow the schema', () => {
     const result = resolveConfig(undefined, {});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.snapshot).toEqual(DEFAULT_CONFIG);
+    expect(result.value.snapshot).toEqual({
+      ...DEFAULT_CONFIG,
+      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+    });
     expect(validateConfig(result.value.snapshot), JSON.stringify(validateConfig.errors)).toBe(true);
   });
 

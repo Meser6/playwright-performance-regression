@@ -14,7 +14,8 @@ export interface StepsSettingsJson {
   include: JsonPattern[];
   exclude: JsonPattern[];
   maxDepth: number;
-  categories: StepCategory[];
+  /** Non-empty (03-REQ-18). */
+  categories: [StepCategory, ...StepCategory[]];
   groupBy: 'step' | 'test';
   normalizeTitles: boolean;
   redactQuotedValues: boolean;
@@ -49,7 +50,7 @@ export function expandSteps(value: StepsInput | undefined): StepsSettingsJson {
     ...STEP_DEFAULTS,
     include: [],
     exclude: [],
-    categories: [...STEP_DEFAULTS.categories],
+    categories: [...STEP_DEFAULTS.categories] as StepsSettingsJson['categories'],
   });
   if (value === undefined || typeof value === 'boolean') {
     return { enabled: value === true, ...defaults() };

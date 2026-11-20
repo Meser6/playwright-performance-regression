@@ -11,7 +11,9 @@ import type {
   Kind,
   RunReport,
   RunReportAggregate,
+  RunReportStepAggregate,
   SlowSample,
+  StepAggregateStats,
   TestCost,
   ThresholdFileInfo,
 } from '../types/index.ts';
@@ -22,6 +24,8 @@ import { collapseIssues } from './issues.ts';
 /** The parts of the aggregation result (08) the report needs. */
 export interface RunReportAggregates {
   endpoints: Record<string, AggregateStats>;
+  /** Step aggregates (06-REQ-28); empty when measure.steps is off. */
+  steps: Record<string, StepAggregateStats>;
   origins: RunReport['origins'];
   /** 08-REQ-37, 08-REQ-38; null only when rebuilding a report migrated from version 1. */
   testBreakdown: TestBreakdownStats | null;
@@ -57,6 +61,8 @@ export interface RunReportInput {
   config: RunReport['config'];
   /** Normalization fingerprint (07-REQ-21). */
   normalization: string;
+  /** Step normalization fingerprint (06-REQ-25); null when measure.steps is off. */
+  stepNormalization: string | null;
   runConditions: RunReport['runConditions'];
   tests: RunReport['tests'];
   aggregates: RunReportAggregates;
@@ -176,6 +182,25 @@ function buildAggregates(
   return result;
 }
 
+/** Step aggregates: the common fields plus location and stepErrorsFromFailedTests (06-REQ-28). */
+function buildStepAggregates(
+  aggregates: Record<string, StepAggregateStats>,
+  perKey: Record<string, EvaluatedKey>,
+  hintOptions: HintOptions,
+): Record<string, RunReportStepAggregate> {
+  const common = buildAggregates('step', aggregates, perKey, false, hintOptions);
+  const result: Record<string, RunReportStepAggregate> = {};
+  for (const [key, aggregate] of Object.entries(common)) {
+    const stats = aggregates[key];
+    result[key] = {
+      ...aggregate,
+      location: stats?.location == null ? null : { ...stats.location },
+      stepErrorsFromFailedTests: stats?.stepErrorsFromFailedTests ?? 0,
+    } as RunReportStepAggregate;
+  }
+  return result;
+}
+
 /** Adds violatedKeys from the evaluation of the endpoints and drops the key lists (08-REQ-37). */
 function buildTestBreakdown(
   breakdown: TestBreakdownStats | null,
@@ -211,7 +236,7 @@ function buildTestBreakdown(
 export function buildRunReport(input: RunReportInput): RunReport {
   const { meta, aggregates, evaluation } = input;
   const rawUrls = input.config.report?.rawUrls === true;
-  const kindOrder: Record<Kind, number> = { api: 0 };
+  const kindOrder: Record<Kind, number> = { api: 0, step: 1 };
   // The snapshot is complete in a real run; a sparse one falls back to the defaults (03).
   const hintOptions: HintOptions = {
     errorStatuses: input.config.checks?.errors?.statuses ?? perfDefaults.checks.errors.statuses,
@@ -238,6 +263,7 @@ export function buildRunReport(input: RunReportInput): RunReport {
     configDir: meta.configDir,
     config: structuredClone(input.config),
     normalization: input.normalization,
+    stepNormalization: input.stepNormalization,
     ci: meta.ci === null ? null : { ...meta.ci },
     host: { ...meta.host },
     playwright: { ...meta.playwright },
@@ -261,6 +287,7 @@ export function buildRunReport(input: RunReportInput): RunReport {
       .map((o) => ({ ...o }))
       .sort((a, b) => compareText(a.origin, b.origin)),
     endpoints,
+    steps: buildStepAggregates(aggregates.steps, evaluation.perKey.step, hintOptions),
     testBreakdown: buildTestBreakdown(aggregates.testBreakdown, endpoints),
   };
 }

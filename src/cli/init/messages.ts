@@ -83,7 +83,7 @@ const en = {
 
   stepEnvs: 'Environments',
   envsLesson:
-    'Each environment gets its own thresholds files (pw-perf-thresholds.<kind>.<label>.json).',
+    'Each environment gets its own thresholds files (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Do you run against several environments?',
   envLabelsQuestion: 'Environment labels, separated by commas?',
   none: 'none',
@@ -239,7 +239,7 @@ const pl: Messages = {
   warnOnlyQuestion: 'Zacząć w trybie warn-only przez pierwsze tygodnie?',
 
   stepEnvs: 'Środowiska',
-  envsLesson: 'Każde środowisko ma własne pliki progów (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'Każde środowisko ma własne pliki progów (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Czy testujesz kilka środowisk?',
   envLabelsQuestion: 'Etykiety środowisk, oddzielone przecinkami?',
   none: 'brak',
@@ -393,7 +393,7 @@ const es: Messages = {
 
   stepEnvs: 'Entornos',
   envsLesson:
-    'Cada entorno tiene sus propios archivos de umbrales (pw-perf-thresholds.<kind>.<label>.json).',
+    'Cada entorno tiene sus propios archivos de umbrales (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: '¿Ejecutas contra varios entornos?',
   envLabelsQuestion: '¿Etiquetas de los entornos, separadas por comas?',
   none: 'ninguno',
@@ -549,7 +549,7 @@ const fr: Messages = {
 
   stepEnvs: 'Environnements',
   envsLesson:
-    'Chaque environnement a ses propres fichiers de seuils (pw-perf-thresholds.<kind>.<label>.json).',
+    'Chaque environnement a ses propres fichiers de seuils (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Testez-vous plusieurs environnements ?',
   envLabelsQuestion: 'Libellés des environnements, séparés par des virgules ?',
   none: 'aucun',
@@ -705,7 +705,7 @@ const it: Messages = {
   warnOnlyQuestion: 'Iniziare in modalità warn-only per le prime settimane?',
 
   stepEnvs: 'Ambienti',
-  envsLesson: 'Ogni ambiente ha i propri file di soglie (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'Ogni ambiente ha i propri file di soglie (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Esegui i test su più ambienti?',
   envLabelsQuestion: 'Etichette degli ambienti, separate da virgole?',
   none: 'nessuno',
@@ -861,7 +861,7 @@ const uk: Messages = {
   warnOnlyQuestion: 'Почати в режимі warn-only на перші тижні?',
 
   stepEnvs: 'Середовища',
-  envsLesson: 'Кожне середовище має власні файли порогів (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'Кожне середовище має власні файли порогів (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Ви тестуєте кілька середовищ?',
   envLabelsQuestion: 'Мітки середовищ через кому?',
   none: 'немає',
@@ -1014,7 +1014,7 @@ const ru: Messages = {
   warnOnlyQuestion: 'Начать в режиме warn-only на первые недели?',
 
   stepEnvs: 'Окружения',
-  envsLesson: 'У каждого окружения свои файлы порогов (pw-perf-thresholds.<kind>.<label>.json).',
+  envsLesson: 'У каждого окружения свои файлы порогов (pw-perf-thresholds[.steps].<label>.json).',
   envsQuestion: 'Вы тестируете несколько окружений?',
   envLabelsQuestion: 'Метки окружений через запятую?',
   none: 'нет',

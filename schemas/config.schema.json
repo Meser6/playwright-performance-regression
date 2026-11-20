@@ -672,7 +672,7 @@
           "default": "."
         },
         "filePrefix": {
-          "description": "File name prefix; files are <prefix>.<kind>[.<env>].json.",
+          "description": "File name prefix; files are <prefix>[.steps][.<env>].json.",
           "type": "string",
           "pattern": "^[A-Za-z0-9._-]+$",
           "default": "pw-perf-thresholds"

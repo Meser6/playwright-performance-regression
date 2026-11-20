@@ -13,9 +13,9 @@ export function plural(n: number, word: string, many = `${word}s`): string {
   return `${n} ${n === 1 ? word : many}`;
 }
 
-const KIND_NOUN: Record<Kind, string> = { api: 'endpoint' };
+const KIND_NOUN: Record<Kind, string> = { api: 'endpoint', step: 'step' };
 
-/** Path of the file without the environment label: <prefix>.<kind>.<env>.json → <prefix>.<kind>.json. */
+/** Path of the file without the environment label: <prefix>[.steps].<env>.json → <prefix>[.steps].json. */
 function envlessPath(path: string, env: string): string {
   const suffix = `.${env}.json`;
   return path.endsWith(suffix) ? `${path.slice(0, -suffix.length)}.json` : path;

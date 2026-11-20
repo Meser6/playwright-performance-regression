@@ -653,7 +653,7 @@ directory describe each format. Hand edits of thresholds files are the usual cau
 ### THRESHOLDS_KIND_MISMATCH
 
 **Error.** A thresholds file has a `kind` that does not match its file name: endpoint limits live
-in `pw-perf-thresholds.api[.<env>].json`. Move the entries to the right file or fix `kind`.
+in `pw-perf-thresholds[.steps][.<env>].json`. Move the entries to the right file or fix `kind`.
 
 ## HTML report
 

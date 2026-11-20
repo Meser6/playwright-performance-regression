@@ -462,8 +462,7 @@ const testBreakdown = oneOf(
   nul,
 );
 
-const aggregate = obj(
-  {
+const aggregateProps = {
     count,
     successCount: count,
     errorCount: count,
@@ -497,9 +496,8 @@ const aggregate = obj(
     evaluation: keyEvaluation,
     histogram,
     hints: arr(hint, { maxItems: 3 }),
-  },
-  {
-    required: [
+};
+const aggregateRequired = [
       'count',
       'successCount',
       'errorCount',
@@ -515,8 +513,21 @@ const aggregate = obj(
       'evaluation',
       'histogram',
       'hints',
-    ],
+];
+
+const aggregate = obj(aggregateProps, { required: aggregateRequired });
+
+/** Step aggregate (06-REQ-28): the aggregate fields plus location and stepErrorsFromFailedTests. */
+const stepAggregate = obj(
+  {
+    ...aggregateProps,
+    location: oneOf(
+      obj({ file: nonEmpty, line: int({ minimum: 1 }) }, { required: ['file', 'line'] }),
+      nul,
+    ),
+    stepErrorsFromFailedTests: count,
   },
+  { required: [...aggregateRequired, 'location', 'stepErrorsFromFailedTests'] },
 );
 
 export const runReport = obj(
@@ -531,6 +542,7 @@ export const runReport = obj(
     configDir: nonEmpty,
     config: packageConfig,
     normalization: fingerprint,
+    stepNormalization: oneOf(fingerprint, nul),
     ci: oneOf(
       obj(
         {
@@ -588,7 +600,10 @@ export const runReport = obj(
       {
         status: evaluationStatus,
         gateEnabled: bool,
-        counts: obj({ api: evaluationCounts }, { required: ['api'] }),
+        counts: obj(
+          { api: evaluationCounts, step: evaluationCounts },
+          { required: ['api', 'step'] },
+        ),
       },
       { required: ['status', 'gateEnabled', 'counts'] },
     ),
@@ -602,6 +617,7 @@ export const runReport = obj(
       ),
     ),
     endpoints: record(key, aggregate),
+    steps: record(key, stepAggregate),
     testBreakdown,
   },
   {
@@ -616,6 +632,7 @@ export const runReport = obj(
       'configDir',
       'config',
       'normalization',
+      'stepNormalization',
       'ci',
       'host',
       'playwright',
@@ -627,6 +644,7 @@ export const runReport = obj(
       'toolErrors',
       'origins',
       'endpoints',
+      'steps',
       'testBreakdown',
     ],
   },

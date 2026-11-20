@@ -97,6 +97,7 @@ function runReport(): { [key: string]: Json } {
     configDir: '/home/user/project',
     config: defaultConfig(),
     normalization: '0123456789abcd',
+    stepNormalization: null,
     ci: null,
     host: { ...host, nodeVersion: '22.18.0' },
     playwright: { version: '1.57.0' },
@@ -108,12 +109,13 @@ function runReport(): { [key: string]: Json } {
       overriddenSettings: [],
     },
     tests: { status: 'passed', expected: 3, unexpected: 0, flaky: 0, skipped: 0 },
-    evaluation: { status: 'passed', gateEnabled: true, counts: { api: counts } },
+    evaluation: { status: 'passed', gateEnabled: true, counts: { api: counts, step: counts } },
     thresholdFiles: [],
     warnings: [],
     toolErrors: [],
     origins: [],
     endpoints: {},
+    steps: {},
     testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }

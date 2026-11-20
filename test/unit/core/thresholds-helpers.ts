@@ -105,6 +105,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     configDir: '/home/user/project',
     config: {},
     normalization: spec.normalization ?? '0a3f9c21d47b6e',
+    stepNormalization: null,
     ci: null,
     host: { ...HOST, ...spec.host },
     playwright: { version: spec.playwrightVersion ?? '1.57.0' },
@@ -125,13 +126,14 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     evaluation: {
       status: 'passed',
       gateEnabled: false,
-      counts: { api: { ...counts } },
+      counts: { api: { ...counts }, step: { ...counts } },
     },
     thresholdFiles: [],
     warnings: [],
     toolErrors: spec.toolErrors ?? [],
     origins: [],
     endpoints: expand(spec.endpoints),
+    steps: {},
     testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }
@@ -179,7 +181,7 @@ export function file(
   return {
     status: 'loaded',
     kind,
-    path: `pw-perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}.json`,
     file: { schemaVersion: 2, kind, generated: gen, entries },
   };
 }
@@ -188,13 +190,16 @@ export function absent(kind: Kind): LoadedThresholdsFile {
   return {
     status: 'missing',
     kind,
-    path: `pw-perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}.json`,
     envlessFileExists: false,
   };
 }
 
-export function existing(api: LoadedThresholdsFile = absent('api')): LoadedThresholds {
-  return { api };
+export function existing(
+  api: LoadedThresholdsFile = absent('api'),
+  step: LoadedThresholdsFile = absent('step'),
+): LoadedThresholds {
+  return { api, step };
 }
 
 export function cfg(input: PerfConfigInput = {}): ResolvedConfig {
@@ -237,7 +242,7 @@ export function loadedFile(content: ThresholdsFile, migratedFrom?: number): Load
   return {
     status: 'loaded',
     kind: content.kind,
-    path: `pw-perf-thresholds.${content.kind}.json`,
+    path: `pw-perf-thresholds${content.kind === 'step' ? '.steps' : ''}.json`,
     file: structuredClone(content),
     ...(migratedFrom === undefined ? {} : { migratedFrom }),
   };

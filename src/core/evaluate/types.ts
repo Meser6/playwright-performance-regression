@@ -36,6 +36,13 @@ export interface RunSource {
   host: HostFingerprint;
   /** Normalization fingerprint (07-REQ-21). */
   normalization: string;
+  /** Step normalization fingerprint (06-REQ-25); null when measure.steps is off. */
+  stepNormalization: string | null;
+}
+
+/** The source as seen by the thresholds file of one kind: its own fingerprint (09-REQ-31). */
+export function sourceForKind(source: RunSource, kind: Kind): RunSource {
+  return kind === 'step' ? { ...source, normalization: source.stepNormalization ?? '' } : source;
 }
 
 export interface EvaluateOptions {

@@ -87,6 +87,7 @@ export const SOURCE: EvaluateOptions['source'] = {
   playwrightVersion: '1.57.0',
   host: { platform: 'linux', arch: 'x64', ci: true, cpuCount: 4, cpuModel: 'AMD EPYC 7763' },
   normalization: '0a3f9c21d47b6e',
+  stepNormalization: null,
 };
 
 export function options(partial: Partial<EvaluateOptions> = {}): EvaluateOptions {
@@ -116,7 +117,7 @@ export function loaded(
   return {
     status: 'loaded',
     kind,
-    path: `pw-perf-thresholds.${kind}.json`,
+    path: `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}.json`,
     file: thresholdsFile(kind, entries, generated),
   };
 }
@@ -126,13 +127,13 @@ export function missing(kind: Kind, envlessFileExists = false, env?: string): Lo
   return {
     status: 'missing',
     kind,
-    path: `pw-perf-thresholds.${kind}${label}.json`,
+    path: `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}${label}.json`,
     envlessFileExists,
   };
 }
 
 export function invalid(kind: Kind): LoadedThresholdsFile {
-  const path = `pw-perf-thresholds.${kind}.json`;
+  const path = `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}.json`;
   return {
     status: 'invalid',
     kind,
@@ -149,8 +150,16 @@ export function invalid(kind: Kind): LoadedThresholdsFile {
 }
 
 /** The thresholds files of every kind. */
-export function files(api: LoadedThresholdsFile = loaded('api')): LoadedThresholds {
-  return { api };
+export function files(
+  api: LoadedThresholdsFile = loaded('api'),
+  step: LoadedThresholdsFile = {
+    status: 'missing',
+    kind: 'step',
+    path: 'pw-perf-thresholds.steps.json',
+    envlessFileExists: false,
+  },
+): LoadedThresholds {
+  return { api, step };
 }
 
 export function aggregates(
@@ -204,7 +213,7 @@ export function runGoldenCase(c: EvaluateGoldenCase): {
 function evaluateInput(c: EvaluateGoldenCase, cfg: ResolvedConfig, level: string): Evaluation {
   return evaluate(
     aggregates(c.input.aggregates.endpoints, level),
-    c.input.thresholds,
+    { ...files(), ...c.input.thresholds },
     cfg,
     options(c.input.options),
   );

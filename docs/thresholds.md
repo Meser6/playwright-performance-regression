@@ -21,8 +21,8 @@ There is one file per kind and environment, in `thresholds.dir` (default: next t
 
 | File                                | Contents                                          |
 | ----------------------------------- | ------------------------------------------------- |
-| `pw-perf-thresholds.api.json`       | backend requests, one entry per endpoint key      |
-| `pw-perf-thresholds.api.<env>.json` | the same for an environment label, e.g. `staging` |
+| `pw-perf-thresholds.json`       | backend requests, one entry per endpoint key      |
+| `pw-perf-thresholds.<env>.json` | the same for an environment label, e.g. `staging` |
 
 An entry looks like this:
 

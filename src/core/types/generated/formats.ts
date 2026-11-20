@@ -706,7 +706,7 @@ export interface PackageConfig {
      */
     dir?: string;
     /**
-     * File name prefix; files are <prefix>.<kind>[.<env>].json.
+     * File name prefix; files are <prefix>[.steps][.<env>].json.
      */
     filePrefix?: string;
     /**

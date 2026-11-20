@@ -103,6 +103,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: ['2xx', '3xx'],
   },
   {
+    path: 'measure.steps',
+    description: "Durations of test.step steps as keys of kind 'step'.",
+    leaf: true,
+    default: false,
+  },
+  {
     path: 'measure.pendingTimeoutMs',
     description: 'How long the collector waits at test end for requests still in flight.',
     leaf: true,
@@ -242,6 +248,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 2000,
   },
   {
+    path: 'checks.time.median.limit.step',
+    description: 'Threshold limit in whole milliseconds, rounded up.',
+    leaf: true,
+    default: 10000,
+  },
+  {
     path: 'checks.time.percentile',
     description: 'The percentile chosen in level must not exceed the limit.',
     leaf: false,
@@ -275,6 +287,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     description: 'Threshold limit in whole milliseconds, rounded up.',
     leaf: true,
     default: 2000,
+  },
+  {
+    path: 'checks.time.percentile.limit.step',
+    description: 'Threshold limit in whole milliseconds, rounded up.',
+    leaf: true,
+    default: 15000,
   },
   {
     path: 'checks.time.percentile.margin',
@@ -342,6 +360,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 4000,
   },
   {
+    path: 'checks.time.p99.limit.step',
+    description: 'Threshold limit in whole milliseconds, rounded up.',
+    leaf: true,
+    default: 30000,
+  },
+  {
     path: 'checks.slowShare',
     description: 'Rules on the share of slow responses, relative to the Apdex threshold T.',
     leaf: false,
@@ -371,6 +395,30 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.slowShare.t.api.medianFactor',
+    description: 'Derived T is at most medianFactor × p50.',
+    leaf: true,
+    default: 2,
+  },
+  {
+    path: 'checks.slowShare.t.step',
+    description: 'Bounds of the derived T for test.step keys.',
+    leaf: false,
+  },
+  {
+    path: 'checks.slowShare.t.step.min',
+    description: 'Lower clamp of derived T.',
+    leaf: true,
+    default: 1000,
+  },
+  {
+    path: 'checks.slowShare.t.step.max',
+    description:
+      'Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.',
+    leaf: true,
+    default: 10000,
+  },
+  {
+    path: 'checks.slowShare.t.step.medianFactor',
     description: 'Derived T is at most medianFactor × p50.',
     leaf: true,
     default: 2,
@@ -416,6 +464,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.slowShare.apdex.limit.api',
+    description: 'Value between 0 and 1 inclusive.',
+    leaf: true,
+    default: 0.85,
+  },
+  {
+    path: 'checks.slowShare.apdex.limit.step',
     description: 'Value between 0 and 1 inclusive.',
     leaf: true,
     default: 0.85,
@@ -486,6 +540,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 0.05,
   },
   {
+    path: 'checks.slowShare.wilson.limit.step',
+    description: 'Value between 0 and 1 inclusive.',
+    leaf: true,
+    default: 0.05,
+  },
+  {
     path: 'checks.errors',
     description: 'Error rate must not exceed the limit (lower Wilson bound compared).',
     leaf: false,
@@ -511,6 +571,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'checks.errors.limit.api',
+    description: 'Value between 0 and 1 inclusive.',
+    leaf: true,
+    default: 0.05,
+  },
+  {
+    path: 'checks.errors.limit.step',
     description: 'Value between 0 and 1 inclusive.',
     leaf: true,
     default: 0.05,
@@ -581,7 +647,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   {
     path: 'thresholds.filePrefix',
-    description: 'File name prefix; files are <prefix>.<kind>[.<env>].json.',
+    description: 'File name prefix; files are <prefix>[.steps][.<env>].json.',
     leaf: true,
     default: 'pw-perf-thresholds',
   },

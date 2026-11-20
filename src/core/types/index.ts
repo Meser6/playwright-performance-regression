@@ -15,6 +15,7 @@ export { ConfigError } from './common.ts';
 
 import type {
   Aggregate,
+  StepAggregate,
   Check,
   Entry,
   KeyEvaluation,
@@ -30,6 +31,9 @@ export type RunReportAggregate = Aggregate;
  * 'hints' (added by buildRunReport, 11-REQ-34).
  */
 export type AggregateStats = Omit<Aggregate, 'evaluation' | 'hints'>;
+/** Step aggregate without 'evaluation' and 'hints', like AggregateStats (06-REQ-28). */
+export type StepAggregateStats = Omit<StepAggregate, 'evaluation' | 'hints'>;
+export type RunReportStepAggregate = StepAggregate;
 /** A check as the evaluation produces it; buildRunReport adds `usage` (11-REQ-30). */
 export type EvaluatedCheck = Omit<Check, 'usage'>;
 /** Evaluation of one key as the evaluation produces it (09), checks without `usage`. */

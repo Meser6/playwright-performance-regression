@@ -153,8 +153,8 @@ describe('reporter with real Playwright', () => {
       const dir = join(scratch, 'thresholds');
       const derived = await runPlaywright({ PW_PERF_MODE: 'thresholds', THRESHOLDS_DIR: dir });
       expect(derived.status, derived.output).toBe(0);
-      expect(readdirSync(dir).sort()).toEqual(['pw-perf-thresholds.api.json']);
-      expect(derived.outcome?.paths.thresholds).toEqual([join(dir, 'pw-perf-thresholds.api.json')]);
+      expect(readdirSync(dir).sort()).toEqual(['pw-perf-thresholds.json']);
+      expect(derived.outcome?.paths.thresholds).toEqual([join(dir, 'pw-perf-thresholds.json')]);
       const diff = derived.outcome?.paths.thresholdsDiff ?? '';
       expect(readFileSync(diff, 'utf8')).toContain('# Thresholds diff');
       expect(derived.output.indexOf('Thresholds: ')).toBeGreaterThan(

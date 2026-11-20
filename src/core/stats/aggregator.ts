@@ -3,10 +3,21 @@ import { roundMs } from '../format/index.ts';
 import type { KeyResult, KeySample } from '../normalize/index.ts';
 import { hash53 } from '../random/index.ts';
 import type { ResolvedConfig } from '../config/index.ts';
-import type { AggregateStats, Issue, RunReport, SlowSample } from '../types/index.ts';
+import type {
+  AggregateStats,
+  Issue,
+  RunReport,
+  SlowSample,
+  StepAggregateStats,
+} from '../types/index.ts';
 import { compileStatusMatcher, requestStatusLabel } from './classification.ts';
 import { sampleId } from './identity.ts';
-import type { EnrichedRequestSample, SampleKind, TestMeta } from './identity.ts';
+import type {
+  EnrichedRequestSample,
+  EnrichedStepSample,
+  SampleKind,
+  TestMeta,
+} from './identity.ts';
 import { histogram } from './histogram.ts';
 import { percentile, percentileNames } from './percentile.ts';
 import { BottomK } from './sampling.ts';
@@ -35,6 +46,8 @@ export type StatsIssue = Issue & { code: StatsIssueCode };
 
 export interface Aggregates {
   endpoints: Record<string, AggregateStats>;
+  /** test.step keys (06, 08-REQ-40); empty when measure.steps is off. */
+  steps: Record<string, StepAggregateStats>;
   /** Request count per known origin, sorted by origin (08-REQ-33). */
   origins: RunReport['origins'];
   /** Run-level STATS_* warnings, each at most once, in catalog order (08, chapter 13). */
@@ -121,6 +134,10 @@ class KeyState {
   sumTenths = 0;
   readonly slowest: SlowCandidate[] = [];
   readonly sample: BottomK;
+  /** Steps only: error and unfinished samples from failed tests (06-REQ-32). */
+  stepErrorsFromFailedTests = 0;
+  /** Steps only: smallest (file, line) location (06-REQ-28). */
+  location: { file: string; line: number } | null = null;
 
   constructor(kind: SampleKind, sample: BottomK) {
     this.kind = kind;
@@ -167,6 +184,7 @@ export class Aggregator {
   private readonly isError: (label: string) => boolean;
   private readonly percentiles: [string, number][];
   private readonly endpoints = new Map<string, KeyState>();
+  private readonly steps = new Map<string, KeyState>();
   /** Interned resultIds: the heap stores an index instead of the text (08-REQ-29). */
   private readonly resultIndex = new Map<string, number>();
   private readonly resultIds: string[] = [];
@@ -249,6 +267,36 @@ export class Aggregator {
   }
 
   /**
+   * Adds a step sample under its key (08-REQ-40). Only ok samples enter time statistics; error
+   * and unfinished samples are errors, except those from failed tests, which only
+   * stepErrorsFromFailedTests counts (06-REQ-32). Steps are timed in Node and stay out of the
+   * test breakdown (08-D-18).
+   */
+  addStep(sample: EnrichedStepSample): void {
+    if (!this.accept(sample.test)) return;
+    const state = this.state(this.steps, 'step', sample.key);
+    const failedError = sample.outcome !== 'ok' && sample.test.failed;
+    state.countSample(sample.outcome, sample.test, sample.outcome !== 'ok' && !failedError);
+    if (failedError) state.stepErrorsFromFailedTests += 1;
+    state.node += 1;
+    const loc = sample.location;
+    if (
+      loc !== null &&
+      (state.location === null ||
+        loc.file < state.location.file ||
+        (loc.file === state.location.file && loc.line < state.location.line))
+    ) {
+      state.location = { file: loc.file, line: loc.line };
+    }
+    if (sample.outcome !== 'ok' || sample.duration === null || sample.endTime === null) return;
+    this.addTime(state, sample.key, sample.test, sample.ordinal, {
+      duration: sample.duration,
+      ttfb: null,
+      startedAt: Math.round(sample.endTime - sample.duration),
+    });
+  }
+
+  /**
    * Closes one test result after all its samples were added (08-REQ-36); also for a result with
    * an empty batch. Results of projects that are not measured are ignored (08-REQ-31).
    */
@@ -264,6 +312,7 @@ export class Aggregator {
     this.finalized = true;
     return {
       endpoints: this.build(this.endpoints),
+      steps: this.buildSteps(),
       origins: [...this.origins.keys()].sort(compareText).map((origin) => {
         const entry = this.origins.get(origin) ?? { label: '', requestCount: 0 };
         return { origin, label: entry.label, requestCount: entry.requestCount };
@@ -335,6 +384,20 @@ export class Aggregator {
     for (const key of [...states.keys()].sort(compareText)) {
       const state = states.get(key);
       if (state !== undefined) result[key] = this.aggregate(state);
+    }
+    return result;
+  }
+
+  private buildSteps(): Record<string, StepAggregateStats> {
+    const result: Record<string, StepAggregateStats> = {};
+    for (const key of [...this.steps.keys()].sort(compareText)) {
+      const state = this.steps.get(key);
+      if (state === undefined) continue;
+      result[key] = {
+        ...this.aggregate(state),
+        location: state.location,
+        stepErrorsFromFailedTests: state.stepErrorsFromFailedTests,
+      } as StepAggregateStats;
     }
     return result;
   }

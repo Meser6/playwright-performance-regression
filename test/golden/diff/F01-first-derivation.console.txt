@@ -1,4 +1,4 @@
-Thresholds: pw-perf-thresholds.api.json (created)
+Thresholds: pw-perf-thresholds.json (created)
   3 added · 2 skipped
 
   + GET /api/search?q               t 500  median 196  p95 854  p99 940  apdex 0.900  wilson 0.150  errors 0.050

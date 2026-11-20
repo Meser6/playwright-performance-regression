@@ -64,6 +64,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   - [`measure.exclude`](#measureexclude)
   - [`measure.excludeKnownThirdParty`](#measureexcludeknownthirdparty)
   - [`measure.successStatuses`](#measuresuccessstatuses)
+  - [`measure.steps`](#measuresteps)
   - [`measure.pendingTimeoutMs`](#measurependingtimeoutms)
 - [`keys`](#keys)
   - [`keys.origins`](#keysorigins)
@@ -90,12 +91,14 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
         - [`checks.time.median.margin.smallSampleRelative`](#checkstimemedianmarginsmallsamplerelative)
       - [`checks.time.median.limit`](#checkstimemedianlimit)
         - [`checks.time.median.limit.api`](#checkstimemedianlimitapi)
+        - [`checks.time.median.limit.step`](#checkstimemedianlimitstep)
     - [`checks.time.percentile`](#checkstimepercentile)
       - [`checks.time.percentile.enabled`](#checkstimepercentileenabled)
       - [`checks.time.percentile.minSamples`](#checkstimepercentileminsamples)
       - [`checks.time.percentile.level`](#checkstimepercentilelevel)
       - [`checks.time.percentile.limit`](#checkstimepercentilelimit)
         - [`checks.time.percentile.limit.api`](#checkstimepercentilelimitapi)
+        - [`checks.time.percentile.limit.step`](#checkstimepercentilelimitstep)
       - [`checks.time.percentile.margin`](#checkstimepercentilemargin)
         - [`checks.time.percentile.margin.relative`](#checkstimepercentilemarginrelative)
         - [`checks.time.percentile.margin.minMs`](#checkstimepercentilemarginminms)
@@ -109,12 +112,17 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
         - [`checks.time.p99.margin.minGapRelative`](#checkstimep99marginmingaprelative)
       - [`checks.time.p99.limit`](#checkstimep99limit)
         - [`checks.time.p99.limit.api`](#checkstimep99limitapi)
+        - [`checks.time.p99.limit.step`](#checkstimep99limitstep)
   - [`checks.slowShare`](#checksslowshare)
     - [`checks.slowShare.t`](#checksslowsharet)
       - [`checks.slowShare.t.api`](#checksslowsharetapi)
         - [`checks.slowShare.t.api.min`](#checksslowsharetapimin)
         - [`checks.slowShare.t.api.max`](#checksslowsharetapimax)
         - [`checks.slowShare.t.api.medianFactor`](#checksslowsharetapimedianfactor)
+      - [`checks.slowShare.t.step`](#checksslowsharetstep)
+        - [`checks.slowShare.t.step.min`](#checksslowsharetstepmin)
+        - [`checks.slowShare.t.step.max`](#checksslowsharetstepmax)
+        - [`checks.slowShare.t.step.medianFactor`](#checksslowsharetstepmedianfactor)
     - [`checks.slowShare.apdex`](#checksslowshareapdex)
       - [`checks.slowShare.apdex.enabled`](#checksslowshareapdexenabled)
       - [`checks.slowShare.apdex.minSamples`](#checksslowshareapdexminsamples)
@@ -123,6 +131,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
         - [`checks.slowShare.apdex.margin.smallSampleAbsolute`](#checksslowshareapdexmarginsmallsampleabsolute)
       - [`checks.slowShare.apdex.limit`](#checksslowshareapdexlimit)
         - [`checks.slowShare.apdex.limit.api`](#checksslowshareapdexlimitapi)
+        - [`checks.slowShare.apdex.limit.step`](#checksslowshareapdexlimitstep)
     - [`checks.slowShare.wilson`](#checksslowsharewilson)
       - [`checks.slowShare.wilson.enabled`](#checksslowsharewilsonenabled)
       - [`checks.slowShare.wilson.minSamples`](#checksslowsharewilsonminsamples)
@@ -134,12 +143,14 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
         - [`checks.slowShare.wilson.margin.smallSampleMin`](#checksslowsharewilsonmarginsmallsamplemin)
       - [`checks.slowShare.wilson.limit`](#checksslowsharewilsonlimit)
         - [`checks.slowShare.wilson.limit.api`](#checksslowsharewilsonlimitapi)
+        - [`checks.slowShare.wilson.limit.step`](#checksslowsharewilsonlimitstep)
   - [`checks.errors`](#checkserrors)
     - [`checks.errors.enabled`](#checkserrorsenabled)
     - [`checks.errors.minSamples`](#checkserrorsminsamples)
     - [`checks.errors.statuses`](#checkserrorsstatuses)
     - [`checks.errors.limit`](#checkserrorslimit)
       - [`checks.errors.limit.api`](#checkserrorslimitapi)
+      - [`checks.errors.limit.step`](#checkserrorslimitstep)
     - [`checks.errors.margin`](#checkserrorsmargin)
       - [`checks.errors.margin.factor`](#checkserrorsmarginfactor)
       - [`checks.errors.margin.add`](#checkserrorsmarginadd)
@@ -225,7 +236,7 @@ Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 
 
 What the collector measures.
 
-Options: [`resourceTypes`](#measureresourcetypes), [`ignoreExtensions`](#measureignoreextensions), [`include`](#measureinclude), [`exclude`](#measureexclude), [`excludeKnownThirdParty`](#measureexcludeknownthirdparty), [`successStatuses`](#measuresuccessstatuses), [`pendingTimeoutMs`](#measurependingtimeoutms).
+Options: [`resourceTypes`](#measureresourcetypes), [`ignoreExtensions`](#measureignoreextensions), [`include`](#measureinclude), [`exclude`](#measureexclude), [`excludeKnownThirdParty`](#measureexcludeknownthirdparty), [`successStatuses`](#measuresuccessstatuses), [`steps`](#measuresteps), [`pendingTimeoutMs`](#measurependingtimeoutms).
 
 ### `measure.resourceTypes`
 
@@ -268,6 +279,13 @@ HTTP statuses counted as successful samples: a class like '2xx' or an exact code
 
 - Type: array of string (matching `^(?:[1-5]xx|[1-5][0-9]{2})$`); at least 1 item, no duplicates
 - Default: `["2xx","3xx"]`
+
+### `measure.steps`
+
+Durations of test.step steps as keys of kind 'step'. false (default) disables, true enables with defaults, an object enables with settings.
+
+- Type: boolean or object
+- Default: `false`
 
 ### `measure.pendingTimeoutMs`
 
@@ -435,7 +453,7 @@ Relative headroom when the key has fewer than thresholds.smallSampleN samples.
 
 Limit in ms for keys without an entry in the thresholds file.
 
-Options: [`api`](#checkstimemedianlimitapi).
+Options: [`api`](#checkstimemedianlimitapi), [`step`](#checkstimemedianlimitstep).
 
 ### `checks.time.median.limit.api`
 
@@ -443,6 +461,13 @@ Threshold limit in whole milliseconds, rounded up.
 
 - Type: integer (at least 0)
 - Default: `2000`
+
+### `checks.time.median.limit.step`
+
+Threshold limit in whole milliseconds, rounded up.
+
+- Type: integer (at least 0)
+- Default: `10000`
 
 ### `checks.time.percentile`
 
@@ -475,7 +500,7 @@ Which percentile this rule evaluates, e.g. p95 (the thresholds file records it a
 
 Limit in ms for keys without an entry in the thresholds file.
 
-Options: [`api`](#checkstimepercentilelimitapi).
+Options: [`api`](#checkstimepercentilelimitapi), [`step`](#checkstimepercentilelimitstep).
 
 ### `checks.time.percentile.limit.api`
 
@@ -483,6 +508,13 @@ Threshold limit in whole milliseconds, rounded up.
 
 - Type: integer (at least 0)
 - Default: `2000`
+
+### `checks.time.percentile.limit.step`
+
+Threshold limit in whole milliseconds, rounded up.
+
+- Type: integer (at least 0)
+- Default: `15000`
 
 ### `checks.time.percentile.margin`
 
@@ -562,7 +594,7 @@ The p99 limit is at least this share above the percentile limit.
 
 Limit in ms for keys without an entry in the thresholds file.
 
-Options: [`api`](#checkstimep99limitapi).
+Options: [`api`](#checkstimep99limitapi), [`step`](#checkstimep99limitstep).
 
 ### `checks.time.p99.limit.api`
 
@@ -570,6 +602,13 @@ Threshold limit in whole milliseconds, rounded up.
 
 - Type: integer (at least 0)
 - Default: `4000`
+
+### `checks.time.p99.limit.step`
+
+Threshold limit in whole milliseconds, rounded up.
+
+- Type: integer (at least 0)
+- Default: `30000`
 
 ### `checks.slowShare`
 
@@ -581,7 +620,7 @@ Options: [`t`](#checksslowsharet), [`apdex`](#checksslowshareapdex), [`wilson`](
 
 Apdex threshold T: satisfied below T, tolerated up to 4T. Used by the apdex and wilson rules, which run only for keys whose thresholds file entry has a key-specific t. These settings bound the derived T.
 
-Options: [`api`](#checksslowsharetapi).
+Options: [`api`](#checksslowsharetapi), [`step`](#checksslowsharetstep).
 
 ### `checks.slowShare.t.api`
 
@@ -602,6 +641,31 @@ Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are nu
 - Default: none
 
 ### `checks.slowShare.t.api.medianFactor`
+
+Derived T is at most medianFactor × p50.
+
+- Type: number (1 to 10)
+- Default: none
+
+### `checks.slowShare.t.step`
+
+Options: [`min`](#checksslowsharetstepmin), [`max`](#checksslowsharetstepmax), [`medianFactor`](#checksslowsharetstepmedianfactor).
+
+### `checks.slowShare.t.step.min`
+
+Lower clamp of derived T.
+
+- Type: integer (at least 0)
+- Default: none
+
+### `checks.slowShare.t.step.max`
+
+Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.
+
+- Type: integer (at least 0)
+- Default: none
+
+### `checks.slowShare.t.step.medianFactor`
 
 Derived T is at most medianFactor × p50.
 
@@ -652,9 +716,16 @@ Subtracted when the key has fewer than thresholds.smallSampleN samples.
 
 minApdex for hand-written thresholds file entries that set t but omit minApdex. Keys without an entry never run this rule.
 
-Options: [`api`](#checksslowshareapdexlimitapi).
+Options: [`api`](#checksslowshareapdexlimitapi), [`step`](#checksslowshareapdexlimitstep).
 
 ### `checks.slowShare.apdex.limit.api`
+
+Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
+
+- Type: number (0 to 1)
+- Default: `0.85`
+
+### `checks.slowShare.apdex.limit.step`
 
 Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
 
@@ -726,9 +797,16 @@ Minimum limit when the key has fewer than thresholds.smallSampleN samples.
 
 maxWilson for hand-written thresholds file entries that set t but omit maxWilson. Keys without an entry never run this rule.
 
-Options: [`api`](#checksslowsharewilsonlimitapi).
+Options: [`api`](#checksslowsharewilsonlimitapi), [`step`](#checksslowsharewilsonlimitstep).
 
 ### `checks.slowShare.wilson.limit.api`
+
+Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
+
+- Type: number (0 to 1)
+- Default: `0.05`
+
+### `checks.slowShare.wilson.limit.step`
 
 Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
 
@@ -766,9 +844,16 @@ Request statuses counted as errors by the 'errors' rule: a class like '5xx', an 
 
 Limit for keys without an entry in the thresholds file.
 
-Options: [`api`](#checkserrorslimitapi).
+Options: [`api`](#checkserrorslimitapi), [`step`](#checkserrorslimitstep).
 
 ### `checks.errors.limit.api`
+
+Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
+
+- Type: number (0 to 1)
+- Default: `0.05`
+
+### `checks.errors.limit.step`
 
 Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places; hand-written values with more decimals are accepted.
 
@@ -858,7 +943,7 @@ Directory of thresholds files, relative to the Playwright config directory.
 
 ### `thresholds.filePrefix`
 
-File name prefix; files are `<prefix>.<kind>[.<env>].json`.
+File name prefix; files are `<prefix>[.steps][.<env>].json`.
 
 - Type: string (matching `^[A-Za-z0-9._-]+$`)
 - Default: `"pw-perf-thresholds"`

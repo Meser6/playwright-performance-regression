@@ -2,6 +2,7 @@
 // report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
 // terminal width and the color decision, and prints the text. Colors follow 09-REQ-27; without
 // them the text is the same apart from the ANSI sequences.
+import { KINDS } from '../core/types/index.ts';
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
 import { painter } from './color.ts';
 import type { ColorStyle, Painter } from './color.ts';
@@ -27,14 +28,16 @@ export const MAX_SLOWEST_LINES = 5;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
 
-const KINDS: readonly Kind[] = ['api'];
 /** Label of the counter line of each kind (09-REQ-28). */
-const KIND_LABEL: Record<Kind, string> = { api: 'Endpoints:' };
+const KIND_LABEL: Record<Kind, string> = { api: 'Endpoints:', step: 'Steps:' };
 const ALWAYS_SHOWN: ReadonlySet<Kind> = new Set<Kind>(['api']);
 
 /** Aggregates of one kind in the report. */
 function aggregatesOf(report: RunReport, kind: Kind): RunReport['endpoints'] {
-  const byKind: Record<Kind, RunReport['endpoints']> = { api: report.endpoints };
+  const byKind: Record<Kind, RunReport['endpoints']> = {
+    api: report.endpoints,
+    step: report.steps,
+  };
   return byKind[kind];
 }
 const RULE_ORDER: readonly Check['rule'][] = [

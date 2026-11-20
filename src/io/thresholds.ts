@@ -2,6 +2,7 @@
 // The reporter and `thresholds --from` read them the same way (10, chapter 3).
 import type { LoadedThresholds, LoadedThresholdsFile } from '../core/evaluate/index.ts';
 import { parseThresholdsFile } from '../core/schema/index.ts';
+import { KINDS } from '../core/types/index.ts';
 import type { Kind } from '../core/types/index.ts';
 import { fileExists, readTextFile, relativeSlashPath, resolvePath } from './files.ts';
 
@@ -14,13 +15,17 @@ export interface ThresholdsLocation {
   filePrefix: string;
   /** Environment label of the run, or null. */
   env: string | null;
+  /** measure.steps.enabled: the step file is read only when steps are measured (09-REQ-31). */
+  steps: boolean;
 }
 
-const KINDS: readonly Kind[] = ['api'];
+/** File name part of each kind; endpoints have none (02-REQ-35, D-37). */
+const NAME_PART: Record<Kind, string | null> = { api: null, step: 'steps' };
 
-/** `<prefix>.<kind>[.<env>].json` (02, chapter 8.1). */
+/** `<prefix>[.<part>][.<env>].json` (02-REQ-35). */
 export function thresholdsFileName(prefix: string, kind: Kind, env: string | null): string {
-  return `${prefix}.${kind}${env === null ? '' : `.${env}`}.json`;
+  const part = NAME_PART[kind];
+  return `${prefix}${part === null ? '' : `.${part}`}${env === null ? '' : `.${env}`}.json`;
 }
 
 /** Absolute paths of the thresholds files of every kind for the label of the run. */
@@ -34,6 +39,10 @@ export function thresholdsFilePaths(location: ThresholdsLocation): Record<Kind, 
 async function loadFile(location: ThresholdsLocation, kind: Kind): Promise<LoadedThresholdsFile> {
   const absolute = thresholdsFilePaths(location)[kind];
   const path = relativeSlashPath(location.configDir, absolute);
+  // Not read at all while steps are off, even when it exists (09-REQ-31).
+  if (kind === 'step' && !location.steps) {
+    return { status: 'missing', kind, path, envlessFileExists: false };
+  }
   let text: string | null;
   try {
     text = await readTextFile(absolute);
@@ -82,7 +91,8 @@ async function loadFile(location: ThresholdsLocation, kind: Kind): Promise<Loade
 /**
  * Reads the thresholds files of every kind (09-REQ-01, 09-REQ-02): `loaded`, `missing` or
  * `invalid`. Paths in the result are relative to configDir with forward slashes. Files of
- * removed kinds (pw-perf-thresholds.custom…, D-32) are not looked for.
+ * removed kinds (pw-perf-thresholds.custom…, D-32) and old names (pw-perf-thresholds.api…,
+ * D-37) are not looked for.
  */
 export async function loadThresholds(location: ThresholdsLocation): Promise<LoadedThresholds> {
   const files = await Promise.all(KINDS.map((kind) => loadFile(location, kind)));

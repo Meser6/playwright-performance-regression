@@ -82,6 +82,19 @@
         "violations": 3,
         "blockingViolations": 3,
         "muted": 0
+      },
+      "step": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
       }
     },
     "violations": [

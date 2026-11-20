@@ -1,5 +1,6 @@
 // Derivation of the thresholds files from a run report (10, chapters 3–8).
 import type { ResolvedConfig } from '../config/index.ts';
+import { sourceForKind } from '../evaluate/index.ts';
 import type { LoadedThresholds, LoadedThresholdsFile, RunSource } from '../evaluate/index.ts';
 import { compareText, majorMinor, plural, sameList, sourceDifferences } from '../evaluate/files.ts';
 import { stringifyStable } from '../format/index.ts';
@@ -14,19 +15,20 @@ import type {
   ThresholdsEntry,
   ThresholdsFile,
 } from '../types/index.ts';
-import { CLI_COMMAND, PACKAGE_NAME } from '../types/index.ts';
+import { CLI_COMMAND, KINDS, PACKAGE_NAME } from '../types/index.ts';
 import { entrySelfConsistent } from './consistency.ts';
 import { isComplete, loosenedMuch, withinHysteresis } from './entries.ts';
 import { deriveEntry, derivationSettings, isDerivable, minDeriveSamples } from './formulas.ts';
 import type { DeriveOptions, DerivedFile, DerivedThresholds } from './types.ts';
 
-const KINDS: readonly Kind[] = ['api'];
-
-const KIND_NOUN: Record<Kind, string> = { api: 'endpoint' };
+const KIND_NOUN: Record<Kind, string> = { api: 'endpoint', step: 'step' };
 
 /** Aggregates of one kind in the report. */
 export function aggregatesOf(report: RunReport, kind: Kind): Record<string, AggregateStats> {
-  const byKind: Record<Kind, Record<string, AggregateStats>> = { api: report.endpoints };
+  const byKind: Record<Kind, Record<string, AggregateStats>> = {
+    api: report.endpoints,
+    step: report.steps,
+  };
   return byKind[kind];
 }
 
@@ -41,6 +43,7 @@ export function reportSource(report: RunReport): RunSource {
     playwrightVersion: report.playwright.version,
     host: { platform, arch, ci, cpuCount, cpuModel },
     normalization: report.normalization,
+    stepNormalization: report.stepNormalization,
   };
 }
 
@@ -118,7 +121,8 @@ function generatedBlock(
     browsers: source.browsers,
     playwrightVersion: source.playwrightVersion,
     host: source.host,
-    normalization: source.normalization,
+    // The step file carries the step fingerprint (10-REQ-22, 06-REQ-25).
+    normalization: kind === 'step' ? (report.stepNormalization ?? '') : source.normalization,
   };
 }
 
@@ -194,7 +198,7 @@ function deriveKind(
       diffs,
       timing,
       keys: keysDiffer,
-    } = sourceDifferences(loaded.file.generated, reportSource(report));
+    } = sourceDifferences(loaded.file.generated, sourceForKind(reportSource(report), kind));
     if (diffs.length > 0) {
       const hints: string[] = [];
       if (timing) {
@@ -329,6 +333,11 @@ export function deriveThresholds(
   for (const kind of KINDS) {
     const file = existing[kind];
     if (file.status === 'invalid') throw new Error('deriveThresholds: unreachable invalid file');
+    // A kind other than api without keys and without a file is left out of the result and the
+    // diff, e.g. steps while measure.steps is off (10-REQ-22).
+    if (kind !== 'api' && file.status === 'missing') {
+      if (Object.keys(aggregatesOf(report, kind)).length === 0) continue;
+    }
     const result = deriveKind(report, cfg, file, opts);
     files.push(result.file);
     warnings.push(...result.warnings);

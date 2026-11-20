@@ -1,6 +1,6 @@
 # Thresholds diff
 
-## pw-perf-thresholds.api.json (created)
+## pw-perf-thresholds.json (created)
 
 3 added · 2 skipped
 
