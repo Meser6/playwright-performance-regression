@@ -29,10 +29,11 @@ import { CLI_COMMAND, PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/type
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
+import { outcomeLine } from '../console/outcome-line.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import { renderHtmlReport } from '../html/index.ts';
-import { generateRunId, readModeState } from '../mode/index.ts';
+import { generateRunId, readModeState, testArgsFromArgv, testFilters } from '../mode/index.ts';
 import type { PerfModeState } from '../mode/index.ts';
 import { notWrappedWarning } from '../registry/index.ts';
 import type { RegisteredState, RunConditions } from '../registry/index.ts';
@@ -226,6 +227,15 @@ export class RunSession {
     const io = this.host.io;
     this.configDir =
       config.configFile === undefined ? config.rootDir : io.directoryOf(config.configFile);
+    // The outcome of an earlier run must never be read by a CI job (04-REQ-62).
+    const outcomeFile = this.outcomePath();
+    if (this.environmentMode && outcomeFile !== null) {
+      try {
+        io.removeFileSync(outcomeFile);
+      } catch {
+        // A file that cannot be removed is overwritten in onEnd.
+      }
+    }
     this.maxFailures = config.maxFailures;
     const names = this.settings.measuredProjects ?? config.projects.map((p) => p.name);
     this.measured = new Set(names);
@@ -446,7 +456,10 @@ export class RunSession {
         this.host.stderr.write(`${PACKAGE_NAME}: ${issue.code}: ${issue.message}\n`);
       }
     }
-    await this.writeOutcome(outcome);
+    const written = await this.writeOutcome(outcome);
+    if (this.environmentMode && written !== null) {
+      this.host.stdout.write(outcomeLine(outcome, written));
+    }
     return outcome.exitCode === 0 ? undefined : { status: 'failed' };
   }
 
@@ -558,7 +571,7 @@ export class RunSession {
           paths: diffPaths.map((p) => io.relativeSlashPath(this.host.cwd, p)),
           width,
           color,
-          prune: this.settings.mode.prune === true,
+          prune: this.pruned,
           // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
           diffPath: paths.thresholdsDiff,
         }),
@@ -618,7 +631,7 @@ export class RunSession {
     const io = this.host.io;
     const derived = deriveThresholds(report, cfg, loaded, {
       env: cfg.run.env,
-      prune: this.settings.mode.prune === true,
+      prune: this.prune(warnings),
       toolVersion: this.settings.packageVersion,
     });
     if (!derived.ok) {
@@ -681,16 +694,57 @@ export class RunSession {
     };
   }
 
-  /** Last step of onEnd (02-REQ-27); without PW_PERF_OUTCOME_FILE there is no outcome file. */
-  private async writeOutcome(outcome: Outcome): Promise<void> {
+  /** Whether entries not seen were removed in this run (04-REQ-35). */
+  private pruned = false;
+
+  /**
+   * PW_PERF_PRUNE in the environment mode with a test filter in the arguments: the files are
+   * written without removing entries, with RUN_PRUNE_SKIPPED (04-REQ-35). The CLI rejects the
+   * same case before the run.
+   */
+  private prune(warnings: Issue[]): boolean {
+    if (this.settings.mode.prune !== true) return false;
+    const filters = this.environmentMode ? testFilters(testArgsFromArgv(this.host.argv)) : [];
+    if (filters.length > 0) {
+      warnings.push({
+        code: 'RUN_PRUNE_SKIPPED',
+        message: `PW_PERF_PRUNE was ignored: the run selects a subset of the tests (${filters.join(' ')}), so entries not seen were kept.`,
+        hint: 'Prune in a run of all tests, without --grep, --project or file filters.',
+      });
+      return false;
+    }
+    this.pruned = true;
+    return true;
+  }
+
+  /** Run without the CLI: the CLI sets PW_PERF_OUTCOME_FILE (04-REQ-62, D-35). */
+  private get environmentMode(): boolean {
+    return this.settings.mode.outcomeFile === undefined;
+  }
+
+  /** PW_PERF_OUTCOME_FILE, else <report.dir>/outcome.json (02-REQ-27, 04-REQ-62). */
+  private outcomePath(): string | null {
     const file = this.settings.mode.outcomeFile;
-    if (file === undefined) return;
+    if (file !== undefined) return file;
+    const io = this.host.io;
+    return io.resolvePath(
+      io.resolvePath(this.configDir, this.settings.config.report.dir),
+      'outcome.json',
+    );
+  }
+
+  /** Last step of onEnd (02-REQ-27); returns the path written, or null. */
+  private async writeOutcome(outcome: Outcome): Promise<string | null> {
+    const file = this.outcomePath();
+    if (file === null) return null;
     try {
       await this.host.io.writeJsonStable(file, outcome);
+      return file;
     } catch (error) {
       this.host.stderr.write(
         `${PACKAGE_NAME}: OUTCOME_WRITE_FAILED: the outcome file could not be written to ${file}: ${error instanceof Error ? error.message : String(error)}\n`,
       );
+      return null;
     }
   }
 }

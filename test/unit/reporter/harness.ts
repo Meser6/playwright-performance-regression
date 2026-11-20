@@ -42,7 +42,13 @@ export function tempDir(): string {
 
 export function fakeHost(
   dir: string,
-  options: { start?: number; random?: number; env?: Record<string, string>; tty?: number } = {},
+  options: {
+    start?: number;
+    random?: number;
+    env?: Record<string, string>;
+    tty?: number;
+    argv?: string[];
+  } = {},
 ): Captured {
   const stdout: string[] = [];
   const stderr: string[] = [];
@@ -52,6 +58,7 @@ export function fakeHost(
     stderr,
     host: {
       env: options.env ?? {},
+      argv: options.argv ?? ['node', 'playwright', 'test'],
       io,
       stdout: {
         write: (t: string) => stdout.push(t),

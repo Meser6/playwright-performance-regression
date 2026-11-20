@@ -6,7 +6,7 @@ import type { CliIssue, Result } from '../core/types/index.ts';
 import { ENV_LABEL_FORMAT, REPEAT_FORMAT, isEnvLabel, parseRepeat } from '../mode/index.ts';
 import { LANGUAGES, isWizardLanguage } from './init/messages.ts';
 import type { WizardLanguage } from './init/messages.ts';
-import { isListOnly, testFilters, unsupportedOptions } from './playwright-args.ts';
+import { isListOnly, testFilters, unsupportedOptions } from '../mode/playwright-args.ts';
 
 export type HelpTopic = 'test' | 'thresholds' | 'report' | 'init';
 

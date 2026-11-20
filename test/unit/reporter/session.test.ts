@@ -655,3 +655,56 @@ describe('reporter session in thresholds mode', () => {
     expect(outcome.paths.thresholds).toEqual([]);
   });
 });
+
+describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
+  const outcomeJson = (): string => join(dir, 'pw-perf-results', 'outcome.json');
+
+  test('04-AC-39 writes pw-perf-results/outcome.json, removes the old one in onBegin and prints the Outcome line', async () => {
+    mkdirSync(join(dir, 'pw-perf-results'), { recursive: true });
+    writeFileSync(outcomeJson(), '{"stale":true}');
+    const captured = fakeHost(dir);
+    const s = session(captured, registered({}, { mode: 'test', runId: 'run-e' }));
+    s.begin(fakeConfig(dir), ROOT);
+    expect(existsSync(outcomeJson())).toBe(false);
+    runTests(s, dir, 10, PATHS, steady);
+    await s.end({ status: 'passed' });
+    const outcome = readOutcome(outcomeJson());
+    expect(outcome).toMatchObject({ runId: 'run-e', exitCode: 0 });
+    expect(captured.stdout.join('')).toContain(
+      `Outcome: performance passed · exit code 0 in ${outcomeJson()} (Playwright exits with 0)\n`,
+    );
+  });
+
+  test('through the CLI (PW_PERF_OUTCOME_FILE) nothing is written in report.dir and no Outcome line', async () => {
+    const captured = fakeHost(dir);
+    const outcomeFile = join(dir, 'tmp', 'run.outcome.json');
+    const s = session(captured, registered({}, { mode: 'test', outcomeFile }));
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 10, PATHS, steady);
+    await s.end({ status: 'passed' });
+    expect(existsSync(outcomeFile)).toBe(true);
+    expect(existsSync(outcomeJson())).toBe(false);
+    expect(captured.stdout.join('')).not.toContain('Outcome:');
+  });
+
+  test('04-REQ-35 PW_PERF_PRUNE with a test filter keeps the entries and warns RUN_PRUNE_SKIPPED', async () => {
+    const run = async (paths: string[], argv: string[]): Promise<Outcome> => {
+      const captured = fakeHost(dir, { argv });
+      const s = session(captured, registered({}, { mode: 'thresholds', prune: true }));
+      s.begin(fakeConfig(dir), ROOT);
+      runTests(s, dir, 30, paths, steady);
+      await s.end({ status: 'passed' });
+      return readOutcome(outcomeJson());
+    };
+    await run(PATHS, ['node', 'playwright', 'test']);
+    const skipped = await run(['/api/cart'], ['node', 'playwright', 'test', '--grep', '@perf']);
+    const report = JSON.parse(readFileSync(skipped.paths.reportJson ?? '', 'utf8')) as {
+      warnings: { code: string }[];
+    };
+    expect(codes(report.warnings)).toContain('RUN_PRUNE_SKIPPED');
+    const file = JSON.parse(readFileSync(join(dir, 'pw-perf-thresholds.json'), 'utf8')) as {
+      entries: Record<string, unknown>;
+    };
+    expect(Object.keys(file.entries)).toHaveLength(2);
+  });
+});

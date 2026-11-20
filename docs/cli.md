@@ -16,6 +16,53 @@ pw-perf <command> [options] [playwright test arguments]
 | [`report`](#pw-perf-report)                                  | Render `report.html` again from a `report.json`                                 |
 | [`init`](#pw-perf-init)                                      | Guided setup in the current project                                             |
 
+## Run through your own test command (recommended)
+
+The simplest way is the test command your project already has, with one environment variable in
+front of it. Playwright rejects unknown command line flags, so the "flag" is a variable:
+
+| Goal              | Command (bash, zsh, Git Bash)                        |
+| ----------------- | ---------------------------------------------------- |
+| measurement run   | `PW_PERF_MODE=test npm run e2e`                      |
+| thresholds run    | `PW_PERF_MODE=thresholds npm run e2e`                |
+| without a script  | `PW_PERF_MODE=test npx playwright test --grep @perf` |
+| environment label | `PW_PERF_MODE=test PW_PERF_ENV=qa npm run e2e:qa`    |
+
+Everything the script does still happens: its variables, setup steps and Playwright flags. The
+variable reaches Playwright through npm and the shell of the script.
+
+On Windows use `npx cross-env PW_PERF_MODE=test npm run e2e` (cmd and PowerShell). Without
+cross-env: PowerShell `$env:PW_PERF_MODE='test'; npm run e2e; Remove-Item Env:PW_PERF_MODE`, cmd
+`set "PW_PERF_MODE=test" && npm run e2e && set "PW_PERF_MODE="`. A variable set with `$env:` or
+`set` stays in the terminal session: remove it, or the next normal run is in perf mode too. In CI,
+set `PW_PERF_MODE` in the `env` of the job.
+
+What is different from `npx pw-perf`:
+
+- The exit code is Playwright's: 1 when a test failed or the performance result is not 0, else 0.
+  The exact result is in `pw-perf-results/outcome.json` (`exitCode` 0, 2 or 3, as the
+  [exit codes](#exit-codes) below), written next to `report.json` and removed at the start of every
+  run, so a CI job never reads an old one. Read it with
+  `node -p "require('./pw-perf-results/outcome.json').exitCode"` or `jq .exitCode`. The summary
+  ends with a line like `Outcome: performance failed · exit code 2 in …/outcome.json (Playwright
+exits with 1)`.
+- Flags are not refused before the run; the package warns instead:
+  [`RUN_REPORTER_FLAG`](troubleshooting.md#run_reporter_flag) for a `--reporter` that replaces the
+  pw-perf reporter (then nothing is evaluated),
+  [`RUN_UNSUPPORTED_FLAG`](troubleshooting.md#run_unsupported_flag) for `--ui` and `--debug`, and
+  [`RUN_PRUNE_SKIPPED`](troubleshooting.md#run_prune_skipped) when `PW_PERF_PRUNE=1` meets a test
+  filter (the files are written without pruning).
+- A script that runs Playwright more than once overwrites the report and `outcome.json`; the last
+  run counts. Steps after Playwright in the script (`&& node upload.js`) run only when Playwright
+  exits with 0.
+
+### Advanced: the pw-perf runner
+
+`npx pw-perf test` and `thresholds` set the variables themselves, refuse `--ui`, `--debug`,
+`--shard` and `--prune` with a test filter before the run, and end with the exit codes 0, 2 or 3.
+They do not write `outcome.json` in `report.dir`. Use them when your CI needs the codes 2 and 3
+directly.
+
 `pw-perf --help` (or `-h`) prints the overview, `pw-perf <command> --help` the options of one
 command, and `pw-perf --version` (or `-v`) the installed version.
 
@@ -278,9 +325,10 @@ TypeScript config files are loaded by Node's built-in type stripping. Imports wi
 extension, `tsconfig` path aliases and `enum` do not work there; the error message says how to
 fix them.
 
-## Environment variables and manual mode
+## Environment variables
 
-The CLI runs Playwright with these variables. You normally never set them yourself:
+The CLI runs Playwright with these variables; in the environment mode you set `PW_PERF_MODE` (and
+optionally `PW_PERF_ENV`, `PW_PERF_REPEAT`, `PW_PERF_PRUNE`) yourself:
 
 | Variable               | Meaning                                                                    |
 | ---------------------- | -------------------------------------------------------------------------- |
@@ -297,14 +345,8 @@ already set, `pw-perf` warns with
 [`CLI_MODE_ALREADY_SET`](troubleshooting.md#cli_mode_already_set) and replaces all of them for
 its run.
 
-**Manual mode.** `PW_PERF_MODE=test npx playwright test` also runs in perf mode, without the
-CLI. This is meant for setups that cannot call `pw-perf`. You lose what the CLI adds:
-
-- `--ui`, `--debug`, `--shard` and `--prune` with a test filter are not refused (a sharded run is
-  still detected by the reporter, [`RUN_SHARDED`](troubleshooting.md#run_sharded));
-- a `--reporter` flag replaces the package reporter, so nothing is measured;
-- the exit code is Playwright's: 1 when the performance result or the tests failed, else 0. The
-  codes 2 and 3 below exist only through `pw-perf`.
+The [environment mode](#run-through-your-own-test-command-recommended) uses the same variables
+without the CLI.
 
 ## Signals
 

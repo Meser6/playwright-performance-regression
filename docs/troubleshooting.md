@@ -445,6 +445,26 @@ mixed in the same keys. Measure one browser engine per run with `run.projects`.
 
 ## Run and reporter
 
+### RUN_REPORTER_FLAG
+
+**Warning, on stderr only.** The test command has a `--reporter` option (also one written in an npm
+script) that does not include the pw-perf reporter. `--reporter` replaces every reporter of the
+config, so the run is measured but nothing is evaluated and no report is written. Remove
+`--reporter` from the measurement command, or add the reporter to it:
+`--reporter=line,playwright-performance-regression/reporter`.
+
+### RUN_UNSUPPORTED_FLAG
+
+**Warning.** The test command has `--ui`, `--ui-host`, `--ui-port` or `--debug`. Interactive runs
+are not measured reliably. Use a separate script without these options for the measurement.
+
+### RUN_PRUNE_SKIPPED
+
+**Warning.** `PW_PERF_PRUNE=1` was set in a thresholds run that selects only some tests (`--grep`,
+`--project`, file filters and similar). Removing the entries not seen in the run would delete the
+thresholds of the other tests, so the files were written without removing anything. Prune in a
+run of all tests.
+
 ### RUN_INCOMPLETE
 
 **Tool error (exit code 3).** The run did not execute all tests: it timed out, was interrupted,

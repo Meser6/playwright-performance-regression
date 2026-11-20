@@ -155,7 +155,8 @@ describe('withPerf with real Playwright', () => {
       expect(existsSync(join(run.out, 'html'))).toBe(false);
 
       const registry = {
-        mode: { mode: 'test', repeat: 3 },
+        // The worker inherits the run id of the main process (04-REQ-60).
+        mode: { mode: 'test', repeat: 3, runId: expect.stringMatching(/^\d{4}-/u) },
         measuredProjects: ['chromium'],
         repeat: 3,
         origins: { 'https://api.example.com': 'ts' },

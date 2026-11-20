@@ -170,3 +170,20 @@ export function playwrightConfigArg(args: readonly string[]): string | null {
   );
   return configs.length === 0 ? null : (configs[configs.length - 1]?.values[0] ?? null);
 }
+
+/**
+ * The arguments of `playwright test` in the main Playwright process: the words after `test` in
+ * process.argv, including flags written in an npm script (04-REQ-61). Empty when there is no
+ * `test` word (e.g. another Playwright command).
+ */
+export function testArgsFromArgv(argv: readonly string[]): string[] {
+  const at = argv.findIndex((word, i) => i >= 1 && word === 'test');
+  return at < 0 ? [] : argv.slice(at + 1);
+}
+
+/** Values of the last --reporter (04-REQ-61); null without --reporter. */
+export function lastReporterValue(args: readonly string[]): string | null {
+  const reporters = scanPlaywrightArgs(args).options.filter((o) => o.name === '--reporter');
+  const last = reporters.at(-1);
+  return last === undefined ? null : last.values.join(',');
+}

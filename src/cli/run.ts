@@ -9,7 +9,7 @@ import type { ExitInput } from './exit.ts';
 import type { ChildProcessLike, CliHost, ForwardedSignal } from './host.ts';
 import { formatIssues, infoLine, outputStyle, resultLines } from './output.ts';
 import type { ParsedCommand } from './parse.ts';
-import { playwrightConfigArg, testFilters } from './playwright-args.ts';
+import { playwrightConfigArg, testFilters } from '../mode/playwright-args.ts';
 import { withPerfReporterArg } from './reporter-arg.ts';
 
 export type RunCommand = Extract<ParsedCommand, { kind: 'run' }>;
