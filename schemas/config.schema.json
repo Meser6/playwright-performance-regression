@@ -134,7 +134,34 @@
           "items": {"type": "string", "pattern": "^(?:[1-5]xx|[1-5][0-9]{2})$"},
           "default": ["2xx", "3xx"]
         },
-        "pendingTimeoutMs": {
+        "steps": {
+        "description": "Durations of test.step steps as keys of kind 'step' (06). false (default) disables, true enables with defaults, an object enables with settings (03-REQ-18).",
+        "default": false,
+        "oneOf": [
+          {"type": "boolean"},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {"description": "Default true when an object is given.", "type": "boolean"},
+              "include": {"description": "When not empty, only steps whose step key part matches at least one pattern give samples (06-REQ-22).", "type": "array", "items": {"$ref": "#/$defs/urlPattern"}},
+              "exclude": {"description": "Steps whose step key part matches any pattern give no samples; exclude wins over include.", "type": "array", "items": {"$ref": "#/$defs/urlPattern"}},
+              "maxDepth": {"description": "Deepest step level measured; deeper steps are included in their ancestor's time (06-REQ-21).", "type": "integer", "minimum": 1, "maximum": 10},
+              "categories": {
+                "description": "Playwright step categories measured (06-REQ-20). Steps of other categories are transparent for keys and depth.",
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"enum": ["test.step", "expect", "pw:api", "fixture", "hook"]}
+              },
+              "groupBy": {"description": "'step': one key per step path across tests; 'test': one key per test and step path (06-REQ-23).", "enum": ["step", "test"]},
+              "normalizeTitles": {"description": "false skips the key-stability rules (ids, dates, numbers); privacy rules always apply (06-REQ-35).", "type": "boolean"},
+              "redactQuotedValues": {"description": "true replaces quoted values in step titles with :value; by default they stay in keys (06-D-26).", "type": "boolean"}
+            }
+          }
+        ]
+      },
+      "pendingTimeoutMs": {
           "description": "How long the collector waits at test end for requests still in flight (05).",
           "type": "integer",
           "minimum": 0,
@@ -263,7 +290,8 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
+                    "step": {"$ref": "common.schema.json#/$defs/msLimit", "default": 10000}
                   }
                 }
               }
@@ -292,7 +320,8 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 2000},
+                    "step": {"$ref": "common.schema.json#/$defs/msLimit", "default": 15000}
                   }
                 },
                 "margin": {
@@ -367,7 +396,8 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 4000}
+                    "api": {"$ref": "common.schema.json#/$defs/msLimit", "default": 4000},
+                    "step": {"$ref": "common.schema.json#/$defs/msLimit", "default": 30000}
                   }
                 }
               }
@@ -403,6 +433,24 @@
                     }
                   },
                   "default": {"min": 500, "max": 2000, "medianFactor": 2}
+                },
+                "step": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "min": {"$ref": "common.schema.json#/$defs/msLimit", "description": "Lower clamp of derived T."},
+                    "max": {
+                      "$ref": "common.schema.json#/$defs/msLimit",
+                      "description": "Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null (10-D-13)."
+                    },
+                    "medianFactor": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "description": "Derived T is at most medianFactor × p50."
+                    }
+                  },
+                  "default": {"min": 1000, "max": 10000, "medianFactor": 2}
                 }
               }
             },
@@ -447,7 +495,8 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85}
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85},
+                    "step": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.85}
                   }
                 }
               }
@@ -514,7 +563,8 @@
                   "additionalProperties": false,
                   "default": {},
                   "properties": {
-                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+                    "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
+                    "step": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
                   }
                 }
               }
@@ -547,7 +597,8 @@
               "additionalProperties": false,
               "default": {},
               "properties": {
-                "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
+                "api": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05},
+                "step": {"$ref": "common.schema.json#/$defs/ratio", "default": 0.05}
               }
             },
             "margin": {

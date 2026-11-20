@@ -1,0 +1,317 @@
+{
+  "description": "Golden cases for step title sanitization (06, chapter 5.3; 06-REQ-24). Each case: 'options' is merged into the default step options (normalizeTitles true, redactQuotedValues false, default keys.idPatterns, no extraIdPatterns). 'expected' is one key segment; 'redacted' lists the privacy rules P1-P4 that fired (06-REQ-38). T31 uses 'x' instead of 'a' (spec fix: 300 'a' match the hex id pattern).",
+  "cases": [
+    {
+      "id": "T01",
+      "input": "Open order 4711",
+      "expected": "Open order :id",
+      "redacted": []
+    },
+    {
+      "id": "T02",
+      "input": "Open order #4711:",
+      "expected": "Open order #:id:",
+      "redacted": []
+    },
+    {
+      "id": "T03",
+      "input": "Login as jan.kowalski@example.com",
+      "expected": "Login as :email",
+      "redacted": []
+    },
+    {
+      "id": "T04",
+      "input": "Fill email \"jan@example.com\"",
+      "expected": "Fill email \":email\"",
+      "redacted": []
+    },
+    {
+      "id": "T05",
+      "input": "Click \"Save\"",
+      "expected": "Click \"Save\"",
+      "redacted": []
+    },
+    {
+      "id": "T06",
+      "input": "Open https://app.example/orders/42?token=abc",
+      "expected": "Open :url",
+      "redacted": [
+        "url"
+      ]
+    },
+    {
+      "id": "T07",
+      "input": "Go to www.example.com/a.",
+      "expected": "Go to :url.",
+      "redacted": [
+        "url"
+      ]
+    },
+    {
+      "id": "T08",
+      "input": "Navigate to /orders/4711/edit?tab=2",
+      "expected": "Navigate to /orders/:id/edit?:query",
+      "redacted": []
+    },
+    {
+      "id": "T09",
+      "input": "Use eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln",
+      "expected": "Use :secret",
+      "redacted": [
+        "jwt"
+      ]
+    },
+    {
+      "id": "T10",
+      "input": "Authorize with Bearer abc.def-123",
+      "expected": "Authorize with Bearer :secret",
+      "redacted": [
+        "auth-scheme"
+      ]
+    },
+    {
+      "id": "T11",
+      "input": "Login with password=Secr3t!",
+      "expected": "Login with password=:secret",
+      "redacted": [
+        "secret-pair"
+      ]
+    },
+    {
+      "id": "T12",
+      "input": "Set api_key: 9f8e7d",
+      "expected": "Set api_key: :secret",
+      "redacted": [
+        "secret-pair"
+      ]
+    },
+    {
+      "id": "T13",
+      "input": "Open order 3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+      "expected": "Open order :id",
+      "redacted": []
+    },
+    {
+      "id": "T14",
+      "input": "Open customer cus_NffrFeUfNV2Hib",
+      "expected": "Open customer :id",
+      "redacted": []
+    },
+    {
+      "id": "T15",
+      "input": "Open item 01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "expected": "Open item :id",
+      "redacted": []
+    },
+    {
+      "id": "T16",
+      "input": "Report for 2026-11-20",
+      "expected": "Report for :date",
+      "redacted": []
+    },
+    {
+      "id": "T17",
+      "input": "Report at 2026-11-20T10:15:00Z",
+      "expected": "Report at :datetime",
+      "redacted": []
+    },
+    {
+      "id": "T18",
+      "input": "Book 20.11.2026 at 2:30 PM",
+      "expected": "Book :date at :time",
+      "redacted": []
+    },
+    {
+      "id": "T19",
+      "input": "Wait 2.5s",
+      "expected": "Wait :num",
+      "redacted": []
+    },
+    {
+      "id": "T20",
+      "input": "Pay 1,299.00 PLN with 10% discount",
+      "expected": "Pay :num PLN with :num discount",
+      "redacted": []
+    },
+    {
+      "id": "T21",
+      "input": "Add 2 items",
+      "expected": "Add :id items",
+      "redacted": []
+    },
+    {
+      "id": "T22",
+      "input": "Search ${query}",
+      "expected": "Search :value",
+      "redacted": []
+    },
+    {
+      "id": "T23",
+      "input": "Call +48 600 100 200",
+      "expected": "Call :phone",
+      "redacted": []
+    },
+    {
+      "id": "T24",
+      "input": "Ping 192.168.0.1",
+      "expected": "Ping :ip",
+      "redacted": []
+    },
+    {
+      "id": "T25",
+      "input": "Find user 85010112345",
+      "expected": "Find user :id",
+      "redacted": []
+    },
+    {
+      "id": "T26",
+      "input": "Submit​ form",
+      "expected": "Submit form",
+      "redacted": []
+    },
+    {
+      "id": "T27",
+      "input": "Line\nbreak\ttab",
+      "expected": "Line break tab",
+      "redacted": []
+    },
+    {
+      "id": "T28",
+      "input": "Zamów",
+      "expected": "Zamów",
+      "redacted": []
+    },
+    {
+      "id": "T29",
+      "input": "Step › inner",
+      "expected": "Step > inner",
+      "redacted": []
+    },
+    {
+      "id": "T30",
+      "input": "   ",
+      "expected": "(untitled)",
+      "redacted": []
+    },
+    {
+      "id": "T31",
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+      "redacted": []
+    },
+    {
+      "id": "T32",
+      "input": "Open user's profile",
+      "expected": "Open user's profile",
+      "redacted": []
+    },
+    {
+      "id": "T33",
+      "input": "Say \"hi",
+      "expected": "Say \"hi",
+      "redacted": []
+    },
+    {
+      "id": "T34",
+      "input": "Click \"Save\"",
+      "expected": "Click \":value\"",
+      "redacted": [],
+      "options": {
+        "redactQuotedValues": true
+      }
+    },
+    {
+      "id": "T35",
+      "input": "Fill email \"jan@example.com\"",
+      "expected": "Fill email \":value\"",
+      "redacted": [],
+      "options": {
+        "redactQuotedValues": true
+      }
+    },
+    {
+      "id": "T36",
+      "input": "Open order 4711",
+      "expected": "Open order 4711",
+      "redacted": [],
+      "options": {
+        "normalizeTitles": false
+      }
+    },
+    {
+      "id": "T37-a",
+      "input": "Login as jan.kowalski@example.com",
+      "expected": "Login as :email",
+      "redacted": [],
+      "options": {
+        "normalizeTitles": false
+      }
+    },
+    {
+      "id": "T37-b",
+      "input": "Open https://app.example/orders/42?token=abc",
+      "expected": "Open :url",
+      "redacted": [
+        "url"
+      ],
+      "options": {
+        "normalizeTitles": false
+      }
+    },
+    {
+      "id": "T37-c",
+      "input": "Use eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln",
+      "expected": "Use :secret",
+      "redacted": [
+        "jwt"
+      ],
+      "options": {
+        "normalizeTitles": false
+      }
+    },
+    {
+      "id": "T37-d",
+      "input": "Find user 85010112345",
+      "expected": "Find user :id",
+      "redacted": [],
+      "options": {
+        "normalizeTitles": false
+      }
+    },
+    {
+      "id": "T38",
+      "input": "Click \"Cancel\"",
+      "expected": "Click \"Cancel\"",
+      "redacted": []
+    },
+    {
+      "id": "T39",
+      "input": "Search \"Order 4711\"",
+      "expected": "Search \"Order :id\"",
+      "redacted": []
+    },
+    {
+      "id": "T40",
+      "input": "Type \"+48 600 100 200\"",
+      "expected": "Type \":phone\"",
+      "redacted": []
+    },
+    {
+      "id": "T41",
+      "input": "Open \"https://app.example/a?token=x\"",
+      "expected": "Open \":url\"",
+      "redacted": [
+        "url"
+      ]
+    },
+    {
+      "id": "T42",
+      "input": "Search \"Order 4711\"",
+      "expected": "Search \":value\"",
+      "redacted": [],
+      "options": {
+        "redactQuotedValues": true
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { packageConfig } from '../schema/config.ts';
 import { isRecord, Sink } from '../schema/dsl.ts';
 import type { Problem } from '../schema/dsl.ts';
 import { DEFAULT_CONFIG } from './generated/defaults.ts';
+import { STEP_DEFAULTS, STEP_OPTION_NAMES } from './steps.ts';
 import { describeValue, editDistance, formatPath, pointerSegments, valueAt } from './paths.ts';
 import type { Segment } from './paths.ts';
 
@@ -27,11 +28,25 @@ const MAX_SUGGESTION_DISTANCE = 2;
 const MAX_SCHEMA_PROBLEMS = 1000;
 
 /** Option lists whose items are URL patterns (03, chapter 5). */
-export const PATTERN_LISTS: readonly (readonly [string, string])[] = [
+export const PATTERN_LISTS: readonly (readonly string[])[] = [
   ['measure', 'include'],
   ['measure', 'exclude'],
+  ['measure', 'steps', 'include'],
+  ['measure', 'steps', 'exclude'],
   ['keys', 'extraIdPatterns'],
 ];
+
+/** Environment labels that equal a thresholds file name part (02-REQ-35, 03-REQ-22). */
+export const RESERVED_ENV_LABELS: readonly string[] = ['steps', 'requests'];
+
+export function reservedEnvIssue(segments: readonly Segment[], label: string): ConfigIssue {
+  return issue(
+    'CONFIG_INVALID_VALUE',
+    segments,
+    `the environment label ${JSON.stringify(label)} is reserved: it is a part of the thresholds file names (pw-perf-thresholds.${label}.json)`,
+    `Use another environment label, e.g. "${label}-env".`,
+  );
+}
 
 export function issue(
   code: ConfigIssueCode,
@@ -45,9 +60,11 @@ export function issue(
 
 function isPatternItem(segments: readonly Segment[]): boolean {
   return (
-    segments.length === 3 &&
-    typeof segments[2] === 'number' &&
-    PATTERN_LISTS.some(([a, b]) => segments[0] === a && segments[1] === b)
+    typeof segments.at(-1) === 'number' &&
+    PATTERN_LISTS.some(
+      (list) =>
+        segments.length === list.length + 1 && list.every((name, i) => segments[i] === name),
+    )
   );
 }
 
@@ -55,6 +72,9 @@ function isPatternItem(segments: readonly Segment[]): boolean {
 function knownOptions(parent: readonly Segment[]): string[] {
   if (isPatternItem(parent)) return ['regex', 'flags'];
   if (parent[0] === 'keys' && parent[1] === 'origins') return [];
+  if (parent.length === 2 && parent[0] === 'measure' && parent[1] === 'steps') {
+    return [...STEP_OPTION_NAMES];
+  }
   const node = valueAt(DEFAULT_CONFIG, parent);
   const names = isRecord(node) ? Object.keys(node) : [];
   if (parent.length === 0) names.push('$schema');
@@ -97,7 +117,10 @@ function isRemovedCustomOption(parent: readonly Segment[], name: string): boolea
 
 /** Hint with the expected format: the default value as an example, when there is one. */
 function exampleHint(segments: readonly Segment[]): string {
-  let example = valueAt(DEFAULT_CONFIG, segments);
+  let example =
+    segments[0] === 'measure' && segments[1] === 'steps' && segments.length > 2
+      ? valueAt(STEP_DEFAULTS, segments.slice(2))
+      : valueAt(DEFAULT_CONFIG, segments);
   if (example === undefined && typeof segments.at(-1) === 'number') {
     const list = valueAt(DEFAULT_CONFIG, segments.slice(0, -1));
     if (Array.isArray(list)) example = list[0];
@@ -146,8 +169,8 @@ export function schemaIssues(document: unknown): ConfigIssue[] {
 /** CONFIG_INVALID_REGEX for every { regex, flags } pattern that does not compile. */
 export function regexIssues(document: unknown): ConfigIssue[] {
   const issues: ConfigIssue[] = [];
-  for (const [section, option] of PATTERN_LISTS) {
-    const list = valueAt(document, [section, option]);
+  for (const path of PATTERN_LISTS) {
+    const list = valueAt(document, path);
     if (!Array.isArray(list)) continue;
     list.forEach((item: unknown, index) => {
       if (!isRecord(item) || typeof item.regex !== 'string') return;
@@ -159,7 +182,7 @@ export function regexIssues(document: unknown): ConfigIssue[] {
         issues.push(
           issue(
             'CONFIG_INVALID_REGEX',
-            [section, option, index],
+            [...path, index],
             `regular expression does not compile (${reason})`,
             'Fix the expression; it uses JavaScript RegExp syntax, e.g. { "regex": "^/api/v[0-9]+/", "flags": "i" }.',
           ),
@@ -184,7 +207,7 @@ const RULES: readonly (readonly string[])[] = [
   ['checks', 'slowShare', 'wilson'],
   ['checks', 'errors'],
 ];
-const KINDS = ['api'] as const;
+const KINDS = ['api', 'step'] as const;
 const MIN_PERCENTILE = 50;
 
 function percentileLevel(name: unknown): number | undefined {
@@ -294,6 +317,12 @@ export function relationalIssues(
         'Enable at least one rule in checks, or set gate.warnOnly to true.',
       ),
     );
+  }
+
+  // Environment labels that collide with thresholds file names (03-REQ-22).
+  const env = valueAt(config, ['run', 'env']);
+  if (typeof env === 'string' && RESERVED_ENV_LABELS.includes(env)) {
+    errors.push(reservedEnvIssue(['run', 'env'], env));
   }
 
   // Origins that share a label (their keys merge, 07).

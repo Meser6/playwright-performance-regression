@@ -12,6 +12,9 @@ export type {
   ResolvedConfig,
   ResolvedConfigJson,
   ResolvedConfigResult,
+  ResolvedStepsSettings,
   ResolvedUrlPattern,
   UrlPattern,
 } from './types.ts';
+export { STEP_DEFAULTS, expandSteps } from './steps.ts';
+export type { StepCategory, StepsSettingsJson } from './steps.ts';

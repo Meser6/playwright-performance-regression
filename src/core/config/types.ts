@@ -3,6 +3,7 @@
 // patterns (RegExp allowed) and keys.keyBuilder (a function).
 import type { ConfigIssue, DeepPartial, Override } from '../types/common.ts';
 import type { PackageConfig } from '../types/generated/formats.ts';
+import type { StepsSettingsJson } from './steps.ts';
 
 /** JSON form of the package config: a JSON config file or the snapshot in the run report. */
 export type PerfConfigJson = PackageConfig;
@@ -26,11 +27,20 @@ export type PerfConfigInput = DeepPartial<
   Override<
     PerfConfigJson,
     {
-      measure: { include: UrlPattern[]; exclude: UrlPattern[] };
+      measure: {
+        include: UrlPattern[];
+        exclude: UrlPattern[];
+        steps: boolean | (Omit<StepsSettingsJson, 'include' | 'exclude'> & StepPatternsInput);
+      };
       keys: { extraIdPatterns: UrlPattern[]; keyBuilder: KeyBuilder };
     }
   >
 >;
+
+interface StepPatternsInput {
+  include: UrlPattern[];
+  exclude: UrlPattern[];
+}
 
 /** Every property required, recursively; arrays and tuples are kept as they are. */
 type Complete<T> = T extends readonly unknown[]
@@ -45,8 +55,17 @@ type CompleteJson = Complete<Omit<PerfConfigJson, '$schema'>>;
  * JSON form of a fully resolved config: every option has a value. keys.keyBuilder is present
  * ("[function]") only when a key builder function was configured (02-REQ-17).
  */
-export type ResolvedConfigJson = Omit<CompleteJson, 'keys'> & {
+export type ResolvedConfigJson = Omit<CompleteJson, 'keys' | 'measure'> & {
+  measure: Omit<CompleteJson['measure'], 'steps'> & { steps: StepsSettingsJson };
   keys: Omit<CompleteJson['keys'], 'keyBuilder'> & { keyBuilder?: '[function]' };
+};
+
+/**
+ * The schema defaults (03-REQ-05): like ResolvedConfigJson, but measure.steps keeps the schema
+ * default `false`; resolveConfig expands it (03-REQ-18).
+ */
+export type DefaultConfigJson = Omit<ResolvedConfigJson, 'measure'> & {
+  measure: Omit<ResolvedConfigJson['measure'], 'steps'> & { steps: boolean };
 };
 
 /** A URL pattern after resolution: a substring, or a compiled regular expression. */
@@ -54,14 +73,21 @@ export type ResolvedUrlPattern = string | RegExp;
 
 /** Fully resolved config: all options filled in, patterns compiled (03, chapter 5). */
 export type ResolvedConfig = Omit<ResolvedConfigJson, 'measure' | 'keys'> & {
-  measure: Omit<ResolvedConfigJson['measure'], 'include' | 'exclude'> & {
+  measure: Omit<ResolvedConfigJson['measure'], 'include' | 'exclude' | 'steps'> & {
     include: ResolvedUrlPattern[];
     exclude: ResolvedUrlPattern[];
+    steps: ResolvedStepsSettings;
   };
   keys: Omit<ResolvedConfigJson['keys'], 'extraIdPatterns' | 'keyBuilder'> & {
     extraIdPatterns: ResolvedUrlPattern[];
     keyBuilder: KeyBuilder | undefined;
   };
+};
+
+/** measure.steps after resolution: full object, patterns compiled (03-REQ-18). */
+export type ResolvedStepsSettings = Omit<StepsSettingsJson, 'include' | 'exclude'> & {
+  include: ResolvedUrlPattern[];
+  exclude: ResolvedUrlPattern[];
 };
 
 /** Values that override the config, read from the environment by the mode module (03-REQ-04). */

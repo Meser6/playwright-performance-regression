@@ -15,6 +15,7 @@ import type {
   ResolvedConfigResult,
   ResolvedUrlPattern,
 } from './types.ts';
+import { expandSteps } from './steps.ts';
 import { issue, PATTERN_LISTS, regexIssues, relationalIssues, schemaIssues } from './validate.ts';
 
 const KEY_BUILDER_SNAPSHOT = '[function]';
@@ -241,8 +242,10 @@ export function resolveConfig(
   errors.push(...relational.errors);
   if (errors.length > 0) return { ok: false, issues: sortByInput(errors, order) };
 
-  for (const [section, option] of PATTERN_LISTS) {
-    const list = valueAt(merged, [section, option]) as JsonPattern[];
+  // measure.steps becomes the full object before the pattern lists inside it are normalized.
+  merged.measure.steps = expandSteps(merged.measure.steps as Parameters<typeof expandSteps>[0]);
+  for (const path of PATTERN_LISTS) {
+    const list = valueAt(merged, path) as JsonPattern[];
     list.splice(0, list.length, ...list.map(snapshotPattern));
   }
   if (keyBuilder.inSnapshot) merged.keys.keyBuilder = KEY_BUILDER_SNAPSHOT;
@@ -256,6 +259,11 @@ export function resolveConfig(
       ...copy.measure,
       include: snapshot.measure.include.map(compilePattern),
       exclude: snapshot.measure.exclude.map(compilePattern),
+      steps: {
+        ...copy.measure.steps,
+        include: snapshot.measure.steps.include.map(compilePattern),
+        exclude: snapshot.measure.steps.exclude.map(compilePattern),
+      },
     },
     keys: {
       ...(clone(keys) as typeof keys),
