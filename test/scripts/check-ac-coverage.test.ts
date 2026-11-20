@@ -11,6 +11,8 @@ interface Fixture {
   acs: string[];
   inScope: string[];
   manual?: string[];
+  /** ACs exported with "withdrawn": true (12-REQ-21). */
+  withdrawn?: string[];
   /** Test files (relative to test/) with the AC IDs used in their test titles. */
   tests: Record<string, string[]>;
 }
@@ -19,7 +21,11 @@ interface Fixture {
 // Titles are assembled at runtime so that this file itself contains no AC IDs in titles.
 function makeRoot(fixture: Fixture): string {
   const root = mkdtempSync(join(tmpdir(), 'check-ac-coverage-'));
-  const ids = fixture.acs.map((id) => ({ id, kind: 'AC' }));
+  const withdrawn = fixture.withdrawn ?? [];
+  const ids = [
+    ...fixture.acs.map((id) => ({ id, kind: 'AC' })),
+    ...withdrawn.map((id) => ({ id, kind: 'AC', withdrawn: true })),
+  ];
   writeFileSync(join(root, 'spec-ids.json'), JSON.stringify({ specCommit: 'x@0', ids }));
   mkdirSync(join(root, 'scripts'));
   writeFileSync(join(root, 'scripts/ac-scope.json'), JSON.stringify({ inScope: fixture.inScope }));
@@ -105,6 +111,45 @@ describe('check-ac-coverage', () => {
     expect(checkAcCoverage({ root }).unknown).toEqual([
       { id: '01-AC-02', where: 'scripts/ac-scope.json' },
     ]);
+  });
+
+  test('12-AC-07 withdrawn criteria need no test, also with --all and a file prefix in scope', () => {
+    const root = makeRoot({
+      acs: ['06-AC-09'],
+      withdrawn: ['06-AC-01', '06-AC-02'],
+      inScope: ['06'],
+      tests: { 'a.test.ts': ['06-AC-09'] },
+    });
+    expect(checkAcCoverage({ root })).toMatchObject({
+      missing: [],
+      unknown: [],
+      withdrawn: [],
+      inScope: 1,
+      covered: 1,
+    });
+    expect(checkAcCoverage({ root, all: true }).missing).toEqual([]);
+    expect(run(root).status).toBe(0);
+    expect(run(root, '--all').status).toBe(0);
+  });
+
+  test('12-AC-07 a test title or a manual entry naming a withdrawn criterion fails the check', () => {
+    // The ID is assembled at runtime so that this file has no withdrawn ID in a title.
+    const old = ['06', 'AC', '01'].join('-');
+    const root = makeRoot({
+      acs: ['06-AC-09'],
+      withdrawn: [old, '06-AC-02'],
+      inScope: ['06-AC-09'],
+      manual: ['06-AC-02'],
+      tests: { 'unit/old.test.ts': [old, '06-AC-09'] },
+    });
+    expect(checkAcCoverage({ root, all: true }).withdrawn).toEqual([
+      { id: '06-AC-02', where: 'scripts/ac-manual.json' },
+      { id: old, where: 'test/unit/old.test.ts' },
+    ]);
+    const failing = run(root, '--all');
+    expect(failing.status).toBe(1);
+    expect(failing.output).toContain(`${old} in test/unit/old.test.ts is withdrawn`);
+    expect(run(root).status).toBe(1);
   });
 
   test('finds AC IDs only in test, it and describe titles', () => {
