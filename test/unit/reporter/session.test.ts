@@ -708,3 +708,77 @@ describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
     expect(Object.keys(file.entries)).toHaveLength(2);
   });
 });
+
+describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09-REQ-33, 03-REQ-21)', () => {
+  test('09-AC-26 the Next: line is the last line, after the Outcome line', async () => {
+    const captured = fakeHost(dir, {
+      env: {
+        npm_lifecycle_event: 'e2e',
+        npm_lifecycle_script: 'playwright test',
+        npm_config_user_agent: 'npm/10',
+      },
+    });
+    const s = session(captured, registered({}, { mode: 'test' }));
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 10, PATHS, steady);
+    await s.end({ status: 'passed' });
+    const lines = captured.stdout.join('').trimEnd().split('\n');
+    expect(lines.at(-2)).toMatch(/^Outcome: /u);
+    expect(lines.at(-1)).toBe('Next: derive thresholds: PW_PERF_MODE=thresholds npm run e2e');
+  });
+
+  test('09-AC-28 a measured project with batches but no requests gives RUN_PROJECT_NO_REQUESTS', async () => {
+    const outcomeFile = join(dir, 'run.outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 5, [], steady);
+    await s.end({ status: 'passed' });
+    const report = JSON.parse(
+      readFileSync(join(dir, 'pw-perf-results', 'report.json'), 'utf8'),
+    ) as {
+      warnings: { code: string; message: string }[];
+    };
+    const warning = report.warnings.find((w) => w.code === 'RUN_PROJECT_NO_REQUESTS');
+    expect(warning?.message).toContain('chromium');
+
+    const other = tempDir();
+    const s2 = session(
+      fakeHost(other),
+      registered({}, { mode: 'test', outcomeFile: join(other, 'o.json') }),
+    );
+    s2.begin(fakeConfig(other), ROOT);
+    runTests(s2, other, 5, PATHS, steady);
+    await s2.end({ status: 'passed' });
+    const report2 = JSON.parse(
+      readFileSync(join(other, 'pw-perf-results', 'report.json'), 'utf8'),
+    ) as {
+      warnings: { code: string }[];
+    };
+    expect(codes(report2.warnings)).not.toContain('RUN_PROJECT_NO_REQUESTS');
+  });
+
+  test('03-AC-15 an empty or "undefined" baseURL of a measured project warns, a dependency does not', async () => {
+    for (const baseURL of ['', 'https://undefined.example.com']) {
+      const d = tempDir();
+      const s = session(
+        fakeHost(d),
+        registered({}, { mode: 'test', outcomeFile: join(d, 'o.json') }),
+      );
+      s.begin(
+        fakeConfig(d, {
+          projects: [project('setup', { use: {} }), project('chromium', { use: { baseURL } })],
+        }),
+        ROOT,
+      );
+      runTests(s, d, 5, PATHS, steady);
+      await s.end({ status: 'passed' });
+      const report = JSON.parse(
+        readFileSync(join(d, 'pw-perf-results', 'report.json'), 'utf8'),
+      ) as {
+        warnings: { code: string; message: string }[];
+      };
+      const warning = report.warnings.find((w) => w.code === 'CONFIG_BASEURL_EMPTY');
+      expect(warning?.message, baseURL).toBe('Measured project chromium has an empty use.baseURL.');
+    }
+  });
+});

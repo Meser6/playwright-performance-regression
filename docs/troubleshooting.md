@@ -77,6 +77,14 @@ median to percentile to p99, a lower bound above its upper bound, a percentile l
 range, or the environment label `steps` or `requests`, which are parts of the thresholds file
 names (`pw-perf-thresholds.steps.json`). The message names the option and the value received.
 
+### CONFIG_BASEURL_EMPTY
+
+**Warning.** `use.baseURL` of a measured project is empty, or its host contains `undefined` or
+`null` (for example `https://undefined.example.com`, the result of an unset environment
+variable). The tests probably run against the wrong address. If `baseURL` comes from environment
+variables, run the tests through the script that sets them, e.g. `PW_PERF_MODE=test npm run
+e2e:qa`.
+
 ### CONFIG_INVALID_REGEX
 
 **Error.** A `{ "regex": ..., "flags": ... }` pattern in `measure.include`, `measure.exclude` or
@@ -444,6 +452,14 @@ want to measure into tests of a measured project, or adjust `run.projects`.
 mixed in the same keys. Measure one browser engine per run with `run.projects`.
 
 ## Run and reporter
+
+### RUN_PROJECT_NO_REQUESTS
+
+**Warning.** A measured project ran tests with the pw-perf fixtures, but no request of the
+browser was recorded in it. Tests that only use the `request` fixture (API tests) are not
+measured: requests made outside the browser are out of scope, so remove such projects from
+`run.projects`. Otherwise check `use.baseURL`, that the tests import the test object wrapped with
+`withPerfFixtures()`, and `measure.include` / `measure.exclude`.
 
 ### RUN_REPORTER_FLAG
 

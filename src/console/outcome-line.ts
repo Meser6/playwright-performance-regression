@@ -1,6 +1,7 @@
 // Texts of the result of a run, shared by the CLI line (04-REQ-30) and the Outcome line of the
 // reporter in the environment mode (04-REQ-62).
 import type { Outcome } from '../core/types/index.ts';
+import { painter } from './color.ts';
 
 export const TESTS_TEXT: Record<Outcome['tests']['status'], string> = {
   passed: 'tests passed',
@@ -36,4 +37,9 @@ export function performanceText(outcome: Outcome): string {
 export function outcomeLine(outcome: Outcome, path: string): string {
   const playwright = outcome.tests.status === 'passed' && outcome.exitCode === 0 ? 0 : 1;
   return `Outcome: ${performanceText(outcome)} · exit code ${String(outcome.exitCode)} in ${path} (Playwright exits with ${String(playwright)})\n`;
+}
+
+/** `Next: <text>` with `Next:` in bold (09-REQ-32). */
+export function nextLine(text: string, color: boolean): string {
+  return `${painter(color)('Next:', 'bold')} ${text}\n`;
 }

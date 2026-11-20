@@ -16,3 +16,18 @@ export {
 } from './hints.ts';
 export type { HintFacts, HintOptions } from './hints.ts';
 export { collapseIssues } from './issues.ts';
+export {
+  nextHint,
+  packageManager,
+  perfCommand,
+  plainCommand,
+  scriptCommand,
+  suggestCommand,
+} from './next-hint.ts';
+export type {
+  CommandContext,
+  NextHintInput,
+  PackageManager,
+  PerfMode,
+  WrittenFile,
+} from './next-hint.ts';

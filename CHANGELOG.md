@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- After every run the last line is a `Next:` hint with the exact command of your project: derive
+  thresholds (`PW_PERF_MODE=thresholds npm run e2e`), commit the written files, or run the check
+  when nothing was measured. The command follows how the run was started (npm, pnpm or yarn
+  script, plain `npx playwright test`, or `npx pw-perf`).
+- Warnings `RUN_PROJECT_NO_REQUESTS` (a measured project with only API tests) and
+  `CONFIG_BASEURL_EMPTY` (an empty `use.baseURL` or one built from an unset variable).
+
 - Environment mode as the recommended way to run: `PW_PERF_MODE=test npm run e2e` (or `thresholds`)
   runs your own test command in perf mode. The reporter writes the exact result to
   `pw-perf-results/outcome.json` (exit code 0, 2 or 3; the old file is removed when the run starts)
