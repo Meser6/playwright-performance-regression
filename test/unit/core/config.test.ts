@@ -489,3 +489,75 @@ test('the package entry point exports definePerfConfig and perfDefaults', async 
   expect(Object.keys(entry).sort()).toEqual(['definePerfConfig', 'perfDefaults']);
   expect(entry.perfDefaults).toBe(perfDefaults);
 });
+
+describe('step settings (03-REQ-18, 03-REQ-22)', () => {
+  test('03-REQ-18 false, true and an object become the full settings', () => {
+    expect(resolved({}).snapshot.measure.steps).toEqual({
+      enabled: false,
+      include: [],
+      exclude: [],
+      maxDepth: 3,
+      categories: ['test.step'],
+      groupBy: 'step',
+      normalizeTitles: true,
+      redactQuotedValues: false,
+    });
+    expect(resolved({ measure: { steps: true } }).snapshot.measure.steps.enabled).toBe(true);
+    const object = resolved({ measure: { steps: { maxDepth: 2, include: [/^login/u] } } });
+    expect(object.snapshot.measure.steps).toMatchObject({
+      enabled: true,
+      maxDepth: 2,
+      include: [{ regex: '^login', flags: 'u' }],
+    });
+    expect(object.config.measure.steps.include[0]).toBeInstanceOf(RegExp);
+    expect(
+      resolved({ measure: { steps: { enabled: false, maxDepth: 2 } } }).snapshot.measure.steps
+        .enabled,
+    ).toBe(false);
+    expect(perfDefaults.measure.steps.categories).toEqual(['test.step']);
+  });
+
+  test('03-AC-13 redactQuotedValues is false by default and keepQuotedValues was renamed', () => {
+    expect(resolved({ measure: { steps: {} } }).snapshot.measure.steps.redactQuotedValues).toBe(
+      false,
+    );
+    expect(
+      resolved({ measure: { steps: { redactQuotedValues: true } } }).snapshot.measure.steps
+        .redactQuotedValues,
+    ).toBe(true);
+    const [found] = issues({ measure: { steps: { keepQuotedValues: true } } });
+    expect(found).toMatchObject({
+      code: 'CONFIG_UNKNOWN_OPTION',
+      path: 'measure.steps.keepQuotedValues',
+    });
+    expect(found?.hint).toContain('renamed to redactQuotedValues with the opposite meaning');
+  });
+
+  test('03-REQ-18 invalid step settings', () => {
+    const codes = (input: unknown) => issues(input).map((i) => [i.code, i.path]);
+    expect(codes({ measure: { steps: { maxDepth: 11 } } })).toEqual([
+      ['CONFIG_INVALID_VALUE', 'measure.steps.maxDepth'],
+    ]);
+    expect(codes({ measure: { steps: { categories: [] } } })[0]?.[0]).toBe('CONFIG_INVALID_VALUE');
+    expect(codes({ measure: { steps: { categories: ['test.attach'] } } })[0]?.[0]).toBe(
+      'CONFIG_INVALID_VALUE',
+    );
+    expect(codes({ measure: { steps: { exclude: [{ regex: '(' }] } } })).toEqual([
+      ['CONFIG_INVALID_REGEX', 'measure.steps.exclude[0]'],
+    ]);
+    expect(issues({ measure: { steps: { maxDept: 2 } } })[0]?.message).toContain(
+      'Did you mean "measure.steps.maxDepth"?',
+    );
+  });
+
+  test('03-REQ-22 the environment labels steps and requests are reserved', () => {
+    for (const label of ['steps', 'requests']) {
+      expect(issues({ run: { env: label } })[0]).toMatchObject({
+        code: 'CONFIG_INVALID_VALUE',
+        path: 'run.env',
+      });
+      expect(issues({}, { env: label })[0]?.code).toBe('CONFIG_INVALID_VALUE');
+    }
+    expect(resolved({ run: { env: 'steps-env' } }).snapshot.run.env).toBe('steps-env');
+  });
+});

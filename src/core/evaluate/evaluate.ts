@@ -148,8 +148,9 @@ function evaluationStatus(
   perKey: Record<Kind, Record<string, EvaluatedKey>>,
   thresholds: LoadedThresholds,
   fatalToolError: boolean,
+  kinds: readonly Kind[],
 ): EvaluationStatus {
-  if (fatalToolError || KINDS.some((kind) => thresholds[kind].status === 'invalid')) {
+  if (fatalToolError || kinds.some((kind) => thresholds[kind].status === 'invalid')) {
     return 'error';
   }
   const checks = KINDS.flatMap((kind) => Object.values(perKey[kind])).flatMap((e) => e.checks);
@@ -188,9 +189,9 @@ export function evaluate(
   const toolErrors: Issue[] = [];
   const thresholdFiles: ThresholdFileInfo[] = [];
   const unseenCount: Record<Kind, number> = { api: 0, step: 0 };
-  for (const kind of KINDS) {
-    // The step file is not read while measure.steps is off, even when it exists (09-REQ-31).
-    if (kind === 'step' && !cfg.measure.steps.enabled) continue;
+  // The step file is not read while measure.steps is off, even when it exists (09-REQ-31).
+  const activeKinds = KINDS.filter((kind) => kind !== 'step' || cfg.measure.steps.enabled);
+  for (const kind of activeKinds) {
     const file = thresholds[kind];
     if (file.kind !== kind) {
       throw new Error(`evaluate: thresholds.${kind} has kind "${file.kind}"`);
@@ -257,7 +258,7 @@ export function evaluate(
   warnings.push(...mutingWarnings(mutedKeys, runDay));
 
   return {
-    status: evaluationStatus(perKey, thresholds, opts.fatalToolError),
+    status: evaluationStatus(perKey, thresholds, opts.fatalToolError, activeKinds),
     gateEnabled: opts.mode === 'test',
     counts,
     perKey,

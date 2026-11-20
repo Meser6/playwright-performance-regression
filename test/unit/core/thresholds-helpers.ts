@@ -54,6 +54,9 @@ export function reportAggregate(spec: ReportAggregateSpec, level = 'p95'): Aggre
 
 export interface ReportSpec {
   endpoints?: Record<string, ReportAggregateSpec>;
+  /** Step keys (06-REQ-28); location null, no errors from failed tests. */
+  steps?: Record<string, ReportAggregateSpec>;
+  stepNormalization?: string | null;
   level?: string;
   runId?: string;
   startedAt?: string;
@@ -105,7 +108,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     configDir: '/home/user/project',
     config: {},
     normalization: spec.normalization ?? '0a3f9c21d47b6e',
-    stepNormalization: null,
+    stepNormalization: spec.stepNormalization ?? null,
     ci: null,
     host: { ...HOST, ...spec.host },
     playwright: { version: spec.playwrightVersion ?? '1.57.0' },
@@ -133,7 +136,12 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     toolErrors: spec.toolErrors ?? [],
     origins: [],
     endpoints: expand(spec.endpoints),
-    steps: {},
+    steps: Object.fromEntries(
+      Object.entries(expand(spec.steps)).map(([key, a]) => [
+        key,
+        { ...a, location: null, stepErrorsFromFailedTests: 0 },
+      ]),
+    ),
     testBreakdown: { tests: [], omitted: 0, waterfalls: [] },
   };
 }
