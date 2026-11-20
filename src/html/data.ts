@@ -1,20 +1,26 @@
 // Data embedded in the HTML report (11, chapter 5): the run report without retained durations.
-import type { Aggregate, RunReport } from '../core/types/index.ts';
+import type { Aggregate, RunReport, StepAggregate } from '../core/types/index.ts';
 
 /** Aggregate without `samples.durations`; `samples.retained` holds their count (11-REQ-05). */
 export type HtmlAggregate = Omit<Aggregate, 'samples'> & {
   samples: { retained: number; sampled: boolean };
+  /** Steps only (06-REQ-28). */
+  location?: { file: string; line: number } | null;
+  stepErrorsFromFailedTests?: number;
 };
 
 /** Data embedded in the page: the run report without retained durations (11-REQ-05, 11-D-01). */
-export type HtmlReportData = Omit<RunReport, 'endpoints'> & {
+export type HtmlReportData = Omit<RunReport, 'endpoints' | 'steps'> & {
   endpoints: Record<string, HtmlAggregate>;
+  steps: Record<string, HtmlAggregate>;
 };
 
-function withoutDurations(aggregates: Record<string, Aggregate>): Record<string, HtmlAggregate> {
+function withoutDurations(
+  aggregates: Record<string, Aggregate | StepAggregate>,
+): Record<string, HtmlAggregate> {
   const out: Record<string, HtmlAggregate> = {};
   for (const key of Object.keys(aggregates).sort()) {
-    const { samples, ...rest } = aggregates[key] as Aggregate;
+    const { samples, ...rest } = aggregates[key] as Aggregate | StepAggregate;
     out[key] = {
       ...rest,
       samples: { retained: samples.durations.length, sampled: samples.sampled },
@@ -28,6 +34,8 @@ export function toHtmlReportData(report: RunReport): HtmlReportData {
   return {
     ...report,
     endpoints: withoutDurations(report.endpoints),
+    // Reports from before the steps (02-REQ-32) are migrated with steps: {}.
+    steps: withoutDurations(report.steps ?? {}),
   };
 }
 

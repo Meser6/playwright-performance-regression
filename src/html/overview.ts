@@ -167,8 +167,12 @@ export function kpis(ctx: Ctx): SafeHtml {
   const t = r.tests;
   return join(
     html`<section class="kpis" aria-label="Key figures">`,
-    // Other kinds are added as "+ N <kind>" once they exist; zero parts are left out (11-REQ-28).
-    tile('Endpoints', String(endpoints.length), ''),
+    // Other kinds are added as "+ N <kind>"; zero parts are left out (11-REQ-28).
+    tile(
+      'Endpoints',
+      String(endpoints.length),
+      Object.keys(r.steps).length === 0 ? '' : `+ ${String(Object.keys(r.steps).length)} steps`,
+    ),
     tile(
       'Violations',
       String(sum(r, 'violations')),
@@ -462,13 +466,17 @@ const COUNTERS: [keyof RunReport['evaluation']['counts']['api'], string][] = [
 
 function counters(report: RunReport): SafeHtml {
   const counts = report.evaluation.counts;
+  // The step column only for a report with step keys or step file entries (11-REQ-47).
+  const kinds = LINK_KINDS.filter(
+    (k) => k === 'api' || counts[k].keys > 0 || counts[k].unseenThresholdEntries > 0,
+  );
   return join(
     html`<section aria-labelledby="counts-h"><details><summary><h3 id="counts-h">Evaluation counts</h3></summary>`,
     html`<div class="scroll" tabindex="0" role="region" aria-label="Evaluation counts table"><table class="counts"><caption>Keys per kind</caption>`,
-    html`<thead><tr><th scope="col">Counter</th>${LINK_KINDS.map((k) => html`<th scope="col">${KIND_COLUMN[k]}</th>`)}</tr></thead>`,
+    html`<thead><tr><th scope="col">Counter</th>${kinds.map((k) => html`<th scope="col">${KIND_COLUMN[k]}</th>`)}</tr></thead>`,
     html`<tbody>${COUNTERS.map(
       ([field, label]) =>
-        html`<tr><th scope="row">${label}</th>${LINK_KINDS.map((k) => html`<td>${counts[k][field]}</td>`)}</tr>`,
+        html`<tr><th scope="row">${label}</th>${kinds.map((k) => html`<td>${counts[k][field]}</td>`)}</tr>`,
     )}</tbody></table></div></details></section>`,
   );
 }
@@ -479,7 +487,7 @@ export function overview(ctx: Ctx, docsUrl: string): SafeHtml {
   return join(
     verdict(ctx.report),
     empty
-      ? html`<p>No requests were recorded. See the <a href="${docsUrl}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
+      ? html`<p>No requests or steps were recorded. See the <a href="${docsUrl}" rel="noopener noreferrer">documentation</a> for setting up the measured tests.</p>`
       : null,
     violations(ctx),
     rankingsSection(ctx),

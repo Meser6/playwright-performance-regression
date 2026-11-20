@@ -10,7 +10,13 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { RunReport } from '../../src/core/types/index.ts';
 import { renderHtmlReport, toHtmlReportData } from '../../src/html/index.ts';
 import { defaultOrder } from '../../src/html/render.ts';
-import { fullRun, largeReport, markupCase, referenceReport } from '../unit/html/fixtures.ts';
+import {
+  fullRun,
+  largeReport,
+  markupCase,
+  referenceReport,
+  stepsRun,
+} from '../unit/html/fixtures.ts';
 
 const URL = 'http://report.test/report.html';
 const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
@@ -283,6 +289,30 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     const anchor = await open(fullRun(), {}, '#key-api-1');
     await pw(anchor.page.locator('#drawer-title')).toHaveText('POST /api/orders');
     await anchor.page.context().close();
+  });
+
+  test('11-AC-32 Steps tab: Defined at, count, ranking switch, deep link and markup in a title', async () => {
+    const { page, dialogs, console: messages } = await open(
+      stepsRun(),
+      {},
+      '#key=step:login%20%E2%80%BA%20submit',
+    );
+    await pw(drawer(page)).toBeVisible();
+    await pw(page.locator('#drawer-title')).toHaveText('login \u203a submit');
+    await pw(drawer(page)).toContainText('pages/login.page.ts:12');
+    await page.keyboard.press('Escape');
+    await pw(page.locator('#tab-steps-link')).toContainText('Steps 2');
+    await page.locator('#tab-steps-link').click();
+    await pw(page.locator('#table-step > thead')).toContainText('Defined at');
+    await pw(page.locator('#table-step')).toContainText('pages/login.page.ts:30');
+    await pw(page.locator('#table-step')).toContainText('<img src=x onerror=alert(1)>');
+    expect(dialogs).toEqual([]);
+    expect(messages.filter((m) => /pageerror/u.test(m))).toEqual([]);
+    await page.locator('#tab-overview-link').click();
+    await pw(page.locator('[data-kinds] [data-k="step"]')).toHaveCount(1);
+    const plain = await open(fullRun());
+    await pw(plain.page.locator('#tab-steps-link')).toHaveCount(0);
+    await pw(plain.page.locator('[data-kinds]')).toHaveCount(0);
   });
 
   test('11-AC-17 filters: result chips are or-ed, groups and text and-ed; counter; reset; ranking kinds', async () => {

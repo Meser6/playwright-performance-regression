@@ -34,10 +34,11 @@ interface TestData {
 
 interface ReportData {
   endpoints: Record<string, AggregateData>;
+  steps: Record<string, AggregateData>;
   testBreakdown: { tests: TestData[] } | null;
 }
 
-type Kind = 'api';
+type Kind = 'api' | 'step';
 type Direction = 'ascending' | 'descending';
 
 const doc = document;
@@ -45,9 +46,10 @@ const dataText = doc.getElementById('report-data')?.textContent ?? '{}';
 const data = JSON.parse(dataText) as Partial<ReportData>;
 const aggregates: Record<Kind, Record<string, AggregateData>> = {
   api: data.endpoints ?? {},
+  step: data.steps ?? {},
 };
 const testData: TestData[] = data.testBreakdown?.tests ?? [];
-const KIND_TAB: Record<Kind, string> = { api: 'endpoints' };
+const KIND_TAB: Record<Kind, string> = { api: 'endpoints', step: 'steps' };
 
 doc.documentElement.classList.add('js');
 
@@ -121,6 +123,7 @@ if (tabList !== null) {
 
 const rows: Record<Kind, Map<string, HTMLTableSectionElement>> = {
   api: new Map(),
+  step: new Map(),
 };
 
 /** Kind of a key table from its data-kind attribute. */
@@ -233,7 +236,7 @@ function route(hash: string, from: HTMLElement | null = null): void {
     return;
   }
   let body: HTMLTableSectionElement | undefined;
-  match = /^#key=(api|request):(.*)$/su.exec(hash);
+  match = /^#key=(api|request|step):(.*)$/su.exec(hash);
   if (match !== null) {
     let key: string | null;
     try {
@@ -244,7 +247,7 @@ function route(hash: string, from: HTMLElement | null = null): void {
     const kind = match[1] as Kind;
     if (key !== null && own(rows, kind)) body = rows[kind].get(key);
   } else {
-    match = /^#key-api-(\d+)$/u.exec(hash);
+    match = /^#key-(?:api|step)-(\d+)$/u.exec(hash);
     if (match === null) return;
     body = doc.getElementById(hash.slice(1))?.closest('tbody') ?? undefined;
   }

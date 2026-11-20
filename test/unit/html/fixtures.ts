@@ -198,3 +198,26 @@ export function referenceReport(retained = 100): RunReport {
   })) as NonNullable<RunReport['testBreakdown']>['waterfalls'];
   return { ...large, endpoints, testBreakdown: { tests, omitted: 0, waterfalls } };
 }
+
+/**
+ * fullRun() with two step keys (06, 11-REQ-47): "login › submit" and a title with markup. The
+ * step aggregates reuse endpoint aggregates with a location.
+ */
+export function stepsRun(): RunReport {
+  const report = fullRun();
+  const [first, second] = Object.values(report.endpoints);
+  if (first === undefined || second === undefined) throw new Error('fullRun needs two endpoints');
+  const asStep = (a: typeof first, line: number) => ({
+    ...structuredClone(a),
+    ttfb: null,
+    timeSources: { browser: 0, node: a.count },
+    location: { file: 'pages/login.page.ts', line },
+    stepErrorsFromFailedTests: 0,
+  });
+  report.steps = {
+    'login › submit': asStep(first, 12),
+    '<img src=x onerror=alert(1)>': asStep(second, 30),
+  };
+  report.evaluation.counts.step = { ...report.evaluation.counts.api, keys: 2 };
+  return report;
+}
