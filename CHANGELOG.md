@@ -7,6 +7,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `init` no longer asks for the label of the `baseURL` origin: labels are automatic (no label for
+  the `baseURL` origin, the host for other hosts), and the summary points to `keys.origins` for
+  shorter labels. The steps are numbered 1 to 10.
+- `init` measures all tests by default, also when some tests are tagged `@perf` and with `--yes`.
+  `INIT_NO_TAGGED_TESTS` is now information shown in the wizard, not a warning.
+- The `pw-perf.config.ts` written by `init` lists every option: the answers that differ from the
+  defaults as code, all other options as comments with their default value and a one-line
+  description, grouped by section. The comments are generated from the config schema.
+
 ## [0.1.0-next.1] - 2026-11-19
 
 ### Added

@@ -2,6 +2,7 @@
 // chapter 8: test/golden/init/), recognized layouts and the CI templates (13-AC-11).
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import typescript from 'typescript';
 import { describe, expect, test } from 'vitest';
 import { CI_COMMAND, CI_TARGETS, ciFiles } from '../../../src/cli/init/ci.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
@@ -14,7 +15,11 @@ import {
   wrapPlaywrightConfig,
   wrapTestObject,
 } from '../../../src/cli/init/patterns.ts';
-import { renderPerfConfig } from '../../../src/cli/init/perf-config.ts';
+import { CONFIG_OPTIONS } from '../../../src/cli/init/generated/config-options.ts';
+import { LANGUAGES } from '../../../src/cli/init/messages.ts';
+import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
+import { renderPerfConfig, ts } from '../../../src/cli/init/perf-config.ts';
+import { DEFAULT_CONFIG } from '../../../src/core/config/index.ts';
 import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
 import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
 
@@ -40,7 +45,6 @@ function files(entries: Record<string, string>): Map<string, string> {
 }
 
 const ANSWERS: InitAnswers = {
-  originLabels: {},
   scope: 'all',
   repeatTest: 5,
   warnOnly: true,
@@ -192,17 +196,124 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       }),
     ]);
     const config = plan.changes.find((c) => c.path === 'pw-perf.config.ts')?.after ?? '';
-    expect(config).not.toMatch(/\benv\b/u);
+    // run.env stays the default: only a commented line.
+    const active = config.split('\n').filter((l) => !/^\s*\/\//u.test(l));
+    expect(active.join('\n')).not.toMatch(/\benv\b/u);
+    expect(config).toMatch(/^ {2}\/\/ {3}env: null,$/mu);
   });
 
-  test('pw-perf.config.ts holds only values that differ from the defaults', () => {
+  test('04-AC-17 04-REQ-46 pw-perf.config.ts holds only values that differ from the defaults as active code', () => {
     const config = renderPerfConfig(ANSWERS);
-    expect(config).toContain('warnOnly: true');
-    expect(config).not.toContain('repeat: { test: 5 }');
-    expect(config).not.toContain('origins: {\n');
+    const active = config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
+    expect(active).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '  gate: {',
+      '    warnOnly: true,',
+      '  },',
+      '});',
+    ]);
+    expect(config).toContain('    // Report violations but never fail the run. Default: false.\n');
+    // No origin labels from the wizard: they follow the baseURL (07-REQ-03).
+    expect(config).toContain('  //   origins: {},\n');
     const other = renderPerfConfig({ ...ANSWERS, warnOnly: false, repeatTest: 7 });
-    expect(other).toContain('repeat: { test: 7 }');
-    expect(other).not.toContain('\n    warnOnly: false,');
+    expect(other.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l))).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '  run: {',
+      '    repeat: {',
+      '      test: 7,',
+      '    },',
+      '  },',
+      '});',
+    ]);
+    expect(other).toContain('  //   warnOnly: false,\n');
+  });
+
+  test('04-REQ-46 every other option is a comment with its default and a description, in schema order', () => {
+    const config = renderPerfConfig(ANSWERS);
+    const lines = config.split('\n');
+    let at = 0;
+    for (const option of CONFIG_OPTIONS) {
+      const name = option.path.split('.').at(-1) as string;
+      const depth = option.path.split('.').length - 1;
+      const value =
+        option.path === 'gate.warnOnly'
+          ? 'true'
+          : option.default === undefined
+            ? '({ method, url, resourceType }) => undefined'
+            : ts(option.default);
+      const code =
+        option.leaf && !Array.isArray(option.default) ? `${name}: ${value},` : `${name}: `;
+      const index = lines.findIndex(
+        (l, i) =>
+          i >= at &&
+          l
+            .replace(/^\s*(\/\/ )?/u, '')
+            .trimStart()
+            .startsWith(code),
+      );
+      expect(index, option.path).toBeGreaterThanOrEqual(at);
+      // Nested as in the config object: two more spaces per level.
+      const commented = option.path !== 'gate' && option.path !== 'gate.warnOnly';
+      expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth + (commented ? 3 : 0));
+      // The description comes right before, wrapped.
+      expect(lines.slice(0, index).join(' '), option.path).toContain(
+        option.description.split(' ').slice(0, 3).join(' '),
+      );
+      at = index + 1;
+    }
+    expect(CONFIG_OPTIONS.filter((o) => !o.path.includes('.')).map((o) => o.path)).toEqual([
+      'run',
+      'measure',
+      'keys',
+      'checks',
+      'gate',
+      'thresholds',
+      'report',
+      'advanced',
+    ]);
+    expect(
+      CONFIG_OPTIONS.filter((o) => /^checks\.[^.]+$/u.test(o.path)).map((o) => o.path),
+    ).toEqual(['checks.time', 'checks.slowShare', 'checks.errors']);
+    for (const line of lines) expect(line.length, line).toBeLessThanOrEqual(100);
+  });
+
+  test('04-REQ-46 the option list has the defaults of DEFAULT_CONFIG and no specification references', () => {
+    const leaves = CONFIG_OPTIONS.filter((o) => o.leaf);
+    const get = (path: string): unknown =>
+      path.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown>)[k], DEFAULT_CONFIG);
+    for (const option of leaves) {
+      if (option.path === 'keys.keyBuilder') expect(option.default).toBeUndefined();
+      else expect(option.default, option.path).toEqual(get(option.path));
+    }
+    const paths = new Set(CONFIG_OPTIONS.map((o) => o.path));
+    const walk = (value: unknown, prefix: string): void => {
+      if (prefix !== '') expect(paths, prefix).toContain(prefix);
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) return;
+      for (const [k, v] of Object.entries(value)) walk(v, prefix === '' ? k : `${prefix}.${k}`);
+    };
+    walk(DEFAULT_CONFIG, '');
+    for (const option of CONFIG_OPTIONS) {
+      expect(option.description, option.path).not.toMatch(
+        /\b\d{2}-(?:REQ|AC|D)-\d+|\b(?:D|ADR|NF|P|V)-\d{2,4}\b|<pkg>|<PKG>/iu,
+      );
+      expect(option.description, option.path).toMatch(/^[^\s].*[.!?]$/u);
+    }
+  });
+
+  test('04-AC-23 04-REQ-46 pw-perf.config.ts is valid TypeScript and the same in every wizard language', async () => {
+    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
+    const text = (lang: WizardLanguage): string =>
+      planInitChanges(info, { ...ANSWERS, repeatTest: 3 }, lang).changes.find(
+        (c) => c.path === 'pw-perf.config.ts',
+      )?.after ?? '';
+    const en = text('en');
+    for (const lang of LANGUAGES) expect(text(lang), lang).toBe(en);
+    for (const config of [en, renderPerfConfig({ ...ANSWERS, warnOnly: false })]) {
+      const out = typescript.transpileModule(config, { reportDiagnostics: true });
+      expect(out.diagnostics ?? []).toEqual([]);
+    }
   });
 
   test('another package config format is never rewritten; the answers become a manual step', () => {

@@ -1,9 +1,9 @@
-// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and eleven
-// steps, each with a short lesson. Interactive only when stdin and stdout are terminals; --yes
+// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and ten
+// steps, each with a short lesson. Origin labels are not asked (07-REQ-03). Interactive only when stdin and stdout are terminals; --yes
 // takes the default answers and writes, and without a terminal and without --yes it only shows
 // the plan, like --dry-run (04-REQ-37, 04-D-20). Declining the tutorial (or --no-tutorial) prints
 // the manual setup and changes nothing (04-REQ-45). Texts in the chosen language (04-REQ-43),
-// colors by 04-REQ-44. Nothing is written before step 9 (04-REQ-41).
+// colors by 04-REQ-44. Nothing is written before the changes step (04-REQ-41).
 import { colorEnabled, painter } from '../../console/color.ts';
 import type { ColorStyle, Painter } from '../../console/color.ts';
 import { DEFAULT_CONFIG, resolveConfig } from '../../core/config/index.ts';
@@ -19,7 +19,7 @@ import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
 import { readProjectFiles } from './files.ts';
-import { DEFAULT_ANSWERS_REPEAT, defaultLabel } from './defaults.ts';
+import { DEFAULT_ANSWERS_REPEAT } from './defaults.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers } from './perf-config.ts';
@@ -34,7 +34,8 @@ export interface InitCommand {
   noTutorial?: boolean;
 }
 
-const STEPS = 11;
+/** Steps shown as [n/10]: the steps of 04-REQ-38 without the removed step 3. */
+const STEPS = 10;
 const PLATFORM_NAMES: Record<CiPlatform, string> = {
   github: 'GitHub Actions',
   gitlab: 'GitLab CI',
@@ -77,7 +78,7 @@ class Dialog {
     this.say(`${indent}${this.paint(text, style)}`);
   }
 
-  /** Step header in cyan ("[3/11] Backend") and the lesson dimmed. */
+  /** Step header in cyan ("[3/10] Which tests") and the lesson dimmed. */
   step(n: number | string, title: string, ...lesson: string[]): void {
     this.say('', this.paint(`[${n}/${STEPS}] ${title}`, 'cyan'));
     for (const l of lesson) this.line(l, 'dim');
@@ -253,48 +254,27 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   );
   await dialog.pause();
 
-  dialog.stepOf(3, 'stepBackend', 'backendLesson');
-  const originLabels: Record<string, string> = {};
-  if (info.baseUrls.length === 0) dialog.say(`  ${t('noBaseUrl')}`);
-  const used = new Set<string>();
-  for (const origin of info.baseUrls) {
-    const fallback = defaultLabel(origin, used);
-    const label = await dialog.ask(t('labelQuestion', { origin }), fallback, fallback, (a) =>
-      /^[a-z0-9.-]{1,64}$/u.test(a) ? a : null,
-    );
-    used.add(label);
-    originLabels[origin] = label;
-  }
-
   const tagged = info.taggedPerfTestFiles > 0;
   dialog.step(
-    4,
+    3,
     t('stepTests'),
     t('testsLesson'),
     t('taggedFiles', { count: info.taggedPerfTestFiles }),
   );
   if (!tagged) {
-    dialog.warn([
-      {
-        code: 'INIT_NO_TAGGED_TESTS',
-        message: t('noTaggedMessage'),
-        hint: t('noTaggedHint'),
-      },
-    ]);
+    // Information only: the default is all tests either way.
+    const code = 'INIT_NO_TAGGED_TESTS';
+    dialog.say(`  ${dialog.paint(`ℹ ${code}`, 'cyan')} ${t('noTaggedMessage')}`);
+    dialog.line(t('noTaggedHint'), 'dim', '    ');
   }
   const all = t('scopeAll');
-  const scope = await dialog.ask<'all' | 'tagged'>(
-    t('scopeQuestion', { all }),
-    tagged ? '@perf' : all,
-    tagged ? 'tagged' : 'all',
-    (a) => {
-      const answer = a.toLowerCase();
-      if (answer === 'all' || answer === all) return 'all';
-      return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
-    },
-  );
+  const scope = await dialog.ask<'all' | 'tagged'>(t('scopeQuestion', { all }), all, 'all', (a) => {
+    const answer = a.toLowerCase();
+    if (answer === 'all' || answer === all) return 'all';
+    return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
+  });
 
-  dialog.stepOf(5, 'stepRepeat', 'repeatLesson');
+  dialog.stepOf(4, 'stepRepeat', 'repeatLesson');
   const repeatTest = await dialog.ask(
     t('repeatQuestion'),
     String(DEFAULT_ANSWERS_REPEAT),
@@ -305,10 +285,10 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     },
   );
 
-  dialog.stepOf(6, 'stepTrial', 'trialLesson');
+  dialog.stepOf(5, 'stepTrial', 'trialLesson');
   const warnOnly = await dialog.confirm(t('warnOnlyQuestion'), true);
 
-  dialog.stepOf(7, 'stepEnvs', 'envsLesson');
+  dialog.stepOf(6, 'stepEnvs', 'envsLesson');
   let envLabels: string[] = [];
   if (await dialog.confirm(t('envsQuestion'), false)) {
     envLabels = await dialog.ask(t('envLabelsQuestion'), t('none'), [] as string[], (a) => {
@@ -324,7 +304,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     });
   }
 
-  dialog.stepOf(8, 'stepCi', 'ciLesson');
+  dialog.stepOf(7, 'stepCi', 'ciLesson');
   let addCi = false;
   if (info.ciPlatform === null) {
     dialog.say(`  ${t('noCi', { url: `${DOCS}/ci.md` })}`);
@@ -334,7 +314,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
       true,
     );
   }
-  return { originLabels, scope, repeatTest, warnOnly, envLabels, addCi };
+  return { scope, repeatTest, warnOnly, envLabels, addCi };
 }
 
 function changeKind(change: FileChange, t: Translate): string {
@@ -350,7 +330,7 @@ function diffStyle(line: string): ColorStyle | null {
   return null;
 }
 
-/** Step 9: diffs, confirmations and writes. Returns the paths written. */
+/** The changes step: diffs, confirmations and writes. Returns the paths written. */
 async function applyChanges(
   dialog: Dialog,
   host: CliHost,
@@ -477,7 +457,7 @@ export async function runInit(
     const plan = planInitChanges(info, answers, lang);
 
     dialog.stepOf(
-      9,
+      8,
       'stepChanges',
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
@@ -493,7 +473,7 @@ export async function runInit(
     dialog.warn(plan.manualSteps);
 
     dialog.step(
-      10,
+      9,
       t('stepFirstRun'),
       t('firstRunLesson', { dir: DEFAULT_CONFIG.report.dir }),
       t('firstRunLaptop'),
@@ -505,7 +485,7 @@ export async function runInit(
       dialog.line(t('skipped'), 'dim');
     }
 
-    dialog.step(11, t('stepSummary'));
+    dialog.step(10, t('stepSummary'));
     if (written.length > 0)
       dialog.say(
         `  ${t('changedFiles')}`,
@@ -523,6 +503,7 @@ export async function runInit(
       `  ${paint(t('nextSteps'), 'bold')}`,
       ...nextSteps(dialog, info, answers, written).map((s, i) => `    ${i + 1}. ${s}`),
     );
+    dialog.say(`  ${t('originsNote')}`);
     dialog.line(
       t('docs', { links: `${DOCS}/adoption.md · ${DOCS}/ci.md · ${DOCS}/configuration.md` }),
       'dim',

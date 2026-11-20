@@ -1,5 +1,5 @@
 {
-  "name": "import-swap with the default answers (--yes): imports swapped to the package's test, @perf scripts, Azure job",
+  "name": "import-swap with the default answers (--yes): imports swapped to the package's test, all tests although one file is tagged @perf, Azure job",
   "input": {
     "project": "init-import-swap",
     "answers": null

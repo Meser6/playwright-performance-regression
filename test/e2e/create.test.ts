@@ -75,7 +75,7 @@ describe.skipIf(process.platform === 'win32')('create-playwright-performance-reg
     expect(calls(dir)).toEqual([
       `npm install --save-dev playwright-performance-regression@${version}`,
     ]);
-    expect(run.output).toContain('[11/11] Summary');
+    expect(run.output).toContain('[10/10] Summary');
     expect(run.output).toContain('dry run');
     expect(snapshot(dir)).toEqual(before);
   });

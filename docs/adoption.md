@@ -89,7 +89,7 @@ is printed as an `INIT_MANUAL_STEP` instruction from the table above.
 | `playwright.config.*` | `export default defineConfig({...})`, `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as the last statement | wraps it in `withPerf(..., perfConfig)` and adds the imports (CommonJS: `require('./pw-perf.config').default`)                            |
 | test object           | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`     | wraps it in `withPerfFixtures(...)`                                                                                                       |
 | test files            | no `.extend(` and no `mergeTests` anywhere; files import an unaliased `test` from `@playwright/test`                                                   | switches that import to `playwright-performance-regression/test`; other names stay in an `@playwright/test` import, `test as setup` stays |
-| `pw-perf.config.ts`   | missing                                                                                                                                                | created with the answers that differ from the defaults                                                                                    |
+| `pw-perf.config.ts`   | missing                                                                                                                                                | created with the answers that differ from the defaults; every other option is a comment with its default and a description                |
 | `.gitignore`          | any                                                                                                                                                    | adds `perf-results/`                                                                                                                      |
 | `package.json`        | scripts missing                                                                                                                                        | adds `perf:test` and `perf:thresholds` (one pair per environment)                                                                         |
 | CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                         | adds a separate job file from [the CI recipes](ci.md)                                                                                     |
@@ -101,8 +101,9 @@ changes nothing that is already set up.
 ## Choosing the tests to measure
 
 A measurement run executes every measured test several times in one worker, so it is much slower
-than your normal suite. Measure a subset: tag a few representative tests with `@perf` and run
-`pw-perf test --grep @perf` (or select projects with `--project`). Good candidates load the main
+than your normal suite. `init` measures all tests by default; to measure a subset, tag a few representative tests with
+`@perf` and run `pw-perf test --grep @perf` (or answer `@perf` in `init`, or select projects with
+`--project`). Good candidates load the main
 pages and call the endpoints you care about; tests that mostly wait for timers or animations add
 time without useful samples.
 

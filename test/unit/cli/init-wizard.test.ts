@@ -33,15 +33,50 @@ function scriptedPrompt(
 }
 
 describe('init wizard', () => {
-  test('04-AC-21 without tests tagged @perf, --yes measures all tests and warns INIT_NO_TAGGED_TESTS', async () => {
+  test('04-AC-21 without tests tagged @perf, --yes measures all tests and shows INIT_NO_TAGGED_TESTS as information', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = fakeCliHost({ cwd: dir, playwright: null });
     expect(await main(['init', '--yes'], fake.host)).toBe(0);
-    expect(fake.stderr.join('')).toContain('warning INIT_NO_TAGGED_TESTS');
+    const out = fake.stdout.join('');
+    expect(out).toContain(
+      'ℹ INIT_NO_TAGGED_TESTS No test is tagged @perf yet; all tests are measured.',
+    );
+    expect(out).toContain("tag them with test('title', { tag: '@perf' }, ...)");
+    expect(fake.stderr.join('')).not.toContain('INIT_NO_TAGGED_TESTS');
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toMatchObject({
       'perf:test': 'pw-perf test',
       'perf:thresholds': 'pw-perf thresholds',
     });
+  });
+
+  test('04-AC-17 with tests tagged @perf the default is still all tests, also with --yes', async () => {
+    const dir = copyProject('init-import-swap');
+    const fake = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    expect(out).toContain('Files with tests tagged @perf: 1.');
+    expect(out).toContain('Measure all tests or only tests tagged @perf? [all/@perf] (all) → all');
+    expect(out).not.toContain('INIT_NO_TAGGED_TESTS');
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toMatchObject({
+      'perf:test': 'pw-perf test',
+      'perf:thresholds': 'pw-perf thresholds',
+    });
+  });
+
+  test('04-AC-17 no origin label question: steps [1/10] to [10/10], keys.origins named in the summary', async () => {
+    const dir = copyProject('init-esm-ts');
+    const fake = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
+    expect(steps).toEqual(['0/10', ...Array.from({ length: 10 }, (_, i) => `${i + 1}/10`)]);
+    expect(out).not.toMatch(/Label for|Backend/u);
+    expect(out).toContain(
+      'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
+    );
+    const config = readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8');
+    expect(config).toContain('  //   origins: {},\n');
+    expect(config).not.toContain("'https://api.example.com':");
   });
 
   test('04-AC-19 --yes writes the changes; a second run changes no file', async () => {
@@ -74,12 +109,12 @@ describe('init wizard', () => {
     expect(snapshot(dir)).toEqual(before);
   });
 
-  test('04-AC-19 Ctrl+C before step 9 leaves no changes and ends with 130', async () => {
+  test('04-AC-19 Ctrl+C before the changes step leaves no changes and ends with 130', async () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
-    // Questions before step 9: tutorial (0a), language (0), Enter (2), label (3), scope (4), repeats (5),
-    // warn-only (6), environments (7), CI (8).
-    for (let at = 0; at < 9; at += 1) {
+    // Questions before the changes step: tutorial (0a), language (0), Enter (2), scope (3),
+    // repeats (4), warn-only (5), environments (6), CI (7).
+    for (let at = 0; at < 8; at += 1) {
       const script = scriptedPrompt([], at);
       const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
       expect(await main(['init'], fake.host), `abort at question ${at}`).toBe(130);
@@ -96,7 +131,6 @@ describe('init wizard', () => {
       '', // tutorial: yes
       '', // language: en
       '', // Enter
-      'backend', // label
       '@perf', // scope
       '0', // invalid repeat, asked again
       '3',
@@ -159,7 +193,7 @@ describe('init wizard', () => {
     );
 
     // Interactive: every default, then "y" to the overwrite question.
-    const script = scriptedPrompt(['', '', '', '', '', '', '', '', '', 'y']);
+    const script = scriptedPrompt(['', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
     expect(await main(['init'], tty.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toContain(
@@ -225,14 +259,14 @@ describe('init wizard', () => {
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
-    expect(out).toContain('[1/11] Projekt');
+    expect(out).toContain('[1/10] Projekt');
     expect(out).toContain('Zastosować tę zmianę?');
     expect(out).toContain('Następne kroki:');
     expect(out).not.toContain('Apply this change?');
     // Diffs, codes, file and option names stay in English.
     expect(out).toContain('+++ b/pw-perf.config.ts');
-    expect(fakePl.stderr.join('')).toContain('warning INIT_NO_TAGGED_TESTS');
-    expect(fakePl.stderr.join('')).toContain('@perf');
+    expect(out).toContain('ℹ INIT_NO_TAGGED_TESTS Żaden test nie ma jeszcze tagu @perf');
+    expect(out).toContain('keys.origins w pw-perf.config.ts');
     // Without --lang and without a terminal: English.
     const plain = copyProject('init-esm-ts');
     const fakeDefault = fakeCliHost({ cwd: plain, playwright: null });
@@ -328,7 +362,7 @@ describe('init wizard', () => {
     expect(await main(['init', '--yes'], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).not.toContain('guided tutorial');
-    expect(out).toContain('[0/11] Language');
+    expect(out).toContain('[0/10] Language');
     expect(fake.written.length).toBe(6);
   });
 });

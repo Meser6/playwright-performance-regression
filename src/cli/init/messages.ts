@@ -61,18 +61,13 @@ const en = {
   how4: '"{thresholds}" derives thresholds per key into files you commit to the repository.',
   how5: 'Exit code 0 means ok, 2 a performance regression, 3 a tool or config error.',
 
-  stepBackend: 'Backend',
-  backendLesson: 'Endpoint keys start with a short label of the backend origin.',
-  noBaseUrl: 'No baseURL found in playwright.config: requests are labeled with their host.',
-  labelQuestion: 'Label for {origin}?',
-
   stepTests: 'Which tests',
   testsLesson:
     'A measurement run takes about (tests × repetitions) test runs on 1 worker, so measure the tests that call the important backend endpoints.',
   taggedFiles: 'Files with tests tagged @perf: {count}.',
-  noTaggedMessage: 'No test is tagged @perf, so all tests are proposed.',
+  noTaggedMessage: 'No test is tagged @perf yet; all tests are measured.',
   noTaggedHint:
-    "Tag the tests to measure with test('title', { tag: '@perf' }, ...), then choose @perf.",
+    "To measure only some tests, tag them with test('title', { tag: '@perf' }, ...) and choose @perf.",
   scopeQuestion: 'Measure all tests or only tests tagged @perf? [{all}/@perf]',
   scopeAll: 'all',
 
@@ -130,6 +125,8 @@ const en = {
   nextAzure: 'Create a pipeline in Azure DevOps from {path}.',
   nextWarnOnly: 'After the trial period remove gate.warnOnly from pw-perf.config.ts.',
   nextApply: 'Apply the changes above (run init again in a terminal or with --yes).',
+  originsNote:
+    'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
   docs: 'Docs: {links}',
   finished: 'Setup finished.',
 
@@ -221,18 +218,13 @@ const pl: Messages = {
   how4: '"{thresholds}" wyznacza progi dla każdego klucza i zapisuje je w plikach, które commitujesz do repozytorium.',
   how5: 'Kod wyjścia 0 oznacza sukces, 2 regresję wydajności, 3 błąd narzędzia albo konfiguracji.',
 
-  stepBackend: 'Backend',
-  backendLesson: 'Klucze endpointów zaczynają się od krótkiej etykiety originu backendu.',
-  noBaseUrl: 'Brak baseURL w playwright.config: żądania będą oznaczone nazwą hosta.',
-  labelQuestion: 'Etykieta dla {origin}?',
-
   stepTests: 'Które testy',
   testsLesson:
     'Pomiar trwa mniej więcej tyle, co (testy × powtórzenia) uruchomień testów na 1 workerze, więc mierz testy, które wywołują ważne endpointy backendu.',
   taggedFiles: 'Pliki z testami oznaczonymi @perf: {count}.',
-  noTaggedMessage: 'Żaden test nie ma tagu @perf, więc proponowane są wszystkie testy.',
+  noTaggedMessage: 'Żaden test nie ma jeszcze tagu @perf; mierzone są wszystkie testy.',
   noTaggedHint:
-    "Oznacz testy do pomiaru: test('tytuł', { tag: '@perf' }, ...), a potem wybierz @perf.",
+    "Aby mierzyć tylko część testów, oznacz je: test('tytuł', { tag: '@perf' }, ...) i wybierz @perf.",
   scopeQuestion: 'Mierzyć wszystkie testy czy tylko oznaczone @perf? [{all}/@perf]',
   scopeAll: 'wszystkie',
 
@@ -289,6 +281,8 @@ const pl: Messages = {
   nextAzure: 'Utwórz w Azure DevOps pipeline z pliku {path}.',
   nextWarnOnly: 'Po okresie próbnym usuń gate.warnOnly z pw-perf.config.ts.',
   nextApply: 'Zastosuj powyższe zmiany (uruchom init ponownie w terminalu albo z --yes).',
+  originsNote:
+    'Klucze endpointów originu z baseURL nie mają etykiety, a inne hosty są oznaczone nazwą hosta; krótsze etykiety dla nich ustawisz w keys.origins w pw-perf.config.ts.',
   docs: 'Dokumentacja: {links}',
   finished: 'Konfiguracja zakończona.',
 
@@ -377,18 +371,13 @@ const es: Messages = {
   how4: '"{thresholds}" calcula umbrales por clave en archivos que subes al repositorio.',
   how5: 'Código de salida 0: todo bien; 2: regresión de rendimiento; 3: error de la herramienta o de la configuración.',
 
-  stepBackend: 'Backend',
-  backendLesson: 'Las claves de endpoint empiezan con una etiqueta corta del origen del backend.',
-  noBaseUrl: 'No hay baseURL en playwright.config: las peticiones se etiquetan con su host.',
-  labelQuestion: '¿Etiqueta para {origin}?',
-
   stepTests: 'Qué tests',
   testsLesson:
     'Una medición dura unas (tests × repeticiones) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
   taggedFiles: 'Archivos con tests etiquetados @perf: {count}.',
-  noTaggedMessage: 'Ningún test tiene la etiqueta @perf, así que se proponen todos los tests.',
+  noTaggedMessage: 'Ningún test tiene aún la etiqueta @perf; se miden todos los tests.',
   noTaggedHint:
-    "Etiqueta los tests a medir con test('título', { tag: '@perf' }, ...) y luego elige @perf.",
+    "Para medir solo algunos tests, etiquétalos con test('título', { tag: '@perf' }, ...) y elige @perf.",
   scopeQuestion: '¿Medir todos los tests o solo los etiquetados @perf? [{all}/@perf]',
   scopeAll: 'todos',
 
@@ -447,6 +436,8 @@ const es: Messages = {
   nextAzure: 'Crea un pipeline en Azure DevOps a partir de {path}.',
   nextWarnOnly: 'Tras el periodo de prueba, quita gate.warnOnly de pw-perf.config.ts.',
   nextApply: 'Aplica los cambios de arriba (ejecuta init de nuevo en un terminal o con --yes).',
+  originsNote:
+    'Las claves de endpoint del origen de baseURL no llevan etiqueta y los demás hosts se etiquetan con su host; define etiquetas más cortas para ellos en keys.origins de pw-perf.config.ts.',
   docs: 'Documentación: {links}',
   finished: 'Configuración terminada.',
 
@@ -536,18 +527,13 @@ const fr: Messages = {
   how4: '"{thresholds}" calcule des seuils par clé dans des fichiers que vous committez dans le dépôt.',
   how5: 'Code de sortie 0 : tout va bien, 2 : régression de performance, 3 : erreur de l’outil ou de la configuration.',
 
-  stepBackend: 'Backend',
-  backendLesson: 'Les clés d’endpoint commencent par un court libellé de l’origine du backend.',
-  noBaseUrl: 'Aucun baseURL dans playwright.config : les requêtes sont libellées avec leur hôte.',
-  labelQuestion: 'Libellé pour {origin} ?',
-
   stepTests: 'Quels tests',
   testsLesson:
     'Une mesure prend environ (tests × répétitions) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
   taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
-  noTaggedMessage: "Aucun test n'est marqué @perf, tous les tests sont donc proposés.",
+  noTaggedMessage: 'Aucun test n’est encore marqué @perf ; tous les tests sont mesurés.',
   noTaggedHint:
-    "Marquez les tests à mesurer avec test('titre', { tag: '@perf' }, ...), puis choisissez @perf.",
+    "Pour ne mesurer que certains tests, marquez-les avec test('titre', { tag: '@perf' }, ...) et choisissez @perf.",
   scopeQuestion: 'Mesurer tous les tests ou seulement ceux marqués @perf ? [{all}/@perf]',
   scopeAll: 'tous',
 
@@ -607,6 +593,8 @@ const fr: Messages = {
   nextWarnOnly: 'Après la période d’essai, retirez gate.warnOnly de pw-perf.config.ts.',
   nextApply:
     'Appliquez les modifications ci-dessus (relancez init dans un terminal ou avec --yes).',
+  originsNote:
+    'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de pw-perf.config.ts.',
   docs: 'Documentation : {links}',
   finished: 'Configuration terminée.',
 
@@ -696,19 +684,13 @@ const it: Messages = {
   how4: '"{thresholds}" calcola le soglie per chiave in file che fai commit nel repository.',
   how5: 'Codice di uscita 0: tutto ok, 2: regressione delle prestazioni, 3: errore dello strumento o della configurazione.',
 
-  stepBackend: 'Backend',
-  backendLesson: 'Le chiavi di endpoint iniziano con un’etichetta breve dell’origine del backend.',
-  noBaseUrl:
-    'Nessun baseURL in playwright.config: le richieste vengono etichettate con il loro host.',
-  labelQuestion: 'Etichetta per {origin}?',
-
   stepTests: 'Quali test',
   testsLesson:
     'Una misurazione richiede circa (test × ripetizioni) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
   taggedFiles: 'File con test contrassegnati @perf: {count}.',
-  noTaggedMessage: 'Nessun test ha il tag @perf, quindi vengono proposti tutti i test.',
+  noTaggedMessage: 'Nessun test ha ancora il tag @perf; vengono misurati tutti i test.',
   noTaggedHint:
-    "Contrassegna i test da misurare con test('titolo', { tag: '@perf' }, ...), poi scegli @perf.",
+    "Per misurare solo alcuni test, contrassegnali con test('titolo', { tag: '@perf' }, ...) e scegli @perf.",
   scopeQuestion: 'Misurare tutti i test o solo quelli contrassegnati @perf? [{all}/@perf]',
   scopeAll: 'tutti',
 
@@ -766,6 +748,8 @@ const it: Messages = {
   nextAzure: 'Crea una pipeline in Azure DevOps da {path}.',
   nextWarnOnly: 'Dopo il periodo di prova rimuovi gate.warnOnly da pw-perf.config.ts.',
   nextApply: 'Applica le modifiche sopra (esegui di nuovo init in un terminale o con --yes).',
+  originsNote:
+    'Le chiavi di endpoint dell’origine di baseURL non hanno etichetta e gli altri host sono etichettati con il loro host; imposta etichette più brevi in keys.origins di pw-perf.config.ts.',
   docs: 'Documentazione: {links}',
   finished: 'Configurazione completata.',
 
@@ -856,18 +840,13 @@ const uk: Messages = {
   how4: '"{thresholds}" обчислює пороги для кожного ключа у файли, які ви комітите в репозиторій.',
   how5: 'Код виходу 0 — усе гаразд, 2 — регресія продуктивності, 3 — помилка інструмента або конфігурації.',
 
-  stepBackend: 'Бекенд',
-  backendLesson: 'Ключі ендпоінтів починаються з короткої мітки origin бекенду.',
-  noBaseUrl: 'У playwright.config немає baseURL: запити позначаються своїм хостом.',
-  labelQuestion: 'Мітка для {origin}?',
-
   stepTests: 'Які тести',
   testsLesson:
     'Вимірювання триває приблизно (тести × повторення) запусків тестів на 1 worker, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
   taggedFiles: 'Файли з тестами з тегом @perf: {count}.',
-  noTaggedMessage: 'Жоден тест не має тегу @perf, тому пропонуються всі тести.',
+  noTaggedMessage: 'Жоден тест ще не має тегу @perf; вимірюються всі тести.',
   noTaggedHint:
-    "Позначте тести для вимірювання: test('назва', { tag: '@perf' }, ...), а потім виберіть @perf.",
+    "Щоб вимірювати лише частину тестів, позначте їх: test('назва', { tag: '@perf' }, ...) і виберіть @perf.",
   scopeQuestion: 'Вимірювати всі тести чи лише з тегом @perf? [{all}/@perf]',
   scopeAll: 'усі',
 
@@ -923,6 +902,8 @@ const uk: Messages = {
   nextAzure: 'Створіть pipeline в Azure DevOps з {path}.',
   nextWarnOnly: 'Після пробного періоду видаліть gate.warnOnly з pw-perf.config.ts.',
   nextApply: 'Застосуйте зміни вище (запустіть init ще раз у терміналі або з --yes).',
+  originsNote:
+    'Ключі ендпоінтів origin з baseURL не мають мітки, а інші хости позначаються своїм хостом; коротші мітки для них задайте в keys.origins у pw-perf.config.ts.',
   docs: 'Документація: {links}',
   finished: 'Налаштування завершено.',
 
@@ -1012,18 +993,13 @@ const ru: Messages = {
   how4: '"{thresholds}" вычисляет пороги по каждому ключу в файлы, которые вы коммитите в репозиторий.',
   how5: 'Код выхода 0 — всё в порядке, 2 — регрессия производительности, 3 — ошибка инструмента или конфигурации.',
 
-  stepBackend: 'Бэкенд',
-  backendLesson: 'Ключи эндпоинтов начинаются с короткой метки origin бэкенда.',
-  noBaseUrl: 'В playwright.config нет baseURL: запросы помечаются своим хостом.',
-  labelQuestion: 'Метка для {origin}?',
-
   stepTests: 'Какие тесты',
   testsLesson:
     'Измерение занимает примерно (тесты × повторения) запусков тестов на 1 worker, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
   taggedFiles: 'Файлы с тестами с тегом @perf: {count}.',
-  noTaggedMessage: 'Ни у одного теста нет тега @perf, поэтому предлагаются все тесты.',
+  noTaggedMessage: 'Ни у одного теста пока нет тега @perf; измеряются все тесты.',
   noTaggedHint:
-    "Отметьте тесты для измерения: test('название', { tag: '@perf' }, ...), затем выберите @perf.",
+    "Чтобы измерять только часть тестов, отметьте их: test('название', { tag: '@perf' }, ...) и выберите @perf.",
   scopeQuestion: 'Измерять все тесты или только с тегом @perf? [{all}/@perf]',
   scopeAll: 'все',
 
@@ -1079,6 +1055,8 @@ const ru: Messages = {
   nextAzure: 'Создайте pipeline в Azure DevOps из {path}.',
   nextWarnOnly: 'После пробного периода удалите gate.warnOnly из pw-perf.config.ts.',
   nextApply: 'Примените изменения выше (запустите init ещё раз в терминале или с --yes).',
+  originsNote:
+    'Ключи эндпоинтов origin из baseURL не имеют метки, а другие хосты помечаются своим хостом; более короткие метки для них задайте в keys.origins в pw-perf.config.ts.',
   docs: 'Документация: {links}',
   finished: 'Настройка завершена.',
 

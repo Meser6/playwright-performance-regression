@@ -112,30 +112,325 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,319 @@
 +// Configuration of playwright-performance-regression, written by "npx pw-perf init".
-+// Only the values that differ from the defaults are set. All options:
++// Only the values that differ from the defaults are set. Every other option is commented out
++// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
++// are merged with the defaults; an array you set replaces the default array. All options:
 +// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
 +import { definePerfConfig } from 'playwright-performance-regression';
 +
 +export default definePerfConfig({
-+  keys: {
-+    // Labels of the backend origins in the endpoint keys.
-+    origins: {
-+      'https://api.example.com': 'backend',
-+    },
-+  },
++  // How the measurement run is executed.
 +  run: {
-+    // Repetitions per test in measurement runs (default 5).
-+    repeat: { test: 3 },
++    // Environment label.
++    // env: null,
++    // Repetitions of each measured test.
++    repeat: {
++      // Repetitions in a measurement run. Default: 5.
++      test: 3,
++      // Repetitions in a thresholds derivation run.
++      // thresholds: 10,
++    },
++    // Which Playwright projects are measured and repeated in perf mode.
++    // projects: 'auto',
++    // Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit',
++    // 'allure-playwright').
++    // keepReporters: [],
 +  },
 +
-+  // Options changed most often, with their default values:
-+  // run: { repeat: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
-+  // measure: { exclude: ['/socket.io/'] },
-+  // gate: { warnOnly: false, tolerance: 0, maxFailedTestShare: 0.1 },
-+  // thresholds: { dir: '.' },
-+  // report: { dir: 'perf-results' },
++  // What the collector measures.
++  // measure: {
++  //   // Playwright resource types that are measured.
++  //   resourceTypes: ['document', 'xhr', 'fetch'],
++  //   // Requests whose URL path ends with one of these extensions are skipped, except resource
++  //   // type 'document'.
++  //   ignoreExtensions: [
++  //     '.js', '.mjs', '.css', '.map', '.html', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp',
++  //     '.avif', '.ico', '.woff', '.woff2', '.ttf', '.otf', '.eot',
++  //   ],
++  //   // When not empty, only requests whose URL matches at least one pattern are measured.
++  //   include: [],
++  //   // Requests whose URL matches any pattern are skipped.
++  //   exclude: ['/socket.io/'],
++  //   // Skip requests to the built-in list of analytics, tag manager, monitoring and chat hosts.
++  //   excludeKnownThirdParty: true,
++  //   // HTTP statuses counted as successful samples: a class like '2xx' or an exact code like
++  //   // '404'.
++  //   successStatuses: ['2xx', '3xx'],
++  //   // How long the collector waits at test end for requests still in flight.
++  //   pendingTimeoutMs: 2000,
++  // },
++
++  // How raw URLs become endpoint keys.
++  // keys: {
++  //   // Origin to label mapping, e.g. {"https://api.example.com": "api"}.
++  //   origins: {},
++  //   // Built-in path segment patterns replaced with ':id'.
++  //   idPatterns: {
++  //     // Path segments made only of digits.
++  //     number: true,
++  //     // UUIDs in any letter case.
++  //     uuid: true,
++  //     // Hex strings of at least 16 characters.
++  //     hex: true,
++  //     // Tokens of at least 24 characters containing a digit, without separators or with mixed
++  //     // case.
++  //     token: true,
++  //     // Random-looking ids of at least 16 characters with a digit, a lowercase and an uppercase
++  //     // letter, e.g. nanoid.
++  //     mixed: true,
++  //     // E-mail addresses, replaced with ':email'.
++  //     email: true,
++  //   },
++  //   // Additional path segment patterns replaced with ':id'.
++  //   extraIdPatterns: [],
++  //   // 'names': keep sorted parameter names; 'ignore': drop the query string entirely.
++  //   query: 'names',
++  //   // Query parameters whose values are kept in the key, e.g. ['type'] gives '?type=open'.
++  //   keepQueryValues: [],
++  //   // Query parameter names always removed from the key (e.g. cache busters with fixed names).
++  //   dropQueryParams: [],
++  //   // Builds the endpoint key of a request yourself.
++  //   keyBuilder: ({ method, url, resourceType }) => undefined,
++  // },
++
++  // What is checked for every key and how thresholds are derived for it.
++  // checks: {
++  //   // Response-time rules.
++  //   time: {
++  //     // Median (p50) must not exceed the limit.
++  //     median: {
++  //       // Run this rule.
++  //       enabled: true,
++  //       // Minimum samples for the rule to run.
++  //       minSamples: 5,
++  //       // Headroom added to the source run value when deriving this limit.
++  //       margin: {
++  //         // Relative headroom, e.g. 0.4 = +40%.
++  //         relative: 0.4,
++  //         // Minimum absolute headroom in ms.
++  //         minMs: 100,
++  //         // Relative headroom when the key has fewer than thresholds.smallSampleN samples.
++  //         smallSampleRelative: 0.8,
++  //       },
++  //       // Limit in ms for keys without an entry in the thresholds file.
++  //       limit: {
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         api: 2000,
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         custom: 5000,
++  //       },
++  //     },
++  //     // The percentile chosen in level must not exceed the limit.
++  //     percentile: {
++  //       // Run this rule.
++  //       enabled: true,
++  //       // Minimum samples for the rule to run.
++  //       minSamples: 20,
++  //       // Which percentile this rule evaluates, e.g. p95 (the thresholds file records it as
++  //       // evaluatedPercentile).
++  //       level: 'p95',
++  //       // Limit in ms for keys without an entry in the thresholds file.
++  //       limit: {
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         api: 2000,
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         custom: 5000,
++  //       },
++  //       // Headroom added to the source run value when deriving this limit.
++  //       margin: {
++  //         // Relative headroom, e.g. 0.4 = +40%.
++  //         relative: 0.4,
++  //         // Minimum absolute headroom in ms.
++  //         minMs: 100,
++  //         // Relative headroom when the key has fewer than thresholds.smallSampleN samples.
++  //         smallSampleRelative: 0.8,
++  //       },
++  //     },
++  //     // p99 must not exceed the limit.
++  //     p99: {
++  //       // Run this rule.
++  //       enabled: true,
++  //       // Minimum samples for the rule to run.
++  //       minSamples: 100,
++  //       // Headroom added to the source run value when deriving this limit.
++  //       margin: {
++  //         // Relative headroom over the source p99.
++  //         relative: 0.2,
++  //         // The p99 limit is at least this many ms above the percentile limit.
++  //         minGapMs: 50,
++  //         // The p99 limit is at least this share above the percentile limit.
++  //         minGapRelative: 0.1,
++  //       },
++  //       // Limit in ms for keys without an entry in the thresholds file.
++  //       limit: {
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         api: 4000,
++  //         // Threshold limit in whole milliseconds, rounded up.
++  //         custom: 10000,
++  //       },
++  //     },
++  //   },
++  //   // Rules on the share of slow responses, relative to the Apdex threshold T.
++  //   slowShare: {
++  //     // Apdex threshold T: satisfied below T, tolerated up to 4T.
++  //     t: {
++  //       // Bounds of the derived T for backend request keys.
++  //       api: {
++  //         // Lower clamp of derived T.
++  //         min: 500,
++  //         // Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.
++  //         max: 2000,
++  //         // Derived T is at most medianFactor × p50.
++  //         medianFactor: 2,
++  //       },
++  //       // Bounds of the derived T for custom measurement keys.
++  //       custom: {
++  //         // Lower clamp of derived T.
++  //         min: 1000,
++  //         // Upper clamp of derived T; when p50 is above it, t, minApdex and maxWilson are null.
++  //         max: 10000,
++  //         // Derived T is at most medianFactor × p50.
++  //         medianFactor: 2,
++  //       },
++  //     },
++  //     // Apdex(T) must not fall below the limit (upper confidence bound compared).
++  //     apdex: {
++  //       // Run this rule.
++  //       enabled: true,
++  //       // Minimum samples for the rule to run.
++  //       minSamples: 20,
++  //       // Headroom added to the source run value when deriving this limit.
++  //       margin: {
++  //         // Subtracted from the source Apdex.
++  //         absolute: 0.05,
++  //         // Subtracted when the key has fewer than thresholds.smallSampleN samples.
++  //         smallSampleAbsolute: 0.1,
++  //       },
++  //       // minApdex for hand-written thresholds file entries that set t but omit minApdex.
++  //       limit: {
++  //         // Value between 0 and 1 inclusive.
++  //         api: 0.85,
++  //         // Value between 0 and 1 inclusive.
++  //         custom: 0.85,
++  //       },
++  //     },
++  //     // Share of samples slower than T must not exceed the limit (lower Wilson bound compared).
++  //     wilson: {
++  //       // Run this rule.
++  //       enabled: true,
++  //       // Minimum samples for the rule to run.
++  //       minSamples: 20,
++  //       // Headroom added to the source run value when deriving this limit.
++  //       margin: {
++  //         // Multiplier of the source share of slow samples.
++  //         factor: 1.5,
++  //         // Added after multiplying.
++  //         add: 0.02,
++  //         // Lower clamp of the derived limit.
++  //         min: 0.03,
++  //         // Upper clamp of the derived limit (self-consistency may exceed it).
++  //         max: 0.15,
++  //         // Minimum limit when the key has fewer than thresholds.smallSampleN samples.
++  //         smallSampleMin: 0.1,
++  //       },
++  //       // maxWilson for hand-written thresholds file entries that set t but omit maxWilson.
++  //       limit: {
++  //         // Value between 0 and 1 inclusive.
++  //         api: 0.05,
++  //         // Value between 0 and 1 inclusive.
++  //         custom: 0.05,
++  //       },
++  //     },
++  //   },
++  //   // Error rate must not exceed the limit (lower Wilson bound compared).
++  //   errors: {
++  //     // Run this rule.
++  //     enabled: true,
++  //     // Minimum samples for the rule to run.
++  //     minSamples: 5,
++  //     // Request statuses counted as errors by the 'errors' rule: a class like '5xx', an exact
++  //     // code like '429', FAILED (request failed without a response, not aborted), ABORTED
++  //     // (cancelled by the browser, e.g. on navigation), PENDING (still in flight at test end).
++  //     statuses: ['5xx', 'FAILED', 'PENDING'],
++  //     // Limit for keys without an entry in the thresholds file.
++  //     limit: {
++  //       // Value between 0 and 1 inclusive.
++  //       api: 0.05,
++  //       // Value between 0 and 1 inclusive.
++  //       custom: 0.05,
++  //     },
++  //     // Headroom added to the source run value when deriving this limit.
++  //     margin: {
++  //       // Multiplier of the source error rate.
++  //       factor: 1.5,
++  //       // Added after multiplying.
++  //       add: 0.02,
++  //       // Minimum derived limit.
++  //       min: 0.05,
++  //     },
++  //   },
++  // },
++
++  // Gate policy: when violations fail the run.
++  // gate: {
++  //   // Number of keys with violations that is still tolerated: an integer, or a percentage of
++  //   // evaluated keys like '5%'.
++  //   tolerance: 0,
++  //   // A time check exceeding limit x factor always blocks, regardless of tolerance.
++  //   hardLimitFactor: 2,
++  //   // 'block': violations on keys evaluated with default thresholds can fail the run; 'warn':
++  //   // they only warn.
++  //   defaultThresholds: 'block',
++  //   // Report violations but never fail the run.
++  //   warnOnly: false,
++  //   // Highest share of failed test executions (unexpected / executed, skipped excluded) for
++  //   // which the run result is still trustworthy.
++  //   maxFailedTestShare: 0.1,
++  // },
++
++  // Thresholds files and derivation.
++  // thresholds: {
++  //   // Directory of thresholds files, relative to the Playwright config directory.
++  //   dir: '.',
++  //   // File name prefix; files are <prefix>.<kind>[.<env>].json.
++  //   filePrefix: 'perf-thresholds',
++  //   // 'all': recompute every unlocked complete entry (with hysteresis); 'new-only': add entries
++  //   // for new keys, keep existing ones.
++  //   update: 'all',
++  //   // Keys with fewer samples get the small-sample headroom (checks.*.margin.smallSample*) when
++  //   // deriving thresholds.
++  //   smallSampleN: 20,
++  //   // When re-deriving, an existing unlocked entry keeps its limit if the new value differs by
++  //   // less than this.
++  //   hysteresis: {
++  //     // For ms limits: relative difference, e.g. 0.1 = 10%.
++  //     relative: 0.1,
++  //     // For ratio limits: absolute difference.
++  //     ratio: 0.01,
++  //   },
++  //   // Warn (THRESHOLDS_LOOSENED_MUCH) when a derived time limit grows by more than this share.
++  //   loosenWarnRelative: 0.5,
++  // },
++
++  // Run outputs.
++  // report: {
++  //   // Directory of report.json and report.html, relative to the Playwright config directory.
++  //   dir: 'perf-results',
++  //   // Write the HTML report.
++  //   html: true,
++  //   // Include raw URLs of the slowest samples in the run report.
++  //   rawUrls: false,
++  // },
++
++  // Rarely changed settings.
++  // advanced: {
++  //   // Successful durations retained per key.
++  //   maxSamplesPerKey: 5000,
++  //   // Seed of the sampling random generator.
++  //   seed: 1,
++  // },
 +});
 --- a/tests/fixtures.ts
 +++ b/tests/fixtures.ts

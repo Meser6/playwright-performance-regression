@@ -9,7 +9,7 @@ import { EXTEND_CALL, PERF_CONFIG_NAMES } from './detect.ts';
 import type { ProjectInfo } from './detect.ts';
 import { translator } from './messages.ts';
 import type { Translate, WizardLanguage } from './messages.ts';
-import { renderPerfConfig } from './perf-config.ts';
+import { activeValues, renderPerfConfig, ts } from './perf-config.ts';
 import type { InitAnswers } from './perf-config.ts';
 import {
   addIgnore,
@@ -92,15 +92,7 @@ function planPerfConfig(
     return;
   }
   // Another format: never rewritten; the answers are listed for the user to copy (04-REQ-40).
-  const values = [
-    ...Object.entries(answers.originLabels).map(([o, l]) => `keys.origins["${o}"] = "${l}"`),
-    ...(answers.repeatTest === DEFAULT_CONFIG.run.repeat.test
-      ? []
-      : [`run.repeat.test = ${answers.repeatTest}`]),
-    ...(answers.warnOnly === DEFAULT_CONFIG.gate.warnOnly
-      ? []
-      : [`gate.warnOnly = ${answers.warnOnly}`]),
-  ];
+  const values = [...activeValues(answers)].map(([path, value]) => `${path} = ${ts(value)}`);
   if (values.length > 0) {
     plan.manualSteps.push(
       manual(
