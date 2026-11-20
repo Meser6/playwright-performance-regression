@@ -10,7 +10,7 @@ coverage/
 test-results/
 playwright-report/
 blob-report/
-perf-results/
+pw-perf-results/
 
 # Logs
 *.log

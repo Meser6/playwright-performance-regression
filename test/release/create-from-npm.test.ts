@@ -119,8 +119,8 @@ describe.runIf(VERSION !== '')('create package from npm', () => {
       const thresholds = await run(process.execPath, [cli, 'thresholds', '--repeat', '5'], dir);
       expect(thresholds.status, thresholds.output).toBe(0);
       expect(thresholds.output).toContain('thresholds derived');
-      expect(readdirSync(dir).filter((f) => f.startsWith('perf-thresholds.'))).toEqual([
-        'perf-thresholds.api.json',
+      expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
+        'pw-perf-thresholds.api.json',
       ]);
     },
     TIMEOUT,

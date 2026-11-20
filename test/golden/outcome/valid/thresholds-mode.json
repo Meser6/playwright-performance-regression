@@ -11,9 +11,9 @@
       "reportHtml": null,
       "reportJson": "/p/report.json",
       "thresholds": [
-        "/p/perf-thresholds.api.json"
+        "/p/pw-perf-thresholds.api.json"
       ],
-      "thresholdsDiff": "/p/perf-results/thresholds-diff.md"
+      "thresholdsDiff": "/p/pw-perf-results/thresholds-diff.md"
     },
     "runId": "run-1",
     "schemaVersion": 1,

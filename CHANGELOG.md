@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Breaking: every file and directory the package creates now starts with `pw-perf`. The default
+  thresholds files are `pw-perf-thresholds.<kind>[.<env>].json` (`thresholds.filePrefix`, was
+  `perf-thresholds`) and the default output directory is `pw-perf-results/` (`report.dir`, was
+  `perf-results`); the files inside keep their names. The samples attachment of each test is
+  `pw-perf-samples` (was `playwright-performance-regression-samples`). Old names are not read: rename existing
+  thresholds files and the `.gitignore` entry, or set the old values in the config.
 - `init` no longer asks for the label of the `baseURL` origin: labels are automatic (no label for
   the `baseURL` origin, the host for other hosts), and the summary points to `keys.origins` for
   shorter labels. The steps are numbered 1 to 10.

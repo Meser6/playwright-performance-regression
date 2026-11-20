@@ -1,7 +1,7 @@
 # Performance measurement run with playwright-performance-regression (pw-perf).
 # Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
 # night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
-# config error) fails it. The report in perf-results/ is published also when the run fails.
+# config error) fails it. The report in pw-perf-results/ is published also when the run fails.
 trigger: none
 
 pr:
@@ -40,7 +40,7 @@ jobs:
           fi
           exit $code
         displayName: Measurement run
-      - publish: perf-results
-        artifact: perf-results
+      - publish: pw-perf-results
+        artifact: pw-perf-results
         condition: always()
         displayName: Publish the performance report

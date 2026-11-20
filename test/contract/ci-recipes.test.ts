@@ -78,7 +78,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       expect(steps.some((s) => s.run === 'npx pw-perf test')).toBe(true);
       const upload = steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
       expect(upload?.if).toBe('always()');
-      expect(obj(upload?.with, 'with').path).toBe('perf-results/');
+      expect(obj(upload?.with, 'with').path).toBe('pw-perf-results/');
     }
   });
 
@@ -99,7 +99,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     expect(obj(job.allow_failure, 'allow_failure').exit_codes).toBe(2);
     const artifacts = obj(job.artifacts, 'artifacts');
     expect(artifacts.when).toBe('always');
-    expect(artifacts.paths).toEqual(['perf-results/']);
+    expect(artifacts.paths).toEqual(['pw-perf-results/']);
   });
 
   test('Azure Pipelines: pipeline structure, code 2 succeeded with issues, publish always', () => {
@@ -126,7 +126,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       }
       const run = steps.find((s) => String(s.bash).includes('npx pw-perf test'));
       expect(run?.bash).toContain('##vso[task.complete result=SucceededWithIssues;]');
-      const publish = steps.find((s) => s.publish === 'perf-results');
+      const publish = steps.find((s) => s.publish === 'pw-perf-results');
       expect(publish?.condition).toBe('always()');
     }
   });
@@ -153,6 +153,6 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     }
     expect(text).toContain("sh(script: 'npx pw-perf test', returnStatus: true)");
     expect(text).toMatch(/if \(code == 2\) \{\s+unstable\(/u);
-    expect(text).toMatch(/always \{\s+archiveArtifacts artifacts: 'perf-results\/\*\*'/u);
+    expect(text).toMatch(/always \{\s+archiveArtifacts artifacts: 'pw-perf-results\/\*\*'/u);
   });
 });

@@ -175,7 +175,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },
@@ -190,7 +190,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -1501,7 +1501,7 @@
       {
         "generated": null,
         "kind": "api",
-        "path": "perf-thresholds.api.qa.json",
+        "path": "pw-perf-thresholds.api.qa.json",
         "status": "loaded",
         "unseenKeys": [
           "DELETE /api/old",
@@ -1512,7 +1512,7 @@
       {
         "generated": null,
         "kind": "custom",
-        "path": "perf-thresholds.custom.qa.json",
+        "path": "pw-perf-thresholds.custom.qa.json",
         "status": "loaded",
         "unseenKeys": []
       }
@@ -1531,7 +1531,7 @@
       {
         "code": "THRESHOLDS_UNSEEN_ENTRIES",
         "hint": "Run the full suite, or remove stale entries with `npx pw-perf thresholds --prune`.",
-        "message": "3 entries in perf-thresholds.api.qa.json were not seen in this run."
+        "message": "3 entries in pw-perf-thresholds.api.qa.json were not seen in this run."
       },
       {
         "code": "THRESHOLDS_ENTRIES_NOT_EVALUATED",

@@ -1,6 +1,6 @@
-Thresholds: perf-thresholds.api.json (unchanged)
-Thresholds: perf-thresholds.custom.json (not written)
+Thresholds: pw-perf-thresholds.api.json (unchanged)
+Thresholds: pw-perf-thresholds.custom.json (not written)
   no entries
 
 The thresholds files are up to date.
-Diff: perf-results/thresholds-diff.md
+Diff: pw-perf-results/thresholds-diff.md

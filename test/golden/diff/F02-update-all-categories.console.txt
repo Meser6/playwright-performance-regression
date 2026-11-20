@@ -1,4 +1,4 @@
-Thresholds: perf-thresholds.api.json (updated)
+Thresholds: pw-perf-thresholds.api.json (updated)
   1 added · 2 loosened · 2 tightened · 1 mixed · 2 unchanged (2 within hysteresis) · 3 locked (2 incomplete entries) · 2 unseen · 2 skipped
 
   ↑  GET /api/loosened               p99 400 → 492
@@ -11,8 +11,8 @@ Thresholds: perf-thresholds.api.json (updated)
   ! GET /api/muted-expired muted (expired 2026-11-15)
 
   2 entries were not seen in this run and were kept. Use --prune to remove them.
-Thresholds: perf-thresholds.custom.json (not written)
+Thresholds: pw-perf-thresholds.custom.json (not written)
   no entries
 
 Review the changes and commit the thresholds files.
-Diff: perf-results/thresholds-diff.md
+Diff: pw-perf-results/thresholds-diff.md

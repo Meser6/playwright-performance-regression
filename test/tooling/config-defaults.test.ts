@@ -21,7 +21,7 @@ const DEFAULT_LITERALS = [
   /\b4000\b/u,
   /\b0\.85\b/u,
   /socket\.io/u,
-  /perf-results/u,
+  /pw-perf-results/u,
 ];
 
 test('03-AC-02 default values appear in src/ only in generated files', () => {

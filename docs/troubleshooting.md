@@ -9,9 +9,9 @@ it and how to fix it. Search the page for the code you see.
 - **Console summary** at the end of a perf-mode run: tool errors under `Errors:` (marked `✖`),
   then up to 10 warnings under `Warnings:` (marked `!`), each as `CODE: message` with an indented
   `Hint:` line.
-- **`perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
+- **`pw-perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
   run with its code, message and hint.
-- **`perf-results/report.html`**: the same warnings and tool errors near the top of the page.
+- **`pw-perf-results/report.html`**: the same warnings and tool errors near the top of the page.
 - **CLI output (stderr)**: errors of the `pw-perf` command itself (`CLI_*`, `INIT_*`, config file
   problems of the commands that run no tests).
 - **Playwright output**: an invalid package config stops Playwright while it loads
@@ -251,7 +251,7 @@ monorepo). Make sure the project resolves a single version and run again.
 ### CLI_REPORT_NOT_FOUND
 
 **Error.** The run report for `pw-perf report` or `pw-perf thresholds --from` does not exist. By
-default the commands look for `report.json` in `report.dir` (`perf-results/`). Pass the file with
+default the commands look for `report.json` in `report.dir` (`pw-perf-results/`). Pass the file with
 `--input` (report) or `--from` (thresholds), or run `npx pw-perf test` first.
 
 ### CLI_REPORT_TESTS_FAILED
@@ -674,8 +674,8 @@ directory describe each format. Hand edits of thresholds files are the usual cau
 ### THRESHOLDS_KIND_MISMATCH
 
 **Error.** A thresholds file has a `kind` that does not match its file name: endpoint limits live
-in `perf-thresholds.api[.<env>].json`, custom measurements in
-`perf-thresholds.custom[.<env>].json`. Move the entries to the right file or fix `kind`.
+in `pw-perf-thresholds.api[.<env>].json`, custom measurements in
+`pw-perf-thresholds.custom[.<env>].json`. Move the entries to the right file or fix `kind`.
 
 ## HTML report
 

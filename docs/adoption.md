@@ -90,7 +90,7 @@ is printed as an `INIT_MANUAL_STEP` instruction from the table above.
 | test object           | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`     | wraps it in `withPerfFixtures(...)`                                                                                                       |
 | test files            | no `.extend(` and no `mergeTests` anywhere; files import an unaliased `test` from `@playwright/test`                                                   | switches that import to `playwright-performance-regression/test`; other names stay in an `@playwright/test` import, `test as setup` stays |
 | `pw-perf.config.ts`   | missing                                                                                                                                                | created with the answers that differ from the defaults; every other option is a comment with its default and a description                |
-| `.gitignore`          | any                                                                                                                                                    | adds `perf-results/`                                                                                                                      |
+| `.gitignore`          | any                                                                                                                                                    | adds `pw-perf-results/`                                                                                                                   |
 | `package.json`        | scripts missing                                                                                                                                        | adds `perf:test` and `perf:thresholds` (one pair per environment)                                                                         |
 | CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                         | adds a separate job file from [the CI recipes](ci.md)                                                                                     |
 
@@ -189,7 +189,7 @@ Run the CLI from the repository root and point it to the app's config:
 
 ```sh
 npx pw-perf test -c apps/web/playwright.config.ts
-npx pw-perf report --input apps/web/perf-results/report.json
+npx pw-perf report --input apps/web/pw-perf-results/report.json
 ```
 
 Playwright is resolved from the directory of that config, and relative paths in the package

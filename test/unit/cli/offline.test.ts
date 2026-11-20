@@ -48,7 +48,7 @@ async function reporterRun(mode: 'test' | 'thresholds' = 'thresholds'): Promise<
   s.begin(fakeConfig(project), { allTests: () => [] });
   runTests(s, project, 30, PATHS, steady);
   await s.end({ status: 'passed' });
-  return join(project, 'perf-results', 'report.json');
+  return join(project, 'pw-perf-results', 'report.json');
 }
 
 function cli(extra: { importModule?: (url: string) => Promise<unknown> } = {}) {
@@ -62,7 +62,7 @@ const readReport = (path: string): RunReport => JSON.parse(readFileSync(path, 'u
 describe('thresholds --from', () => {
   test('04-AC-07 derives the same thresholds files as the reporter in a thresholds run', async () => {
     const report = await reporterRun();
-    const api = join(project, 'perf-thresholds.api.json');
+    const api = join(project, 'pw-perf-thresholds.api.json');
     const fromReporter = readFileSync(api);
     renameSync(api, join(root, 'reporter.api.json'));
 
@@ -73,7 +73,7 @@ describe('thresholds --from', () => {
     expect(err).toContain('config: the config snapshot in the report');
     expect(err).toContain(`base directory: ${project}`);
     expect(readFileSync(api).equals(fromReporter)).toBe(true);
-    expect(readFileSync(join(project, 'perf-results', 'thresholds-diff.md'), 'utf8')).toContain(
+    expect(readFileSync(join(project, 'pw-perf-results', 'thresholds-diff.md'), 'utf8')).toContain(
       '# Thresholds diff',
     );
     expect(fake.stdout.join('')).toContain('(created)');
@@ -97,7 +97,7 @@ describe('thresholds --from', () => {
     expect(err).toContain('warning CLI_CONFIG_DIR_MISSING');
     expect(err).toContain(`base directory: ${cwd}`);
     // --env wins over the label of the report; the source was a test-mode run.
-    expect(existsSync(join(cwd, 'perf-thresholds.api.ci.json'))).toBe(true);
+    expect(existsSync(join(cwd, 'pw-perf-thresholds.api.ci.json'))).toBe(true);
     expect(err).toContain('warning THRESHOLDS_ENV_MISMATCH');
     expect(err).toContain('warning THRESHOLDS_SOURCE_TEST_MODE');
   });
@@ -146,7 +146,7 @@ describe('thresholds --from', () => {
     const err = fake.stderr.join('');
     expect(err).toContain(`config: ${join(cwd, 'pw-perf.config.json')}`);
     expect(err).toContain(`base directory: ${cwd}`);
-    expect(existsSync(join(cwd, 'thr', 'perf-thresholds.api.json'))).toBe(true);
+    expect(existsSync(join(cwd, 'thr', 'pw-perf-thresholds.api.json'))).toBe(true);
     // 01-REQ-31: thresholds.dir is a location, the margin changes the result.
     expect(err).toContain(
       'warning CONFIG_SNAPSHOT_DIFFERS: The package config file differs from the config the report was recorded with: checks.time.median.margin.relative.',
@@ -162,7 +162,7 @@ describe('thresholds --from', () => {
     const fake = cli();
     expect(await main(['thresholds', '--from', report], fake.host)).toBe(0);
     expect(fake.stderr.join('')).toContain(`config: ${join(project, 'pw-perf.config.json')}`);
-    expect(existsSync(join(project, 'thr', 'perf-thresholds.api.json'))).toBe(true);
+    expect(existsSync(join(project, 'thr', 'pw-perf-thresholds.api.json'))).toBe(true);
   });
 
   test('CLI_WRITE_FAILED when a thresholds file cannot be written', async () => {
@@ -173,7 +173,7 @@ describe('thresholds --from', () => {
     const fake = cli();
     expect(await main(['thresholds', '--from', report], fake.host)).toBe(3);
     expect(fake.stderr.join('')).toContain(
-      `error CLI_WRITE_FAILED: The thresholds file ${join(cwd, 'thr', 'perf-thresholds.api.json')} could not be written`,
+      `error CLI_WRITE_FAILED: The thresholds file ${join(cwd, 'thr', 'pw-perf-thresholds.api.json')} could not be written`,
     );
   });
 });
@@ -360,9 +360,9 @@ describe('report', () => {
     expect(await main(['report'], fake.host)).toBe(3);
     const err = fake.stderr.join('');
     expect(err).toContain(
-      `error CLI_REPORT_NOT_FOUND: The run report ${join(cwd, 'perf-results', 'report.json')} does not exist`,
+      `error CLI_REPORT_NOT_FOUND: The run report ${join(cwd, 'pw-perf-results', 'report.json')} does not exist`,
     );
-    expect(err).toContain('--input apps/web/perf-results/report.json');
+    expect(err).toContain('--input apps/web/pw-perf-results/report.json');
   });
 
   test('04-REQ-28 the HTML file goes next to the input, also with report.html false', async () => {
@@ -388,7 +388,7 @@ describe('report', () => {
 
   test('11-AC-10 report renders the same HTML as onEnd of the run', async () => {
     const report = await reporterRun('test');
-    const fromRun = readFileSync(join(project, 'perf-results', 'report.html'), 'utf8');
+    const fromRun = readFileSync(join(project, 'pw-perf-results', 'report.html'), 'utf8');
     cpSync(report, join(cwd, 'in', 'report.json'));
     const fake = cli();
     expect(await main(['report', '--input', 'in/report.json'], fake.host)).toBe(0);

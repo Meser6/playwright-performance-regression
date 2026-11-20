@@ -521,7 +521,7 @@ describe('limits and results (09, chapter 5)', () => {
     expect(e.toolErrors).toEqual([
       {
         code: 'SCHEMA_INVALID_JSON',
-        message: 'perf-thresholds.api.json: not valid JSON',
+        message: 'pw-perf-thresholds.api.json: not valid JSON',
         hint: expect.any(String),
       },
     ]);
@@ -603,7 +603,7 @@ describe('counters (09, chapter 7)', () => {
     expect(e.counts.api.unseenThresholdEntries).toBe(3);
     expect(codes(e).filter((c) => c === 'THRESHOLDS_UNSEEN_ENTRIES')).toHaveLength(1);
     expect(e.warnings[0]?.message).toBe(
-      '3 entries in perf-thresholds.api.json were not seen in this run.',
+      '3 entries in pw-perf-thresholds.api.json were not seen in this run.',
     );
   });
 
@@ -636,9 +636,9 @@ describe('thresholds files (09, chapter 4)', () => {
     expect(e.perKey.api[KEY]?.thresholdSource).toBe('default');
     expect(e.perKey.api[KEY]?.result).toBe('pass');
     expect(codes(e)).toEqual(['THRESHOLDS_FILE_MISSING', 'THRESHOLDS_FILE_MISSING']);
-    expect(e.warnings[0]?.message).toContain('perf-thresholds.api.qa.json');
+    expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.api.qa.json');
     expect(e.warnings[0]?.hint).toContain('npx pw-perf thresholds');
-    expect(e.warnings[0]?.hint).toContain('perf-thresholds.api.json exists');
+    expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.api.json exists');
     expect(e.warnings[1]?.hint).not.toContain('exists');
     expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([
       ['missing', null],

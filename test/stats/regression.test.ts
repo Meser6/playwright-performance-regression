@@ -49,7 +49,7 @@ function cli(args: string[], thresholds: string): Promise<ProcessRun & { out: st
 const files = (dir: string): Record<string, string> =>
   Object.fromEntries(
     readdirSync(join(workspace.dir, dir))
-      .filter((name) => name.startsWith('perf-thresholds.'))
+      .filter((name) => name.startsWith('pw-perf-thresholds.'))
       .sort()
       .map((name) => [name, readFileSync(join(workspace.dir, dir, name), 'utf8')]),
   );
@@ -97,7 +97,7 @@ describe('statistical tests', () => {
     await setDelays(4);
     const source = await cli(['thresholds', '--repeat', REPEAT], 'stat-03-source');
     expect(source.status, source.output).toBe(0);
-    const report = join(source.out, 'perf-results', 'report.json');
+    const report = join(source.out, 'pw-perf-results', 'report.json');
     const first = await cli(['thresholds', '--from', report], 'stat-03-a');
     const second = await cli(['thresholds', '--from', report], 'stat-03-b');
     expect(first.status, first.output).toBe(0);

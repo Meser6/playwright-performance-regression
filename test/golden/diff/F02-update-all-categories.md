@@ -1,6 +1,6 @@
 # Thresholds diff
 
-## perf-thresholds.api.json (updated)
+## pw-perf-thresholds.api.json (updated)
 
 1 added · 2 loosened · 2 tightened · 1 mixed · 2 unchanged (2 within hysteresis) · 3 locked (2 incomplete entries) · 2 unseen · 2 skipped
 
@@ -17,6 +17,6 @@
 
 Entries marked with ! loosened a time limit by a large step; check that they do not accept a regression.
 
-## perf-thresholds.custom.json (not written)
+## pw-perf-thresholds.custom.json (not written)
 
 no entries

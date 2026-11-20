@@ -8,13 +8,13 @@
       "api": {
         "status": "loaded",
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "file": {"schemaVersion":1,"kind":"api","generated":null,"entries":{}}
       },
       "custom": {
         "status": "loaded",
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
       }
     },

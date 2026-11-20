@@ -170,7 +170,7 @@
         ]
       },
       "report": {
-        "dir": "perf-results",
+        "dir": "pw-perf-results",
         "html": true,
         "rawUrls": false
       },
@@ -185,7 +185,7 @@
       },
       "thresholds": {
         "dir": ".",
-        "filePrefix": "perf-thresholds",
+        "filePrefix": "pw-perf-thresholds",
         "hysteresis": {
           "ratio": 0.01,
           "relative": 0.1
@@ -2476,14 +2476,14 @@
       {
         "generated": null,
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "status": "loaded",
         "unseenKeys": []
       },
       {
         "generated": null,
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "status": "missing",
         "unseenKeys": []
       }
@@ -2497,7 +2497,7 @@
       {
         "code": "THRESHOLDS_FILE_MISSING",
         "hint": "Derive thresholds with `npx pw-perf thresholds`.",
-        "message": "Thresholds file perf-thresholds.custom.json not found; custom measurement keys are evaluated with default thresholds."
+        "message": "Thresholds file pw-perf-thresholds.custom.json not found; custom measurement keys are evaluated with default thresholds."
       },
       {
         "code": "COLLECTOR_REQUESTS_PENDING",

@@ -3,7 +3,7 @@ playwright-performance-regression · mode: test · env: qa · 128 tests (127 pas
 Warnings:
   ! TESTS_FAILED: 1 of 128 test executions failed; the performance result still decides.
     Hint: Functional failures are reported by your regular test run.
-  ! THRESHOLDS_UNSEEN_ENTRIES: 3 entries in perf-thresholds.api.qa.json were not seen in this run.
+  ! THRESHOLDS_UNSEEN_ENTRIES: 3 entries in pw-perf-thresholds.api.qa.json were not seen in this run.
     Hint: Run the full suite, or remove stale entries with `npx pw-perf thresholds --prune`.
   ! THRESHOLDS_ENTRIES_NOT_EVALUATED: 1 key with an entry in the thresholds file had too few samples and was not evaluated.
     Hint: Run more repetitions (run.repeat or `npx pw-perf test --repeat`), or accept that the endpoint is called rarely.
@@ -34,4 +34,4 @@ Muted:     POST /api/reports/export until 2026-12-31 — "Depends on report serv
   slowest: GET /api/tickets/:id?search — 2431 ms in "tickets › search by id" (tests/tickets.spec.ts:42)
 
 FAILED: 6 blocking violations (tolerance: 0)
-Report: perf-results/report.html · perf-results/report.json
+Report: pw-perf-results/report.html · pw-perf-results/report.json

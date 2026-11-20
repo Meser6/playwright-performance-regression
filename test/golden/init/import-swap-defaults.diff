@@ -4,7 +4,7 @@
 +# Performance measurement run with playwright-performance-regression (pw-perf).
 +# Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
 +# night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
-+# config error) fails it. The report in perf-results/ is published also when the run fails.
++# config error) fails it. The report in pw-perf-results/ is published also when the run fails.
 +trigger: none
 +
 +pr:
@@ -43,8 +43,8 @@
 +          fi
 +          exit $code
 +        displayName: Measurement run
-+      - publish: perf-results
-+        artifact: perf-results
++      - publish: pw-perf-results
++        artifact: pw-perf-results
 +        condition: always()
 +        displayName: Publish the performance report
 --- a/package.json
@@ -364,7 +364,7 @@
 +  //   // Directory of thresholds files, relative to the Playwright config directory.
 +  //   dir: '.',
 +  //   // File name prefix; files are <prefix>.<kind>[.<env>].json.
-+  //   filePrefix: 'perf-thresholds',
++  //   filePrefix: 'pw-perf-thresholds',
 +  //   // 'all': recompute every unlocked complete entry (with hysteresis); 'new-only': add entries
 +  //   // for new keys, keep existing ones.
 +  //   update: 'all',
@@ -386,7 +386,7 @@
 +  // Run outputs.
 +  // report: {
 +  //   // Directory of report.json and report.html, relative to the Playwright config directory.
-+  //   dir: 'perf-results',
++  //   dir: 'pw-perf-results',
 +  //   // Write the HTML report.
 +  //   html: true,
 +  //   // Include raw URLs of the slowest samples in the run report.

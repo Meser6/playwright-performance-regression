@@ -90,8 +90,8 @@ describe('pw-perf init', () => {
         const run = await runCli(['thresholds', '--repeat', '5'], dir);
         expect(run.status, run.stdout + run.stderr).toBe(0);
         expect(run.stderr).toContain('thresholds derived');
-        expect(readdirSync(dir).filter((f) => f.startsWith('perf-thresholds.'))).toEqual([
-          'perf-thresholds.api.json',
+        expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
+          'pw-perf-thresholds.api.json',
         ]);
       },
       RUN_TIMEOUT,

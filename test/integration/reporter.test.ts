@@ -100,7 +100,7 @@ function runPlaywright(env: Record<string, string>, args: string[] = []): Promis
           output,
           out,
           outcomeFile,
-          report: readReport(join(out, 'perf-results', 'report.json')),
+          report: readReport(join(out, 'pw-perf-results', 'report.json')),
           outcome: readOutcome(outcomeFile),
         });
       } catch (error) {
@@ -138,7 +138,7 @@ describe('reporter with real Playwright', () => {
       expect(codes(report.warnings)).toEqual(expect.arrayContaining(['THRESHOLDS_FILE_MISSING']));
       expect(report.toolErrors).toEqual([]);
       expect(run.outcome).toMatchObject({ runId: 'run-1', exitCode: 0 });
-      expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'perf-results', 'report.json'));
+      expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'pw-perf-results', 'report.json'));
       expect(run.output).toContain(
         'playwright-performance-regression: perf mode "test": 20 test executions (4 tests × 5 repeats), 1 worker.',
       );
@@ -154,12 +154,12 @@ describe('reporter with real Playwright', () => {
       const derived = await runPlaywright({ PW_PERF_MODE: 'thresholds', THRESHOLDS_DIR: dir });
       expect(derived.status, derived.output).toBe(0);
       expect(readdirSync(dir).sort()).toEqual([
-        'perf-thresholds.api.json',
-        'perf-thresholds.custom.json',
+        'pw-perf-thresholds.api.json',
+        'pw-perf-thresholds.custom.json',
       ]);
       expect(derived.outcome?.paths.thresholds).toEqual([
-        join(dir, 'perf-thresholds.api.json'),
-        join(dir, 'perf-thresholds.custom.json'),
+        join(dir, 'pw-perf-thresholds.api.json'),
+        join(dir, 'pw-perf-thresholds.custom.json'),
       ]);
       const diff = derived.outcome?.paths.thresholdsDiff ?? '';
       expect(readFileSync(diff, 'utf8')).toContain('# Thresholds diff');

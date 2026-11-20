@@ -66,7 +66,7 @@ export async function buildDemoReport({ out, repeat = 10, log = () => {} }) {
     const project = join(scratch, 'with-setup');
     cpSync(join(root, 'examples/with-setup'), project, {
       recursive: true,
-      filter: (path) => !/[\\/](node_modules|perf-results|test-results|\.auth)$/u.test(path),
+      filter: (path) => !/[\\/](node_modules|pw-perf-results|test-results|\.auth)$/u.test(path),
     });
     const config = join(project, 'pw-perf.config.ts');
     const source = readFileSync(config, 'utf8');
@@ -124,7 +124,7 @@ export async function buildDemoReport({ out, repeat = 10, log = () => {} }) {
     if (test.status !== 2) {
       throw new Error(`The test run should fail on ${SLOW_ENDPOINT} (exit 2):\n${test.output}`);
     }
-    const reportFile = join(project, 'perf-results/report.json');
+    const reportFile = join(project, 'pw-perf-results/report.json');
     const report = JSON.parse(readFileSync(reportFile, 'utf8'));
     report.configDir = 'examples/with-setup';
     writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);

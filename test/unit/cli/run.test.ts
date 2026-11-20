@@ -39,7 +39,7 @@ function outcome(extra: Partial<Outcome> = {}): Outcome {
     evaluation: { status: 'failed', gateEnabled: true },
     toolErrors: [],
     paths: {
-      reportJson: '/p/perf-results/report.json',
+      reportJson: '/p/pw-perf-results/report.json',
       reportHtml: null,
       thresholds: [],
       thresholdsDiff: null,
@@ -220,7 +220,7 @@ describe('runTests with a fake Playwright', () => {
   test('04-REQ-12 the exit code comes from the outcome file of this run; another run id is CLI_OUTCOME_INVALID', async () => {
     const two = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(outcome(), 1) });
     expect(await runTests(command(), two.host)).toBe(2);
-    expect(two.stderr.join('')).toContain('report: /p/perf-results/report.json');
+    expect(two.stderr.join('')).toContain('report: /p/pw-perf-results/report.json');
 
     const other = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(outcome({ runId: 'other' }), 1) });
     expect(await runTests(command(), other.host)).toBe(3);

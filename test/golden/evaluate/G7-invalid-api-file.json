@@ -8,12 +8,12 @@
       "api": {
         "status": "invalid",
         "kind": "api",
-        "path": "perf-thresholds.api.json",
+        "path": "pw-perf-thresholds.api.json",
         "issues": [
           {
             "code": "SCHEMA_INVALID_JSON",
-            "source": "perf-thresholds.api.json",
-            "message": "perf-thresholds.api.json: the file is not valid JSON (Unexpected token } in JSON at position 42).",
+            "source": "pw-perf-thresholds.api.json",
+            "message": "pw-perf-thresholds.api.json: the file is not valid JSON (Unexpected token } in JSON at position 42).",
             "problems": []
           }
         ]
@@ -21,7 +21,7 @@
       "custom": {
         "status": "loaded",
         "kind": "custom",
-        "path": "perf-thresholds.custom.json",
+        "path": "pw-perf-thresholds.custom.json",
         "file": {"schemaVersion":1,"kind":"custom","generated":null,"entries":{}}
       }
     },

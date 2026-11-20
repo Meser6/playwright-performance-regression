@@ -1,6 +1,6 @@
 # Performance measurement run with playwright-performance-regression (pw-perf).
 # Save as .github/workflows/perf.yml. Runs on pull requests and every night; the report in
-# perf-results/ is uploaded also when the run fails. Exit codes: 0 ok, 2 performance regression,
+# pw-perf-results/ is uploaded also when the run fails. Exit codes: 0 ok, 2 performance regression,
 # 3 tool or config error.
 name: Performance
 
@@ -28,6 +28,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: perf-results
-          path: perf-results/
+          name: pw-perf-results
+          path: pw-perf-results/
           retention-days: 30

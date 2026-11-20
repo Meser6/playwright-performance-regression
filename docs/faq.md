@@ -20,7 +20,7 @@ single slow sample does not fail them.
 ## Exit code 2: what now?
 
 At least one endpoint key or custom measurement broke a limit in a way that blocks. Open
-`perf-results/report.html` (or read the summary in the log): the violations table lists each key,
+`pw-perf-results/report.html` (or read the summary in the log): the violations table lists each key,
 the check, the measured value, the limit and how far over it is; the details show the slowest
 samples and the tests that made the requests. Then:
 

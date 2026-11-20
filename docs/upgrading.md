@@ -34,6 +34,6 @@ before committing anything.
    and drop only the wrapper call).
 3. In `playwright.config` remove `withPerf(...)` around the config and the `pw-perf.config`
    import.
-4. Delete `pw-perf.config.*`, the `perf-thresholds.*.json` files, the `perf:test` and
-   `perf:thresholds` scripts, the CI job and the `perf-results/` line in `.gitignore`.
+4. Delete `pw-perf.config.*`, the `pw-perf-thresholds.*.json` files, the `perf:test` and
+   `perf:thresholds` scripts, the CI job and the `pw-perf-results/` line in `.gitignore`.
 5. `npm uninstall playwright-performance-regression`.

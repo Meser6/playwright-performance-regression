@@ -1,14 +1,14 @@
 --- /dev/null
 +++ b/.gitignore
 @@ -0,0 +1,1 @@
-+perf-results/
++pw-perf-results/
 --- /dev/null
 +++ b/.gitlab/perf.gitlab-ci.yml
 @@ -0,0 +1,21 @@
 +# Performance measurement run with playwright-performance-regression (pw-perf).
 +# Include this file from .gitlab-ci.yml. Runs in merge request pipelines and scheduled
 +# pipelines; exit code 2 (performance regression) is a soft failure, 3 (tool or config error)
-+# fails the job. The report in perf-results/ is kept also when the job fails.
++# fails the job. The report in pw-perf-results/ is kept also when the job fails.
 +perf:
 +  image: node:22
 +  timeout: 1h
@@ -24,7 +24,7 @@
 +  artifacts:
 +    when: always
 +    paths:
-+      - perf-results/
++      - pw-perf-results/
 +    expire_in: 30 days
 --- a/package.json
 +++ b/package.json
@@ -339,7 +339,7 @@
 +  //   // Directory of thresholds files, relative to the Playwright config directory.
 +  //   dir: '.',
 +  //   // File name prefix; files are <prefix>.<kind>[.<env>].json.
-+  //   filePrefix: 'perf-thresholds',
++  //   filePrefix: 'pw-perf-thresholds',
 +  //   // 'all': recompute every unlocked complete entry (with hysteresis); 'new-only': add entries
 +  //   // for new keys, keep existing ones.
 +  //   update: 'all',
@@ -361,7 +361,7 @@
 +  // Run outputs.
 +  // report: {
 +  //   // Directory of report.json and report.html, relative to the Playwright config directory.
-+  //   dir: 'perf-results',
++  //   dir: 'pw-perf-results',
 +  //   // Write the HTML report.
 +  //   html: true,
 +  //   // Include raw URLs of the slowest samples in the run report.

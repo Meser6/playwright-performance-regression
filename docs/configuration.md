@@ -938,7 +938,7 @@ Directory of thresholds files, relative to the Playwright config directory.
 File name prefix; files are `<prefix>.<kind>[.<env>].json`.
 
 - Type: string (matching `^[A-Za-z0-9._-]+$`)
-- Default: `"perf-thresholds"`
+- Default: `"pw-perf-thresholds"`
 
 ### `thresholds.update`
 
@@ -992,7 +992,7 @@ Options: [`dir`](#reportdir), [`html`](#reporthtml), [`rawUrls`](#reportrawurls)
 Directory of report.json and report.html, relative to the Playwright config directory.
 
 - Type: string (at least 1 character)
-- Default: `"perf-results"`
+- Default: `"pw-perf-results"`
 
 ### `report.html`
 

@@ -131,7 +131,7 @@ const outcome = {
   evaluation: { status: 'passed', gateEnabled: true },
   toolErrors: [],
   paths: {
-    reportJson: '/home/user/project/perf-results/report.json',
+    reportJson: '/home/user/project/pw-perf-results/report.json',
     reportHtml: null,
     thresholds: [],
     thresholdsDiff: null,
