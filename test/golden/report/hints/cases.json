@@ -62,6 +62,10 @@
           "usage": 2.5
         }
       }
+    ],
+    "texts": [
+      "Median is 2.5× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
+      "The median is 150% over its limit: most responses are slower, not only the tail."
     ]
   },
   {
@@ -128,6 +132,10 @@
         "code": "HINT_MUTED",
         "params": {}
       }
+    ],
+    "texts": [
+      "p95 is 110% over its limit and the median is at 90% of its limit: the whole distribution moved up.",
+      "Muted until 2026-12-31: this violation does not fail the run (Known)."
     ]
   },
   {
@@ -195,6 +203,9 @@
           "usage": 1.1
         }
       }
+    ],
+    "texts": [
+      "The median is 10% over its limit: most responses are slower, not only the tail."
     ]
   },
   {
@@ -263,6 +274,9 @@
           "medianUsage": 0.8
         }
       }
+    ],
+    "texts": [
+      "p95 is 50% over its limit while the median is at 80% of its limit: a growing tail of slow responses, not a general slowdown."
     ]
   },
   {
@@ -331,6 +345,9 @@
           "medianUsage": 0.8001
         }
       }
+    ],
+    "texts": [
+      "p95 is 50% over its limit and the median is at 80% of its limit: the whole distribution moved up."
     ]
   },
   {
@@ -399,6 +416,9 @@
           "max": 3100
         }
       }
+    ],
+    "texts": [
+      "Only p99 is over its limit (by 25%): a few very slow responses, up to 3100 ms; see the slowest samples."
     ]
   },
   {
@@ -467,6 +487,9 @@
           "medianUsage": 0.5
         }
       }
+    ],
+    "texts": [
+      "p95 is 10% over its limit while the median is at 50% of its limit: a growing tail of slow responses, not a general slowdown."
     ]
   },
   {
@@ -552,6 +575,9 @@
           "errors": 10
         }
       }
+    ],
+    "texts": [
+      "Error rate 10.0% is above the limit of 5.0%, mostly 500 (5 of 10 errors)."
     ]
   },
   {
@@ -639,6 +665,9 @@
           "count3": 3
         }
       }
+    ],
+    "texts": [
+      "Error rate 10.0% is above the limit of 5.0%; errors are spread over 500 (4), 503 (3) and FAILED (3)."
     ]
   },
   {
@@ -700,6 +729,9 @@
           "errors": 6
         }
       }
+    ],
+    "texts": [
+      "Error rate 12.0% is above the limit of 5.0%, mostly ABORTED (4 of 6 errors)."
     ]
   },
   {
@@ -779,6 +811,9 @@
           "t": 500
         }
       }
+    ],
+    "texts": [
+      "Apdex 0.780 is below the limit of 0.850 although the percentiles are within limits: many responses are slower than T = 500 ms."
     ]
   },
   {
@@ -856,6 +891,9 @@
           "usage": 1.1
         }
       }
+    ],
+    "texts": [
+      "The median is 10% over its limit: most responses are slower, not only the tail."
     ]
   },
   {
@@ -935,6 +973,9 @@
           "t": 500
         }
       }
+    ],
+    "texts": [
+      "12.0% of responses are slower than T = 500 ms (limit 5.0%) although the percentiles are within limits: a slow minority."
     ]
   },
   {
@@ -988,6 +1029,10 @@
           "n": 8
         }
       }
+    ],
+    "texts": [
+      "The median is 20% over its limit: most responses are slower, not only the tail.",
+      "Only the median was evaluated (n = 8): add repetitions for a reliable verdict."
     ]
   },
   {
@@ -1063,6 +1108,10 @@
         "code": "HINT_MUTED",
         "params": {}
       }
+    ],
+    "texts": [
+      "The median is 10% over its limit: most responses are slower, not only the tail.",
+      "Muted until 2026-12-31: this violation does not fail the run (Known slow)."
     ]
   },
   {
@@ -1134,6 +1183,9 @@
           "usage": 1.1
         }
       }
+    ],
+    "texts": [
+      "The median is 10% over its limit: most responses are slower, not only the tail."
     ]
   },
   {
@@ -1201,6 +1253,9 @@
           "share": 0.5
         }
       }
+    ],
+    "texts": [
+      "50.0% of the samples come from failed tests: the results may be distorted."
     ]
   },
   {
@@ -1261,7 +1316,8 @@
         ]
       }
     },
-    "expected": []
+    "expected": [],
+    "texts": []
   },
   {
     "name": "HINT_FAILED_TESTS also for a key without checks",
@@ -1295,6 +1351,9 @@
           "share": 1
         }
       }
+    ],
+    "texts": [
+      "100.0% of the samples come from failed tests: the results may be distorted."
     ]
   },
   {
@@ -1363,6 +1422,9 @@
           "usage": 0.9
         }
       }
+    ],
+    "texts": [
+      "All checks pass, but p95 is at 90% of its limit: the next run may fail."
     ]
   },
   {
@@ -1423,7 +1485,8 @@
         ]
       }
     },
-    "expected": []
+    "expected": [],
+    "texts": []
   },
   {
     "name": "HINT_NEAR_LIMIT: on equal usage the first rule in rule order",
@@ -1491,6 +1554,9 @@
           "usage": 0.9
         }
       }
+    ],
+    "texts": [
+      "All checks pass, but median is at 90% of its limit: the next run may fail."
     ]
   },
   {
@@ -1569,6 +1635,9 @@
           "usage": 0.9
         }
       }
+    ],
+    "texts": [
+      "All checks pass, but Apdex is at 90% of its limit: the next run may fail."
     ]
   },
   {
@@ -1645,6 +1714,11 @@
           "errors": 6
         }
       }
+    ],
+    "texts": [
+      "Median is 2.5× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
+      "The median is 150% over its limit: most responses are slower, not only the tail.",
+      "Error rate 60.0% is above the limit of 5.0%, mostly 500 (6 of 6 errors)."
     ]
   },
   {
@@ -1705,6 +1779,7 @@
         ]
       }
     },
-    "expected": []
+    "expected": [],
+    "texts": []
   }
 ]

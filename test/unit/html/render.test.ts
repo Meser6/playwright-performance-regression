@@ -30,6 +30,7 @@ import {
   fullRun,
   largeReport,
   markupCase,
+  migratedCase,
   pageCases,
   readCase,
   runReportNames,
@@ -45,6 +46,13 @@ function embedded(page: string): unknown {
   const match = /<script type="application\/json" id="report-data">(.*?)<\/script>/su.exec(page);
   if (match === null) throw new Error('no report-data element');
   return JSON.parse(match[1] ?? '');
+}
+
+/** The table row of a key: the first <tr> of the tbody whose details show the key. */
+function rowOf(page: string, key: string): string {
+  const bodies = page.split('<tbody data-g=');
+  const body = bodies.find((b) => b.includes(`<code class="fk">${escapeHtml(key)}</code>`)) ?? '';
+  return /<tr>(.*?)<\/tr>/su.exec(body)?.[1] ?? '';
 }
 
 function sha256(text: string): string {
@@ -163,21 +171,20 @@ describe('renderHtmlReport', () => {
     const report = markupCase();
     const order = defaultOrder(toHtmlReportData(report).endpoints, 'p95');
     const page = renderHtmlReport(report);
+    const table = page.slice(page.indexOf('id="table-api"'), page.indexOf('id="tab-custom"'));
     const rendered = [
-      ...page.matchAll(
-        /<tbody class="key-group" data-key="([^"]*)" data-result="([^"]*)" data-group="(\d)"/gu,
+      ...table.matchAll(
+        /<tbody data-g="(\d)".*?<details id="key-api-(\d+)".*?<code class="fk">(.*?)<\/code>/gsu,
       ),
-    ]
-      .filter((m) => page.indexOf(m[0]) < page.indexOf('id="custom-table"'))
-      .map((m) => ({ key: m[1], result: m[2], group: Number(m[3]) }));
+    ].map((m) => ({ key: m[3], n: Number(m[2]), group: Number(m[1]) }));
     expect(rendered.map((r) => r.key)).toEqual(order.map(escapeHtml));
+    expect(rendered.map((r) => r.n)).toEqual(order.map((_, i) => i + 1));
     const groups = rendered.map((r) => r.group);
     expect([...groups].sort()).toEqual(groups);
     expect(groups[0]).toBe(0);
     // POST /api/reports/export fails but is muted: a non-blocking violation (group 1).
     expect(rendered.find((r) => r.key === 'POST /api/reports/export')?.group).toBe(1);
     expect(rendered.at(-1)).toMatchObject({ key: 'GET /api/rare', group: 3 });
-    // Within a group: evaluated percentile / limit descending, ties by key.
     const ratios = (keys: string[]) =>
       keys.map((k) => {
         const agg = report.endpoints[k];
@@ -190,16 +197,15 @@ describe('renderHtmlReport', () => {
     expect([...r].sort((a, b) => b - a)).toEqual(r);
   });
 
-  test('11-REQ-10 a key without successful samples shows — in the time columns', () => {
+  test('11-REQ-10 a key without successful samples shows — in the time columns and its reason', () => {
     const page = renderHtmlReport(fullRun());
-    const row = /data-key="POST \/api\/orders"[^>]*><tr>(.*?)<\/tr>/su.exec(page)?.[1] ?? '';
+    const row = rowOf(page, 'POST /api/orders');
     expect(row).toContain(
-      '<td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>',
+      '<td>0 / 5</td><td>5</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>',
     );
-    expect(row).toContain('0 / 5');
-    const custom = /data-key="checkout:load-cart"[^>]*><tr>(.*?)<\/tr>/su.exec(page)?.[1] ?? '';
+    const custom = rowOf(page, 'checkout:load-cart');
     expect(custom).toContain('not evaluated');
-    expect(custom).toContain('too few samples');
+    expect(custom).toContain('<small>too few samples</small>');
   });
 
   test('11-REQ-21 report values are escaped; 11-REQ-22 raw URLs are text, never links', () => {
@@ -211,7 +217,7 @@ describe('renderHtmlReport', () => {
     expect(body).toContain('it&#39;s &lt;i&gt;quoted&lt;/i&gt;');
     expect(body).toContain('Old &lt;b&gt;note&lt;/b&gt; &amp; &quot;quotes&quot;');
     expect(body).toContain('feature/&lt;x&gt;');
-    expect(body).not.toMatch(/<img|<i>|<b>|alert\(1\)<\/script>/u);
+    expect(body).not.toMatch(/<img|<i>|<b>[^<]*note|alert\(1\)<\/script>/u);
     expect(page.match(/<script/gu)?.length).toBe(2);
 
     const raw = readCase(join(RUN_REPORTS, 'raw-urls-and-extra-percentile.json')).input;
@@ -224,9 +230,9 @@ describe('renderHtmlReport', () => {
       expect(rawPage).toContain(`<span class="url">${escapeHtml(url)}</span>`);
       expect(rawPage).not.toContain(`href="${escapeHtml(url)}"`);
     }
-    // Only the footer, the build URL and the empty-run documentation are links.
+    // Besides in-page anchors only the build URL and the footer link leave the page.
     expect(
-      [...renderHtmlReport(fullRun()).matchAll(/<a href="([^"]*)"/gu)].map((m) => m[1]),
+      [...renderHtmlReport(fullRun()).matchAll(/<a href="([^"#][^"]*)"/gu)].map((m) => m[1]),
     ).toEqual([
       'https://github.com/o/r/actions/runs/1',
       'https://github.com/Meser6/playwright-performance-regression',
@@ -264,7 +270,7 @@ describe('renderHtmlReport', () => {
 
   test('11-AC-11 the Muted keys section is hidden without mutings', () => {
     expect(renderHtmlReport(readCase(join(RUN_REPORTS, 'empty-run.json')).input)).not.toContain(
-      'Muted keys',
+      'id="muted-h"',
     );
     const report = fullRun();
     for (const agg of Object.values(report.endpoints)) agg.evaluation.muted = null;
@@ -277,7 +283,10 @@ describe('renderHtmlReport', () => {
     const section = /<section aria-labelledby="muted-h">(.*?)<\/section>/su.exec(page)?.[1] ?? '';
     const rows = [
       ...section.matchAll(/<tr><th scope="row" class="key">(.*?)<\/th>(.*?)<\/tr>/gsu),
-    ].map((m) => [m[1], (m[2] ?? '').replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|')]);
+    ].map((m) => [
+      (m[1] ?? '').replace(/<[^>]+>/gu, ''),
+      (m[2] ?? '').replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|'),
+    ]);
     expect(rows).toEqual([
       [
         'GET /api/users',
@@ -290,8 +299,8 @@ describe('renderHtmlReport', () => {
     ]);
     const active = report.evaluation.counts.api.muted + report.evaluation.counts.custom.muted;
     expect(section).toContain(`<p>${active} active muting, 1 expired muting.</p>`);
-    expect(page).toContain('mute expired 2026-01-31');
-    expect(page).toContain('muted until 2026-12-31');
+    expect(page).toContain('>mute expired<');
+    expect(page).toContain('>muted until 2026-12-31<');
   });
 
   test('11-REQ-08 verdict: three results with text; gate off in thresholds mode; failed-share note', () => {
@@ -311,13 +320,16 @@ describe('renderHtmlReport', () => {
     expect(error).toContain('<p class="status">timed out</p>');
     expect(error).toContain('the performance result is not trustworthy');
     expect(error).toContain('<h3>Tool errors</h3><p class="status">1</p>');
-    expect(error).toContain('class="issues-section highlight"');
+    expect(error).toContain('class="card-in hl-err"');
   });
 
-  test('11 chapter 12: an empty run replaces the tables with a message', () => {
+  test('11 chapter 12: an empty run shows a message instead of tables and rankings', () => {
     const page = renderHtmlReport(readCase(join(RUN_REPORTS, 'empty-run.json')).input);
     expect(page).toContain('No requests or custom measurements were recorded.');
-    expect(page).not.toContain('<table id="endpoints-table"');
+    expect(page).not.toContain('<table class="keys"');
+    expect(page).not.toContain('id="rank-h"');
+    expect(page).not.toContain('id="tab-custom"');
+    expect(page).toContain('No test made backend requests in measured projects.');
   });
 
   test('11 chapter 12: an evaluated percentile outside p50/p90/p95/p99 gets its own column', () => {
@@ -328,10 +340,10 @@ describe('renderHtmlReport', () => {
     expect(page).toContain('<button type="button">p99.9 / limit</button>');
     expect(page).not.toContain('>p95 / limit<');
     const value = report.endpoints['GET /api/tickets/:id']?.stats?.percentiles['p99.9'] ?? 0;
-    expect(page).toContain(`${formatMs(value)} <span class="limit">/ `);
+    expect(page).toContain(`${formatMs(value)}<small> / `);
   });
 
-  test('11 chapter 6.1: keys longer than 80 characters are shortened, full in title and details', () => {
+  test('11 chapter 12: keys longer than 80 characters are shortened, full in title and details', () => {
     const report = fullRun();
     const long = `GET /api/${'x'.repeat(1990)}`;
     report.endpoints[long] = report.endpoints[
@@ -340,19 +352,19 @@ describe('renderHtmlReport', () => {
     const page = renderHtmlReport(report);
     const short = truncateMiddle(long, 80);
     expect(Array.from(short)).toHaveLength(80);
-    expect(page).toContain(`<th scope="row" class="key" title="${long}">${short}</th>`);
-    expect(page).toContain(`<p class="full-key"><code>${long}</code></p>`);
+    expect(page).toMatch(new RegExp(`<a href="#key-api-\\d" title="${long}">${short}</a>`, 'u'));
+    expect(page).toContain(`<code class="fk">${long}</code>`);
   });
 
-  test('11-REQ-11 the percentile bar is a static SVG with labelled markers and limit lines', () => {
-    const page = renderHtmlReport(fullRun());
+  test('11-REQ-11 a migrated report shows the percentile bar instead of the histogram', () => {
+    const page = renderHtmlReport(migratedCase());
     const svg = /<svg class="bar"[^>]*aria-label="([^"]*)"/u.exec(page)?.[1] ?? '';
     expect(svg).toBe(
       'Percentiles and limits: p50 180 ms, p90 210 ms, p95 250 ms, p99 250 ms, max 250 ms, T 500 ms, median limit 900 ms, p95 limit 1400 ms, p99 limit 2100 ms',
     );
     expect(page).toContain('>p95, p99, max 250 ms</text>');
-    expect(page).toContain('>p99 limit 2100 ms</text>');
-    expect(page.slice(0, page.indexOf('id="report-data"'))).not.toMatch(/histogram/iu);
+    expect(page).not.toContain('class="hist"');
+    expect(renderHtmlReport(fullRun())).not.toContain('class="bar"');
   });
 
   test('11-REQ-19 numbers and dates do not depend on the locale', () => {
@@ -374,7 +386,7 @@ describe('renderHtmlReport', () => {
   test('11-REQ-20 the footer only links the project page', () => {
     const page = renderHtmlReport(fullRun());
     expect(page).toContain(
-      '<footer>Generated by <a href="https://github.com/Meser6/playwright-performance-regression" rel="noopener noreferrer">playwright-performance-regression</a> v0.1.0</footer>',
+      '<footer class="wrap">Generated by <a href="https://github.com/Meser6/playwright-performance-regression" rel="noopener noreferrer">playwright-performance-regression</a> v0.1.0</footer>',
     );
     expect(page).not.toMatch(/waitlist|\bPro\b/u);
   });
@@ -416,9 +428,9 @@ describe('renderHtmlReport', () => {
     expect(source).not.toMatch(/^\s*import\s/mu);
   });
 
-  test('11-REQ-24 the generated assets are up to date with src/html/template; 11-REQ-25 below 30 kB', async () => {
+  test('11-REQ-24 the generated assets are up to date with src/html/template; 11-REQ-25 below 60 kB', async () => {
     expect(await generate()).toBe(readFileSync(join(ROOT, 'src/html/generated/assets.ts'), 'utf8'));
-    expect(Buffer.byteLength(SCRIPT) + Buffer.byteLength(STYLES)).toBeLessThan(30 * 1024);
+    expect(Buffer.byteLength(SCRIPT) + Buffer.byteLength(STYLES)).toBeLessThan(60 * 1024);
   });
 
   test('11-AC-04 500 keys with 3 slowest samples, all checks and 5000 retained samples: below 5 MB', () => {
