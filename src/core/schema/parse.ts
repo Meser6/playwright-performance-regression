@@ -350,7 +350,8 @@ function withStepOptions(config: unknown): unknown {
           Object.fromEntries(
             Object.entries(rules).map(([name, rule]) => {
               const ruleDefaults = groupDefaults[name];
-              if (group === 'slowShare' && name === 't') return [name, withStep(rule, ruleDefaults)];
+              if (group === 'slowShare' && name === 't')
+                return [name, withStep(rule, ruleDefaults)];
               if (!isRecord(rule) || !isRecord(ruleDefaults)) return [name, rule];
               if (!Object.hasOwn(rule, 'limit')) return [name, rule];
               return [name, { ...rule, limit: withStep(rule.limit, ruleDefaults.limit) }];

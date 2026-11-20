@@ -179,7 +179,12 @@ function replaceMatches(
       const span = pick(match);
       if (span === null || span.to <= span.from) continue;
       const start = run.start + match.index + span.from;
-      replacements.push({ start, end: run.start + match.index + span.to, text: placeholder, protect: true });
+      replacements.push({
+        start,
+        end: run.start + match.index + span.to,
+        text: placeholder,
+        protect: true,
+      });
     }
   }
   s.apply(replacements);
@@ -193,7 +198,12 @@ function replaceCores(s: Masked, test: (core: string) => string | null): number 
     if (word.coreEnd <= word.coreStart || s.protectedIn(word.coreStart, word.coreEnd)) continue;
     const placeholder = test(s.text.slice(word.coreStart, word.coreEnd));
     if (placeholder === null) continue;
-    replacements.push({ start: word.coreStart, end: word.coreEnd, text: placeholder, protect: true });
+    replacements.push({
+      start: word.coreStart,
+      end: word.coreEnd,
+      text: placeholder,
+      protect: true,
+    });
   }
   s.apply(replacements);
   return replacements.length;
@@ -316,13 +326,19 @@ function replaceDates(s: Masked): void {
   const words = s.words();
   const replacements: Replacement[] = [];
   const core = (w: Word): string => s.text.slice(w.coreStart, w.coreEnd);
-  const free = (w: Word): boolean => w.coreEnd > w.coreStart && !s.protectedIn(w.coreStart, w.coreEnd);
+  const free = (w: Word): boolean =>
+    w.coreEnd > w.coreStart && !s.protectedIn(w.coreStart, w.coreEnd);
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
     if (word === undefined || !free(word)) continue;
     const next = words[i + 1];
     // Two words: nothing may be cut between them.
-    if (next !== undefined && free(next) && word.coreEnd === word.end && next.coreStart === next.start) {
+    if (
+      next !== undefined &&
+      free(next) &&
+      word.coreEnd === word.end &&
+      next.coreStart === next.start
+    ) {
       const pair = `${core(word)} ${core(next)}`;
       const placeholder = DATETIME_RE.test(pair)
         ? ':datetime'
@@ -330,7 +346,12 @@ function replaceDates(s: Masked): void {
           ? ':time'
           : null;
       if (placeholder !== null) {
-        replacements.push({ start: word.coreStart, end: next.coreEnd, text: placeholder, protect: true });
+        replacements.push({
+          start: word.coreStart,
+          end: next.coreEnd,
+          text: placeholder,
+          protect: true,
+        });
         i++;
         continue;
       }
@@ -344,7 +365,12 @@ function replaceDates(s: Masked): void {
           ? ':time'
           : null;
     if (placeholder !== null) {
-      replacements.push({ start: word.coreStart, end: word.coreEnd, text: placeholder, protect: true });
+      replacements.push({
+        start: word.coreStart,
+        end: word.coreEnd,
+        text: placeholder,
+        protect: true,
+      });
     }
   }
   s.apply(replacements);
@@ -372,7 +398,12 @@ function replaceIds(s: Masked, isId: IdMatcher): void {
     if (core === '' || s.protectedIn(word.coreStart, word.coreEnd)) continue;
     const placeholder = isId(core);
     if (placeholder !== null) {
-      replacements.push({ start: word.coreStart, end: word.coreEnd, text: placeholder, protect: true });
+      replacements.push({
+        start: word.coreStart,
+        end: word.coreEnd,
+        text: placeholder,
+        protect: true,
+      });
     }
   }
   s.apply(replacements);
@@ -399,9 +430,7 @@ function limitLength(text: string): string {
  * Returns a sanitizer bound to the options; compiles the id patterns once (06-REQ-24).
  * `keys.keyBuilder` never applies to step keys.
  */
-export function createStepTitleSanitizer(
-  opts: SanitizeOptions,
-): (title: string) => SanitizedTitle {
+export function createStepTitleSanitizer(opts: SanitizeOptions): (title: string) => SanitizedTitle {
   const isId = compileIdMatcher({
     idPatterns: opts.idPatterns,
     extraIdPatterns: opts.extraIdPatterns,

@@ -36,7 +36,12 @@ function meta(repeat: number, failed = false, project = 'chromium', title = 'che
   };
 }
 
-function sample(key: string, outcome: RawStepSample['outcome'], duration = 300, line = 12): RawStepSample {
+function sample(
+  key: string,
+  outcome: RawStepSample['outcome'],
+  duration = 300,
+  line = 12,
+): RawStepSample {
   return {
     key,
     duration: outcome === 'unfinished' ? null : duration,

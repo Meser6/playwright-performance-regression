@@ -7,15 +7,11 @@ const EXAMPLES = 3;
 const QUOTE_CHARS = new Set([...'"\'`“”„‘’«']);
 
 export type StepsIssueCode =
-  | 'STEPS_NONE_FOUND'
-  | 'STEPS_HIGH_CARDINALITY'
-  | 'STEPS_TOO_MANY_KEYS'
-  | 'STEPS_SECRET_REDACTED';
+  'STEPS_NONE_FOUND' | 'STEPS_HIGH_CARDINALITY' | 'STEPS_TOO_MANY_KEYS' | 'STEPS_SECRET_REDACTED';
 
 export type StepsIssue = Issue & { code: StepsIssueCode };
 
 const LOCATIONS = 5;
-
 
 /**
  * STEPS_HIGH_CARDINALITY for every group of at least CARDINALITY_MIN_KEYS keys that differ only
@@ -71,7 +67,9 @@ export function secretRedactedIssue(redactions: readonly Redaction[]): StepsIssu
   const names = [...rules].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const locations = [
     ...new Set(
-      redactions.flatMap((r) => (r.location === null ? [] : [`${r.location.file}:${r.location.line}`])),
+      redactions.flatMap((r) =>
+        r.location === null ? [] : [`${r.location.file}:${r.location.line}`],
+      ),
     ),
   ].sort((a, b) => {
     const [fa = '', la = '0'] = a.split(/:(?=[0-9]+$)/u);

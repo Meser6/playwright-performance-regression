@@ -3,7 +3,15 @@ import { describe, expect, test } from 'vitest';
 import { evaluate } from '../../../src/core/evaluate/index.ts';
 import { deriveThresholds } from '../../../src/core/thresholds/index.ts';
 import type { AggregateStats, StepAggregateStats } from '../../../src/core/types/index.ts';
-import { aggregates, config, files, invalid, loaded, missing, options } from './evaluate-helpers.ts';
+import {
+  aggregates,
+  config,
+  files,
+  invalid,
+  loaded,
+  missing,
+  options,
+} from './evaluate-helpers.ts';
 import { deriveOptions, existing, loadedFile, runReport } from './thresholds-helpers.ts';
 
 const STEPS_ON = config({ measure: { steps: true } });
@@ -112,7 +120,11 @@ describe('10-AC-19 step thresholds file', () => {
     expect(step?.changed).toBe(true);
     expect(step?.content?.kind).toBe('step');
     expect(step?.content?.generated?.normalization).toBe('0123456789abcd');
-    expect(step?.content?.generated?.derivation.t).toEqual({ min: 1000, max: 10000, medianFactor: 2 });
+    expect(step?.content?.generated?.derivation.t).toEqual({
+      min: 1000,
+      max: 10000,
+      medianFactor: 2,
+    });
     const entry = step?.content?.entries['login › submit'];
     expect(entry?.t).toBeGreaterThanOrEqual(1000);
 
@@ -131,7 +143,15 @@ describe('10-AC-19 step thresholds file', () => {
 
   test('a report with steps: {} leaves an existing step file unchanged and out of nothing', () => {
     const empty = runReport({ endpoints: { 'GET /api/a': { durations: [[30, 100]] } } });
-    const before = existing(undefined, loadedFile({ schemaVersion: 2, kind: 'step', generated: null, entries: { pay: { median: 900 } } }));
+    const before = existing(
+      undefined,
+      loadedFile({
+        schemaVersion: 2,
+        kind: 'step',
+        generated: null,
+        entries: { pay: { median: 900 } },
+      }),
+    );
     const result = deriveThresholds(empty, STEPS_ON, before, deriveOptions());
     if (!result.ok) throw new Error('refused');
     const step = result.value.files.find((f) => f.kind === 'step');

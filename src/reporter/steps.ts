@@ -70,7 +70,9 @@ export class StepRecorder {
 
   /** Step fingerprint of the run, or null while steps are off (06-REQ-25). */
   fingerprint(): string | null {
-    return this.enabled ? stepNormalizationFingerprint(this.cfg.measure.steps, this.cfg.keys) : null;
+    return this.enabled
+      ? stepNormalizationFingerprint(this.cfg.measure.steps, this.cfg.keys)
+      : null;
   }
 
   /**

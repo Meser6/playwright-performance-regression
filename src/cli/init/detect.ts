@@ -19,6 +19,8 @@ export interface ProjectInfo {
   filesImportingPlaywrightTest: string[];
   filesWithExtend: string[];
   taggedPerfTestFiles: number;
+  /** Source files with a test.step( call (04-REQ-47). */
+  stepFiles: number;
   baseUrls: string[];
   projectNames: string[];
   ciPlatform: CiPlatform | null;
@@ -195,6 +197,7 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     filesImportingPlaywrightTest: sources.filter((p) => IMPORTS_PLAYWRIGHT_TEST.test(text(p))),
     filesWithExtend: sources.filter((p) => text(p).search(EXTEND_CALL) !== -1),
     taggedPerfTestFiles: sources.filter((p) => PERF_TAG.test(text(p))).length,
+    stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
     baseUrls,
     projectNames,
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,

@@ -26,6 +26,7 @@ const PREFIXES = [
   'RUN',
   'SCHEMA',
   'STATS',
+  'STEPS',
   'TESTS',
   'THRESHOLDS',
 ];

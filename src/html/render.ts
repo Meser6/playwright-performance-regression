@@ -68,7 +68,12 @@ function tabs(ctx: Ctx): Tab[] {
   ];
   // Only a report with step keys has the Steps tab (11-REQ-47).
   if (steps > 0) {
-    list.push({ id: 'steps', label: 'Steps', count: steps, content: keyTable(ctx, 'step', 'Steps') });
+    list.push({
+      id: 'steps',
+      label: 'Steps',
+      count: steps,
+      content: keyTable(ctx, 'step', 'Steps'),
+    });
   }
   list.push(
     {

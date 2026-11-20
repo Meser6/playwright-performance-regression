@@ -292,11 +292,11 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
   });
 
   test('11-AC-32 Steps tab: Defined at, count, ranking switch, deep link and markup in a title', async () => {
-    const { page, dialogs, console: messages } = await open(
-      stepsRun(),
-      {},
-      '#key=step:login%20%E2%80%BA%20submit',
-    );
+    const {
+      page,
+      dialogs,
+      console: messages,
+    } = await open(stepsRun(), {}, '#key=step:login%20%E2%80%BA%20submit');
     await pw(drawer(page)).toBeVisible();
     await pw(page.locator('#drawer-title')).toHaveText('login \u203a submit');
     await pw(drawer(page)).toContainText('pages/login.page.ts:12');

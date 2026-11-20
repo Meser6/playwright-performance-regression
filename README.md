@@ -82,7 +82,7 @@ wrappers or custom reporters: see [Adopting the package in an existing project](
 
 ```sh
 npm run perf:thresholds   # measure and write the thresholds files
-git add pw-perf-thresholds.*.json && git commit -m "test: add performance thresholds"
+git add pw-perf-thresholds*.json && git commit -m "test: add performance thresholds"
 npm run perf:test         # measure again and compare with the thresholds
 ```
 
@@ -95,6 +95,20 @@ do not fit CI. See [Thresholds](docs/thresholds.md).
 
 The result is printed in the terminal and written to `pw-perf-results/report.json` and
 `pw-perf-results/report.html`.
+
+## Step timings
+
+Your existing `test.step` blocks can be measured too, without changing the tests:
+
+```ts
+// pw-perf.config.ts
+export default definePerfConfig({ measure: { steps: true } });
+```
+
+A step `submit` inside a step `login` becomes the key `login › submit`, with its own statistics,
+checks and thresholds file `pw-perf-thresholds.steps.json`. Step titles are sanitized: ids,
+e-mails, URLs and secrets never reach the keys or the reports, also inside quotes. See
+[Step timings](docs/steps.md).
 
 ## CI
 
@@ -178,6 +192,7 @@ that Playwright's HTML report and traces contain the full URLs.
 - [CLI](docs/cli.md): commands, options and exit codes
 - [Adoption](docs/adoption.md): existing projects, choosing tests, sample counts
 - [Thresholds](docs/thresholds.md): deriving, reviewing, locking and muting
+- [Step timings](docs/steps.md): measuring `test.step` blocks, keys and title sanitization
 - [CI](docs/ci.md): recipes for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines
 - [Troubleshooting](docs/troubleshooting.md): every warning and error code
 - [FAQ](docs/faq.md) · [Upgrading and uninstalling](docs/upgrading.md)

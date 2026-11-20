@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Step timings: with `measure: { steps: true }` the durations of the existing `test.step` blocks
+  become keys of kind `step` (for example `login › submit`), checked and derived like endpoints,
+  with their own thresholds file `pw-perf-thresholds.steps.json`, a `Steps:` line in the console
+  and a Steps tab in the HTML report. Step titles are sanitized: ids, e-mails, URLs and secrets
+  never reach the keys or the reports, also inside quotes. Options `categories`, `maxDepth`,
+  `include`, `exclude`, `groupBy`, `normalizeTitles` and `redactQuotedValues`; warnings
+  `STEPS_NONE_FOUND`, `STEPS_HIGH_CARDINALITY`, `STEPS_TOO_MANY_KEYS` and
+  `STEPS_SECRET_REDACTED`. `init` asks about it when the project has `test.step` calls. See
+  `docs/steps.md`.
+
 - The run report (`report.json`) holds more data for the HTML report: a
   histogram of the retained durations per key, the median time outside TTFB
   (`ttfb.otherP50`), the part of each limit a check uses (`usage`), up to three rule-based hints
@@ -32,6 +42,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are migrated when read; the package writes the new versions. A thresholds file of kind
   `custom` is rejected with `SCHEMA_VALIDATION_FAILED`.
 
+- Breaking: the endpoint thresholds file has no kind in its name: `pw-perf-thresholds.json`
+  (`pw-perf-thresholds.<env>.json` with an environment label), was `pw-perf-thresholds.api.json`.
+  Rename the file with `git mv pw-perf-thresholds.api.json pw-perf-thresholds.json`; the old name
+  is not read. The environment labels `steps` and `requests` are reserved.
 - Breaking: every file and directory the package creates now starts with `pw-perf`. The default
   thresholds files are `pw-perf-thresholds.<kind>[.<env>].json` (`thresholds.filePrefix`, was
   `perf-thresholds`) and the default output directory is `pw-perf-results/` (`report.dir`, was

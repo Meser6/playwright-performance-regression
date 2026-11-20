@@ -12,7 +12,14 @@ import {
 } from '../../../src/core/steps/index.ts';
 import type { CollectStepsOptions, StepNode } from '../../../src/core/steps/index.ts';
 
-function config(steps: PerfConfigInput['measure'] extends infer M ? M extends { steps?: infer S } ? S : never : never = true, keys: PerfConfigInput['keys'] = {}): ResolvedConfig {
+function config(
+  steps: PerfConfigInput['measure'] extends infer M
+    ? M extends { steps?: infer S }
+      ? S
+      : never
+    : never = true,
+  keys: PerfConfigInput['keys'] = {},
+): ResolvedConfig {
   const result = resolveConfig({ measure: { steps }, keys }, {});
   if (!result.ok) throw new Error(JSON.stringify(result.issues));
   return result.value.config;
@@ -47,7 +54,8 @@ function step(title: string, children: StepNode[] = [], extra: Partial<StepNode>
   };
 }
 
-const keys = (nodes: StepNode[], opts = options()) => collectSteps(nodes, opts).samples.map((s) => s.key);
+const keys = (nodes: StepNode[], opts = options()) =>
+  collectSteps(nodes, opts).samples.map((s) => s.key);
 
 describe('06-AC-11 categories and depth', () => {
   const tree = (): StepNode[] => [
@@ -113,7 +121,11 @@ describe('06-AC-13 keys across repetitions and tests', () => {
 
   test('groupBy test prefixes the key with file and sanitized test title', () => {
     const sanitize = createStepTitleSanitizer({ ...options(), normalizeTitles: true });
-    const prefix = stepTestPrefix('tests/a.spec.ts', ['checkout', 'pays as jan@example.com'], sanitize);
+    const prefix = stepTestPrefix(
+      'tests/a.spec.ts',
+      ['checkout', 'pays as jan@example.com'],
+      sanitize,
+    );
     expect(prefix).toBe('tests/a.spec.ts › checkout › pays as :email');
     expect(keys([step('login', [step('submit')])], options({ groupBy: 'test' }, prefix))).toEqual([
       `${prefix} » login`,
@@ -141,12 +153,27 @@ describe('06-AC-15 include and exclude', () => {
 
 describe('06-AC-17 key explosion and no steps', () => {
   test('12 keys that differ in one unrecognized word give one STEPS_HIGH_CARDINALITY', () => {
-    const words = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliett', 'kilo', 'lima'];
+    const words = [
+      'alpha',
+      'bravo',
+      'charlie',
+      'delta',
+      'echo',
+      'foxtrot',
+      'golf',
+      'hotel',
+      'india',
+      'juliett',
+      'kilo',
+      'lima',
+    ];
     const issues = detectStepKeyExplosion(words.map((w) => `Open report ${w}`));
     expect(issues).toHaveLength(1);
     expect(issues[0]?.code).toBe('STEPS_HIGH_CARDINALITY');
     expect(issues[0]?.message).toContain('Open report *');
-    expect(issues[0]?.message).toContain('e.g. Open report alpha, Open report bravo, Open report charlie');
+    expect(issues[0]?.message).toContain(
+      'e.g. Open report alpha, Open report bravo, Open report charlie',
+    );
   });
 
   test('quoted words point to redactQuotedValues', () => {
@@ -190,8 +217,12 @@ describe('06-AC-21 STEPS_SECRET_REDACTED', () => {
   test('three titles with T06, T09 and T11', () => {
     const { redactions } = collectSteps(
       [
-        step('Open https://app.example/orders/42?token=abc', [], { location: { file: 'tests/b.spec.ts', line: 3 } }),
-        step('Use eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln', [], { location: { file: 'tests/a.spec.ts', line: 20 } }),
+        step('Open https://app.example/orders/42?token=abc', [], {
+          location: { file: 'tests/b.spec.ts', line: 3 },
+        }),
+        step('Use eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln', [], {
+          location: { file: 'tests/a.spec.ts', line: 20 },
+        }),
         step('Login with password=Secr3t!', [], { location: { file: 'tests/a.spec.ts', line: 9 } }),
       ],
       options(),
@@ -204,8 +235,17 @@ describe('06-AC-21 STEPS_SECRET_REDACTED', () => {
   });
 
   test('T01–T05 give no warning', () => {
-    const titles = ['Open order 4711', 'Open order #4711:', 'Login as jan.kowalski@example.com', 'Fill email "jan@example.com"', 'Click "Save"'];
-    const { redactions } = collectSteps(titles.map((t) => step(t)), options());
+    const titles = [
+      'Open order 4711',
+      'Open order #4711:',
+      'Login as jan.kowalski@example.com',
+      'Fill email "jan@example.com"',
+      'Click "Save"',
+    ];
+    const { redactions } = collectSteps(
+      titles.map((t) => step(t)),
+      options(),
+    );
     expect(secretRedactedIssue(redactions)).toBeNull();
   });
 });

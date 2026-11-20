@@ -66,7 +66,11 @@ describe('steps project', () => {
         ...readdirSync(results).map((f) => readFileSync(join(results, f), 'utf8')),
         readFileSync(join(dir, 'pw-perf-thresholds.steps.json'), 'utf8'),
       ];
-      for (const secret of ['jan.kowalski@example.com', 'SECRET123TOKEN456', 'eyJhbGciOiJIUzI1NiJ9']) {
+      for (const secret of [
+        'jan.kowalski@example.com',
+        'SECRET123TOKEN456',
+        'eyJhbGciOiJIUzI1NiJ9',
+      ]) {
         for (const text of texts) expect(text).not.toContain(secret);
       }
     },
@@ -100,7 +104,11 @@ describe('playwright-bdd scenarios', () => {
       const run = await harness.run(dir, { env: { ...PERF, PERF_STEPS: '1' } });
       const keys = Object.keys(run.report?.steps ?? {});
       expect(keys, run.output).toEqual(
-        expect.arrayContaining(['Given I open the shop', 'When I load the catalog', 'Then the catalog is shown']),
+        expect.arrayContaining([
+          'Given I open the shop',
+          'When I load the catalog',
+          'Then the catalog is shown',
+        ]),
       );
     },
     RUN_TIMEOUT,

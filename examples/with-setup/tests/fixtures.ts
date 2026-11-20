@@ -6,8 +6,11 @@ export class Shop {
   constructor(readonly page: Page) {}
 
   async open(): Promise<void> {
-    await this.page.goto('/app');
-    await this.page.locator('#status').waitFor();
+    // A step of the page object: measured as the step key "open shop" (docs/steps.md).
+    await base.step('open shop', async () => {
+      await this.page.goto('/app');
+      await this.page.locator('#status').waitFor();
+    });
   }
 
   /** Loads the prices from the API origin. */

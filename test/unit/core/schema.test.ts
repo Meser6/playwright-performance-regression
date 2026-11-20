@@ -171,11 +171,7 @@ describe('thresholds file (02-REQ-22, 02-REQ-29)', () => {
   });
 
   test('02-AC-12 parseThresholdsFile rejects a date that does not exist (2026-02-30)', () => {
-    const result = parseThresholdsFile(
-      text(muted('2026-02-30')),
-      'pw-perf-thresholds.json',
-      'api',
-    );
+    const result = parseThresholdsFile(text(muted('2026-02-30')), 'pw-perf-thresholds.json', 'api');
     expect(!result.ok && result.issues[0]).toEqual({
       code: 'SCHEMA_VALIDATION_FAILED',
       source: 'pw-perf-thresholds.json',

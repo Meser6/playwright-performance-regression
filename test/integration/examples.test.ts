@@ -54,6 +54,11 @@ describe.each([
       expectStatus(thresholds, 0);
       expect(existsSync(join(dir, 'pw-perf-thresholds.json'))).toBe(true);
       expect(endpointKeys(thresholds).filter((key) => key.includes('/api/'))).toEqual(keys);
+      if (name === 'with-setup') {
+        // The page object's test.step (13-REQ-16, docs/steps.md).
+        expect(Object.keys(thresholds.report?.steps ?? {})).toEqual(['open shop']);
+        expect(existsSync(join(dir, 'pw-perf-thresholds.steps.json'))).toBe(true);
+      }
 
       const run = await harness.run(dir, {
         cli: true,

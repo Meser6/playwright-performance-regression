@@ -98,7 +98,10 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
   });
 
   test('09-AC-25 the step file is read only with measure.steps on', async () => {
-    writeFileSync(join(dir, 'pw-perf-thresholds.steps.json'), file('step', { login: { median: 1000 } }));
+    writeFileSync(
+      join(dir, 'pw-perf-thresholds.steps.json'),
+      file('step', { login: { median: 1000 } }),
+    );
     const location = { configDir: dir, dir: '.', filePrefix: 'pw-perf-thresholds', env: null };
     const off = await loadThresholds({ ...location, steps: false });
     expect(off.step.status).toBe('missing');
@@ -108,7 +111,10 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
 
   test('D-37 files with the old names are not read', async () => {
     writeFileSync(join(dir, 'pw-perf-thresholds.api.json'), file('api', { 'GET /a': {} }));
-    writeFileSync(join(dir, 'pw-perf-thresholds.step.json'), file('step', { login: { median: 1000 } }));
+    writeFileSync(
+      join(dir, 'pw-perf-thresholds.step.json'),
+      file('step', { login: { median: 1000 } }),
+    );
     const loaded = await loadThresholds({
       configDir: dir,
       dir: '.',

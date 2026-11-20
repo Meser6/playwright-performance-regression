@@ -27,7 +27,6 @@ import { TIME_RULES, runRules } from './rules.ts';
 import { sourceForKind } from './types.ts';
 import type { EvaluateOptions, Evaluation, EvaluationStatus, LoadedThresholds } from './types.ts';
 
-
 /**
  * Number of keys with qualified violations that is still tolerated (09-REQ-13, step 5): the
  * integer tolerance, or floor(percent × E / 100) computed on integers so that e.g. "5%" of 40
