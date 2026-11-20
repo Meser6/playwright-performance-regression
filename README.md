@@ -86,7 +86,8 @@ git add perf-thresholds.*.json && git commit -m "test: add performance threshold
 npm run perf:test         # measure again and compare with the thresholds
 ```
 
-Without the scripts: `npx pw-perf thresholds --grep @perf` and `npx pw-perf test --grep @perf`.
+Without the scripts: `npx pw-perf thresholds` and `npx pw-perf test` (add `--grep @perf` to
+measure only the tests tagged `@perf`).
 
 Derive thresholds on the same machines that run the check, usually your CI runners, and bring them
 to your repository with `pw-perf thresholds --from <report.json>`. Thresholds measured on a laptop

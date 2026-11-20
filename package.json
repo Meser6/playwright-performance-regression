@@ -114,6 +114,8 @@
     "check:ci-generated": "node scripts/build-ci-templates.mjs --check",
     "gen:docs": "node scripts/build-config-docs.mjs",
     "check:docs-generated": "node scripts/build-config-docs.mjs --check",
+    "gen:config-template": "node scripts/build-config-template.mjs",
+    "check:config-template-generated": "node scripts/build-config-template.mjs --check",
     "check:packages": "node scripts/check-packages.mjs",
     "publint": "publint --strict && publint --strict create",
     "attw": "attw --pack . --profile node16"

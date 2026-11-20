@@ -162,7 +162,7 @@ function typeOf(raw, schema) {
 }
 
 /** Options whose generated text needs more than the schema gives. */
-const NOTES = {
+export const NOTES = {
   'keys.keyBuilder': {
     type: 'function `({ method, url, resourceType }) => string | undefined` (TypeScript or JavaScript config only)',
     description:

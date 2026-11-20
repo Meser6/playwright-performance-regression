@@ -129,9 +129,13 @@ pw-perf init [--yes] [--dry-run] [--lang <code>] [--no-tutorial]
 ```
 
 Sets the package up in the current project. It reads the project files as text (the Playwright
-config is never executed), asks a few questions (the label of the `baseURL` origin, which tests
-to measure, repetitions, a warn-only start, environments, a CI job), shows a diff of every change
-and applies the changes after you confirm them. `npm init playwright-performance-regression`
+config is never executed), asks a few questions (which tests to measure, repetitions, a
+warn-only start, environments, a CI job), shows a diff of every change and applies the changes
+after you confirm them. It does not ask for origin labels: requests to the `baseURL` origin get no
+label in the endpoint keys and other hosts are labeled with their host; set shorter labels in
+`keys.origins`. The default is to measure all tests, also when some are tagged `@perf` and with
+`--yes`; when no test is tagged, the wizard shows how to tag them
+([`INIT_NO_TAGGED_TESTS`](troubleshooting.md#init_no_tagged_tests)). `npm init playwright-performance-regression`
 installs the package and then runs this command.
 
 | Option          | Meaning                                                                     |
@@ -144,7 +148,8 @@ installs the package and then runs this command.
 
 What it can change:
 
-- a new `pw-perf.config.ts` with only the values that differ from the defaults;
+- a new `pw-perf.config.ts`: the answers that differ from the defaults as code, and every other
+  option as a comment with its default value and a one-line description, grouped by section;
 - `playwright.config`: the config wrapped in `withPerf()`;
 - the file that creates your `test` object: wrapped in `withPerfFixtures()`, or, when the tests
   import `test` directly from `@playwright/test`, those imports switched to
