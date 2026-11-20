@@ -2495,11 +2495,6 @@
     "toolErrors": [],
     "warnings": [
       {
-        "code": "THRESHOLDS_FILE_MISSING",
-        "hint": "Derive thresholds with `npx pw-perf thresholds`.",
-        "message": "Thresholds file pw-perf-thresholds.custom.json not found; custom measurement keys are evaluated with default thresholds."
-      },
-      {
         "code": "COLLECTOR_REQUESTS_PENDING",
         "hint": "Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.",
         "message": "Requests still pending at the end of test 1."

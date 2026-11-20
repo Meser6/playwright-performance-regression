@@ -176,5 +176,5 @@ it is. A file without a `generated` block (`THRESHOLDS_MANUAL_FILE`) is fine.
 
 A key that has no entry is checked against the default limits from the config
 (`checks.*.limit`, e.g. 2000 ms median for requests). With `gate.defaultThresholds: "block"` (the
-default) these violations can fail the run; with `"warn"` they only warn. Without any thresholds
-file the run warns with `THRESHOLDS_FILE_MISSING`.
+default) these violations can fail the run; with `"warn"` they only warn. Without a thresholds
+file the run warns with `THRESHOLDS_FILE_MISSING`, once for each kind that has keys in the run.

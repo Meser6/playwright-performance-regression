@@ -1,3 +1,4 @@
+────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: test · env: qa · 128 tests (127 passed, 1 failed, 2 skipped) · main@3f2a91c
 
 Warnings:
@@ -10,8 +11,8 @@ Warnings:
   ! THRESHOLDS_MUTED: 1 key is muted; its violations do not block.
     Hint: Muted keys are listed with their note and end date; remove gate and until from the entry once the cause is fixed.
 
-Endpoints: 9 keys · 7 from file · 1 default · 1 too few samples · 1 median only · 3 unseen entries
-Custom:    2 keys · 1 from file · 1 default · 0 too few samples · 0 median only
+Endpoints: 9 keys · 7 from file · 1 on default thresholds · 1 skipped (too few samples) · 1 checked by median only (few samples) · 3 file entries not seen
+Custom:    2 keys · 1 from file · 1 on default thresholds
 Muted:     POST /api/reports/export until 2026-12-31 — "Depends on report service, tracked in backlog"
 
     kind    key                             rule           actual    limit   over    n  src   flag
@@ -33,5 +34,5 @@ Muted:     POST /api/reports/export until 2026-12-31 — "Depends on report serv
   slowest: GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&include&page&sort — 2600 ms in "deployments › list" (tests/deployments.spec.ts:120)
   slowest: GET /api/tickets/:id?search — 2431 ms in "tickets › search by id" (tests/tickets.spec.ts:42)
 
-FAILED: 6 blocking violations (tolerance: 0)
-Report: pw-perf-results/report.html · pw-perf-results/report.json
+ ✖ FAILED  6 blocking violations (tolerance: 0)
+Report: /work/app/pw-perf-results/report.html

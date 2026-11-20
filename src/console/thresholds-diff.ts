@@ -20,7 +20,7 @@ export interface ThresholdsDiffOptions {
   color: boolean;
   /** --prune was given: unseen entries left in the file are locked ones. */
   prune: boolean;
-  /** Path of thresholds-diff.md as shown, or null when it was not written. */
+  /** Absolute path of thresholds-diff.md (10, chapter 9.1), or null when it was not written. */
   diffPath: string | null;
 }
 

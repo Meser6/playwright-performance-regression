@@ -38,4 +38,19 @@ describe('terminal colors', () => {
       expect(paint('✔ done', style, false)).toBe('✔ done');
     }
   });
+
+  test('09-AC-21 verdict badges: bold text on a colored background, magenta for ERROR', () => {
+    const badges = {
+      'badge-green': '1;30;42',
+      'badge-yellow': '1;30;43',
+      'badge-red': '1;97;41',
+      'badge-magenta': '1;97;45',
+    } as const;
+    for (const [style, sgr] of Object.entries(badges)) {
+      const colored = paint(' ✖ ERROR ', style as keyof typeof badges, true);
+      expect(colored).toBe(`${ESC}[${sgr}m ✖ ERROR ${ESC}[0m`);
+      expect(stripAnsi(colored)).toBe(' ✖ ERROR ');
+    }
+    expect(paint('x', 'magenta', true)).toBe(`${ESC}[35mx${ESC}[0m`);
+  });
 });

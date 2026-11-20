@@ -24,9 +24,12 @@ Messages of the CLI go to stderr; `--help`, `--version` and the thresholds diff 
 
 Colors: the CLI messages, the run summary, the thresholds diff and `init` use the 16 ANSI colors
 when the output is a terminal and `TERM` is not `dumb`. Green means success, red an error or a
-blocking result, yellow a warning, cyan step headers and commands, dim explanations and default
-answers. Every colored item also has a symbol or a word, and the text is the same without
-colors.
+blocking result, yellow a warning, magenta a result that is not trustworthy, cyan step headers
+and commands, dim explanations, hints and default answers, bold headings. The run summary starts
+with a separator line and ends with the verdict as a badge (`✔ PASSED`, `! PASSED WITH
+WARNINGS`, `✖ FAILED`, `✖ ERROR` on a green, yellow, red or magenta background), the reason and
+one `Report:` line with the absolute path of the HTML report. Every colored item also has a
+symbol or a word, and the text is the same without colors.
 
 | Variable        | Effect                                                   |
 | --------------- | -------------------------------------------------------- |
@@ -214,7 +217,10 @@ A `--reporter` flag replaces all reporters of the config, including the one `wit
 `pw-perf` therefore appends the package reporter to the value of the last `--reporter` flag, so
 `npx pw-perf test --reporter=line` still measures. Without `--reporter`, the reporters of the
 config are used as `withPerf()` adjusted them (see
-[`run.keepReporters`](configuration.md#runkeepreporters)).
+[`run.keepReporters`](configuration.md#runkeepreporters)): a measurement run has hundreds of test
+executions, so the `list` reporter is replaced with `dot`, and `dot` is added when no console
+reporter is left. `npx pw-perf test --reporter=list` (or `run.keepReporters: ['list']`) keeps
+`list`.
 
 ### `--list`
 
@@ -238,8 +244,10 @@ the lowest supported one (1.57) gives the warning
 and the run continues.
 
 Before the run the CLI prints the mode, the repetitions and a tip to measure a subset when no
-test filter is given. After the run it prints one result line (tests, performance, exit code) and
-the path of the report and, in a thresholds run, of the thresholds diff.
+test filter is given. After the run it prints one result line (tests, performance, exit code),
+for example `tests failed · performance result not trustworthy · exit code 3` when too many tests
+failed. The paths of the report and, in a thresholds run, of the thresholds diff are the last
+lines of the reporter output (`Report:` and `Diff:`), so the CLI does not repeat them.
 
 ## Package config in commands without tests
 

@@ -13,8 +13,6 @@ export interface PerfRunInput {
   keepReporters: string[];
   /** Repetitions of each measured test in the current mode (environment override applied). */
   repeat: number;
-  /** Running on CI: decides the default console reporter. */
-  ci: boolean;
   /** Absolute path of the package reporter entry point. */
   reporterPath: string;
 }
@@ -152,13 +150,19 @@ function reporterEntries(reporter: Config['reporter']): Entry[] {
 function planReporters(
   reporter: Config['reporter'],
   input: PerfRunInput,
-): { reporters: Entry[]; removed: string[] } {
+): { reporters: Entry[]; removed: string[]; replaced: string[] } {
   const ours = (name: string): boolean => name === input.reporterPath || name === PACKAGE_REPORTER;
   const kept: Entry[] = [];
   const removed: string[] = [];
+  const replaced: string[] = [];
   for (const entry of reporterEntries(reporter)) {
     const [name, options] = entry;
-    if (!CONSOLE_REPORTERS.has(name) && !input.keepReporters.includes(name) && !ours(name)) {
+    if (name === 'list' && !input.keepReporters.includes(name)) {
+      // A measurement run has hundreds of executions: one line each floods the terminal
+      // (04-REQ-32, 04-D-24). Options of list do not apply to dot.
+      if (!replaced.includes(name)) replaced.push(name);
+      kept.push(['dot']);
+    } else if (!CONSOLE_REPORTERS.has(name) && !input.keepReporters.includes(name) && !ours(name)) {
       removed.push(name);
     } else if (name === 'html') {
       kept.push([name, { ...(options as object | undefined), open: 'never' }]);
@@ -166,13 +170,14 @@ function planReporters(
       kept.push(entry);
     }
   }
+  // One dot is enough, also when list became dot next to an existing dot.
+  const firstDot = kept.findIndex(([name]) => name === 'dot');
+  const deduped = kept.filter(([name], i) => name !== 'dot' || i === firstDot);
   const reporters: Entry[] = [];
-  if (!kept.some(([name]) => CONSOLE_REPORTERS.has(name))) {
-    reporters.push([input.ci ? 'dot' : 'list']);
-  }
-  reporters.push(...kept);
-  if (!kept.some(([name]) => ours(name))) reporters.push([input.reporterPath]);
-  return { reporters, removed };
+  if (!deduped.some(([name]) => CONSOLE_REPORTERS.has(name))) reporters.push(['dot']);
+  reporters.push(...deduped);
+  if (!deduped.some(([name]) => ours(name))) reporters.push([input.reporterPath]);
+  return { reporters, removed, replaced };
 }
 
 function overriddenSettings(
@@ -261,7 +266,7 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
     source.projects === undefined
       ? []
       : projects.filter((p) => !keep.has(projectName(p))).map(projectName);
-  const { reporters, removed } = planReporters(source.reporter, input);
+  const { reporters, removed, replaced } = planReporters(source.reporter, input);
 
   const result: Config = {
     ...source,
@@ -292,6 +297,7 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
         overridden: overriddenSettings(source, kept, input.repeat, measuredSet),
         removedProjects,
         removedReporters: removed,
+        replacedReporters: replaced,
       },
       warnings: [
         ...enginesWarnings(source, projects, measured.value),

@@ -113,7 +113,12 @@ export function runSettings(
     mode,
     packageVersion,
     measuredProjects: null,
-    runConditions: { overridden: [], removedProjects: [], removedReporters: [] },
+    runConditions: {
+      overridden: [],
+      removedProjects: [],
+      removedReporters: [],
+      replacedReporters: [],
+    },
     registered: false,
     warnings: [notWrappedWarning()],
     toolErrors: read.ok ? [] : read.issues,
@@ -536,7 +541,7 @@ export class RunSession {
 
     const { width, color } = this.terminal();
     this.host.stdout.write(
-      formatSummary(report, { width, color, cwd: this.host.cwd, html: paths.reportHtml !== null }),
+      formatSummary(report, { width, color, html: paths.reportHtml !== null }),
     );
     if (diffs.length > 0) {
       this.host.stdout.write(
@@ -545,10 +550,8 @@ export class RunSession {
           width,
           color,
           prune: this.settings.mode.prune === true,
-          diffPath:
-            paths.thresholdsDiff === null
-              ? null
-              : io.relativeSlashPath(this.host.cwd, paths.thresholdsDiff),
+          // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
+          diffPath: paths.thresholdsDiff,
         }),
       );
     }

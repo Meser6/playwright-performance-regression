@@ -226,7 +226,7 @@ Which Playwright projects are measured and repeated in perf mode. 'auto': projec
 
 ### `run.keepReporters`
 
-Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters (list, line, dot, github) and the package reporter.
+Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters line, dot and github (list becomes dot; name list here to keep it) and the package reporter.
 
 - Type: array of string (at least 1 character); no duplicates
 - Default: `[]`

@@ -22,6 +22,7 @@ import {
   tempDir,
 } from './harness.ts';
 
+const slash = (path: string): string => path.replace(/\\/gu, '/');
 const ajv = createAjv();
 const validReport = validator(ajv, 'run-report.schema.json');
 const validOutcome = validator(ajv, 'outcome.schema.json');
@@ -87,7 +88,8 @@ describe('reporter session in test mode', () => {
       { name: 'chromium', role: 'measured', browserName: 'chromium', repeatEach: 5, retries: 0 },
     ]);
     expect(report.runConditions.overriddenSettings).toEqual(['trace']);
-    expect(codes(report.warnings)).toEqual(['THRESHOLDS_FILE_MISSING', 'THRESHOLDS_FILE_MISSING']);
+    // No custom keys in this run: no warning about the custom file (09-D-17).
+    expect(codes(report.warnings)).toEqual(['THRESHOLDS_FILE_MISSING']);
     expect(report.toolErrors).toEqual([]);
 
     const outcome = readOutcome(outcomeFile);
@@ -101,10 +103,11 @@ describe('reporter session in test mode', () => {
 
     const out = captured.stdout.join('');
     expect(out).toContain(
-      'playwright-performance-regression: perf mode overrides trace; removed projects firefox.\n',
+      'playwright-performance-regression: perf mode overrides trace; removed projects firefox; reporter list replaced with dot.\n',
     );
     expect(out).toContain('PASSED');
-    expect(out).toContain('Report: pw-perf-results/report.html');
+    // One absolute Report path (09-REQ-30).
+    expect(out).toContain(`Report: ${slash(dir)}/pw-perf-results/report.html\n`);
     expect(out).not.toContain('\u001b[');
   });
 
@@ -467,7 +470,7 @@ describe('reporter session: HTML report', () => {
     const { outcome, out } = await run({ report: { html: false } });
     expect(existsSync(htmlPath())).toBe(false);
     expect(outcome.paths.reportHtml).toBeNull();
-    expect(out).toContain('Report: pw-perf-results/report.json\n');
+    expect(out).toContain(`Report: ${slash(dir)}/pw-perf-results/report.json\n`);
   });
 
   test('11 chapter 13: HTML_RENDER_FAILED keeps report.json, records the error and exit code 3', async () => {
@@ -536,7 +539,7 @@ describe('reporter session in thresholds mode', () => {
     expect(stdout.indexOf('Thresholds: pw-perf-thresholds.api.json (created)')).toBeGreaterThan(
       stdout.indexOf('PASSED'),
     );
-    expect(stdout).toContain('Diff: pw-perf-results/thresholds-diff.md');
+    expect(stdout).toContain(`Diff: ${join(dir, 'pw-perf-results', 'thresholds-diff.md')}\n`);
   });
 
   test('02-AC-04 deriving twice from the same samples gives byte-identical files', async () => {

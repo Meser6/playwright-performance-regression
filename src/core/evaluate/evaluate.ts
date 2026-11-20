@@ -195,7 +195,9 @@ export function evaluate(
     }
     let unseen: string[] = [];
     if (file.status === 'missing') {
-      warnings.push(missingFileWarning(file, opts.env));
+      // Only for a kind with keys in the run: a project without custom measurements does not
+      // need the custom file (09-REQ-02, 09-D-17).
+      if (Object.keys(byKind[kind]).length > 0) warnings.push(missingFileWarning(file, opts.env));
     } else if (file.status === 'invalid') {
       toolErrors.push(...file.issues.map(schemaIssueToIssue));
     } else {

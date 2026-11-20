@@ -146,7 +146,7 @@ export interface PackageConfig {
      */
     projects?: 'auto' | [string, ...string[]];
     /**
-     * Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters (list, line, dot, github) and the package reporter (D-23, 04-REQ-32).
+     * Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters line, dot and github (list becomes dot; name list here to keep it) and the package reporter (D-23, 04-REQ-32).
      */
     keepReporters?: string[];
   };

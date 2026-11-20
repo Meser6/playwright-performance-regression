@@ -220,7 +220,11 @@ describe('runTests with a fake Playwright', () => {
   test('04-REQ-12 the exit code comes from the outcome file of this run; another run id is CLI_OUTCOME_INVALID', async () => {
     const two = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(outcome(), 1) });
     expect(await runTests(command(), two.host)).toBe(2);
-    expect(two.stderr.join('')).toContain('report: /p/pw-perf-results/report.json');
+    // The reporter prints the report path at the end of its summary; the CLI does not repeat it.
+    expect(two.stderr.join('')).toMatch(
+      /\nplaywright-performance-regression: tests passed · performance failed · exit code 2\n$/u,
+    );
+    expect(two.stderr.join('')).not.toContain('report');
 
     const other = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(outcome({ runId: 'other' }), 1) });
     expect(await runTests(command(), other.host)).toBe(3);
@@ -230,6 +234,37 @@ describe('runTests with a fake Playwright', () => {
     const broken = fakeCliHost({ cwd: dir, onSpawn: writesOutcome('{', 1) });
     expect(await runTests(command(), broken.host)).toBe(3);
     expect(outcomeFiles()).toEqual([]);
+  });
+
+  test('04-AC-27 exit code 3 of an untrustworthy run: one line, performance result not trustworthy', async () => {
+    const tooMany = outcome({
+      exitCode: 3,
+      tests: { status: 'failed' },
+      evaluation: { status: 'passed', gateEnabled: true },
+      toolErrors: [{ code: 'TESTS_FAILED_TOO_MANY', message: '30 of 101 test executions failed' }],
+      paths: {
+        reportJson: '/p/pw-perf-results/report.json',
+        reportHtml: '/p/pw-perf-results/report.html',
+        thresholds: [],
+        thresholdsDiff: null,
+      },
+    });
+    const fake = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(tooMany, 1) });
+    expect(await runTests(command(), fake.host)).toBe(3);
+    expect(fake.stderr.join('')).toMatch(
+      /\nplaywright-performance-regression: tests failed · performance result not trustworthy · exit code 3\n$/u,
+    );
+    expect(fake.stderr.join('')).not.toContain('report');
+    const invalid = outcome({
+      exitCode: 3,
+      evaluation: { status: 'error', gateEnabled: true },
+      toolErrors: [{ code: 'SCHEMA_INVALID_JSON', message: 'x' }],
+    });
+    const other = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(invalid, 1) });
+    expect(await runTests(command(), other.host)).toBe(3);
+    expect(other.stderr.join('')).toContain(
+      'tests passed · performance not evaluated · exit code 3',
+    );
   });
 
   test('04-AC-11 a run with failed tests and no outcome file ends with 3', async () => {

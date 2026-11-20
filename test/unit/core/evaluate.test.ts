@@ -635,15 +635,43 @@ describe('thresholds files (09, chapter 4)', () => {
     );
     expect(e.perKey.api[KEY]?.thresholdSource).toBe('default');
     expect(e.perKey.api[KEY]?.result).toBe('pass');
-    expect(codes(e)).toEqual(['THRESHOLDS_FILE_MISSING', 'THRESHOLDS_FILE_MISSING']);
+    expect(codes(e)).toEqual(['THRESHOLDS_FILE_MISSING']);
     expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.api.qa.json');
     expect(e.warnings[0]?.hint).toContain('npx pw-perf thresholds');
     expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.api.json exists');
-    expect(e.warnings[1]?.hint).not.toContain('exists');
     expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([
       ['missing', null],
       ['missing', null],
     ]);
+  });
+
+  test('09-AC-23 THRESHOLDS_FILE_MISSING only for kinds with keys in the run', () => {
+    const apiOnly = evaluate(
+      aggregates({ [KEY]: { durations: [[20, 100]] } }),
+      both(missing('api'), missing('custom')),
+      config(),
+      options(),
+    );
+    expect(codes(apiOnly)).toEqual(['THRESHOLDS_FILE_MISSING']);
+    expect(apiOnly.warnings[0]?.message).toContain('pw-perf-thresholds.api.json');
+    // A custom key with n = 0 is a key of the run (09-REQ-05): the custom file is missing too.
+    const withCustom = evaluate(
+      aggregates({ [KEY]: { durations: [[20, 100]] } }, { checkout: { durations: [] } }),
+      both(missing('api'), missing('custom')),
+      config(),
+      options(),
+    );
+    expect(codes(withCustom)).toEqual(['THRESHOLDS_FILE_MISSING', 'THRESHOLDS_FILE_MISSING']);
+    expect(withCustom.warnings[1]?.message).toContain('pw-perf-thresholds.custom.json');
+    expect(withCustom.warnings[1]?.hint).not.toContain('exists');
+    // No keys at all: EVAL_NO_SAMPLES says it all.
+    const none = evaluate(
+      aggregates({}),
+      both(missing('api'), missing('custom')),
+      config(),
+      options(),
+    );
+    expect(codes(none)).toEqual(['EVAL_NO_SAMPLES']);
   });
 
   const generated: Generated = {

@@ -117,6 +117,9 @@ export function overriddenLine(conditions: RunConditions): string | null {
   if (conditions.removedReporters.length > 0) {
     parts.push(`removed reporters ${list(conditions.removedReporters)}`);
   }
+  for (const name of conditions.replacedReporters) {
+    parts.push(`reporter ${name} replaced with dot`);
+  }
   return parts.length === 0 ? null : `${parts.join('; ')}.`;
 }
 

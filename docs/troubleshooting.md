@@ -6,9 +6,10 @@ it and how to fix it. Search the page for the code you see.
 
 ## Where codes appear
 
-- **Console summary** at the end of a perf-mode run: tool errors under `Errors:` (marked `✖`),
-  then up to 10 warnings under `Warnings:` (marked `!`), each as `CODE: message` with an indented
-  `Hint:` line.
+- **Console summary** at the end of a perf-mode run (after a separator line): tool errors under
+  `Errors:` (marked `✖`, red), then up to 10 warnings under `Warnings:` (marked `!`, yellow), each
+  as `CODE: message` with an indented `Hint:` line. The verdict at the end names the cause of an
+  `ERROR`, e.g. `too many failed tests (30 of 101 executions)`.
 - **`pw-perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
   run with its code, message and hint.
 - **`pw-perf-results/report.html`**: the same warnings and tool errors near the top of the page.
@@ -469,7 +470,9 @@ may be affected by the repetitions (for example tests that create the same data)
 ### TESTS_FAILED_TOO_MANY
 
 **Tool error (exit code 3).** More test executions failed than `gate.maxFailedTestShare` allows,
-so samples of a large part of the tests are missing and the result is not trustworthy. Fix the
+so samples of a large part of the tests are missing and the result is not trustworthy. The
+summary ends with `✖ ERROR  too many failed tests (F of N executions)` and the CLI with
+`performance result not trustworthy · exit code 3`. Fix the
 failing tests (run them without perf mode first), or raise `gate.maxFailedTestShare` if the
 failures are expected.
 
@@ -522,7 +525,8 @@ percentile. Derive the thresholds again after changing the level.
 
 **Warning.** The thresholds file for a kind (endpoints or custom measurements) and the current
 environment label was not found, so those keys are evaluated with the default limits from
-`checks.*.limit`. Derive thresholds with `npx pw-perf thresholds` and commit the file. When an
+`checks.*.limit`. It is reported only for a kind that has keys in the run: a project without
+custom measurements gets no warning about the custom file. Derive thresholds with `npx pw-perf thresholds` and commit the file. When an
 environment label is set, a file without the label is not used for it; the hint says so when such
 a file exists. See [thresholds.md](thresholds.md).
 

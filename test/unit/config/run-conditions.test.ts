@@ -11,7 +11,6 @@ function input(overrides: Partial<PerfRunInput> = {}): PerfRunInput {
     projects: 'auto',
     keepReporters: [],
     repeat: 5,
-    ci: false,
     reporterPath: REPORTER,
     ...overrides,
   };
@@ -257,7 +256,7 @@ describe('planPerfRun: reporters (04-REQ-32)', () => {
     const result = plan(
       {
         reporter: [
-          ['list'],
+          ['line'],
           ['junit', { outputFile: 'junit.xml' }],
           ['html', { open: 'always', outputFolder: 'report' }],
           ['./reporters/slack.ts', { channel: 'qa' }],
@@ -267,25 +266,40 @@ describe('planPerfRun: reporters (04-REQ-32)', () => {
       { keepReporters: ['html'] },
     );
     expect(result.config.reporter).toEqual([
-      ['list'],
+      ['line'],
       ['html', { open: 'never', outputFolder: 'report' }],
       ['github'],
       [REPORTER],
     ]);
     expect(result.runConditions.removedReporters).toEqual(['junit', './reporters/slack.ts']);
+    expect(result.runConditions.replacedReporters).toEqual([]);
     expect(
       plan({ reporter: [['junit', { outputFile: 'junit.xml' }]] }, { keepReporters: ['junit'] })
         .config.reporter,
-    ).toEqual([['list'], ['junit', { outputFile: 'junit.xml' }], [REPORTER]]);
+    ).toEqual([['dot'], ['junit', { outputFile: 'junit.xml' }], [REPORTER]]);
   });
 
-  test('adds a console reporter when none is left: dot on CI, list locally', () => {
-    expect(plan({ reporter: 'html' }).config.reporter).toEqual([['list'], [REPORTER]]);
-    expect(plan({ reporter: 'html' }, { ci: true }).config.reporter).toEqual([['dot'], [REPORTER]]);
-    // Without a reporter Playwright uses the same default: nothing is removed.
-    const result = plan({}, { ci: true });
+  test('04-AC-26 list becomes dot, two dots become one, run.keepReporters keeps list', () => {
+    const result = plan({ reporter: [['list', { printSteps: true }], ['junit']] });
+    expect(result.config.reporter).toEqual([['dot'], [REPORTER]]);
+    expect(result.runConditions.removedReporters).toEqual(['junit']);
+    expect(result.runConditions.replacedReporters).toEqual(['list']);
+    expect(plan({ reporter: 'list' }).config.reporter).toEqual([['dot'], [REPORTER]]);
+    expect(plan({ reporter: [['list'], ['dot']] }).config.reporter).toEqual([['dot'], [REPORTER]]);
+    expect(plan({ reporter: [['dot'], ['list']] }).config.reporter).toEqual([['dot'], [REPORTER]]);
+    const kept = plan({ reporter: [['list']] }, { keepReporters: ['list'] });
+    expect(kept.config.reporter).toEqual([['list'], [REPORTER]]);
+    expect(kept.runConditions.replacedReporters).toEqual([]);
+  });
+
+  test('04-AC-26 adds dot when no console reporter is left, on CI and locally', () => {
+    // The plan does not depend on CI: dot also locally.
+    expect(plan({ reporter: 'html' }).config.reporter).toEqual([['dot'], [REPORTER]]);
+    // Without a reporter Playwright would pick list locally; the run gets dot, nothing is removed.
+    const result = plan({});
     expect(result.config.reporter).toEqual([['dot'], [REPORTER]]);
     expect(result.runConditions.removedReporters).toEqual([]);
+    expect(result.runConditions.replacedReporters).toEqual([]);
     expect(plan({ reporter: 'line' }).config.reporter).toEqual([['line'], [REPORTER]]);
   });
 

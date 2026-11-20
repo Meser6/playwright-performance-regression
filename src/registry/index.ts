@@ -15,6 +15,8 @@ export interface RunConditions {
   removedProjects: string[];
   /** Reporters removed from the run (04-REQ-32). */
   removedReporters: string[];
+  /** Console reporters replaced with dot (04-REQ-32): ["list"] or []. */
+  replacedReporters: string[];
 }
 
 export interface RegisteredState {
