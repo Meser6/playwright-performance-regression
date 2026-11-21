@@ -638,6 +638,16 @@ describe('reporter session in thresholds mode', () => {
     expect(stdout).toContain(`Diff: ${join(dir, 'pw-perf-results', 'thresholds-diff.md')}\n`);
   });
 
+  test('09-AC-32 the run that creates the thresholds file does not warn that it is missing', async () => {
+    const { outcome, stdout } = await derive();
+    expect(outcome.paths.thresholds).toEqual([thresholdsFile()]);
+    const report = JSON.parse(readFileSync(outcome.paths.reportJson ?? '', 'utf8')) as {
+      warnings: { code: string }[];
+    };
+    expect(codes(report.warnings)).not.toContain('THRESHOLDS_FILE_MISSING');
+    expect(stdout).not.toContain('THRESHOLDS_FILE_MISSING');
+  });
+
   test('02-AC-04 deriving twice from the same samples gives byte-identical files', async () => {
     await derive();
     const first = readFileSync(thresholdsFile());

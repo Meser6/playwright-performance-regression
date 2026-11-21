@@ -627,7 +627,8 @@ percentile. Derive the thresholds again after changing the level.
 
 **Warning.** The thresholds file for a kind (endpoints) and the current environment label was not
 found, so those keys are evaluated with the default limits from `checks.*.limit`. It is reported
-only for a kind that has keys in the run. Derive thresholds with `PW_PERF_MODE=thresholds npm run e2e` and commit the file. When an
+only in test mode and only for a kind that has keys in the run; the thresholds run that writes
+the file does not report it. Derive thresholds with `PW_PERF_MODE=thresholds npm run e2e` and commit the file. When an
 environment label is set, a file without the label is not used for it; the hint says so when such
 a file exists. See [thresholds.md](thresholds.md).
 

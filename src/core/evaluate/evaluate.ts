@@ -196,9 +196,11 @@ export function evaluate(
     }
     let unseen: string[] = [];
     if (file.status === 'missing') {
-      // Only for a kind with keys in the run: a kind without keys does not need its file
-      // (09-REQ-02, 09-D-17).
-      if (Object.keys(byKind[kind]).length > 0) warnings.push(missingFileWarning(file, opts.env));
+      // Only in test mode, for a kind with keys in the run: a kind without keys does not need
+      // its file (09-D-17), and a thresholds run writes the file itself (09-REQ-02, 09-D-19).
+      if (opts.mode === 'test' && Object.keys(byKind[kind]).length > 0) {
+        warnings.push(missingFileWarning(file, opts.env));
+      }
     } else if (file.status === 'invalid') {
       toolErrors.push(...file.issues.map(schemaIssueToIssue));
     } else {

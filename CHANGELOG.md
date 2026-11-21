@@ -17,6 +17,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A `PW_PERF_MODE=thresholds` run no longer warns with `THRESHOLDS_FILE_MISSING` about the
+  thresholds file it is creating.
 - With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2
   as `npm run npx` ("Missing script"): a package script runs again only when `package.json` has
   it. The `Next:` hint no longer suggests `npm run npx` either.
