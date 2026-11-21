@@ -146,7 +146,7 @@ describe('withPerf in perf mode', () => {
     const error = thrown(() => withPerf(EMPTY));
     expect(error.issues.map((i) => i.code)).toEqual(['MODE_INVALID_VALUE', 'MODE_INVALID_VALUE']);
     expect(error.message).toContain(
-      '  - PW_PERF_MODE: expected "test" or "thresholds", got "perf"',
+      '  - PW_PERF_MODE: expected "test", "thresholds" or "check", got "perf"',
     );
     expect(getRegistered()).toBeUndefined();
   });

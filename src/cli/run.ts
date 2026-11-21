@@ -3,7 +3,13 @@
 import { parseOutcome } from '../core/schema/index.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { CliIssue, Issue, Outcome, Result } from '../core/types/index.ts';
-import { MODE_ENV_NAMES, generateRunId, writeModeState } from '../mode/index.ts';
+import {
+  DEFAULT_MAX_TESTS,
+  MODE_ENV_NAMES,
+  checkStateFileName,
+  generateRunId,
+  writeModeState,
+} from '../mode/index.ts';
 import { resolveExitCode } from './exit.ts';
 import type { ExitInput } from './exit.ts';
 import type { ChildProcessLike, CliHost, ForwardedSignal } from './host.ts';
@@ -70,6 +76,7 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
     writeModeState({
       mode: cmd.mode,
       ...(cmd.repeat === undefined ? {} : { repeat: cmd.repeat }),
+      ...(cmd.maxTests === undefined ? {} : { maxTests: cmd.maxTests }),
       ...(cmd.env === undefined ? {} : { env: cmd.env }),
       runId: input.runId,
       outcomeFile: input.outcomeFile,
@@ -80,11 +87,13 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
   // The CLI does not load the Playwright config (01-REQ-24): without --repeat the number of
   // repetitions is the config's, and the reporter prints the real test executions (04-REQ-20).
   const repeats =
-    cmd.repeat === undefined
-      ? `repeats per test from run.repeat.${cmd.mode}`
-      : `${cmd.repeat} ${cmd.repeat === 1 ? 'repeat' : 'repeats'} per test`;
+    cmd.mode === 'check'
+      ? `the first test of each file, at most ${String(cmd.maxTests ?? DEFAULT_MAX_TESTS)} tests, once`
+      : cmd.repeat === undefined
+        ? `repeats per test from run.repeat.${cmd.mode}`
+        : `${cmd.repeat} ${cmd.repeat === 1 ? 'repeat' : 'repeats'} per test`;
   const lines = [`perf mode "${cmd.mode}", ${repeats}, 1 worker.`];
-  if (!cmd.listOnly && testFilters(cmd.playwrightArgs).length === 0) {
+  if (cmd.mode !== 'check' && !cmd.listOnly && testFilters(cmd.playwrightArgs).length === 0) {
     lines.push('tip: measure a subset, e.g. --grep @perf or --project chromium.');
   }
   return { ok: true, value: { args: args.value, env, lines, warnings } };
@@ -239,6 +248,12 @@ export async function runTests(cmd: RunCommand, host: CliHost): Promise<number> 
   // The outcome file is removed after reading, also after a signal (04-REQ-11).
   const outcome = await readOutcome(host, outcomeFile, runId);
   await host.removeFile(outcomeFile).catch(() => undefined);
+  // The state file of a check (04-REQ-49); the reporter removes it too.
+  if (cmd.mode === 'check') {
+    await host
+      .removeFile(host.paths.join(host.tmpdir, checkStateFileName(runId)))
+      .catch(() => undefined);
+  }
   if (exit.error !== undefined) return fail([spawnFailed(exit.error)]);
 
   const resolved = resolveExitCode({

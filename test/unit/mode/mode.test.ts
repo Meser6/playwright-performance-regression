@@ -60,7 +60,7 @@ describe('readModeState', () => {
     expect(issues).toEqual([
       expect.objectContaining({
         code: 'MODE_INVALID_VALUE',
-        message: 'PW_PERF_MODE: expected "test" or "thresholds", got "tset"',
+        message: 'PW_PERF_MODE: expected "test", "thresholds" or "check", got "tset"',
       }),
     ]);
   });
@@ -123,6 +123,7 @@ describe('writeModeState', () => {
       'PW_PERF_RUN_ID',
       'PW_PERF_OUTCOME_FILE',
       'PW_PERF_PRUNE',
+      'PW_PERF_MAX_TESTS',
     ]);
   });
 });

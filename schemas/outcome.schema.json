@@ -9,7 +9,7 @@
   "properties": {
     "schemaVersion": { "const": 1 },
     "runId": { "$ref": "common.schema.json#/$defs/runId" },
-    "mode": { "$ref": "common.schema.json#/$defs/mode" },
+    "mode": { "description": "Perf mode of the run: test, thresholds or check (02-REQ-34). The run report and thresholds files never have check.", "enum": ["test", "thresholds", "check"] },
     "exitCode": {
       "description": "Exit code the CLI must use, computed by buildOutcome() in core (00, chapter 11; 02-REQ-26): 0 ok, 2 performance violations block the run, 3 tool error or untrustworthy result. Precedence 3 > 2 > 0. Failed tests alone never give a non-zero code in perf mode (gate.maxFailedTestShare, 09-REQ-24); code 1 is reserved and never written. An interrupted or timed-out run without a signal has RUN_INCOMPLETE in toolErrors, so 3; the CLI itself uses 130/143 after a signal it received, regardless of this file (04).",
       "enum": [0, 2, 3]

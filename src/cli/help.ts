@@ -28,6 +28,7 @@ const GENERAL = [
   'Commands:',
   '  test                       Measurement run: measure, evaluate against the thresholds, fail on regression',
   '  thresholds                 Thresholds run: measure without the gate, then write the thresholds files',
+  '  check                      Dry run: what would be measured and how long a full run takes',
   '  thresholds --from <file>   Derive the thresholds from an existing report.json (no tests)',
   '  report                     Render the HTML report again from report.json',
   '  init                       Guided setup in this project',
@@ -123,9 +124,26 @@ const INIT = [
   'Exit codes: 0 done (also with manual steps left) · 3 error · 130 interrupted',
 ];
 
+const CHECK = [
+  `Usage: ${CLI_COMMAND} check [--max-tests <n>] [--env <label>] [playwright test arguments]`,
+  '',
+  'Dry run before the first measurement: runs the first test of each file once and shows what',
+  'would be measured (projects, origins and labels, top keys, thresholds files) and how long a',
+  'full run would take (an order of magnitude). Nothing is evaluated and no file is written.',
+  'Recommended form: PW_PERF_MODE=check <your test command>, e.g. PW_PERF_MODE=check npm run e2e.',
+  '',
+  'Options:',
+  '  --max-tests <n>    Measured tests to run, 1-1000 (default 10)',
+  '  --env <label>      Environment label; selects the thresholds files that are shown',
+  '  -h, --help         Show this help',
+  '',
+  'Exit codes: 0 done (also with warnings and failed tests) · 3 error · 130/143 interrupted',
+];
+
 const TOPICS: Record<HelpTopic, string[]> = {
   test: TEST,
   thresholds: THRESHOLDS,
+  check: CHECK,
   report: REPORT,
   init: INIT,
 };

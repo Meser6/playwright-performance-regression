@@ -53,7 +53,10 @@ export function formatIssues(
  */
 export function resultLines(outcome: Outcome | null, exitCode: number, opts: OutputStyle): string {
   const parts: string[] = [];
-  if (outcome !== null) parts.push(TESTS_TEXT[outcome.tests.status], performanceText(outcome));
+  // A check has no performance result (04-REQ-53).
+  if (outcome?.mode === 'check')
+    parts.push(exitCode === 0 ? 'check finished' : 'check not completed');
+  else if (outcome !== null) parts.push(TESTS_TEXT[outcome.tests.status], performanceText(outcome));
   parts.push(paint(`exit code ${exitCode}`, exitCode === 0 ? 'green' : 'red', opts));
   return infoLine(parts.join(' · '));
 }

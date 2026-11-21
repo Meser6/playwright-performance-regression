@@ -61,7 +61,7 @@ describe('module import boundaries', () => {
     }
   });
 
-  test('collector imports core/types, core/schema, core/config, mode, registry and Playwright types', async () => {
+  test('collector imports core/types, core/schema, core/config, mode, registry, node fs/os/path and Playwright types', async () => {
     for (const code of [
       "export type * from '../core/types/index.ts';\n",
       "export { parseSampleBatch } from '../core/schema/index.ts';\n",
@@ -69,6 +69,8 @@ describe('module import boundaries', () => {
       "export { readModeState } from '../mode/index.ts';\n",
       "export { trackedContexts } from '../registry/index.ts';\n",
       "import type { BrowserContext } from '@playwright/test';\nexport type C = BrowserContext;\n",
+      // The state file of a check (04-REQ-49).
+      "import { join } from 'node:path';\nexport const a = join;\n",
     ]) {
       expect(await violations('src/collector', code), code).toEqual([]);
     }
@@ -78,7 +80,7 @@ describe('module import boundaries', () => {
       "export { aggregate } from '../core/stats/index.ts';\n",
       "export { withPerf } from '../config/index.ts';\n",
       "export { writeJson } from '../io/json.ts';\n",
-      "import { join } from 'node:path';\nexport const a = join;\n",
+      "import { spawn } from 'node:child_process';\nexport const a = spawn;\n",
     ]) {
       expect(await violations('src/collector', code), code).toContain(RULE);
     }

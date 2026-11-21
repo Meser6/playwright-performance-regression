@@ -2,7 +2,13 @@
 // not import node:* itself (01, chapter 5), so the path helpers it needs live here too.
 import { rmSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+
+/** A path in the temporary directory of the OS (04-REQ-49). */
+export function tempPath(name: string): string {
+  return join(tmpdir(), name);
+}
 
 /** Removes a file if it exists; synchronous, for Reporter.onBegin (04-REQ-62). */
 export function removeFileSync(path: string): void {

@@ -656,7 +656,8 @@ export const outcomeFile = obj(
   {
     schemaVersion: constant(1),
     runId,
-    mode,
+    // The outcome has its own modes: a check writes neither a report nor thresholds (02-REQ-34).
+    mode: enumOf(['test', 'thresholds', 'check']),
     exitCode: enumOf([0, 2, 3]),
     tests: obj({ status: testsStatus }, { required: ['status'] }),
     evaluation: obj(

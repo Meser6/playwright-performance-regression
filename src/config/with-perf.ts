@@ -33,9 +33,11 @@ export function withPerf<T extends PlaywrightTestConfig>(
   if (!mode.ok || mode.value === null) throw new Error('withPerf: the mode state changed');
   const state = mode.value;
 
+  // A check runs every test once; the config is resolved as for a measurement run (04-REQ-48).
+  const check = state.mode === 'check';
   const resolved = resolveConfig(perfConfig, {
-    mode: state.mode,
-    ...(state.repeat === undefined ? {} : { repeat: state.repeat }),
+    mode: state.mode === 'check' ? 'test' : state.mode,
+    ...(state.repeat === undefined || check ? {} : { repeat: state.repeat }),
     ...(state.env === undefined ? {} : { env: state.env }),
   });
   if (!resolved.ok) throw new ConfigError(resolved.issues);
@@ -44,7 +46,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const plan = planPerfRun(config, {
     projects: perf.run.projects,
     keepReporters: perf.run.keepReporters,
-    repeat: perf.run.repeat[state.mode],
+    repeat: state.mode === 'check' ? 1 : perf.run.repeat[state.mode],
     reporterPath: reporterEntryPath(),
   });
   if (!plan.ok) throw new ConfigError(plan.issues);

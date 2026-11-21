@@ -2269,9 +2269,9 @@ export interface OutcomeFile {
    */
   runId: string;
   /**
-   * Perf mode of the run: 'test' (measurement run) or 'thresholds' (thresholds derivation run).
+   * Perf mode of the run: test, thresholds or check (02-REQ-34). The run report and thresholds files never have check.
    */
-  mode: 'test' | 'thresholds';
+  mode: 'test' | 'thresholds' | 'check';
   /**
    * Exit code the CLI must use, computed by buildOutcome() in core (00, chapter 11; 02-REQ-26): 0 ok, 2 performance violations block the run, 3 tool error or untrustworthy result. Precedence 3 > 2 > 0. Failed tests alone never give a non-zero code in perf mode (gate.maxFailedTestShare, 09-REQ-24); code 1 is reserved and never written. An interrupted or timed-out run without a signal has RUN_INCOMPLETE in toolErrors, so 3; the CLI itself uses 130/143 after a signal it received, regardless of this file (04).
    */

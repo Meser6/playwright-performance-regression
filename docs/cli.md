@@ -13,6 +13,7 @@ pw-perf <command> [options] [playwright test arguments]
 | [`test`](#pw-perf-test)                                      | Measurement run: measure, compare with the thresholds files, fail on regression |
 | [`thresholds`](#pw-perf-thresholds)                          | Thresholds run: measure without the gate, then write the thresholds files       |
 | [`thresholds --from`](#pw-perf-thresholds---from-reportjson) | Derive the thresholds files from an existing `report.json`, without tests       |
+| [`check`](#pw-perf-check)                                    | Dry run: what would be measured and how long a full run takes, nothing written  |
 | [`report`](#pw-perf-report)                                  | Render `report.html` again from a `report.json`                                 |
 | [`init`](#pw-perf-init)                                      | Guided setup in the current project                                             |
 
@@ -155,6 +156,29 @@ the changed thresholds files and `thresholds-diff.md` in `report.dir`, and print
 stdout. A report whose tests did not pass gives the warning
 [`CLI_REPORT_TESTS_FAILED`](troubleshooting.md#cli_report_tests_failed); the thresholds are still
 derived.
+
+## `pw-perf check`
+
+```text
+pw-perf check [--max-tests <n>] [--env <label>] [playwright test arguments]
+PW_PERF_MODE=check npm run e2e        # recommended form, PW_PERF_MAX_TESTS=<n>
+```
+
+A dry run before the first measurement. It runs the first test of each file of the measured
+projects once, up to `--max-tests` tests (default 10; setup and teardown projects run in full), and
+prints what would be measured: the projects with their `baseURL`, the reporters, the origins with
+their labels and where each label comes from, the top keys, the state of the thresholds files,
+warnings, and an estimate of the measurement and thresholds runs (an order of magnitude:
+setup time + tests × repeats × the mean test time). Nothing is evaluated and no file is written.
+
+When hosts look generated per CI instance, the check warns with
+[`CHECK_RANDOM_HOST`](troubleshooting.md#check_random_host) and proposes host patterns for
+`keys.origins` (see [Dynamic environments](dynamic-environments.md)).
+
+The skipped tests are skipped by the pw-perf fixture before their body; `beforeAll` hooks of their
+files may still run. `--repeat` and `--prune` are not options of `check`. Exit code: 0 when the run
+finished, also with warnings, failed tests or no requests; 3 on a tool or config error. In the
+environment mode Playwright's code applies and no `outcome.json` is written.
 
 ## `pw-perf report`
 

@@ -453,6 +453,14 @@ mixed in the same keys. Measure one browser engine per run with `run.projects`.
 
 ## Run and reporter
 
+### CHECK_RANDOM_HOST
+
+**Warning, `check` only.** Some origins look generated per environment (a host label with three or
+more digits, a random mix of letters and digits, a UUID). Their keys, or the normalization
+fingerprint when it is the `baseURL` origin, would change on every CI instance. The hint contains a
+ready `keys.origins` object with host patterns; see [dynamic-environments.md](dynamic-environments.md).
+A wrong guess only costs this line.
+
 ### RUN_PROJECT_NO_REQUESTS
 
 **Warning.** A measured project ran tests with the pw-perf fixtures, but no request of the

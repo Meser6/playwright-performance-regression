@@ -25,6 +25,8 @@ export type ProjectLike = Pick<FullProject, 'name' | 'repeatEach' | 'retries' | 
 
 export type ConfigLike = Pick<FullConfig, 'rootDir' | 'workers' | 'maxFailures' | 'version'> & {
   configFile?: string | undefined;
+  /** Reporters of the run, for the check output (04-REQ-50). */
+  reporter?: FullConfig['reporter'];
   shard: FullConfig['shard'];
   projects: ProjectLike[];
 };
@@ -48,6 +50,8 @@ export type TestLike = Pick<
 
 export type ResultLike = Pick<TestResult, 'status' | 'retry' | 'startTime'> & {
   attachments: { name: string; contentType: string; body?: Buffer | undefined; path?: string }[];
+  /** TestResult.duration, for the estimate of a check (04-REQ-51). */
+  duration?: number;
   /** Top-level steps (06-REQ-16); optional so that tests can omit it. */
   steps?: readonly StepLike[];
 };
@@ -69,6 +73,8 @@ export interface ReporterIo {
   removeFileSync(path: string): void;
   /** Nearest package.json scripts and lock files (09-REQ-32). */
   readPackageInfo(dir: string): PackageInfo;
+  /** A path in the temporary directory (04-REQ-49). */
+  tempPath(name: string): string;
 }
 
 /** Output stream as the reporter sees it. */

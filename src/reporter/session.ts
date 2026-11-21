@@ -7,13 +7,18 @@ import type { ResolvedConfig, ResolvedConfigJson } from '../core/config/index.ts
 import { assessRun, buildOutcome, evaluate } from '../core/evaluate/index.ts';
 import type { LoadedThresholds, RunSource } from '../core/evaluate/index.ts';
 import {
+  compileHostPatterns,
+  coveredByOrigins,
   createKeyBuilder,
   detectKeyExplosion,
+  isHostPattern,
+  matchingPattern,
   measuredBaseOrigins,
   normalizationFingerprint,
 } from '../core/normalize/index.ts';
 import type { KeySample, KeyResult } from '../core/normalize/index.ts';
-import { buildRunReport, nextHint, suggestCommand } from '../core/report/index.ts';
+import { buildRunReport, collapseIssues, nextHint, suggestCommand } from '../core/report/index.ts';
+import { estimateText, randomHostIssue } from '../core/check/index.ts';
 import type { CommandContext, PerfMode, WrittenFile } from '../core/report/index.ts';
 import { StepRecorder } from './steps.ts';
 import type { RunReportInput } from '../core/report/index.ts';
@@ -31,10 +36,17 @@ import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
 import { nextLine, outcomeLine } from '../console/outcome-line.ts';
+import { formatCheckSummary } from '../console/check-summary.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import { renderHtmlReport } from '../html/index.ts';
-import { generateRunId, readModeState, testArgsFromArgv, testFilters } from '../mode/index.ts';
+import {
+  checkStateFileName,
+  generateRunId,
+  readModeState,
+  testArgsFromArgv,
+  testFilters,
+} from '../mode/index.ts';
 import type { PerfModeState } from '../mode/index.ts';
 import { notWrappedWarning } from '../registry/index.ts';
 import type { RegisteredState, RunConditions } from '../registry/index.ts';
@@ -105,7 +117,7 @@ export function runSettings(
   if (read.ok && read.value === null) return null;
   const mode: PerfModeState = read.ok && read.value !== null ? read.value : { mode: 'test' };
   const resolved = resolveConfig(undefined, {
-    mode: mode.mode,
+    mode: mode.mode === 'check' ? 'test' : mode.mode,
     ...(mode.repeat === undefined ? {} : { repeat: mode.repeat }),
     ...(mode.env === undefined ? {} : { env: mode.env }),
   });
@@ -170,6 +182,19 @@ export class RunSession {
   private retried = 0;
   private withArtifacts = 0;
   private readonly pending = new Map<string, number>();
+  /** Check (04, chapter 4.11): counters for the output and the estimate. */
+  private readonly checkRun = {
+    selected: 0,
+    ran: 0,
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    durations: [] as number[],
+    setupMs: 0,
+    requests: new Map<string, number>(),
+    tests: new Map<string, number>(),
+  };
+  private configLike: ConfigLike | null = null;
   /** Measured projects with a non-skipped test that has a batch, and those with requests. */
   private readonly instrumentedProjects = new Set<string>();
   private readonly projectsWithRequests = new Set<string>();
@@ -192,11 +217,19 @@ export class RunSession {
     this.steps = new StepRecorder(settings.config);
   }
 
+  /** Mode of the run report; a check aggregates like a measurement run (04-REQ-48). */
   private get mode(): 'test' | 'thresholds' {
-    return this.settings.mode.mode;
+    const mode = this.settings.mode.mode;
+    return mode === 'check' ? 'test' : mode;
+  }
+
+  /** A dry run: nothing is evaluated or written (04, chapter 4.11). */
+  private get check(): boolean {
+    return this.settings.mode.mode === 'check';
   }
 
   private get repeat(): number {
+    if (this.check) return 1;
     return this.settings.config.run.repeat[this.mode];
   }
 
@@ -224,6 +257,7 @@ export class RunSession {
 
   begin(config: ConfigLike, suite: RootSuiteLike): void {
     this.playwrightVersion = config.version;
+    this.configLike = config;
     this.startedAt = this.host.now();
     if (this.settings.mode.runId === undefined) {
       this.runId = generateRunId(this.startedAt, this.host.random);
@@ -243,6 +277,9 @@ export class RunSession {
     this.maxFailures = config.maxFailures;
     const names = this.settings.measuredProjects ?? config.projects.map((p) => p.name);
     this.measured = new Set(names);
+    this.checkRun.selected = suite
+      .allTests()
+      .filter((t) => this.measured.has(projectName(t))).length;
     this.conditions = readRunConditions(
       config,
       this.measured,
@@ -281,7 +318,13 @@ export class RunSession {
     const overridden = overriddenLine(this.settings.runConditions);
     if (overridden !== null) this.info(overridden);
     this.info(
-      executionsLine(this.mode, suite.allTests(), this.measured, this.repeat, config.workers),
+      executionsLine(
+        this.settings.mode.mode,
+        suite.allTests(),
+        this.measured,
+        this.repeat,
+        config.workers,
+      ),
     );
   }
 
@@ -296,6 +339,7 @@ export class RunSession {
 
     const bodies = sampleAttachments(result);
     const measured = this.measured.has(projectName(test));
+    if (this.check) this.countCheck(test, result, measured);
     const relative = (file: string): string => this.host.io.relativeSlashPath(this.configDir, file);
     const meta = testMeta(test, result, relative(test.location.file));
     // Steps come from the result, not from the batch, so they are read without it (06-REQ-16).
@@ -326,6 +370,10 @@ export class RunSession {
       const batch = parsed.value;
       this.warnings.push(...batch.diagnostics);
       if (measured && batch.requests.length > 0) this.projectsWithRequests.add(project);
+      if (measured) {
+        const n = this.checkRun.requests.get(project) ?? 0;
+        this.checkRun.requests.set(project, n + batch.requests.length);
+      }
       batch.requests.forEach((sample, ordinal) => {
         const keyed = addKeyedRequest(
           this.aggregator,
@@ -468,6 +516,7 @@ export class RunSession {
   async end(result: FullResultLike): Promise<{ status?: FullResultLike['status'] } | undefined> {
     // --list, or a filter that selected no test: no report, no outcome, no status (01-REQ-40).
     if (this.testsStarted === 0) return undefined;
+    if (this.check) return this.endCheck(result);
     let outcome: Outcome;
     try {
       outcome = await this.finish(result);
@@ -605,6 +654,261 @@ export class RunSession {
     }
     this.next = nextHint({ report, commands: this.commands(), written: this.written });
     return buildOutcome(report, paths);
+  }
+
+  private countCheck(test: TestLike, result: ResultLike, measured: boolean): void {
+    const c = this.checkRun;
+    const duration = result.duration ?? 0;
+    if (!measured) {
+      c.setupMs += duration;
+      return;
+    }
+    if (result.status === 'skipped') {
+      c.skipped += 1;
+      return;
+    }
+    c.ran += 1;
+    if (result.status === 'passed' || result.status === test.expectedStatus) c.passed += 1;
+    else c.failed += 1;
+    c.durations.push(duration);
+    const project = projectName(test);
+    c.tests.set(project, (c.tests.get(project) ?? 0) + 1);
+  }
+
+  /** onEnd of a check (04-REQ-50, 04-REQ-53): output, no report, no files; outcome only via the CLI. */
+  private async endCheck(
+    result: FullResultLike,
+  ): Promise<{ status?: FullResultLike['status'] } | undefined> {
+    let outcome: Outcome;
+    try {
+      outcome = await this.finishCheck(result);
+    } catch (error) {
+      this.recordInternalError('onEnd', error);
+      outcome = {
+        ...this.fallbackOutcome(result),
+        mode: 'check',
+        evaluation: { status: 'error', gateEnabled: false },
+      };
+    }
+    if (!this.environmentMode) await this.writeOutcome(outcome);
+    // The state file of the test selection (04-REQ-49); the CLI removes it too.
+    if (this.settings.mode.runId !== undefined) {
+      try {
+        this.host.io.removeFileSync(
+          this.host.io.tempPath(checkStateFileName(this.settings.mode.runId)),
+        );
+      } catch {
+        // A left-over file in the temporary directory is harmless.
+      }
+    }
+    if (this.next !== null) this.host.stdout.write(nextLine(this.next, this.terminal().color));
+    return outcome.exitCode === 0 ? undefined : { status: 'failed' };
+  }
+
+  private async finishCheck(result: FullResultLike): Promise<Outcome> {
+    const cfg = this.settings.config;
+    const config = this.configLike;
+    const c = this.checkRun;
+    const aggregates = this.aggregator.finalize();
+    const tests = this.testsResult(result.status);
+    // With ten tests one failure is 10%: a check never has TESTS_FAILED_TOO_MANY (04-REQ-53).
+    const assessment = assessRun(
+      { tests, maxFailures: this.maxFailures, sharded: false },
+      { maxFailedTestShare: 1 },
+    );
+    const toolErrors = [...this.toolErrors, ...assessment.toolErrors];
+    const baseUrls = this.conditions.projects.map((p, i) => ({
+      project: p,
+      baseURL: config?.projects[i]?.use.baseURL ?? null,
+    }));
+    const warnings: Issue[] = [
+      ...this.warnings,
+      ...this.runWarnings(),
+      ...assessment.warnings,
+      ...aggregates.issues,
+      ...detectKeyExplosion(Object.keys(aggregates.endpoints)),
+      ...this.steps.issues(Object.keys(aggregates.steps)),
+    ];
+    // An unset baseURL is reported only by a check (03-REQ-21).
+    const unset = baseUrls
+      .filter(
+        (b) => b.project.role === 'measured' && (b.baseURL === null || b.baseURL === undefined),
+      )
+      .map((b) => b.project.name);
+    if (unset.length > 0) {
+      warnings.push({
+        code: 'CONFIG_BASEURL_EMPTY',
+        message: `Measured ${unset.length === 1 ? 'project' : 'projects'} ${unset.join(', ')} ${unset.length === 1 ? 'has' : 'have'} no use.baseURL.`,
+        hint: 'If baseURL comes from environment variables, run the tests through the script that sets them (e.g. PW_PERF_MODE=check npm run e2e:qa, see docs/dynamic-environments.md).',
+      });
+    }
+    const keys = cfg.keys;
+    const baseOrigins = baseUrls.flatMap((b) =>
+      b.project.role === 'measured' && typeof b.baseURL === 'string' ? [b.baseURL] : [],
+    );
+    const candidates = [
+      ...aggregates.origins.map((o) => o.origin),
+      ...baseOrigins.flatMap((u) => {
+        try {
+          return [new URL(u).origin];
+        } catch {
+          return [];
+        }
+      }),
+    ];
+    const baseSet = new Set(
+      baseOrigins.flatMap((u) => (URL.canParse(u) ? [new URL(u).origin] : [])),
+    );
+    const random = randomHostIssue(
+      [...new Set(candidates)]
+        .filter((o) => !coveredByOrigins(keys.origins, o))
+        .map((origin) => ({ origin, base: baseSet.has(origin) })),
+    );
+    if (random !== null) warnings.push(random);
+
+    const patterns = compileHostPatterns(keys.origins);
+    const exact = new Set(
+      Object.keys(keys.origins)
+        .filter((k) => !isHostPattern(k))
+        .flatMap((k) => (URL.canParse(k) ? [new URL(k).origin] : [])),
+    );
+    const origins = [...aggregates.origins]
+      .sort((a, b) => b.requestCount - a.requestCount || (a.origin < b.origin ? -1 : 1))
+      .map((o) => {
+        const pattern = URL.canParse(o.origin)
+          ? matchingPattern(patterns, new URL(o.origin))
+          : null;
+        const source = exact.has(o.origin)
+          ? 'keys.origins'
+          : pattern !== null
+            ? `keys.origins pattern ${pattern.canonical}`
+            : baseSet.has(o.origin)
+              ? 'baseURL'
+              : 'host';
+        return { origin: o.origin, label: o.label, requests: o.requestCount, source };
+      });
+    const topKeys = [
+      ...Object.entries(aggregates.endpoints).map(([key, a]) => ({
+        kind: 'api' as const,
+        key,
+        samples: a.count,
+        tests: a.testCount,
+      })),
+      ...Object.entries(aggregates.steps).map(([key, a]) => ({
+        kind: 'step' as const,
+        key,
+        samples: a.count,
+        tests: a.testCount,
+      })),
+    ]
+      .sort(
+        (a, b) =>
+          b.samples - a.samples ||
+          (a.kind === b.kind ? 0 : a.kind === 'api' ? -1 : 1) ||
+          (a.key < b.key ? -1 : a.key > b.key ? 1 : 0),
+      )
+      .slice(0, 10);
+
+    const location = {
+      configDir: this.configDir,
+      dir: cfg.thresholds.dir,
+      filePrefix: cfg.thresholds.filePrefix,
+      env: cfg.run.env,
+      steps: cfg.measure.steps.enabled,
+    };
+    const loaded = await this.host.io.loadThresholds(location);
+    const kindsWithKeys = {
+      api: Object.keys(aggregates.endpoints).length > 0,
+      step: Object.keys(aggregates.steps).length > 0,
+    };
+    const thresholdsFiles = (['api', 'step'] as const)
+      .filter((kind) => kind === 'api' || kindsWithKeys.step || !cfg.measure.steps.enabled)
+      .map((kind) => {
+        const file = loaded[kind];
+        if (kind === 'step' && !cfg.measure.steps.enabled)
+          return { kind, name: file.path, state: 'not used' };
+        const state =
+          file.status === 'loaded'
+            ? `${String(Object.keys(file.file.entries).length)} entries`
+            : file.status === 'missing'
+              ? 'missing'
+              : `invalid (${file.issues[0]?.code ?? 'SCHEMA_VALIDATION_FAILED'})`;
+        return { kind, name: file.path, state };
+      });
+    const missingFile = (['api', 'step'] as const).some(
+      (kind) => kindsWithKeys[kind] && loaded[kind].status !== 'loaded',
+    );
+
+    const meanMs =
+      c.durations.length === 0 ? null : c.durations.reduce((a, b) => a + b, 0) / c.durations.length;
+    // The package reporter by its short name, not by the path the CLI or withPerf() adds.
+    const reporters = (config?.reporter ?? []).map(([name]) =>
+      /playwright-performance-regression|[\\/]dist[\\/]reporter\.c?js$/u.test(name)
+        ? 'pw-perf'
+        : name,
+    );
+    const { width, color } = this.terminal();
+    this.host.stdout.write(
+      formatCheckSummary(
+        {
+          packageName: 'pw-perf',
+          ran: c.ran,
+          selected: c.selected,
+          passed: c.passed,
+          failed: c.failed,
+          skippedByCheck: c.skipped,
+          projects: this.conditions.projects.map((p, i) => ({
+            name: p.name,
+            role: p.role,
+            browserName: p.browserName,
+            baseURL: config?.projects[i]?.use.baseURL ?? null,
+            requests: c.requests.get(p.name) ?? 0,
+            tests: c.tests.get(p.name) ?? 0,
+          })),
+          removedProjects: this.settings.runConditions.removedProjects,
+          reporters: {
+            kept: reporters,
+            replaced: this.settings.runConditions.replacedReporters,
+            removed: this.settings.runConditions.removedReporters,
+          },
+          requests: aggregates.origins.reduce((n, o) => n + o.requestCount, 0),
+          apiKeys: Object.keys(aggregates.endpoints).length,
+          stepKeys: Object.keys(aggregates.steps).length,
+          origins,
+          topKeys,
+          thresholdsFiles,
+          warnings: collapseIssues(warnings),
+          toolErrors: collapseIssues(toolErrors),
+          estimate: estimateText({
+            tests: c.selected,
+            repeatTest: this.settings.mode.repeat ?? cfg.run.repeat.test,
+            repeatThresholds: cfg.run.repeat.thresholds,
+            meanMs,
+            setupMs: c.setupMs,
+          }),
+        },
+        { width, color },
+      ),
+    );
+    const commands = this.commands();
+    this.next =
+      toolErrors.length > 0
+        ? null
+        : !kindsWithKeys.api && !kindsWithKeys.step
+          ? `nothing was measured: check use.baseURL and run.projects, then run ${commands.check}`
+          : missingFile
+            ? `derive thresholds on the CI machines: ${commands.thresholds}`
+            : `run the measurement: ${commands.test}`;
+    return {
+      schemaVersion: SCHEMA_VERSIONS.outcome,
+      runId: this.runId,
+      mode: 'check',
+      exitCode: toolErrors.length > 0 ? 3 : 0,
+      tests: { status: result.status },
+      evaluation: { status: toolErrors.length > 0 ? 'error' : 'passed', gateEnabled: false },
+      toolErrors: collapseIssues(toolErrors),
+      paths: { reportJson: null, reportHtml: null, thresholds: [], thresholdsDiff: null },
+    };
   }
 
   /** Commands of the project for each mode, for the Next: hint (09-REQ-32). */

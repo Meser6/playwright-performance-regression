@@ -17,6 +17,7 @@ import {
   relativeSlashPath,
   removeFileSync,
   resolvePath,
+  tempPath,
   writeJsonStable,
   writeTextAtomic,
 } from '../io/index.ts';
@@ -40,6 +41,7 @@ function processHost(): ReporterHost {
       relativeSlashPath,
       removeFileSync,
       readPackageInfo,
+      tempPath,
     },
     stdout: process.stdout,
     stderr: process.stderr,
