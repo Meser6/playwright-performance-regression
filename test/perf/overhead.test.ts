@@ -1,7 +1,7 @@
 // 12-PERF-01: run-time overhead of perf mode on the demo suite (NF-01, 05-AC-10). The same
 // project and Playwright config run alternately without perf mode (`playwright test --workers=1
-// --retries=0 --repeat-each=5`) and through the CLI (`pw-perf test --passes 5`), 5 times each;
-// the medians of the wall times are compared (12-D-04).
+// --retries=0` 5 times in a row) and through the CLI (`pw-perf test --passes 5`), 5 rounds each;
+// the medians of the wall times are compared (12-D-04, D-39).
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
@@ -16,7 +16,7 @@ import {
 import type { Workspace } from './helpers.ts';
 
 const ROUNDS = 5;
-const REPEAT = 5;
+const PASSES = 5;
 const MAX_OVERHEAD = 0.05;
 
 let workspace: Workspace;
@@ -49,22 +49,26 @@ describe('12-PERF-01 run-time overhead', () => {
       THRESHOLDS_DIR: join(workspace.dir, 'thresholds'),
     });
     const plainArgs = [PLAYWRIGHT, 'test', '--workers=1', '--retries=0'];
+    // The plain variant starts Playwright once per pass, like the passes of perf mode.
+    const runPlain = async (run: string) => {
+      let wallMs = 0;
+      for (let pass = 1; pass <= PASSES; pass++) {
+        const p = await runNode(plainArgs, DEMO_PROJECT, env(`${run}-${String(pass)}`));
+        expect(p.status, p.output).toBe(0);
+        wallMs += p.wallMs;
+      }
+      return wallMs;
+    };
     // Warm-up of both variants (browser start, file system caches), not counted.
-    await runNode([...plainArgs, `--repeat-each=${REPEAT}`], DEMO_PROJECT, env('warm-plain'));
-    await runNode([CLI, 'test', '--passes', String(REPEAT)], DEMO_PROJECT, env('warm-perf'));
+    await runPlain('warm-plain');
+    await runNode([CLI, 'test', '--passes', String(PASSES)], DEMO_PROJECT, env('warm-perf'));
 
     const plain: number[] = [];
     const perf: number[] = [];
     for (let round = 0; round < ROUNDS; round++) {
-      const p = await runNode(
-        [...plainArgs, `--repeat-each=${REPEAT}`],
-        DEMO_PROJECT,
-        env(`plain-${round}`),
-      );
-      expect(p.status, p.output).toBe(0);
-      plain.push(p.wallMs);
+      plain.push(await runPlain(`plain-${String(round)}`));
       const m = await runNode(
-        [CLI, 'test', '--passes', String(REPEAT)],
+        [CLI, 'test', '--passes', String(PASSES)],
         DEMO_PROJECT,
         env(`perf-${round}`),
       );
@@ -75,7 +79,7 @@ describe('12-PERF-01 run-time overhead', () => {
     const overhead = median(perf) / median(plain) - 1;
     recordResult('12-PERF-01', {
       rounds: ROUNDS,
-      repeat: REPEAT,
+      passes: PASSES,
       plainMs: plain.map(Math.round),
       perfMs: perf.map(Math.round),
       plainMedianMs: Math.round(median(plain)),
