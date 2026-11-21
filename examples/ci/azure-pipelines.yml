@@ -1,17 +1,24 @@
-# Performance measurement run with playwright-performance-regression (pw-perf).
-# Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
-# night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
-# config error) fails it. The report in pw-perf-results/ is published also when the run fails.
+# Performance runs with playwright-performance-regression (pw-perf). Register as its own
+# pipeline, e.g. azure-pipelines.perf.yml. Recommended path (docs/ci.md):
+#   1. Run the pipeline by hand with mode "thresholds". Thresholds come from the same agents
+#      that measure.
+#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
+#   3. The pipeline runs every Monday with mode "test" and fails on a regression.
+# The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) ends the job
+# as "succeeded with issues", 3 (tool or config error) fails it.
 trigger: none
+pr: none
 
-pr:
-  branches:
-    include:
-      - '*'
+parameters:
+  - name: mode
+    displayName: 'test: measurement run, thresholds: derive the thresholds files'
+    type: string
+    default: test
+    values: [test, thresholds]
 
 schedules:
-  - cron: '0 3 * * *'
-    displayName: Nightly measurement run
+  - cron: '0 3 * * 1'
+    displayName: Weekly measurement run
     branches:
       include:
         - main
@@ -22,7 +29,9 @@ pool:
 
 jobs:
   - job: perf
-    timeoutInMinutes: 60
+    timeoutInMinutes: 120
+    variables:
+      PW_PERF_MODE: ${{ parameters.mode }}
     steps:
       - task: NodeTool@0
         inputs:
@@ -32,14 +41,22 @@ jobs:
       - script: npx playwright install --with-deps chromium
         displayName: Install Chromium
       - bash: |
-          code=0
-          npx pw-perf test || code=$?
+          rm -f pw-perf-results/outcome.json
+          npm run e2e || true
+          code=$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)
           if [ "$code" -eq 2 ]; then
             echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
             exit 0
           fi
           exit $code
-        displayName: Measurement run
+        displayName: Performance run
+      - bash: mkdir -p pw-perf-thresholds && cp pw-perf-thresholds*.json pw-perf-thresholds/
+        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
+        displayName: Collect the thresholds files
+      - publish: pw-perf-thresholds
+        artifact: pw-perf-thresholds
+        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
+        displayName: Publish the thresholds files
       - publish: pw-perf-results
         artifact: pw-perf-results
         condition: always()

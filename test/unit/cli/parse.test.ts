@@ -104,8 +104,9 @@ describe('parseArgs', () => {
     expect(parsed(['test', '--', '--help'])).toEqual(run('test', ['--help']));
   });
 
-  test('04-REQ-01 a missing or unknown command is CLI_UNKNOWN_COMMAND with the list of commands', () => {
-    for (const argv of [[], ['tests'], ['--grep', 'x']]) {
+  test('04-REQ-01 no arguments is the help; an unknown command is CLI_UNKNOWN_COMMAND with the list of commands', () => {
+    expect(parsed([])).toEqual({ kind: 'help', noArgs: true });
+    for (const argv of [['tests'], ['--grep', 'x']]) {
       const result = parseArgs(argv);
       expect(result.ok).toBe(false);
       if (result.ok) continue;

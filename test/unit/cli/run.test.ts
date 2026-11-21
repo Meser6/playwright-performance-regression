@@ -417,6 +417,35 @@ describe('main', () => {
     expect(fake.stderr.join('')).toContain('error CLI_UNKNOWN_COMMAND: Unknown command "nope".');
   });
 
+  test('04-AC-47 no arguments without a config: the init box and the help, exit code 0', async () => {
+    const project = mkdtempSync(join(tmpdir(), 'pw-perf-noargs-'));
+    try {
+      const bare = fakeCliHost({ cwd: project, env: { NO_COLOR: '1' } });
+      expect(await main([], bare.host)).toBe(0);
+      const out = bare.stdout.join('');
+      expect(out).toContain('No pw-perf config found in this project');
+      expect(out).toContain('Run: npx pw-perf init');
+      expect(out).toContain('╭');
+      expect(out.indexOf('npx pw-perf init')).toBeLessThan(out.indexOf('Usage:'));
+      const dumb = fakeCliHost({ cwd: project, env: { TERM: 'dumb' } });
+      expect(await main([], dumb.host)).toBe(0);
+      expect(dumb.stdout.join('')).toContain('+---');
+
+      writeFileSync(join(project, 'playwright.config.ts'), 'export default withPerf({});\n');
+      const wrapped = fakeCliHost({ cwd: project });
+      expect(await main([], wrapped.host)).toBe(0);
+      expect(wrapped.stdout.join('')).not.toContain('No pw-perf config found');
+      rmSync(join(project, 'playwright.config.ts'));
+      writeFileSync(join(project, 'pw-perf.config.ts'), 'export default {};\n');
+      const configured = fakeCliHost({ cwd: project });
+      expect(await main([], configured.host)).toBe(0);
+      expect(configured.stdout.join('')).not.toContain('No pw-perf config found');
+      expect(configured.stdout.join('')).toContain('Usage:');
+    } finally {
+      rmSync(project, { recursive: true, force: true });
+    }
+  });
+
   test('an unexpected error is CLI_INTERNAL_ERROR with exit code 3', async () => {
     const fake = fakeCliHost({ cwd: dir });
     fake.host.resolvePlaywright = () => {

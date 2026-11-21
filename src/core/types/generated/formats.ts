@@ -146,6 +146,10 @@ export interface PackageConfig {
      */
     projects?: 'auto' | [string, ...string[]];
     /**
+     * Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf' (03-REQ-25). Applied case-insensitively to the measured projects only; their setup and teardown projects run in full. null: all tests.
+     */
+    grep?: null | string;
+    /**
      * Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters line, dot and github (list becomes dot; name list here to keep it) and the package reporter (D-23, 04-REQ-32).
      */
     keepReporters?: string[];
@@ -689,10 +693,6 @@ export interface PackageConfig {
      */
     defaultThresholds?: 'block' | 'warn';
     /**
-     * Report violations but never fail the run.
-     */
-    warnOnly?: boolean;
-    /**
      * Highest share of failed test executions (unexpected / executed, skipped excluded) for which the run result is still trustworthy. Above it the run ends with tool error TESTS_FAILED_TOO_MANY (exit code 3, 09). Failed tests below it are a warning only: in perf mode the performance result decides (00, chapter 11).
      */
     maxFailedTestShare?: number;
@@ -701,6 +701,10 @@ export interface PackageConfig {
    * Thresholds files and derivation (10).
    */
   thresholds?: {
+    /**
+     * Headroom preset for derived thresholds (D-41, 10-REQ-23): sets the defaults of every checks.*.margin; margin fields set explicitly win. strict: small headroom, catches smaller regressions, more false alarms on a noisy environment. normal: recommended start. loose: large headroom, only clear regressions, for shared noisy environments.
+     */
+    preset?: 'strict' | 'normal' | 'loose';
     /**
      * Directory of thresholds files, relative to the Playwright config directory.
      */

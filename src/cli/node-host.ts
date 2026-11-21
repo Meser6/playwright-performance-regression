@@ -55,6 +55,7 @@ export function nodeHost(): CliHost {
     paths: { join, resolve, dirname },
     env: process.env,
     platform: process.platform,
+    execPath: process.execPath,
     tmpdir: tmpdir(),
     stdin: process.stdin,
     stdout: process.stdout,
@@ -67,6 +68,7 @@ export function nodeHost(): CliHost {
     reporterPath: fileURLToPath(new URL('./reporter.js', import.meta.url)),
     resolvePlaywright,
     spawnNode: (args, options) => spawn(process.execPath, args, options),
+    spawnProcess: (file, args, options) => spawn(file, args, options),
     onSignal: (signal, handler) => {
       process.on(signal, handler);
       return () => {

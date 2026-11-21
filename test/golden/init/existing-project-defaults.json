@@ -1,5 +1,5 @@
 {
-  "name": "existing-project with the default answers (--yes): config wrapper and several test objects are manual steps, existing script kept",
+  "name": "existing-project with the default answers (--yes): config wrapper is a manual step, several test objects give the red box",
   "input": {
     "project": "init-existing-project",
     "answers": null
@@ -9,15 +9,14 @@
       {
         "code": "INIT_MANUAL_STEP",
         "message": "playwright.config.ts was not changed: its export is not a plain defineConfig({...}) or object (for example another wrapper)."
-      },
-      {
-        "code": "INIT_MANUAL_STEP",
-        "message": "tests/a11y.ts, tests/fixtures.ts were not changed: the test objects are not one `export const test = base.extend(...)` (several test objects, mergeTests() or another layout)."
-      },
-      {
-        "code": "INIT_MANUAL_STEP",
-        "message": "package.json: the script \"perf:test\" exists and was not changed."
       }
-    ]
+    ],
+    "testObject": {
+      "extendFiles": [
+        "tests/a11y.ts",
+        "tests/fixtures.ts"
+      ],
+      "importingFiles": 2
+    }
   }
 }

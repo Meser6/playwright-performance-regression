@@ -12,8 +12,9 @@ select projects with `--project`. See [Choosing the tests to measure](adoption.m
 Most often from a noisy environment: shared CI runners, a QA environment used by other pipelines
 at the same time, or thresholds derived on a different machine than the one running the gate.
 Derive thresholds on the CI runners ([Thresholds](thresholds.md#deriving-thresholds-the-recommended-flow)),
-isolate the run ([CI](ci.md#isolation-of-the-environment-and-the-runner)), and start with
-`gate.warnOnly` for the first weeks. The p95 and p99 checks need enough samples to be stable; the
+isolate the run ([CI](ci.md#isolation-of-the-environment-and-the-runner)), choose the
+`loose` headroom preset on a noisy environment (`thresholds: { preset: 'loose' }`), and keep the
+measurement job non-blocking (`continue-on-error`) for the first weeks. The p95 and p99 checks need enough samples to be stable; the
 checks on Apdex, slow share and error rate compare confidence bounds rather than raw values, so a
 single slow sample does not fail them.
 

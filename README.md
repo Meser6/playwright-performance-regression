@@ -26,13 +26,15 @@ Your normal `npx playwright test` runs are not changed.
 ## Install
 
 ```sh
-npm init playwright-performance-regression
+npm init playwright-performance-regression@next
 ```
 
-This installs the package as a dev dependency and starts a short guided setup (`pw-perf init`). It
-shows a diff of every change before writing anything: it wraps your Playwright config, wraps your
-`test` object or switches test imports, creates `pw-perf.config.ts`, adds `perf:test` and
-`perf:thresholds` scripts, ignores `pw-perf-results/`, and can add a CI job. `pnpm create` and
+This installs the package as a dev dependency and starts a short guided setup (`pw-perf init`;
+after `0.1.0`: `npm init playwright-performance-regression`). It shows a diff of every change
+before writing anything: it wraps your Playwright config and your fixtures module, creates
+`pw-perf.config.ts`, ignores `pw-perf-results/` and can add the CI jobs. It never changes your test
+files or `package.json`: when it cannot wrap your `test` object, it shows the code to paste. At the
+end it runs a short check of what will be measured. `pnpm create` and
 `yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
 `@next` with `yarn create`); `-- --yes` accepts the defaults without questions. The guided
 setup speaks English, Spanish, French, Polish, Italian, Ukrainian and Russian (`--lang <code>`).
@@ -99,9 +101,10 @@ error) is in `pw-perf-results/outcome.json`. The result is also printed in the t
 to `pw-perf-results/report.json` and `pw-perf-results/report.html`. A runner with its own exit
 codes is described in [Advanced: the pw-perf runner](docs/cli.md#advanced-the-pw-perf-runner).
 
-Derive thresholds on the same machines that run the check, usually your CI runners, and bring them
-to your repository with `pw-perf thresholds --from <report.json>`. Thresholds measured on a laptop
-do not fit CI. See [Thresholds](docs/thresholds.md).
+Derive thresholds on the same machines that run the check, usually your CI runners (see
+[CI](#ci) below); thresholds measured on a laptop do not fit CI. How much headroom they get is one
+setting, `thresholds: { preset: 'strict' | 'normal' | 'loose' }`. See
+[Thresholds](docs/thresholds.md).
 
 ## Step timings
 
@@ -119,38 +122,47 @@ e-mails, URLs and secrets never reach the keys or the reports, also inside quote
 
 ## CI
 
-A GitHub Actions job that measures pull requests and runs every night:
+The recommended path: (1) a CI job you start by hand runs with `PW_PERF_MODE=thresholds` and keeps
+the thresholds files as an artifact, (2) you commit them, (3) a weekly job runs with
+`PW_PERF_MODE=test` and fails on a regression. In GitHub Actions, shortened:
 
 ```yaml
 name: Performance
 on:
-  pull_request:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      mode: { type: choice, options: [test, thresholds], default: test }
 jobs:
-  perf:
+  thresholds:
+    if: inputs.mode == 'thresholds'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    env: { PW_PERF_MODE: thresholds }
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      # A tagged subset on pull requests, the full measured suite at night.
-      - run: npx pw-perf test ${{ github.event_name == 'pull_request' && '--grep @perf' || '' }}
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with: { name: pw-perf-thresholds, path: pw-perf-thresholds*.json }
+  measure:
+    if: github.event_name == 'schedule' || inputs.mode == 'test'
+    runs-on: ubuntu-latest
+    env: { PW_PERF_MODE: test }
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: always() # the report matters most when the run fails
-        with:
-          name: pw-perf-results
-          path: pw-perf-results/
+        with: { name: pw-perf-results, path: pw-perf-results/ }
 ```
 
-Exit codes: **0** no blocking regression, **2** performance regression, **3** tool or config error
-(the measurement itself is not trustworthy). Recipes for GitLab CI, Jenkins and Azure Pipelines,
-with code 2 as a soft failure where the platform supports it: [CI](docs/ci.md).
+Not ready to block builds yet? Set `continue-on-error: true` on the measure job. The full recipes
+for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit code (**0** ok,
+**2** performance regression, **3** tool or config error) from `pw-perf-results/outcome.json`:
+[CI](docs/ci.md).
 
 ## Limitations
 
@@ -159,11 +171,11 @@ with code 2 as a soft failure where the platform supports it: [CI](docs/ci.md).
   calls through `page.request` or `context.request`, record nothing.
 - Only Chromium projects are measured by default. Firefox and WebKit are best effort.
 - The measurement run is separate from your normal run, uses one worker and runs your test command
-  several times (passes), so it is slow: measure a subset (`--grep @perf`, `--project`).
+  several times (passes), so it is slow: measure a subset (`run: { grep: '@perf' }`, `--project`).
 - The test command, with its setup steps, runs once per pass; tests that create data without such
   a step can collide in the next pass; make the data unique.
-- In manual mode (`PW_PERF_MODE=test npx playwright test`), a `--reporter` flag replaces the
-  package reporter and nothing is reported. Use `pw-perf test`.
+- A `--reporter` flag in the test command replaces the package reporter, so nothing is reported
+  (the run warns with `RUN_REPORTER_FLAG`); keep reporters in `playwright.config` instead.
 
 ## Privacy
 

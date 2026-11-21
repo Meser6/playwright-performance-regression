@@ -10,6 +10,6 @@ export default definePerfConfig({
     // Also measure the test.step blocks of the page objects (docs/steps.md).
     steps: true,
   },
-  // Report violations without failing the run while the thresholds settle.
-  gate: { warnOnly: true },
+  // Derived thresholds with the recommended headroom (strict / normal / loose).
+  thresholds: { preset: 'normal' },
 });

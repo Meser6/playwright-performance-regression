@@ -7,7 +7,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking:** `gate.warnOnly` (the trial mode). The option is now `CONFIG_UNKNOWN_OPTION` with a
+  hint; to keep a CI job green on a regression, set `continue-on-error` on the job, or use
+  `gate.tolerance` / `gate.defaultThresholds: 'warn'`.
+- **Breaking:** `pw-perf init` no longer writes `perf:*` scripts to `package.json` and no longer
+  changes test files (no import swap). Scripts written by an earlier wizard keep working.
+
 ### Changed
+
+- `pw-perf init` is rebuilt around your own test command: it detects the scripts that run
+  `playwright test` and shows `Run: PW_PERF_MODE=test npm run <script>`, warns about flags that
+  break a measurement run (`INIT_SCRIPT_FLAG`) and later steps of the script
+  (`INIT_SCRIPT_LATER_STEPS`), asks which projects to measure, writes `@perf` as `run.grep`,
+  asks for the headroom preset, no longer asks about a trial period or environments, and ends
+  with a check. Steps 1 and 2 are one step with a short description of the package.
+- When the wizard cannot wrap your fixtures module it changes no test file and shows a red box
+  with the code to paste (`INIT_TEST_OBJECT_MANUAL`). Without `playwright.config` it stops before
+  the first question.
+- The CI recipes in `examples/ci/` (and the files `init` writes) have two jobs: a thresholds job
+  you start by hand that keeps the thresholds files as an artifact, and a weekly measurement job;
+  both set `PW_PERF_MODE` and run your test command, and read the exit code from
+  `pw-perf-results/outcome.json`.
+- `npx pw-perf` without arguments prints the help instead of an error, with a box pointing to
+  `npx pw-perf init` in a project without config.
 
 - **Breaking:** `run.repeat`, `PW_PERF_REPEAT` and `--repeat` are renamed to `run.passes`,
   `PW_PERF_PASSES` and `--passes`; the old names are errors with a hint. Every project runs with
@@ -18,6 +42,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `pw-perf test` and `thresholds` print no mode line before the run; the start banner replaces it.
 
 ### Added
+
+- `thresholds.preset`: `strict`, `normal` (default, the previous margins) or `loose` sets the
+  headroom of every derived threshold; fields in `checks.*.margin` still win.
+- `run.grep`: only tests whose title or tags match run in perf mode (e.g. `'@perf'`), applied to
+  the measured projects only, so setup projects run in full.
+- `pw-perf.config.ts` written by `init` starts with a "Most important settings" block.
 
 - Passes: a run now runs your test command several times in a row (`run.passes`: 5 for `test`,
   10 for `thresholds`; `PW_PERF_PASSES` or `--passes` for one run) instead of repeating each test

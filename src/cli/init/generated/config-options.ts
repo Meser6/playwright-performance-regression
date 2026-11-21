@@ -36,6 +36,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 'auto',
   },
   {
+    path: 'run.grep',
+    description:
+      "Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'.",
+    leaf: true,
+    default: null,
+  },
+  {
     path: 'run.keepReporters',
     description:
       "Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright').",
@@ -626,12 +633,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 'block',
   },
   {
-    path: 'gate.warnOnly',
-    description: 'Report violations but never fail the run.',
-    leaf: true,
-    default: false,
-  },
-  {
     path: 'gate.maxFailedTestShare',
     description:
       'Highest share of failed test executions (unexpected / executed, skipped excluded) for which the run result is still trustworthy.',
@@ -639,6 +640,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 0.1,
   },
   { path: 'thresholds', description: 'Thresholds files and derivation.', leaf: false },
+  {
+    path: 'thresholds.preset',
+    description:
+      'Headroom preset for derived thresholds: sets the defaults of every checks.*.margin; margin fields set explicitly win.',
+    leaf: true,
+    default: 'normal',
+  },
   {
     path: 'thresholds.dir',
     description: 'Directory of thresholds files, relative to the Playwright config directory.',

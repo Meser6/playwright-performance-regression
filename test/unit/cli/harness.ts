@@ -7,6 +7,7 @@ import type {
   CliHost,
   ForwardedSignal,
   Prompt,
+  ProcessOptions,
   SpawnOptions,
 } from '../../../src/cli/host.ts';
 import * as io from '../../../src/io/index.ts';
@@ -28,7 +29,7 @@ export interface FakeHost {
   host: CliHost;
   stdout: string[];
   stderr: string[];
-  spawned: { args: string[]; options: SpawnOptions }[];
+  spawned: { file?: string; args: string[]; options: SpawnOptions | ProcessOptions }[];
   child: FakeChild;
   signals: Map<ForwardedSignal, (() => void)[]>;
   /** Sends a signal to the CLI. */
@@ -46,7 +47,7 @@ export interface FakeHostOptions {
   /** null: @playwright/test is not installed. */
   playwright?: { cliPath: string; version: string } | null;
   /** Called when Playwright is started: the script of the run (write the outcome, exit). */
-  onSpawn?: (fake: FakeHost, options: SpawnOptions) => void;
+  onSpawn?: (fake: FakeHost, options: SpawnOptions | ProcessOptions) => void;
   platform?: string;
   directories?: string[];
   reporterPath?: string;
@@ -78,6 +79,7 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     paths: { join, resolve, dirname },
     env: options.env ?? {},
     platform: options.platform ?? 'linux',
+    execPath: '/usr/bin/node',
     tmpdir: join(options.cwd, 'tmp'),
     stdin: { isTTY: options.prompt !== undefined },
     stdout: { write: (t: string) => fake.stdout.push(t), isTTY: options.prompt !== undefined },
@@ -96,6 +98,14 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     spawnNode: (args, spawnOptions) => {
       fake.spawned.push({ args, options: spawnOptions });
       setImmediate(() => options.onSpawn?.(fake, spawnOptions));
+      return fake.child;
+    },
+    spawnProcess: (file, args, spawnOptions) => {
+      fake.spawned.push({ file, args, options: spawnOptions });
+      // The wizard's check run (04-REQ-58) ends with 0 unless the test decides.
+      setImmediate(() =>
+        options.onSpawn === undefined ? fake.child.exit(0) : options.onSpawn(fake, spawnOptions),
+      );
       return fake.child;
     },
     onSignal: (signal, handler) => {

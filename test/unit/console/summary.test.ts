@@ -98,7 +98,7 @@ describe('console summary golden files', () => {
       .filter((l) => /^ {2}[✖!] api /u.test(l))
       .map((l) => l.slice(2, 3));
     expect(markers.indexOf('!')).toBeGreaterThan(markers.lastIndexOf('✖'));
-    const many = formatSummary(report('thresholds-mode-warn-only'), {
+    const many = formatSummary(report('thresholds-mode'), {
       width: 120,
       color: false,
     });
@@ -155,9 +155,9 @@ describe('console summary golden files', () => {
     expect(formatSummary(report('passed'), { width: 120, color: true })).toContain(
       `${ESC}[1;30;42m ✔ PASSED ${ESC}[0m `,
     );
-    expect(
-      formatSummary(report('thresholds-mode-warn-only'), { width: 120, color: true }),
-    ).toContain(`${ESC}[1;30;43m ! PASSED WITH WARNINGS ${ESC}[0m `);
+    expect(formatSummary(report('thresholds-mode'), { width: 120, color: true })).toContain(
+      `${ESC}[1;30;43m ! PASSED WITH WARNINGS ${ESC}[0m `,
+    );
   });
 
   test('09-AC-22 ERROR names the cause: too many failed tests is not a tool error', () => {

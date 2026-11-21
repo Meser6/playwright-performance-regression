@@ -72,8 +72,8 @@ config snapshot in a report was edited. Fix the value as shown in the hint.
 **Error.** An option has the right type but an invalid value: out of range, not one of the
 allowed values, or inconsistent with another option. Examples: time limits that decrease from
 median to percentile to p99, a lower bound above its upper bound, a percentile level below
-`p50`, a rule with a smaller `minSamples` than the median rule, every rule disabled without
-`gate.warnOnly`, an `--env` / `--passes` value (or `PW_PERF_ENV` / `PW_PERF_PASSES`) out of
+`p50`, a rule with a smaller `minSamples` than the median rule, every rule disabled, a
+`thresholds.preset` other than `strict`, `normal` or `loose`, an `--env` / `--passes` value (or `PW_PERF_ENV` / `PW_PERF_PASSES`) out of
 range, or the environment label `steps` or `requests`, which are parts of the thresholds file
 names (`pw-perf-thresholds.steps.json`). The message names the option and the value received.
 
@@ -318,6 +318,29 @@ already exists with other content: a config with another wrapper, several test o
 `mergeTests()`, an existing script or CI file, a GitLab main file that must include the new job,
 or a project that uses pnpm or yarn instead of npm. The hint shows the exact change to make by
 hand. [adoption.md](adoption.md) lists the layouts `init` changes by itself.
+
+### INIT_TEST_OBJECT_MANUAL
+
+**Warning.** Nothing is measured yet: the wizard found no fixtures module it could wrap without
+touching your test files, so it changed none and showed a red box with the code to paste. Either
+wrap the `test` exported by your fixtures file — `export const test =
+withPerfFixtures(base.extend({ ... }))` with `withPerfFixtures` from
+`playwright-performance-regression/fixture` — or import `test` and `expect` from
+`playwright-performance-regression/test` instead of `@playwright/test` in your test files.
+[adoption.md](adoption.md) covers `mergeTests`, several test objects and playwright-bdd.
+
+### INIT_SCRIPT_FLAG
+
+**Warning.** The test script you chose has flags that break a measurement run (`--ui`, `--debug`,
+`--shard`, `--reporter`, `--last-failed`, `--only-changed`, `--workers`, `--repeat-each`,
+`--max-failures`, `-x`, `--global-timeout`). The script is not changed: add a script without them,
+e.g. `e2e:perf`, and choose it when you run `init` again.
+
+### INIT_SCRIPT_LATER_STEPS
+
+**Warning.** The chosen script runs more steps after Playwright (e.g. uploading a report); they
+also run in measurement runs when Playwright exits with 0. If they should not, add a script
+without them.
 
 ### INIT_WRITE_FAILED
 

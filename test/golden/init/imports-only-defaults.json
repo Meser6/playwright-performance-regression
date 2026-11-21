@@ -1,0 +1,14 @@
+{
+  "name": "tests import test from @playwright/test: no test file is changed, the red box instead (04-REQ-67)",
+  "input": {
+    "project": "init-import-swap",
+    "answers": null
+  },
+  "expected": {
+    "manualSteps": [],
+    "testObject": {
+      "extendFiles": [],
+      "importingFiles": 3
+    }
+  }
+}

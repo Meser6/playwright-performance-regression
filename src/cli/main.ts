@@ -3,6 +3,7 @@
 import type { Issue } from '../core/types/index.ts';
 import { renderHtmlReport } from '../html/index.ts';
 import { helpText } from './help.ts';
+import { hasPerfSetup, initBox } from './init-box.ts';
 import { runInit } from './init/index.ts';
 import type { CliHost } from './host.ts';
 import { renderReport, thresholdsFrom } from './offline.ts';
@@ -44,6 +45,7 @@ export async function main(
     const cmd = parsed.value;
     switch (cmd.kind) {
       case 'help':
+        if (cmd.noArgs === true && !(await hasPerfSetup(host))) host.stdout.write(initBox(host));
         host.stdout.write(helpText(cmd.command));
         return 0;
       case 'version':

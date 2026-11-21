@@ -359,18 +359,18 @@ describe('pw-perf without tests', () => {
     '01-AC-08 a .ts config with an extensionless import, a tsconfig alias or an enum gives CONFIG_FILE_LOAD_FAILED with its hint',
     async () => {
       const { cwd } = await workspace('ts configs');
-      writeFileSync(join(cwd, 'helpers.ts'), 'export const warnOnly: boolean = true;\n');
+      writeFileSync(join(cwd, 'helpers.ts'), 'export const tolerance: number = 2;\n');
       const files: Record<string, [string, string]> = {
         'noext.ts': [
-          "import { warnOnly } from './helpers';\nexport default { gate: { warnOnly } };\n",
+          "import { tolerance } from './helpers';\nexport default { gate: { tolerance } };\n",
           '"./helpers.ts"',
         ],
         'alias.ts': [
-          "import { warnOnly } from '@cfg/helpers';\nexport default { gate: { warnOnly } };\n",
+          "import { tolerance } from '@cfg/helpers';\nexport default { gate: { tolerance } };\n",
           'use a relative import',
         ],
         'enum.ts': [
-          "enum Mode { On = 'on' }\nexport default { gate: { warnOnly: Mode.On === 'on' } };\n",
+          "enum Mode { On = 'on' }\nexport default { gate: { tolerance: Mode.On === 'on' ? 2 : 0 } };\n",
           'replace enums',
         ],
       };
@@ -389,7 +389,7 @@ describe('pw-perf without tests', () => {
       // 04-AC-08 (thresholds --from part): no @playwright/test in this directory.
       writeFileSync(
         join(cwd, 'good.ts'),
-        "import { warnOnly } from './helpers.ts';\nexport default { gate: { warnOnly }, thresholds: { dir: 'thr' } };\n",
+        "import { tolerance } from './helpers.ts';\nexport default { gate: { tolerance }, thresholds: { dir: 'thr' } };\n",
       );
       const good = await runCli(['thresholds', '--from', 'report.json', '--config', 'good.ts'], {
         cwd,

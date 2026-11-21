@@ -389,7 +389,7 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
     );
   });
 
-  test('03-AC-03 at least one rule must be enabled unless gate.warnOnly', () => {
+  test('03-AC-03 03-AC-17 at least one rule must be enabled, without an exception', () => {
     const off = { enabled: false };
     const checks = {
       time: { median: off, percentile: off, p99: off },
@@ -399,9 +399,8 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
     expect(issues({ checks })[0]).toMatchObject({
       code: 'CONFIG_INVALID_VALUE',
       path: 'checks',
-      hint: expect.stringContaining('gate.warnOnly') as string,
+      hint: 'Enable at least one rule in checks.',
     });
-    expect(resolved({ checks, gate: { warnOnly: true } }).warnings).toEqual([]);
     expect(resolved({ checks: { ...checks, errors: { enabled: true } } }).warnings).toEqual([]);
   });
 
@@ -570,5 +569,66 @@ describe('step settings (03-REQ-18, 03-REQ-22)', () => {
       expect(issues({}, { env: label })[0]?.code).toBe('CONFIG_INVALID_VALUE');
     }
     expect(resolved({ run: { env: 'steps-env' } }).snapshot.run.env).toBe('steps-env');
+  });
+});
+
+describe('removed gate.warnOnly (D-40)', () => {
+  test('03-AC-17 gate.warnOnly is CONFIG_UNKNOWN_OPTION with a hint about continue-on-error', () => {
+    const [issue] = issues({ gate: { warnOnly: true } });
+    expect(issue).toMatchObject({ code: 'CONFIG_UNKNOWN_OPTION', path: 'gate.warnOnly' });
+    expect(issue?.hint).toContain('continue-on-error');
+    expect(DEFAULT_CONFIG.gate).not.toHaveProperty('warnOnly');
+  });
+});
+
+describe('margin presets (D-41)', () => {
+  test('10-AC-20 a preset sets the margin defaults and explicit fields win', () => {
+    const strict = resolved({ thresholds: { preset: 'strict' } }).config.checks;
+    expect(strict.time.percentile.margin).toEqual({
+      relative: 0.25,
+      minMs: 50,
+      smallSampleRelative: 0.5,
+    });
+    expect(strict.time.p99.margin.relative).toBe(0.1);
+    expect(strict.errors.margin.factor).toBe(1.25);
+    expect(strict.slowShare.apdex.margin).toEqual({ absolute: 0.03, smallSampleAbsolute: 0.06 });
+    expect(strict.slowShare.wilson.margin.factor).toBe(1.25);
+    // Fields outside the table keep the schema defaults.
+    expect(strict.time.p99.margin.minGapMs).toBe(DEFAULT_CONFIG.checks.time.p99.margin.minGapMs);
+    expect(strict.errors.margin.add).toBe(DEFAULT_CONFIG.checks.errors.margin.add);
+
+    const loose = resolved({
+      thresholds: { preset: 'loose' },
+      checks: { time: { median: { margin: { minMs: 30 } } } },
+    });
+    expect(loose.config.checks.time.median.margin).toEqual({
+      relative: 0.6,
+      minMs: 30,
+      smallSampleRelative: 1.2,
+    });
+    expect(loose.snapshot.thresholds.preset).toBe('loose');
+    expect(loose.config.checks.errors.margin.factor).toBe(2);
+
+    // normal equals the schema defaults.
+    expect(resolved({}).config.checks).toEqual(DEFAULT_CONFIG.checks);
+    expect(resolved({ thresholds: { preset: 'normal' } }).config.checks).toEqual(
+      DEFAULT_CONFIG.checks,
+    );
+    expect(codes(issues({ thresholds: { preset: 'tight' } }))).toEqual(['CONFIG_INVALID_VALUE']);
+  });
+
+  test('10-AC-20 a snapshot with a preset resolves to the same margins (thresholds --from)', () => {
+    const first = resolved({ thresholds: { preset: 'strict' } }).snapshot;
+    const again = resolved(first, { source: 'snapshot' }).snapshot;
+    expect(again).toEqual(first);
+  });
+});
+
+describe('run.grep (03-REQ-25)', () => {
+  test('03-AC-18 run.grep must compile; null by default', () => {
+    expect(DEFAULT_CONFIG.run.grep).toBeNull();
+    expect(resolved({ run: { grep: '@perf' } }).snapshot.run.grep).toBe('@perf');
+    expect(codes(issues({ run: { grep: '(' } }))).toEqual(['CONFIG_INVALID_REGEX']);
+    expect(codes(issues({ run: { grep: '' } }))).toEqual(['CONFIG_INVALID_VALUE']);
   });
 });

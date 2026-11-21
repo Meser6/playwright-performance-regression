@@ -17,6 +17,9 @@ pw-perf <command> [options] [playwright test arguments]
 | [`report`](#pw-perf-report)                                  | Render `report.html` again from a `report.json`                                 |
 | [`init`](#pw-perf-init)                                      | Guided setup in the current project                                             |
 
+`npx pw-perf` without arguments prints the help; in a project without `pw-perf.config.*` and
+without `withPerf(` in `playwright.config` it first shows a box with `npx pw-perf init`.
+
 ## Run through your own test command (recommended)
 
 The simplest way is the test command your project already has, with one environment variable in
@@ -233,13 +236,17 @@ pw-perf init [--yes] [--dry-run] [--lang <code>] [--no-tutorial]
 ```
 
 Sets the package up in the current project. It reads the project files as text (the Playwright
-config is never executed), asks a few questions (which tests to measure, repetitions, a
-warn-only start, environments, a CI job), shows a diff of every change and applies the changes
-after you confirm them. It does not ask for origin labels: requests to the `baseURL` origin get no
+config is never executed), asks a few questions (which test script runs your tests, which
+projects to measure, all tests or only those tagged `@perf`, passes, `test.step` timings, the
+threshold headroom preset, the CI jobs), shows a diff of every change and applies the changes
+after you confirm them. At the end it offers a check (`PW_PERF_MODE=check` with your test
+command) and prints the exact commands for your project, e.g. `Run: PW_PERF_MODE=test npm run
+e2e:qa`. It does not ask for origin labels: requests to the `baseURL` origin get no
 label in the endpoint keys and other hosts are labeled with their host; set shorter labels in
 `keys.origins`. The default is to measure all tests, also when some are tagged `@perf` and with
 `--yes`; when no test is tagged, the wizard shows how to tag them
-([`INIT_NO_TAGGED_TESTS`](troubleshooting.md#init_no_tagged_tests)). `npm init playwright-performance-regression`
+([`INIT_NO_TAGGED_TESTS`](troubleshooting.md#init_no_tagged_tests)). Choosing `@perf` writes
+`run: { grep: '@perf' }` to `pw-perf.config.ts`; your commands stay the same. `npm init playwright-performance-regression`
 installs the package and then runs this command.
 
 | Option          | Meaning                                                                     |
@@ -255,15 +262,19 @@ What it can change:
 - a new `pw-perf.config.ts`: the answers that differ from the defaults as code, and every other
   option as a comment with its default value and a one-line description, grouped by section;
 - `playwright.config`: the config wrapped in `withPerf()`;
-- the file that creates your `test` object: wrapped in `withPerfFixtures()`, or, when the tests
-  import `test` directly from `@playwright/test`, those imports switched to
-  `playwright-performance-regression/test`;
+- your fixtures module (one file that exports `test` created with `.extend()` and contains no
+  tests): wrapped in `withPerfFixtures()`. Test files are never changed; in every other layout
+  the wizard shows a red box with the code to paste
+  ([`INIT_TEST_OBJECT_MANUAL`](troubleshooting.md#init_test_object_manual));
 - `.gitignore`: `pw-perf-results/`;
-- `package.json`: the scripts `perf:test` and `perf:thresholds` (one pair per environment);
-- a CI job file from the [CI recipes](ci.md).
+- a CI file from the [CI recipes](ci.md) with a manual thresholds job and a weekly measurement
+  job that run your test command.
 
-Layouts it does not recognize (another wrapper around the config, several test objects,
-`mergeTests`, existing scripts or CI files with other content) are left as they are, with an
+`package.json` is never changed. Scripts `perf:*` written by an earlier version of the wizard
+still work; the summary mentions that they are no longer needed.
+
+Layouts it does not recognize (another wrapper around the config, existing CI files with other
+content) are left as they are, with an
 instruction ([`INIT_MANUAL_STEP`](troubleshooting.md#init_manual_step)); see
 [Adoption](adoption.md) for those cases. Running `init` again changes nothing that is already
 set up. An existing `pw-perf.config.ts` is replaced only after its own confirmation, never with
@@ -414,7 +425,7 @@ writes no thresholds files.
 
 | Code       | Meaning                                                                                                                                                                                         |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0          | OK. Also with warnings, with tolerated violations, with `gate.warnOnly`, and with a few failed tests (they are reported as a warning).                                                          |
+| 0          | OK. Also with warnings, with tolerated violations, and with a few failed tests (they are reported as a warning).                                                                                |
 | 2          | Performance regression: at least one blocking violation (`test` only).                                                                                                                          |
 | 3          | Tool or config error, or a result that cannot be trusted: an invalid option or config, too many failed tests, an interrupted or timed-out run, a sharded run, a file that could not be written. |
 | 130 / 143  | Interrupted by SIGINT / SIGTERM.                                                                                                                                                                |

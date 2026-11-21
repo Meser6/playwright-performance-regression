@@ -13,6 +13,8 @@ export interface PerfRunInput {
   keepReporters: string[];
   /** Absolute path of the package reporter entry point. */
   reporterPath: string;
+  /** run.grep of the resolved package config (03-REQ-25); null or absent: all tests. */
+  grep?: string | null;
 }
 
 export interface PerfRunPlan<T> {
@@ -62,6 +64,25 @@ function positive(value: number | undefined): boolean {
 
 function artifactsOff(use: Use | undefined): Use {
   return { ...use, trace: 'off', video: 'off', screenshot: 'off' };
+}
+
+type Grep = NonNullable<Config['grep']>;
+
+/**
+ * The grep of a measured project with run.grep (03-REQ-25): `extra` alone, or, when the project
+ * has its own grep, one expression that needs both (lookaheads), case-insensitive.
+ */
+export function andGrep(extra: string, own: Grep | undefined): RegExp {
+  if (own === undefined) return new RegExp(extra, 'i');
+  const list = Array.isArray(own) ? own : [own];
+  const flags = new Set(['i', ...list.flatMap((re) => [...re.flags])]);
+  flags.delete('g');
+  flags.delete('y');
+  const ownSource = list.map((re) => `(?:${re.source})`).join('|');
+  return new RegExp(
+    `^(?=[\\s\\S]*?(?:${extra}))(?=[\\s\\S]*?(?:${ownSource}))`,
+    [...flags].sort().join(''),
+  );
 }
 
 /** Names of the measured projects (04-REQ-18) or the issues that prevent a run (03-REQ-11). */
@@ -266,8 +287,19 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
     reporter: reporters as unknown as ReporterDescription[],
   };
   result.repeatEach = 1;
+  const grep = input.grep ?? null;
   if (source.projects !== undefined) {
-    result.projects = kept.map((p) => ({ ...p, repeatEach: 1, use: artifactsOff(p.use) }));
+    const measuredSet = new Set(measured.value);
+    result.projects = kept.map((p) => {
+      const project: Project = { ...p, repeatEach: 1, use: artifactsOff(p.use) };
+      // run.grep only for measured projects; setup and teardown projects run in full.
+      if (grep !== null && measuredSet.has(projectName(p))) {
+        project.grep = andGrep(grep, p.grep ?? source.grep);
+      }
+      return project;
+    });
+  } else if (grep !== null) {
+    result.grep = andGrep(grep, source.grep);
   }
 
   return {

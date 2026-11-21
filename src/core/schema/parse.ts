@@ -372,12 +372,33 @@ function withPassesOption(config: unknown): unknown {
 }
 
 /**
+ * Options of a snapshot before D-40/D-41 (02-REQ-38): gate.warnOnly is dropped without a warning,
+ * thresholds.preset becomes "normal" and run.grep null (the margins are already complete).
+ */
+function withGateAndPresetOptions(config: unknown): unknown {
+  if (!isRecord(config)) return config;
+  const out: JsonObject = { ...config };
+  if (isRecord(config.gate)) {
+    const { warnOnly: _warnOnly, ...gate } = config.gate;
+    out.gate = gate;
+  }
+  if (isRecord(config.thresholds) && !Object.hasOwn(config.thresholds, 'preset')) {
+    out.thresholds = { preset: 'normal', ...config.thresholds };
+  }
+  if (isRecord(config.run) && !Object.hasOwn(config.run, 'grep')) {
+    out.run = { ...config.run, grep: null };
+  }
+  return out;
+}
+
+/**
  * Run report v2 → v3 (02-REQ-33, 02-D-18): custom measurements were removed (D-32). Drops
  * `custom`, `evaluation.counts.custom`, thresholdFiles entries of kind custom and the custom
  * options of the config snapshot, without a warning. Warnings with CUSTOM_* codes stay as text.
  * Adds the step fields of version 3: `steps: {}`, `stepNormalization: null`, zero
  * `evaluation.counts.step` and the step options of the config snapshot; `passes` of one pass and
- * `config.run.passes` from `config.run.repeat` (D-39, 02-REQ-37).
+ * `config.run.passes` from `config.run.repeat` (D-39, 02-REQ-37); no gate.warnOnly, with
+ * thresholds.preset and run.grep (02-REQ-38).
  */
 export function migrateRunReportV2(document: JsonObject): JsonObject {
   const { custom: _custom, ...rest } = document;
@@ -390,7 +411,9 @@ export function migrateRunReportV2(document: JsonObject): JsonObject {
     steps: {},
     // A run before D-39 ran its repetitions in one pass (02-REQ-37).
     passes: { planned: 1, completed: 1, failed: [] },
-    config: withPassesOption(withStepOptions(withoutCustomOptions(document.config))),
+    config: withGateAndPresetOptions(
+      withPassesOption(withStepOptions(withoutCustomOptions(document.config))),
+    ),
     evaluation:
       isRecord(evaluation) && isRecord(counts)
         ? {
