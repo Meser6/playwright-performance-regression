@@ -97,7 +97,11 @@ export function suggestCommand(mode: PerfMode, ctx: CommandContext): string {
   if (ctx.viaCli) return `npx pw-perf ${mode}${ctx.env === null ? '' : ` --env ${ctx.env}`}`;
   const pm = packageManager(ctx);
   const event = ctx.lifecycleEvent;
-  if (event !== null && event !== '') {
+  // `npx playwright test` sets npm_lifecycle_event to `npx`: only a script of the project counts
+  // (04-REQ-63); without a readable package.json the event is trusted.
+  const isScript =
+    event !== null && event !== '' && (ctx.scripts === null || Object.hasOwn(ctx.scripts, event));
+  if (event !== null && isScript) {
     const script = ctx.lifecycleScript ?? '';
     if (!setsMode(script)) {
       return perfCommand(mode, ctx.env, scriptCommand(pm, event), ctx.platform);

@@ -4,7 +4,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 export interface PackageInfo {
-  /** `scripts` of the nearest package.json at `dir` or above, or null. */
+  /** `scripts` of the nearest package.json at `dir` or above ({} without the field), or null when
+   * there is none or it cannot be read. */
   scripts: Record<string, string> | null;
   lockFiles: { pnpm: boolean; yarn: boolean };
 }
@@ -13,7 +14,7 @@ export function readPackageInfo(dir: string): PackageInfo {
   for (let current = dir; ; current = dirname(current)) {
     const file = join(current, 'package.json');
     if (existsSync(file)) {
-      let scripts: Record<string, string> | null = null;
+      let scripts: Record<string, string> | null = {};
       try {
         const parsed = JSON.parse(readFileSync(file, 'utf8')) as { scripts?: unknown };
         if (typeof parsed.scripts === 'object' && parsed.scripts !== null) {
