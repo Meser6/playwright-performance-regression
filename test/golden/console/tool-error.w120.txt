@@ -1,11 +1,19 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: test · 10 tests (10 passed, 0 failed)
 
-Errors:
-  ✖ SCHEMA_INVALID_JSON: pw-perf-thresholds.api.json: not valid JSON
-    Hint: Fix the JSON syntax, or delete the file and let the package write it again.
+╭─ ❌ Errors (1) ──────────────────────────────────────────────────────────────────────╮
+│ ❌ SCHEMA_INVALID_JSON: pw-perf-thresholds.api.json: not valid JSON                  │
+│    Hint: Fix the JSON syntax, or delete the file and let the package write it again. │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
 
-Endpoints: 1 key · 1 not evaluated
+┌───────────────┬───────────┐
+│               │ Endpoints │
+├───────────────┼───────────┤
+│ keys          │         1 │
+│ not evaluated │         1 │
+└───────────────┴───────────┘
 
- ✖ ERROR  1 tool error; the performance result is not trustworthy
+╭────────────────────────────────────────────────────────────────────╮
+│ ❌  ERROR  1 tool error; the performance result is not trustworthy │
+╰────────────────────────────────────────────────────────────────────╯
 Report: /work/app/pw-perf-results/report.html

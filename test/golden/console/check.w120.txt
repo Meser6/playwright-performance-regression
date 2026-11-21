@@ -14,10 +14,15 @@ Top keys:
    2. api  GET api-pr-4821.ci.example.com/v1/catalog          18 samples · 9 tests
 Thresholds files: api missing (pw-perf-thresholds.json)
 
-Warnings:
-  ! CHECK_RANDOM_HOST: 2 origins look generated per environment: https://api-pr-4821.ci.example.com, https://pr-4821.ci.example.com; their keys or the normalization fingerprint change on every instance.
-    Hint: Add host patterns to keys.origins, e.g. { 'https://api-pr-*.ci.example.com': 'api', 'https://pr-*.ci.example.com': '' } (docs/dynamic-environments.md).
+╭─ ⚠ Warnings (1) ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⚠ CHECK_RANDOM_HOST: 2 origins look generated per environment: https://api-pr-4821.ci.example.com,                   │
+│   https://pr-4821.ci.example.com; their keys or the normalization fingerprint change on every instance.              │
+│   Hint: Add host patterns to keys.origins, e.g. { 'https://api-pr-*.ci.example.com': 'api',                          │
+│         'https://pr-*.ci.example.com': '' } (docs/dynamic-environments.md).                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
 Estimate: measurement run ≈ 1 h 51 min (214 tests × 5 passes × 6.2 s), thresholds run ≈ 3 h 42 min (× 10 passes), 1 worker
 
- ✔ CHECKED  nothing was evaluated and no files were written
+╭──────────────────────────────────────────────────────────────╮
+│ ✅  CHECKED  nothing was evaluated and no files were written │
+╰──────────────────────────────────────────────────────────────╯

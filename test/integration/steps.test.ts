@@ -46,7 +46,7 @@ describe('steps project', () => {
       expect(warningCodes(run)).toContain('STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS');
       expect(steps['a › b']?.location?.file).toBe('tests/steps.spec.ts');
       expect(run.report?.stepNormalization).toMatch(/^[0-9a-f]{14}$/u);
-      expect(run.output).toContain('Steps:');
+      expect(run.output).toMatch(/│ +│ Endpoints │ Steps │/u);
     },
     RUN_TIMEOUT,
   );
@@ -90,7 +90,7 @@ describe('steps project', () => {
       expect(run.report?.steps).toEqual({});
       expect(run.report?.stepNormalization).toBeNull();
       expect(readdirSync(off)).not.toContain('pw-perf-thresholds.steps.json');
-      expect(run.output).not.toContain('Steps:');
+      expect(run.output).not.toContain('│ Steps │');
     },
     RUN_TIMEOUT,
   );

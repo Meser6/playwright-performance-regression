@@ -1,53 +1,64 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: thresholds · 41 tests (40 passed, 0 failed, 1 flaky)
 
-Warnings:
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 1.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 2.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 3.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 4.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 5.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 6.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 7.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 8.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 9.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  ! COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 10.
-    Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs.
-  … and 1 more warning (see report)
+╭─ ⚠ Warnings (11) ────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 1.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 2.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 3.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 4.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 5.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 6.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 7.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 8.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 9.                                   │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ ⚠ COLLECTOR_REQUESTS_PENDING: Requests still pending at the end of test 10.                                  │
+│   Hint: Exclude long-polling and streaming requests with measure.exclude, or raise measure.pendingTimeoutMs. │
+│ … and 1 more warning (see report)                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-Endpoints: 22 keys · 22 from file
+┌───────────┬───────────┐
+│           │ Endpoints │
+├───────────┼───────────┤
+│ keys      │        22 │
+│ from file │        22 │
+└───────────┴───────────┘
 
-    kind  key                             rule   actual    limit  over   n  src   flag
-  ! api   GET /api/items/22               p95   1220 ms  1000 ms  +22%  20  file
-  ! api   GET /api/items/21               p95   1210 ms  1000 ms  +21%  20  file
-  ! api   GET /api/items/20               p95   1200 ms  1000 ms  +20%  20  file
-  ! api   GET /api/items/19               p95   1190 ms  1000 ms  +19%  20  file
-  ! api   GET /api/items/18               p95   1180 ms  1000 ms  +18%  20  file
-  ! api   GET /api/items/17               p95   1170 ms  1000 ms  +17%  20  file
-  ! api   GET /api/items/16               p95   1160 ms  1000 ms  +16%  20  file
-  ! api   GET /api/items/15               p95   1150 ms  1000 ms  +15%  20  file
-  ! api   GET /api/items/14               p95   1140 ms  1000 ms  +14%  20  file
-  ! api   GET /api/items/13               p95   1130 ms  1000 ms  +13%  20  file
-  ! api   GET /api/items/12               p95   1120 ms  1000 ms  +12%  20  file
-  ! api   GET /api/items/11               p95   1110 ms  1000 ms  +11%  20  file
-  ! api   GET /api/items/10               p95   1100 ms  1000 ms  +10%  20  file
-  ! api   GET /api/items/09               p95   1090 ms  1000 ms   +9%  20  file
-  ! api   GET /api/items/08               p95   1080 ms  1000 ms   +8%  20  file
-  ! api   GET /api/items/07               p95   1070 ms  1000 ms   +7%  20  file
-  ! api   GET /api/items/06               p95   1060 ms  1000 ms   +6%  20  file
-  ! api   GET /api/items/05               p95   1050 ms  1000 ms   +5%  20  file
-  ! api   GET /api/items/04               p95   1040 ms  1000 ms   +4%  20  file
-  ! api   GET /api/items/03               p95   1030 ms  1000 ms   +3%  20  file
+┌───┬──────┬────────────────────────────────┬──────┬─────────┬─────────┬──────┬────┬──────┬──────┐
+│   │ kind │ key                            │ rule │  actual │   limit │ over │  n │ src  │ flag │
+├───┼──────┼────────────────────────────────┼──────┼─────────┼─────────┼──────┼────┼──────┼──────┤
+│ ⚠ │ api  │ GET /api/items/22              │ p95  │ 1220 ms │ 1000 ms │ +22% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/21              │ p95  │ 1210 ms │ 1000 ms │ +21% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/20              │ p95  │ 1200 ms │ 1000 ms │ +20% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/19              │ p95  │ 1190 ms │ 1000 ms │ +19% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/18              │ p95  │ 1180 ms │ 1000 ms │ +18% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/17              │ p95  │ 1170 ms │ 1000 ms │ +17% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/16              │ p95  │ 1160 ms │ 1000 ms │ +16% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/15              │ p95  │ 1150 ms │ 1000 ms │ +15% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/14              │ p95  │ 1140 ms │ 1000 ms │ +14% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/13              │ p95  │ 1130 ms │ 1000 ms │ +13% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/12              │ p95  │ 1120 ms │ 1000 ms │ +12% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/11              │ p95  │ 1110 ms │ 1000 ms │ +11% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/10              │ p95  │ 1100 ms │ 1000 ms │ +10% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/09              │ p95  │ 1090 ms │ 1000 ms │  +9% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/08              │ p95  │ 1080 ms │ 1000 ms │  +8% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/07              │ p95  │ 1070 ms │ 1000 ms │  +7% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/06              │ p95  │ 1060 ms │ 1000 ms │  +6% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/05              │ p95  │ 1050 ms │ 1000 ms │  +5% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/04              │ p95  │ 1040 ms │ 1000 ms │  +4% │ 20 │ file │      │
+│ ⚠ │ api  │ GET /api/items/03              │ p95  │ 1030 ms │ 1000 ms │  +3% │ 20 │ file │      │
+└───┴──────┴────────────────────────────────┴──────┴─────────┴─────────┴──────┴────┴──────┴──────┘
   … and 2 more violations (see report)
 
- ! PASSED WITH WARNINGS  22 keys with violations, none blocking (tolerance: 0) (informational, gate disabled)
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⚠  PASSED WITH WARNINGS  22 keys with violations, none blocking (tolerance: 0) (informational, gate disabled) │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 Report: /work/app/pw-perf-results/report.html

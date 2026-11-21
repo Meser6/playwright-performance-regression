@@ -942,7 +942,12 @@ export class RunSession {
 
     const { width, color } = this.terminal();
     this.host.stdout.write(
-      formatSummary(report, { width, color, html: paths.reportHtml !== null }),
+      formatSummary(report, {
+        width,
+        color,
+        ascii: asciiTerminal(this.host.env),
+        html: paths.reportHtml !== null,
+      }),
     );
     if (diffs.length > 0) {
       this.host.stdout.write(
@@ -1191,7 +1196,7 @@ export class RunSession {
             setupMs: c.setupMs,
           }),
         },
-        { width, color },
+        { width, color, ascii: asciiTerminal(this.host.env) },
       ),
     );
     const commands = this.commands();

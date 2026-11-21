@@ -1,7 +1,16 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: test · 10 tests (10 passed, 0 failed)
 
-Endpoints: 2 keys · 1 from file · 1 on default thresholds · 1 checked by median only (few samples)
+┌──────────────────────────────────────┬───────────┐
+│                                      │ Endpoints │
+├──────────────────────────────────────┼───────────┤
+│ keys                                 │         2 │
+│ from file                            │         1 │
+│ on default thresholds                │         1 │
+│ checked by median only (few samples) │         1 │
+└──────────────────────────────────────┴───────────┘
 
- ✔ PASSED  no violations in 2 evaluated keys
+╭───────────────────────────────────────────────╮
+│ ✅  PASSED  no violations in 2 evaluated keys │
+╰───────────────────────────────────────────────╯
 Report: /work/app/pw-perf-results/report.html

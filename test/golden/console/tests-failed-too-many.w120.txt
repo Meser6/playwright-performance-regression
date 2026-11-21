@@ -1,11 +1,23 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: test · 101 tests (71 passed, 30 failed)
 
-Errors:
-  ✖ TESTS_FAILED_TOO_MANY: 30 of 101 test executions failed (29.7%, more than gate.maxFailedTestShare 10%); samples of a large part of the tests are missing, so the performance result is not trustworthy.
-    Hint: Fix the failing tests (run them without perf mode), or raise gate.maxFailedTestShare if the failures are expected.
+╭─ ❌ Errors (1) ──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ❌ TESTS_FAILED_TOO_MANY: 30 of 101 test executions failed (29.7%, more than gate.maxFailedTestShare 10%); samples   │
+│    of a large part of the tests are missing, so the performance result is not trustworthy.                           │
+│    Hint: Fix the failing tests (run them without perf mode), or raise gate.maxFailedTestShare if the failures are    │
+│          expected.                                                                                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-Endpoints: 2 keys · 1 from file · 1 on default thresholds · 1 checked by median only (few samples)
+┌──────────────────────────────────────┬───────────┐
+│                                      │ Endpoints │
+├──────────────────────────────────────┼───────────┤
+│ keys                                 │         2 │
+│ from file                            │         1 │
+│ on default thresholds                │         1 │
+│ checked by median only (few samples) │         1 │
+└──────────────────────────────────────┴───────────┘
 
- ✖ ERROR  too many failed tests (30 of 101 executions); the performance result is not trustworthy
+╭────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ❌  ERROR  too many failed tests (30 of 101 executions); the performance result is not trustworthy │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────╯
 Report: /work/app/pw-perf-results/report.html
