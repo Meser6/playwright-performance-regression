@@ -7,7 +7,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0-next.2] - 2026-11-21
+## [0.1.0-next.3] - 2026-11-21
+
+`0.1.0-next.2` was tagged but not published (the release stopped on the performance tests).
 
 ### Added
 
@@ -177,7 +179,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   a hint), the `CUSTOM_*` warnings, the `Custom:` line of the summary, the Custom tab of the HTML
   report and the migration notes for `playwright-performance`. Time user-visible steps with
   `test.step()` and `measure.steps: true` instead. See
-  [Upgrading](docs/upgrading.md#from-010-next1-to-010-next2-custom-measurements-removed).
+  [Upgrading](docs/upgrading.md#from-010-next1-to-010-next3-custom-measurements-removed).
 
 ### Fixed
 

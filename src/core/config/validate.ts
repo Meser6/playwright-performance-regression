@@ -23,11 +23,11 @@ export type ConfigIssueCode =
 const SCHEMA_FILE = 'schemas/config.schema.json';
 /** Hint for gate.warnOnly, removed with the trial mode (03-REQ-26, D-40). */
 export const REMOVED_WARN_ONLY_HINT =
-  "The trial mode was removed in 0.1.0-next.2; to keep a CI job green on a regression, set continue-on-error on the job (see docs/ci.md), or use gate.tolerance or gate.defaultThresholds: 'warn'.";
+  "The trial mode was removed in 0.1.0-next.3; to keep a CI job green on a regression, set continue-on-error on the job (see docs/ci.md), or use gate.tolerance or gate.defaultThresholds: 'warn'.";
 
 /** Hint for the options of the removed custom measurements (03-REQ-19, D-32). */
 const REMOVED_CUSTOM_HINT =
-  'custom measurements were removed in 0.1.0-next.2; use measure.steps and limit.step (test.step durations) instead.';
+  'custom measurements were removed in 0.1.0-next.3; use measure.steps and limit.step (test.step durations) instead.';
 const MAX_SUGGESTION_DISTANCE = 2;
 /** Validation reports every problem (03-REQ-09); the cap only guards against huge inputs. */
 const MAX_SCHEMA_PROBLEMS = 1000;
