@@ -63,7 +63,7 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
     warnings.push({
       code: 'CLI_MODE_ALREADY_SET',
       message: `${preset.join(', ')} ${preset.length === 1 ? 'is' : 'are'} already set in the environment; the CLI replaces ${preset.length === 1 ? 'it' : 'them'} for this run.`,
-      hint: 'Use the CLI options (--env, --passes, --prune) instead of the variables, or run your test command with PW_PERF_MODE set.',
+      hint: 'Run your test command with the PW_PERF_* variables instead of the pw-perf runner.',
     });
   }
   const env: Record<string, string> = {};

@@ -18,7 +18,7 @@ export interface ThresholdsDiffOptions {
   width: number;
   /** ANSI colors: see colorEnabled (09-REQ-22, 04-REQ-44). */
   color: boolean;
-  /** --prune was given: unseen entries left in the file are locked ones. */
+  /** Pruning was on (PW_PERF_PRUNE=1): unseen entries left in the file are locked ones. */
   prune: boolean;
   /** Absolute path of thresholds-diff.md (10, chapter 9.1), or null when it was not written. */
   diffPath: string | null;
@@ -92,7 +92,7 @@ function fileLines(
       '',
       opts.prune
         ? `  ${entries} not seen in this run ${verb} kept because ${unseen === 1 ? 'it is' : 'they are'} locked.`
-        : `  ${entries} ${verb} not seen in this run and ${verb} kept. Use --prune to remove them.`,
+        : `  ${entries} ${verb} not seen in this run and ${verb} kept. Run with PW_PERF_PRUNE=1 to remove them.`,
     );
   }
   return lines;

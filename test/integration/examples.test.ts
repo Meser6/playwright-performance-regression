@@ -45,19 +45,23 @@ describe.each([
   });
 
   test(
-    '01-AC-05 perf:thresholds then perf:test pass with the derived thresholds',
+    '01-AC-05 a thresholds run then a test run pass with the derived thresholds',
     async () => {
       const scripts = (
         JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
           scripts: Record<string, string>;
         }
       ).scripts;
-      const args = (script: string): string[] =>
-        (scripts[script] ?? '').replace(/^pw-perf /u, '').split(' ');
+      // The documented command: PW_PERF_MODE in front of the example's test script (04-REQ-70).
+      const script = scripts['test:perf'] ?? scripts['test'] ?? '';
+      const args = script
+        .replace(/^playwright test ?/u, '')
+        .split(' ')
+        .filter(Boolean);
 
       const thresholds = await harness.run(dir, {
-        cli: true,
-        args: [...args('perf:thresholds'), '--passes', '5'],
+        args,
+        env: { PW_PERF_MODE: 'thresholds', PW_PERF_PASSES: '5' },
       });
       expectStatus(thresholds, 0);
       expect(existsSync(join(dir, 'pw-perf-thresholds.json'))).toBe(true);
@@ -75,8 +79,8 @@ describe.each([
       }
 
       const run = await harness.run(dir, {
-        cli: true,
-        args: [...args('perf:test'), '--passes', '5'],
+        args,
+        env: { PW_PERF_MODE: 'test', PW_PERF_PASSES: '5' },
       });
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');

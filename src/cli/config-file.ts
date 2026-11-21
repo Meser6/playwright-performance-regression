@@ -66,7 +66,7 @@ export function loadFailureHint(error: unknown): string {
   if (e.code === 'ERR_MODULE_NOT_FOUND' && message.startsWith('Cannot find package')) {
     return 'Path aliases from tsconfig do not work when Node loads the file: use a relative import.';
   }
-  return 'Fix the error in the file, or pass another package config with --config.';
+  return 'Fix the error in the file.';
 }
 
 function loadFailed(path: string, reason: string, hint: string): Issue {

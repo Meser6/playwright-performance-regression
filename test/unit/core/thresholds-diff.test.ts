@@ -281,11 +281,11 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
     expect(row?.indexOf('t 500')).toBe(2 + 1 + 1 + 30 + 2);
   });
 
-  test('the unseen hint mentions --prune, or locked entries after --prune', () => {
+  test('the unseen hint names PW_PERF_PRUNE (04-REQ-70), or locked entries after pruning', () => {
     const files = existing(file('api', { gone: { ...FRESH }, kept: { ...FRESH, locked: true } }));
     const d = diffs({ endpoints: { k: FAST } }, files);
     expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] })).toContain(
-      '  2 entries were not seen in this run and were kept. Use --prune to remove them.',
+      '  2 entries were not seen in this run and were kept. Run with PW_PERF_PRUNE=1 to remove them.',
     );
     const p = diffs({ endpoints: { k: FAST } }, files, cfg(), true);
     expect(formatThresholdsDiff(p, { ...CONSOLE, prune: true, paths: ['a'] })).toContain(

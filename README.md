@@ -29,15 +29,15 @@ Your normal `npx playwright test` runs are not changed.
 npm init playwright-performance-regression@next
 ```
 
-This installs the package as a dev dependency and starts a short guided setup (`pw-perf init`;
-after `0.1.0`: `npm init playwright-performance-regression`). It shows a diff of every change
+This installs the package as a dev dependency and starts a short guided setup (after `0.1.0`:
+`npm init playwright-performance-regression`; run it again at any time). It shows a diff of every change
 before writing anything: it wraps your Playwright config and your fixtures module, creates
 `pw-perf.config.ts`, ignores `pw-perf-results/` and can add the CI jobs. It never changes your test
 files or `package.json`: when it cannot wrap your `test` object, it shows the code to paste. At the
 end it runs a short check of what will be measured. `pnpm create` and
 `yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
-`@next` with `yarn create`); `-- --yes` accepts the defaults without questions. The guided
-setup speaks English, Spanish, French, Polish, Italian, Ukrainian and Russian (`--lang <code>`).
+`@next` with `yarn create`). The guided setup speaks English, Spanish, French, Polish, Italian,
+Ukrainian and Russian (it asks at the start).
 
 <details>
 <summary>Manual setup</summary>
@@ -98,8 +98,8 @@ On Windows: `npx cross-env PW_PERF_MODE=test npm run e2e` (PowerShell and cmd fo
 
 The exit code is Playwright's own; the cause of a failure (a regression, failed tests, a config
 error) is in `pw-perf-results/outcome.json`. The result is also printed in the terminal and written
-to `pw-perf-results/report.json` and `pw-perf-results/report.html`. A runner with its own exit
-codes is described in [Advanced: the pw-perf runner](docs/cli.md#advanced-the-pw-perf-runner).
+to `pw-perf-results/report.json` and `pw-perf-results/report.html`. All variables are described in
+[Running](docs/cli.md).
 
 Derive thresholds on the same machines that run the check, usually your CI runners (see
 [CI](#ci) below); thresholds measured on a laptop do not fit CI. How much headroom they get is one

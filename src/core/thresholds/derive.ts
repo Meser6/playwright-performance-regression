@@ -15,7 +15,7 @@ import type {
   ThresholdsEntry,
   ThresholdsFile,
 } from '../types/index.ts';
-import { CLI_COMMAND, KINDS, PACKAGE_NAME } from '../types/index.ts';
+import { KINDS, PACKAGE_NAME, PRUNE_COMMAND, THRESHOLDS_COMMAND } from '../types/index.ts';
 import { entrySelfConsistent } from './consistency.ts';
 import { isComplete, loosenedMuch, withinHysteresis } from './entries.ts';
 import { deriveEntry, derivationSettings, isDerivable, minDeriveSamples } from './formulas.ts';
@@ -66,7 +66,7 @@ function refusal(
       {
         code: 'THRESHOLDS_SOURCE_INCOMPLETE',
         message: `The source report is incomplete or untrustworthy (${incomplete.join('; ')}); no thresholds file was written.`,
-        hint: `Fix the cause and derive again with \`${CLI_COMMAND} thresholds\`: thresholds are derived from complete runs only.`,
+        hint: `Fix the cause and derive again with \`${THRESHOLDS_COMMAND}\`: thresholds are derived from complete runs only.`,
       },
     ];
   }
@@ -203,12 +203,12 @@ function deriveKind(
       const hints: string[] = [];
       if (timing) {
         hints.push(
-          `Deriving on another machine, browser or Playwright version shifts all limits at once: derive on the CI infrastructure that evaluates the runs (\`${CLI_COMMAND} thresholds --from\` with the report from CI).`,
+          `Deriving on another machine, browser or Playwright version shifts all limits at once: derive on the CI infrastructure that evaluates the runs (a thresholds run in CI, then commit the thresholds files it wrote).`,
         );
       }
       if (keysDiffer) {
         hints.push(
-          `Another normalization changes the keys: entries of old keys are kept as unseen until removed with \`${CLI_COMMAND} thresholds --prune\`.`,
+          `Another normalization changes the keys: entries of old keys are kept as unseen until removed with \`${PRUNE_COMMAND}\`.`,
         );
       }
       warnings.push({
@@ -228,12 +228,12 @@ function deriveKind(
     if (old === undefined) continue;
     const stats = Object.hasOwn(aggregates, key) ? aggregates[key] : undefined;
     if (old.locked === true || !isComplete(old)) {
-      // Locked or incomplete: kept byte for byte, also with --prune (10-REQ-07, 10-REQ-08).
+      // Locked or incomplete: kept byte for byte, also with pruning (10-REQ-07, 10-REQ-08).
       entries[key] = structuredClone(old);
       continue;
     }
     if (stats === undefined) {
-      // Unseen: kept unless --prune (10-REQ-10).
+      // Unseen: kept unless pruning (10-REQ-10).
       if (!opts.prune) entries[key] = structuredClone(old);
       continue;
     }
@@ -309,7 +309,7 @@ export function deriveThresholds(
     warnings.push({
       code: 'THRESHOLDS_ENV_MISMATCH',
       message: `The source report was recorded for environment ${show(report.env)}, but the thresholds are written for environment ${show(opts.env)}.`,
-      hint: 'Check the --env flag and run.env: the files are written for the current environment label.',
+      hint: 'Check PW_PERF_ENV and run.env: the files are written for the current environment label.',
     });
   }
   if (report.tests.unexpected > 0) {
@@ -324,7 +324,7 @@ export function deriveThresholds(
       code: 'THRESHOLDS_SOURCE_TEST_MODE',
       message:
         'The source report comes from test mode, which runs fewer repetitions than a thresholds run.',
-      hint: `Prefer a report of \`${CLI_COMMAND} thresholds\` as the source.`,
+      hint: `Prefer a report of a thresholds run (\`${THRESHOLDS_COMMAND}\`) as the source.`,
     });
   }
 

@@ -37,7 +37,7 @@ import {
   formatThresholdsDiffMarkdown,
 } from '../core/thresholds/index.ts';
 import type { ThresholdsDiff } from '../core/thresholds/index.ts';
-import { CLI_COMMAND, PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
+import { PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
@@ -1231,7 +1231,6 @@ export class RunSession {
     const env = this.host.env;
     const info = this.host.io.readPackageInfo(this.configDir);
     const ctx: CommandContext = {
-      viaCli: !this.environmentMode,
       env: this.settings.config.run.env,
       lifecycleEvent: env['npm_lifecycle_event'] ?? null,
       lifecycleScript: env['npm_lifecycle_script'] ?? null,
@@ -1276,7 +1275,7 @@ export class RunSession {
       return {
         code: 'HTML_WRITE_FAILED',
         message: `The HTML report could not be written to ${path}: ${error instanceof Error ? error.message : String(error)}`,
-        hint: `Check that report.dir is writable; \`${CLI_COMMAND} report\` renders it again from report.json.`,
+        hint: 'Check that report.dir is writable, then run again.',
       };
     }
   }

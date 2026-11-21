@@ -14,12 +14,12 @@
       "default": {},
       "properties": {
         "env": {
-          "description": "Environment label (D-18). Overridden by PW_PERF_ENV / --env. Null: no label, one set of thresholds files.",
+          "description": "Environment label (D-18). Overridden by PW_PERF_ENV. Null: no label, one set of thresholds files.",
           "$ref": "common.schema.json#/$defs/envLabelOrNull",
           "default": null
         },
         "passes": {
-          "description": "Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.",
+          "description": "Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES for the current mode.",
           "type": "object",
           "additionalProperties": false,
           "default": {},

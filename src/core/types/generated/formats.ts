@@ -125,11 +125,11 @@ export interface PackageConfig {
    */
   run?: {
     /**
-     * Environment label (D-18). Overridden by PW_PERF_ENV / --env. Null: no label, one set of thresholds files.
+     * Environment label (D-18). Overridden by PW_PERF_ENV. Null: no label, one set of thresholds files.
      */
     env?: string | null;
     /**
-     * Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.
+     * Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES for the current mode.
      */
     passes?: {
       /**

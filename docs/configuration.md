@@ -39,11 +39,8 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   default list, spread `perfDefaults` as in the example above.
 - URL patterns may be `RegExp` objects and `keys.keyBuilder` may be a function only in a
   TypeScript or JavaScript config; a JSON config uses `{ "regex": "...", "flags": "..." }`.
-- `PW_PERF_ENV` / `--env` override `run.env`, and `PW_PERF_PASSES` / `--passes` override
-  `run.passes.test` or `run.passes.thresholds` for the current mode (see [CLI](cli.md)).
-- The commands that run no tests (`pw-perf thresholds --from`, `pw-perf report`) load
-  `pw-perf.config.*` themselves: `--config <file>`, else the file in the current directory or in
-  the config directory of the report, else the config snapshot stored in the report.
+- `PW_PERF_ENV` overrides `run.env`, and `PW_PERF_PASSES` overrides `run.passes.test` or
+  `run.passes.thresholds` for the current mode (see [Running](cli.md)).
 - An invalid config stops the run before any test with a list of all problems; see
   [Troubleshooting](troubleshooting.md).
 
@@ -194,14 +191,14 @@ Options: [`env`](#runenv), [`passes`](#runpasses), [`projects`](#runprojects), [
 
 ### `run.env`
 
-Environment label. Overridden by PW_PERF_ENV / --env. Null: no label, one set of thresholds files.
+Environment label. Overridden by PW_PERF_ENV. Null: no label, one set of thresholds files.
 
 - Type: string (matching `^[a-z0-9-]+$`, at most 32 characters) or `null`
 - Default: `null`
 
 ### `run.passes`
 
-Passes of the test command: the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.
+Passes of the test command: the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES for the current mode.
 
 Options: [`test`](#runpassestest), [`thresholds`](#runpassesthresholds).
 

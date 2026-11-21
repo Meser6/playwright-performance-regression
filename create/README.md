@@ -9,5 +9,5 @@ npm init playwright-performance-regression
 ```
 
 It installs `playwright-performance-regression` as a dev dependency with the package manager of the
-project (found by its lockfile) and starts the guided setup, `npx pw-perf init`. Arguments are passed
-to the setup, e.g. `npm init playwright-performance-regression -- --yes`.
+project (found by its lockfile) and starts the guided setup. In a project where the package is
+already installed it only starts the setup, so you can run it again at any time.

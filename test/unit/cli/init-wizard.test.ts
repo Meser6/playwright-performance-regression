@@ -223,7 +223,7 @@ describe('init wizard', () => {
     expect(await main(['init', '--yes'], yes.host)).toBe(0);
     expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toBe('export default {};\n');
     expect(yes.stdout.join('')).toContain(
-      'pw-perf.config.ts exists and is kept (--yes does not overwrite it).',
+      'pw-perf.config.ts exists and is kept (the default answers do not overwrite it).',
     );
 
     // Interactive: every default, then "y" to the overwrite question.

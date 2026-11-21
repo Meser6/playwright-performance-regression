@@ -31,8 +31,6 @@ export function plainCommand(pm: PackageManager): string {
 }
 
 export interface CommandContext {
-  /** PW_PERF_OUTCOME_FILE is set: the run came through `npx pw-perf` (09-REQ-32, case 1). */
-  viaCli: boolean;
   /** Environment label of the run. */
   env: string | null;
   /** npm_lifecycle_event and npm_lifecycle_script (npm, pnpm and yarn set them in scripts). */
@@ -89,12 +87,11 @@ function modeScript(
 }
 
 /**
- * The project's command for `mode` (09-REQ-32): the pw-perf runner when the run came through it,
- * the same package script with the variable, a script that sets the mode itself, or plain
+ * The project's command for `mode` (09-REQ-32), always with the variable (04-REQ-70): the same
+ * package script with the variable, a script that sets the mode itself, or plain
  * `playwright test` with the variable.
  */
 export function suggestCommand(mode: PerfMode, ctx: CommandContext): string {
-  if (ctx.viaCli) return `npx pw-perf ${mode}${ctx.env === null ? '' : ` --env ${ctx.env}`}`;
   const pm = packageManager(ctx);
   const event = ctx.lifecycleEvent;
   // `npx playwright test` sets npm_lifecycle_event to `npx`: only a script of the project counts

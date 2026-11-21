@@ -1,7 +1,7 @@
 // Thresholds files: state, checks of the `generated` block and unseen entries (09, chapter 4).
 import type { ResolvedConfig } from '../config/index.ts';
 import type { Generated, Issue, Kind, ThresholdFileInfo } from '../types/index.ts';
-import { CLI_COMMAND } from '../types/index.ts';
+import { PRUNE_COMMAND, THRESHOLDS_COMMAND } from '../types/index.ts';
 import type { LoadedThresholdsFile, RunSource } from './types.ts';
 
 /** Code unit order, never localeCompare (02-REQ-04). */
@@ -26,7 +26,7 @@ export function missingFileWarning(
   file: Extract<LoadedThresholdsFile, { status: 'missing' }>,
   env: string | null,
 ): Issue {
-  const derive = `Derive thresholds with \`${CLI_COMMAND} thresholds\`${env === null ? '' : ` (environment "${env}")`}.`;
+  const derive = `Derive thresholds with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}.`;
   const envless =
     env !== null && file.envlessFileExists
       ? ` ${envlessPath(file.path, env)} exists but is not used for environment "${env}": thresholds of another environment would give false alarms or hide regressions.`
@@ -106,7 +106,7 @@ export function generatedWarnings(
     issues.push({
       code: 'EVAL_PERCENTILE_MISMATCH',
       message: `Thresholds in ${path} were derived for ${generated.evaluatedPercentile}, but this run evaluates ${level}; the percentile limits are compared with ${level}.`,
-      hint: `Derive thresholds again with \`${CLI_COMMAND} thresholds\` after changing checks.time.percentile.level.`,
+      hint: `Derive thresholds again with \`${THRESHOLDS_COMMAND}\` after changing checks.time.percentile.level.`,
     });
   }
   if (generated.env !== env) {
@@ -129,7 +129,7 @@ export function generatedWarnings(
     }
     if (keys) {
       hints.push(
-        `Another normalization changes the keys: derive thresholds again with \`${CLI_COMMAND} thresholds\`.`,
+        `Another normalization changes the keys: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
       );
     }
     issues.push({
@@ -146,7 +146,7 @@ export function unseenWarning(path: string, unseen: readonly string[]): Issue {
   return {
     code: 'THRESHOLDS_UNSEEN_ENTRIES',
     message: `${plural(unseen.length, 'entry', 'entries')} in ${path} ${unseen.length === 1 ? 'was' : 'were'} not seen in this run.`,
-    hint: `Run the full suite, or remove stale entries with \`${CLI_COMMAND} thresholds --prune\`.`,
+    hint: `Run the full suite, or remove stale entries with \`${PRUNE_COMMAND}\`.`,
   };
 }
 
@@ -155,7 +155,7 @@ export function outdatedWarning(path: string, from: number, current: number): Is
   return {
     code: 'THRESHOLDS_FILE_OUTDATED',
     message: `Thresholds file ${path} has format version ${from}; it was read after migration to version ${current}.`,
-    hint: `The next \`${CLI_COMMAND} thresholds\` writes it in the current version and keeps locked entries.`,
+    hint: `The next thresholds run (\`${THRESHOLDS_COMMAND}\`) writes it in the current version and keeps locked entries.`,
   };
 }
 

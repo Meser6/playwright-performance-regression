@@ -627,7 +627,7 @@ describe('thresholds files (09, chapter 4)', () => {
     expect(e.perKey.api[KEY]?.result).toBe('pass');
     expect(codes(e)).toEqual(['THRESHOLDS_FILE_MISSING']);
     expect(e.warnings[0]?.message).toContain('pw-perf-thresholds.qa.json');
-    expect(e.warnings[0]?.hint).toContain('npx pw-perf thresholds');
+    expect(e.warnings[0]?.hint).toContain('PW_PERF_MODE=thresholds <your test command>');
     expect(e.warnings[0]?.hint).toContain('pw-perf-thresholds.json exists');
     expect(e.thresholdFiles.map((f) => [f.status, f.generated])).toEqual([['missing', null]]);
   });

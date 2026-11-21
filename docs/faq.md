@@ -4,8 +4,8 @@
 
 A measurement run executes every measured test several times (5 by default, 10 in a thresholds
 run) in a single worker, so tests do not compete for the backend and the timings are comparable.
-Measure a representative subset: tag tests with `@perf` and run `pw-perf test --grep @perf`, or
-select projects with `--project`. See [Choosing the tests to measure](adoption.md#choosing-the-tests-to-measure).
+Measure a representative subset: tag tests with `@perf` and run
+`PW_PERF_MODE=test npx playwright test --grep @perf`, or select projects with `--project`. See [Choosing the tests to measure](adoption.md#choosing-the-tests-to-measure).
 
 ## Where do false alarms come from?
 
@@ -73,4 +73,5 @@ record nothing.
 
 No. Outside a measurement run `withPerf()` returns your config unchanged and `withPerfFixtures()`
 only adds the `perf` fixture, whose methods still work (`perf.measure()` runs the function and
-returns its result). Measurement runs are started by `pw-perf test` or `pw-perf thresholds`.
+returns its result). Measurement runs are started by your test command with `PW_PERF_MODE=test` or
+`PW_PERF_MODE=thresholds` in front of it.

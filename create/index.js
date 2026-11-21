@@ -99,7 +99,7 @@ async function main() {
       code = await run(process.execPath, [process.env.npm_execpath, ...installArgs], cwd);
     } else if (process.platform === 'win32') {
       // npm.cmd and friends cannot be started without a shell on Windows.
-      say(`run "${manager} ${installArgs.join(' ')}", then "npx pw-perf init".`);
+      say(`run "${manager} ${installArgs.join(' ')}", then "npm init ${PKG}" again.`);
       return 3;
     } else {
       code = await run(manager, installArgs, cwd);
@@ -111,7 +111,9 @@ async function main() {
   }
   const cli = installedCli(cwd);
   if (cli === null) {
-    say(`${PKG} is not resolvable from ${cwd} after the installation. Run "npx pw-perf init".`);
+    say(
+      `${PKG} is not resolvable from ${cwd} after the installation. Check the installation, then run "npm init ${PKG}" again.`,
+    );
     return 3;
   }
   return run(process.execPath, [cli, 'init', ...args], cwd);

@@ -1,7 +1,8 @@
 # CI
 
-Ready recipes for four platforms are in [`examples/ci/`](../examples/ci). `pw-perf init` copies
-the one for your platform into the project; you can also copy it by hand.
+Ready recipes for four platforms are in [`examples/ci/`](../examples/ci). The guided setup
+(`npm init playwright-performance-regression`) copies the one for your platform into the project;
+you can also copy it by hand.
 
 | Platform        | Recipe                                                      | Save as                                                                |
 | --------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -10,7 +11,7 @@ the one for your platform into the project; you can also copy it by hand.
 | Jenkins         | [`Jenkinsfile`](../examples/ci/Jenkinsfile)                 | `Jenkinsfile.perf`, as the script of its own pipeline job              |
 | Azure Pipelines | [`azure-pipelines.yml`](../examples/ci/azure-pipelines.yml) | `azure-pipelines.perf.yml`, registered as its own pipeline             |
 
-All recipes install dependencies with `npm ci` and run `npm run e2e`; `pw-perf init` writes the
+All recipes install dependencies with `npm ci` and run `npm run e2e`; the guided setup writes the
 recipe with your own test command (e.g. `npm run e2e:qa`). In a pnpm or yarn project replace the
 install line (and `npx` with `pnpm exec` or `yarn`).
 
@@ -32,7 +33,7 @@ changes; review the diff before committing.
 ## What every recipe does
 
 - **Sets `PW_PERF_MODE`** in the job environment and runs your usual test command, so its setup
-  steps, variables and flags work as they are. The recipes never call `pw-perf`.
+  steps, variables and flags work as they are.
 - **Installs Chromium** with its system libraries (`npx playwright install --with-deps chromium`).
 - **Reads the exit code from `pw-perf-results/outcome.json`**: Playwright itself exits with 0 or 1,
   so the run step removes the file first, runs the command and exits with `exitCode` from the
@@ -58,15 +59,14 @@ removed); `gate.tolerance` and `gate.defaultThresholds: 'warn'` soften the gate 
 | 3    | tool or config error, or an untrustworthy run | job fails on every platform                                                                                                                                |
 
 On Azure, `continueOnError` is not used on purpose: it would also soften code 3, which means the
-measurement did not work. See [CLI exit codes](cli.md#exit-codes) for all codes.
+measurement did not work. See [exit codes](cli.md#exit-codes) for all codes.
 
 ## Reading the result
 
 - The job log contains the summary: verdict, counters, the violations table and the slowest
   sample of the first blocking keys.
 - `pw-perf-results/report.html` is a self-contained page: download the artifact and open it.
-- `pw-perf-results/report.json` is the machine-readable report, also the input of
-  `pw-perf thresholds --from` (see [Thresholds](thresholds.md)) and `pw-perf report`.
+- `pw-perf-results/report.json` is the machine-readable report.
 
 Platform notes on the HTML report:
 
@@ -90,9 +90,3 @@ environment loaded by other pipelines cause false alarms. Prefer:
 
 The reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the machine, browser or Playwright
 version differs from the run the thresholds came from.
-
-## Alternative: the pw-perf runner
-
-`npx pw-perf test` and `npx pw-perf thresholds` run Playwright themselves and exit with 0/2/3
-directly, so a recipe would not need to read `outcome.json`; but they bypass your test script and
-its setup steps. See [Advanced: the pw-perf runner](cli.md#advanced-the-pw-perf-runner).

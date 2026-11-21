@@ -7,7 +7,7 @@ for you.
 
 - [The two changes](#the-two-changes)
 - [Situation → what to do](#situation--what-to-do)
-- [What `init` changes by itself](#what-init-changes-by-itself)
+- [What the guided setup changes by itself](#what-the-guided-setup-changes-by-itself)
 - [Choosing the tests to measure](#choosing-the-tests-to-measure)
 - [Start without blocking builds](#start-without-blocking-builds)
 - [Threshold headroom](#threshold-headroom)
@@ -81,9 +81,9 @@ package's `context` override never runs; the `page` override still finds the pag
 reports the informational diagnostic `COLLECTOR_CONTEXT_AUTO_TRACKED`. Keep `withPerfFixtures()`
 last to avoid that.
 
-## What `init` changes by itself
+## What the guided setup changes by itself
 
-`pw-perf init` reads your project as text and changes only layouts it recognises. It never changes
+The guided setup (`npm init playwright-performance-regression`) reads your project as text and changes only layouts it recognises. It never changes
 your test files or `package.json`. Everything else is printed as an `INIT_MANUAL_STEP` instruction
 from the table above, or, for the test object, as a red box with the code to paste
 (`INIT_TEST_OBJECT_MANUAL`).
@@ -207,15 +207,17 @@ URLs with `measure.exclude`, or keep tests that rely on mocks out of the measure
 
 ## Monorepos
 
-Run the CLI from the repository root and point it to the app's config:
+Run the measurement where you run the app's tests, with the variable in front of the usual
+command, for example from the repository root:
 
 ```sh
-npx pw-perf test -c apps/web/playwright.config.ts
-npx pw-perf report --input apps/web/pw-perf-results/report.json
+PW_PERF_MODE=test npx playwright test -c apps/web/playwright.config.ts
+PW_PERF_MODE=test pnpm --filter web run e2e
 ```
 
-Playwright is resolved from the directory of that config, and relative paths in the package
-config (`report.dir`, `thresholds.dir`) are relative to the Playwright config's directory.
+Relative paths in the package config (`report.dir`, `thresholds.dir`) are relative to the
+Playwright config's directory, so the report of the example above is in
+`apps/web/pw-perf-results/`.
 
 ## CommonJS configs
 

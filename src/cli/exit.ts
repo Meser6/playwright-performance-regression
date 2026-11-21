@@ -1,5 +1,5 @@
 // Exit code of the commands that run tests (04-REQ-22, 04-REQ-23; 00, chapter 11). Pure.
-import { CLI_COMMAND } from '../core/types/index.ts';
+import { INIT_COMMAND } from '../core/types/index.ts';
 import type { CliIssue, Outcome } from '../core/types/index.ts';
 
 export interface ExitInput {
@@ -48,7 +48,7 @@ export function resolveExitCode(input: ExitInput): { code: number; issues: CliIs
         message: `The run wrote no outcome file, so its result is unknown. ${playwright}.`,
         hint: [
           'Common causes:',
-          `- playwright.config does not use withPerf() (set it up with "${CLI_COMMAND} init");`,
+          `- playwright.config does not use withPerf() (set it up with "${INIT_COMMAND}");`,
           '- a configuration error (see the message above);',
           '- no test matched the filters (Playwright then reports no tests);',
           '- Playwright stopped before the reporters finished (onEnd).',

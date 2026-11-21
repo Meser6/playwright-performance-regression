@@ -5,7 +5,7 @@ Guidance for Claude Code (and any contributor) working in this repository.
 ## Project
 
 `playwright-performance-regression` is an npm package for Playwright Test. In a dedicated
-measurement run (`npx pw-perf test`) it records backend request timings and `test.step`
+measurement run (the user's own test command with `PW_PERF_MODE=test`, D-35) it records backend request timings and `test.step`
 durations during existing e2e tests, groups requests into endpoint keys, compares per-key statistics with
 thresholds files committed to the user's repository, and fails the run on regression. A second
 package, `create-playwright-performance-regression`, powers `npm init playwright-performance-regression`.
@@ -13,7 +13,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 ## Specification
 
 - The specification lives in a **separate private repository**, expected as a sibling checkout:
-  `../pw-benchmark/` (`spec/`, `PLAN.md`). Read the relevant spec files before working on a task.
+  `../pw-benchmark/` (`spec/`, `v4_todo.md`, `HANDOFF.md`). Read the relevant spec files before working on a task.
 - The spec is the source of truth. If code and spec disagree, the spec wins; if the spec is wrong,
   it is changed and merged in the spec repository **first**, then the code follows.
 - Never copy spec text, roadmap or business details into this public repository. Refer to spec
@@ -24,7 +24,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 
 ## Work process
 
-- Work follows `PLAN.md` in the spec repo: one work package = one branch = one PR.
+- Work follows `v4_todo.md` in the spec repo: one item = one branch = one PR.
 - Acceptance-criteria tests are written before the code. A test covering an AC has the AC ID in
   its title, e.g. `test('09-AC-03 rule is skipped below minSamples', ...)`.
 - Definition of done for a work package:
