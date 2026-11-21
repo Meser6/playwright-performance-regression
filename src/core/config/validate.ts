@@ -6,6 +6,7 @@ import { packageConfig } from '../schema/config.ts';
 import { isRecord, Sink } from '../schema/dsl.ts';
 import type { Problem } from '../schema/dsl.ts';
 import { DEFAULT_CONFIG } from './generated/defaults.ts';
+import { isHostPattern, parseHostPattern } from '../normalize/host-patterns.ts';
 import { STEP_DEFAULTS, STEP_OPTION_NAMES } from './steps.ts';
 import { describeValue, editDistance, formatPath, pointerSegments, valueAt } from './paths.ts';
 import type { Segment } from './paths.ts';
@@ -338,12 +339,47 @@ export function relationalIssues(
     errors.push(reservedEnvIssue(['run', 'env'], env));
   }
 
+  // Host patterns in keys.origins (03-REQ-20).
+  const originMap = valueAt(config, ['keys', 'origins']);
+  if (isRecord(originMap)) {
+    const seen = new Map<string, string>();
+    for (const [key, label] of Object.entries(originMap)) {
+      if (!isHostPattern(key) || typeof label !== 'string') continue;
+      const parsed = parseHostPattern(key, label);
+      if (typeof parsed === 'string') {
+        errors.push(
+          issue(
+            'CONFIG_INVALID_VALUE',
+            ['keys', 'origins', key],
+            parsed,
+            'Write a host pattern like "https://*.ci.example.com": one "*" inside a host label, a top-level domain without "*" (docs/dynamic-environments.md).',
+          ),
+        );
+        continue;
+      }
+      const other = seen.get(parsed.canonical);
+      if (other !== undefined) {
+        errors.push(
+          issue(
+            'CONFIG_INVALID_VALUE',
+            ['keys', 'origins', key],
+            `the host pattern is the same as ${JSON.stringify(other)} after canonicalization (${parsed.canonical})`,
+            'Keep one of the two patterns.',
+          ),
+        );
+      } else {
+        seen.set(parsed.canonical, key);
+      }
+    }
+  }
+
   // Origins that share a label (their keys merge, 07).
   const origins = valueAt(config, ['keys', 'origins']);
   if (isRecord(origins)) {
     const byLabel = new Map<string, string[]>();
     for (const [origin, label] of Object.entries(origins)) {
-      if (typeof label !== 'string') continue;
+      // A pattern and exact entries may share a label on purpose (03-REQ-20).
+      if (typeof label !== 'string' || isHostPattern(origin)) continue;
       byLabel.set(label, [...(byLabel.get(label) ?? []), origin]);
     }
     for (const [label, list] of byLabel) {

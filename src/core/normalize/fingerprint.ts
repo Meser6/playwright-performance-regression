@@ -3,7 +3,7 @@ import type { ResolvedConfig } from '../config/index.ts';
 import { stringifyStable } from '../format/index.ts';
 import { hashHex } from '../random/index.ts';
 import { NORMALIZE_RULES_VERSION } from './constants.ts';
-import { canonicalOrigin, canonicalOrigins } from './key-builder.ts';
+import { canonicalOrigin, canonicalOrigins, coveredByOrigins } from './key-builder.ts';
 import type { KeyBuilderContext } from './key-builder.ts';
 
 export interface ProjectBaseUrl {
@@ -48,7 +48,10 @@ export function normalizationFingerprint(
     stringifyStable({
       rulesVersion: NORMALIZE_RULES_VERSION,
       keys,
-      baseOrigins: canonicalOrigins(ctx.baseOrigins),
+      // Only baseURL origins keys.origins does not map change the keys (07-REQ-26).
+      baseOrigins: canonicalOrigins(ctx.baseOrigins).filter(
+        (origin) => !coveredByOrigins(cfg.origins, origin),
+      ),
     }),
   );
 }

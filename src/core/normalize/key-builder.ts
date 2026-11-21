@@ -3,6 +3,7 @@ import type { ResolvedConfig } from '../config/index.ts';
 import { hashHex } from '../random/index.ts';
 import type { Issue, RawRequestSample } from '../types/index.ts';
 import { MAX_KEY_LENGTH } from './constants.ts';
+import { compileHostPatterns, isHostPattern, matchingPattern } from './host-patterns.ts';
 import { compileIdMatcher } from './patterns.ts';
 import type { IdMatcher } from './patterns.ts';
 
@@ -113,6 +114,46 @@ export function truncateKey(key: string): string {
 }
 
 /**
+ * Label of an origin (07-REQ-03, 07-REQ-25): an exact keys.origins entry, else the best host
+ * pattern, else '' for a baseURL origin of a measured project, else null (the host is used).
+ * Results are remembered for the run.
+ */
+export function originLabels(
+  origins: Readonly<Record<string, string>>,
+  baseOrigins: readonly string[],
+): (url: URL) => string | null {
+  const exact = new Map<string, string>();
+  for (const [origin, label] of Object.entries(origins)) {
+    if (isHostPattern(origin)) continue;
+    const canonical = canonicalOrigin(origin);
+    if (canonical !== null) exact.set(canonical, label);
+  }
+  const patterns = compileHostPatterns(origins);
+  const base = new Set(canonicalOrigins(baseOrigins));
+  const memo = new Map<string, string | null>();
+  return (url) => {
+    const known = memo.get(url.origin);
+    if (known !== undefined) return known;
+    const label =
+      exact.get(url.origin) ??
+      matchingPattern(patterns, url)?.label ??
+      (base.has(url.origin) ? '' : null);
+    memo.set(url.origin, label);
+    return label;
+  };
+}
+
+/** Whether keys.origins maps the origin, exactly or by a pattern (07-REQ-26). */
+export function coveredByOrigins(
+  origins: Readonly<Record<string, string>>,
+  origin: string,
+): boolean {
+  const url = parseHttpUrl(origin);
+  if (url === null) return false;
+  return originLabels(origins, [])(url) !== null;
+}
+
+/**
  * Compiles the `keys` config once and returns a pure function from a request sample to its
  * endpoint key (07, chapter 12). Collecting and collapsing warnings is up to the caller.
  */
@@ -121,13 +162,7 @@ export function createKeyBuilder(
   ctx: KeyBuilderContext,
 ): (sample: KeySample) => KeyResult {
   const matchId = compileIdMatcher(cfg);
-  const labels = new Map<string, string>();
-  for (const origin of canonicalOrigins(ctx.baseOrigins)) labels.set(origin, '');
-  // keys.origins wins over baseOrigins (07-REQ-03).
-  for (const [origin, label] of Object.entries(cfg.origins)) {
-    const canonical = canonicalOrigin(origin);
-    if (canonical !== null) labels.set(canonical, label);
-  }
+  const labelOf = originLabels(cfg.origins, ctx.baseOrigins);
   const keyBuilder = cfg.keyBuilder;
 
   return (sample) => {
@@ -169,7 +204,7 @@ export function createKeyBuilder(
         });
         return { ok: false, issues };
       }
-      const label = labels.get(url.origin) ?? url.host;
+      const label = labelOf(url) ?? url.host;
       const query = cfg.query === 'names' ? normalizeQuery(url.searchParams, cfg, matchId) : '';
       key = `${method} ${label}${normalizePath(url.pathname, matchId)}${query === '' ? '' : `?${query}`}`;
     }
@@ -186,7 +221,7 @@ export function createKeyBuilder(
       ok: true,
       key: truncated,
       origin: url?.origin ?? null,
-      label: url === null ? null : (labels.get(url.origin) ?? url.host),
+      label: url === null ? null : (labelOf(url) ?? url.host),
       issues,
     };
   };

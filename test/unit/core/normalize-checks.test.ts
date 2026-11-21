@@ -6,6 +6,7 @@ import {
   CARDINALITY_MIN_KEYS,
   MAX_KEYS_WARNING,
   NORMALIZE_RULES_VERSION,
+  createKeyBuilder,
   detectKeyExplosion,
   measuredBaseOrigins,
   normalizationFingerprint,
@@ -164,3 +165,89 @@ describe('normalization fingerprint (07-REQ-21)', () => {
 });
 
 const PINNED_DEFAULT_FINGERPRINT = '1171addebdc560';
+
+describe('host patterns in keys.origins (03-REQ-20, 07-REQ-25, 07-REQ-26)', () => {
+  const resolve = (origins: Record<string, string>) => resolveConfig({ keys: { origins } }, {});
+
+  test('03-AC-14 valid patterns, a duplicate after canonicalization and invalid ones', () => {
+    expect(
+      resolve({ 'https://*.ci.example.com': 'ci', 'https://app-*.example.com:8443': 'app' }).ok,
+    ).toBe(true);
+    expect(resolve({ 'HTTPS://*.CI.example.com:443/': 'ci' }).ok).toBe(true);
+    const duplicate = resolve({
+      'https://*.ci.example.com': 'a',
+      'HTTPS://*.CI.example.com:443/': 'b',
+    });
+    expect(duplicate.ok ? [] : duplicate.issues.map((i) => i.code)).toEqual([
+      'CONFIG_INVALID_VALUE',
+    ]);
+    for (const bad of [
+      'https://*',
+      'https://*.*',
+      'https://example.*',
+      'https://a**b.example.com',
+      'https://*.example.com/api',
+      'ftp://*.example.com',
+      'https://*.example.com:*',
+    ]) {
+      const result = resolve({ [bad]: 'x' });
+      expect(result.ok ? [] : result.issues.map((i) => i.code), bad).toEqual([
+        'CONFIG_INVALID_VALUE',
+      ]);
+    }
+    const shared = resolve({ 'https://*.ci.example.com': 'api', 'https://api.example.com': 'api' });
+    expect(shared.ok && shared.value.warnings.map((w) => w.code)).toEqual([]);
+  });
+
+  test('07-AC-12 the order of the entries changes neither keys nor the fingerprint', () => {
+    const a = { 'https://*.ci.example.com': 'ci', 'https://api-*.ci.example.com': 'api' };
+    const b = { 'https://api-*.ci.example.com': 'api', 'https://*.ci.example.com': 'ci' };
+    const keysA = config({ keys: { origins: a } }).keys;
+    const keysB = config({ keys: { origins: b } }).keys;
+    const url = 'https://api-12.ci.example.com/x';
+    const build = (keys: ResolvedConfig['keys']) =>
+      createKeyBuilder(keys, { baseOrigins: [] })({ method: 'GET', url, resourceType: 'fetch' });
+    expect(build(keysA)).toEqual(build(keysB));
+    expect(normalizationFingerprint(keysA, { baseOrigins: [] })).toBe(
+      normalizationFingerprint(keysB, { baseOrigins: [] }),
+    );
+  });
+
+  test('07-AC-13 random baseURL hosts covered by a pattern give the same fingerprint', () => {
+    const covered = config({ keys: { origins: { 'https://*.ci.example.com': '' } } }).keys;
+    const fp = (keys: ResolvedConfig['keys'], origin: string) =>
+      normalizationFingerprint(keys, { baseOrigins: [origin] });
+    expect(fp(covered, 'https://pr-1.ci.example.com')).toBe(
+      fp(covered, 'https://pr-2.ci.example.com'),
+    );
+    const plain = config().keys;
+    expect(fp(plain, 'https://pr-1.ci.example.com')).not.toBe(
+      fp(plain, 'https://pr-2.ci.example.com'),
+    );
+  });
+
+  test('07-AC-14 an IPv6 origin never matches; 10 000 origins against 50 patterns', () => {
+    const origins = Object.fromEntries(
+      Array.from({ length: 50 }, (_, i) => [
+        `https://p${String(i)}-*.ci.example.com`,
+        `l${String(i)}`,
+      ]),
+    );
+    const keys = config({ keys: { origins: { ...origins, 'http://*.localhost.test': 'x' } } }).keys;
+    const build = createKeyBuilder(keys, { baseOrigins: [] });
+    expect(
+      build({ method: 'GET', url: 'http://[::1]:3000/a', resourceType: 'fetch' }),
+    ).toMatchObject({
+      key: 'GET [::1]:3000/a',
+    });
+    const start = performance.now();
+    for (let i = 0; i < 10_000; i++) {
+      build({
+        method: 'GET',
+        url: `https://p${String(i % 50)}-${String(i)}.ci.example.com/x`,
+        resourceType: 'fetch',
+      });
+    }
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+});
