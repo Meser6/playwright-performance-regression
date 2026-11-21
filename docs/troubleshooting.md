@@ -149,9 +149,10 @@ usually ends in [`CLI_OUTCOME_MISSING`](#cli_outcome_missing).
 ### MODE_INVALID_VALUE
 
 **Error.** A `PW_PERF_*` environment variable has an invalid value: `PW_PERF_MODE` other than
-`test` or `thresholds`, `PW_PERF_REPEAT` that is not a positive integer, `PW_PERF_ENV` that is not
-a valid environment label, or `PW_PERF_PRUNE` other than `1`. An invalid value never silently
-turns perf mode off. Fix or unset the variable; normally let `npx pw-perf test` set them.
+`test`, `thresholds` or `check`, `PW_PERF_REPEAT` that is not a positive integer, `PW_PERF_ENV`
+that is not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, or `PW_PERF_PRUNE`
+other than `1`. An invalid value never silently turns perf mode off. Fix or unset the variable,
+e.g. `PW_PERF_MODE=test npm run e2e` (see [cli.md](cli.md)).
 
 ### CONFIG_FILE_NOT_FOUND
 
@@ -263,7 +264,7 @@ monorepo). Make sure the project resolves a single version and run again.
 
 **Error.** The run report for `pw-perf report` or `pw-perf thresholds --from` does not exist. By
 default the commands look for `report.json` in `report.dir` (`pw-perf-results/`). Pass the file with
-`--input` (report) or `--from` (thresholds), or run `npx pw-perf test` first.
+`--input` (report) or `--from` (thresholds), or run a measurement first (`PW_PERF_MODE=test npm run e2e`).
 
 ### CLI_REPORT_TESTS_FAILED
 
@@ -577,7 +578,7 @@ percentile. Derive the thresholds again after changing the level.
 
 **Warning.** The thresholds file for a kind (endpoints) and the current environment label was not
 found, so those keys are evaluated with the default limits from `checks.*.limit`. It is reported
-only for a kind that has keys in the run. Derive thresholds with `npx pw-perf thresholds` and commit the file. When an
+only for a kind that has keys in the run. Derive thresholds with `PW_PERF_MODE=thresholds npm run e2e` and commit the file. When an
 environment label is set, a file without the label is not used for it; the hint says so when such
 a file exists. See [thresholds.md](thresholds.md).
 
@@ -590,7 +591,7 @@ next `pw-perf thresholds` run writes it in the current format and keeps locked e
 
 **Warning.** Entries in a thresholds file belong to keys that did not appear in this run. Either
 the run covered only part of the tests (a filter), or the endpoints are gone. Run the full
-measurement set, or remove stale entries with `npx pw-perf thresholds --prune`.
+measurement set, or remove stale entries with `PW_PERF_PRUNE=1 PW_PERF_MODE=thresholds npm run e2e`.
 
 ### THRESHOLDS_ENTRIES_NOT_EVALUATED
 

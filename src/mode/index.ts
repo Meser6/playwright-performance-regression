@@ -105,7 +105,7 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
         MODE,
         '"test", "thresholds" or "check"',
         mode,
-        `Unset ${MODE} to run without perf mode, or start the run with "npx pw-perf test".`,
+        `Set ${MODE} to test, thresholds or check, or unset it to run without perf mode.`,
       ),
     );
   }

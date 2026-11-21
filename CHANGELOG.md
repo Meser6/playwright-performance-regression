@@ -55,6 +55,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `npx pw-perf --help` starts with the recommended form (`PW_PERF_MODE=test npm run e2e`, also
+  `thresholds` and `check`, with the Windows line) and presents the commands as the advanced
+  runner; it lists `--max-tests`. The README quick start uses the same form and says where the
+  result is (`pw-perf-results/outcome.json`).
+- The HTML report size limit for 500 keys, 500 tests and 5 waterfalls is 10 MB (was 5 MB).
 - The HTML report is redesigned: a verdict banner and key figures on top, tabs (Overview,
   Endpoints, Tests, Warnings, Run & config), a side panel with the details of a key and
   links to it (`#key=api:<key>`, `#tab=tests`), search and filter chips, rankings (slowest, most

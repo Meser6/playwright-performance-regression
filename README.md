@@ -80,21 +80,27 @@ wrappers or custom reporters: see [Adopting the package in an existing project](
 
 ## Quick start
 
+Run your usual test command with `PW_PERF_MODE` in front of it. `npm run e2e` stands for your own
+script, or `npx playwright test`:
+
 ```sh
-npm run perf:thresholds   # measure and write the thresholds files
+PW_PERF_MODE=check npm run e2e        # dry run: what is measured and how long a run takes
+PW_PERF_MODE=thresholds npm run e2e   # measure and write the thresholds files
 git add pw-perf-thresholds*.json && git commit -m "test: add performance thresholds"
-npm run perf:test         # measure again and compare with the thresholds
+PW_PERF_MODE=test npm run e2e         # measure again and compare with the thresholds
 ```
 
-Without the scripts: `npx pw-perf thresholds` and `npx pw-perf test` (add `--grep @perf` to
-measure only the tests tagged `@perf`).
+On Windows: `npx cross-env PW_PERF_MODE=test npm run e2e` (PowerShell and cmd forms in
+[docs/cli.md](docs/cli.md)). Without the variable the tests run as before, with no measuring.
+
+The exit code is Playwright's own; the cause of a failure (a regression, failed tests, a config
+error) is in `pw-perf-results/outcome.json`. The result is also printed in the terminal and written
+to `pw-perf-results/report.json` and `pw-perf-results/report.html`. A runner with its own exit
+codes is described in [Advanced: the pw-perf runner](docs/cli.md#advanced-the-pw-perf-runner).
 
 Derive thresholds on the same machines that run the check, usually your CI runners, and bring them
 to your repository with `pw-perf thresholds --from <report.json>`. Thresholds measured on a laptop
 do not fit CI. See [Thresholds](docs/thresholds.md).
-
-The result is printed in the terminal and written to `pw-perf-results/report.json` and
-`pw-perf-results/report.html`.
 
 ## Step timings
 

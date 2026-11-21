@@ -394,12 +394,24 @@ describe('runTests with a fake Playwright', () => {
 });
 
 describe('main', () => {
-  test('help, version and errors', async () => {
+  test('04-REQ-60 help, version and errors', async () => {
     const fake = fakeCliHost({ cwd: dir });
     expect(await main(['--version'], fake.host)).toBe(0);
     expect(fake.stdout).toEqual(['1.2.3\n']);
     expect(await main(['--help'], fake.host)).toBe(0);
     expect(fake.stdout[1]).toContain('Usage: npx pw-perf <command>');
+    // 04-REQ-60: the recommended form comes first, the pw-perf runner is the advanced one.
+    const general = fake.stdout[1] ?? '';
+    expect(general.startsWith('Recommended: run your usual test command with PW_PERF_MODE')).toBe(
+      true,
+    );
+    for (const mode of ['test', 'thresholds', 'check']) {
+      expect(general).toContain(`PW_PERF_MODE=${mode} npm run e2e`);
+    }
+    expect(general).toContain('npx cross-env PW_PERF_MODE=test npm run e2e');
+    expect(general).toContain('pw-perf-results/outcome.json');
+    expect(general.indexOf('Advanced:')).toBeLessThan(general.indexOf('Usage:'));
+    expect(general).toContain('--max-tests <n>');
     expect(await main(['test', '--help'], fake.host)).toBe(0);
     // 04-REQ-21: the repetition warning in the help of test and thresholds.
     expect(fake.stdout[2]).toContain('--grep-invert');
