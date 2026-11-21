@@ -475,7 +475,7 @@ describe('removed custom measurements (03-REQ-19, D-32)', () => {
         message: `${paths[i]}: unknown option`,
         hint: expect.stringContaining('measure.steps'),
       });
-      expect(found[0]?.hint).toContain('custom measurements were removed in 0.1.0-next.2');
+      expect(found[0]?.hint).toContain('custom measurements were removed in 0.1.0-next.3');
     });
   });
 

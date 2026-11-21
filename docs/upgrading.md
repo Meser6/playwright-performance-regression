@@ -25,7 +25,7 @@ changes and are always listed with migration steps:
 After upgrading, run `npx pw-perf thresholds --from <a recent report.json>` and review the diff
 before committing anything.
 
-### From 0.1.0-next.1 to 0.1.0-next.2: custom measurements removed
+### From 0.1.0-next.1 to 0.1.0-next.3: custom measurements removed
 
 Custom measurements are gone. To upgrade:
 
