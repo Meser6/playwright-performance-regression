@@ -33,7 +33,7 @@ export type ParsedCommand =
       /** --no-tutorial: only the manual setup steps, no changes (04-REQ-45). */
       noTutorial?: true;
     }
-  | { kind: 'help'; command?: HelpTopic }
+  | { kind: 'help'; command?: HelpTopic; noArgs?: true }
   | { kind: 'version' };
 
 export const COMMANDS: readonly HelpTopic[] = ['test', 'thresholds', 'check', 'report', 'init'];
@@ -394,9 +394,8 @@ function parseInit(args: readonly string[]): Result<ParsedCommand, CliIssue> {
 /** Parses the arguments after the command name (`process.argv.slice(2)`). */
 export function parseArgs(argv: readonly string[]): Result<ParsedCommand, CliIssue> {
   const first = argv[0];
-  if (first === undefined) {
-    return fail([{ code: 'CLI_UNKNOWN_COMMAND', message: 'No command given.', hint: USAGE_HINT }]);
-  }
+  // No arguments: the help, with the init box in a project without config (04-REQ-01, 04-REQ-68).
+  if (first === undefined) return { ok: true, value: { kind: 'help', noArgs: true } };
   if (HELP.has(first)) return { ok: true, value: { kind: 'help' } };
   if (VERSION.has(first)) return { ok: true, value: { kind: 'version' } };
   const rest = argv.slice(1);

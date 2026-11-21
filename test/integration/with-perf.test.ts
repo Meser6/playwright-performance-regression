@@ -178,6 +178,26 @@ describe('withPerf with real Playwright', () => {
   );
 
   test(
+    '03-AC-18 run.grep filters the measured project only; setup and teardown run in full',
+    () => {
+      const env = { PW_PERF_MODE: 'test', PW_PERF_PASSES: '1' };
+      const none = runPlaywright('esm-ts', { ...env, INTEGRATION_GREP: 'no-such-tag' });
+      expect([count(none, 'setup'), count(none, 'chromium'), count(none, 'cleanup')]).toEqual([
+        1, 0, 1,
+      ]);
+      const some = runPlaywright('esm-ts', { ...env, INTEGRATION_GREP: 'MEASURED' });
+      expect(some.status, some.output).toBe(0);
+      expect([count(some, 'setup'), count(some, 'chromium'), count(some, 'cleanup')]).toEqual([
+        1, 1, 1,
+      ]);
+      // Outside perf mode run.grep does nothing.
+      const off = runPlaywright('esm-ts', { INTEGRATION_GREP: 'no-such-tag' });
+      expect(off.executions).toHaveLength(5);
+    },
+    TIMEOUT,
+  );
+
+  test(
     '04-AC-13 a reporter listed in run.keepReporters keeps writing its file',
     () => {
       const run = runPlaywright('esm-ts', { PW_PERF_MODE: 'test', INTEGRATION_KEEP_JUNIT: '1' });

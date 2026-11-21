@@ -80,7 +80,6 @@ function evaluateKey(
 
 /** Violations of this key may block the run (09-REQ-13, step 2). */
 function qualifies(evaluation: EvaluatedKey, gate: ResolvedConfig['gate']): boolean {
-  if (gate.warnOnly) return false;
   if (evaluation.thresholdSource === 'default' && gate.defaultThresholds === 'warn') return false;
   return !isMuteActive(evaluation.muted);
 }

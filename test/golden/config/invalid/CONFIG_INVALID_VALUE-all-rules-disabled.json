@@ -1,5 +1,5 @@
 {
-  "name": "every rule disabled without gate.warnOnly",
+  "name": "every rule disabled",
   "input": {
     "checks": {
       "time": { "median": { "enabled": false }, "percentile": { "enabled": false }, "p99": { "enabled": false } },

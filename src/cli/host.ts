@@ -27,6 +27,13 @@ export interface SpawnOptions {
   shell: false;
 }
 
+export interface ProcessOptions {
+  cwd: string;
+  env: Record<string, string>;
+  stdio: 'inherit';
+  shell: boolean;
+}
+
 export interface PlaywrightInstall {
   /** Absolute path of the Playwright CLI script (`bin.playwright` of @playwright/test). */
   cliPath: string;
@@ -56,6 +63,8 @@ export interface CliHost {
   paths: PathHelpers;
   env: Readonly<Record<string, string | undefined>>;
   platform: string;
+  /** process.execPath: Node of this process. */
+  execPath: string;
   /** os.tmpdir(): directory of the outcome file (04-REQ-11). */
   tmpdir: string;
   stdin: { isTTY?: boolean };
@@ -72,6 +81,11 @@ export interface CliHost {
   resolvePlaywright(dir: string): PlaywrightInstall | null;
   /** child_process.spawn(process.execPath, args, options). */
   spawnNode(args: string[], options: SpawnOptions): ChildProcessLike;
+  /**
+   * child_process.spawn(file, args, options) for the wizard's check run (04-REQ-58); `shell` is
+   * true only for a checked script name on Windows.
+   */
+  spawnProcess(file: string, args: string[], options: ProcessOptions): ChildProcessLike;
   /** Registers a signal handler; returns the function that removes it. */
   onSignal(signal: ForwardedSignal, handler: () => void): () => void;
   /** Text of a file, or null when it does not exist. */

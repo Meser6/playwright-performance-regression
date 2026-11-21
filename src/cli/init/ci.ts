@@ -1,51 +1,23 @@
-// CI job of the init wizard (04-REQ-38 step 8, 04-REQ-42): the recipes of examples/ci/ (embedded
-// in generated/ci-templates.ts, 13-AC-11) with only the --grep and --env flags filled in. One file
-// per environment label, so each environment has its own job. Pure.
+// CI jobs of the init wizard (04-REQ-38 step 8, 04-REQ-69): the recipes of examples/ci/ (embedded
+// in generated/ci-templates.ts, 13-AC-11) with only the test command replaced by the project's
+// command C (04-REQ-55). Every recipe has a manual thresholds job and a weekly measurement job
+// that set PW_PERF_MODE (13-REQ-16). Pure.
 import type { CiPlatform } from './detect.ts';
 import { CI_TEMPLATES } from './generated/ci-templates.ts';
 
-/** The command of every recipe that the flags are appended to. */
-export const CI_COMMAND = 'npx pw-perf test';
+/** The test command of every recipe, replaced by the project's command. */
+export const CI_COMMAND = 'npm run e2e';
 
-interface CiTarget {
-  /** File the job is written to, for the label (null: no environment). */
-  path: (label: string | null) => string;
-  /** Changes besides the flags that let jobs of several environments live side by side. */
-  rename: (text: string, label: string) => string;
-}
-
-const suffix = (label: string | null): string => (label === null ? '' : `-${label}`);
-
-export const CI_TARGETS: Readonly<Record<CiPlatform, CiTarget>> = {
-  github: {
-    path: (label) => `.github/workflows/perf${suffix(label)}.yml`,
-    rename: (text, label) => text.replace(/^name: Performance$/mu, `name: Performance (${label})`),
-  },
-  gitlab: {
-    path: (label) => `.gitlab/perf${suffix(label)}.gitlab-ci.yml`,
-    rename: (text, label) => text.replace(/^perf:$/mu, `perf-${label}:`),
-  },
-  jenkins: { path: (label) => `Jenkinsfile.perf${suffix(label)}`, rename: (text) => text },
-  azure: { path: (label) => `azure-pipelines.perf${suffix(label)}.yml`, rename: (text) => text },
+/** File the jobs of each platform are written to. */
+export const CI_PATHS: Readonly<Record<CiPlatform, string>> = {
+  github: '.github/workflows/perf.yml',
+  gitlab: '.gitlab/perf.gitlab-ci.yml',
+  jenkins: 'Jenkinsfile.perf',
+  azure: 'azure-pipelines.perf.yml',
 };
 
-/** Flags of the perf:test* script and the CI command (04-REQ-42). */
-export function commandFlags(scope: 'all' | 'tagged', label: string | null): string {
-  return `${scope === 'tagged' ? ' --grep @perf' : ''}${label === null ? '' : ` --env ${label}`}`;
-}
-
-/** The CI files for the platform and answers: path → content. */
-export function ciFiles(
-  platform: CiPlatform,
-  scope: 'all' | 'tagged',
-  envLabels: readonly string[],
-): { path: string; text: string }[] {
-  const target = CI_TARGETS[platform];
+/** The CI file for the platform with the test command `command` (C of 04-REQ-55). */
+export function ciFile(platform: CiPlatform, command: string): { path: string; text: string } {
   const template: string = CI_TEMPLATES[platform];
-  const labels: (string | null)[] = envLabels.length === 0 ? [null] : [...envLabels];
-  return labels.map((label) => {
-    let text = template.replace(CI_COMMAND, `${CI_COMMAND}${commandFlags(scope, label)}`);
-    if (label !== null) text = target.rename(text, label);
-    return { path: target.path(label), text };
-  });
+  return { path: CI_PATHS[platform], text: template.replaceAll(CI_COMMAND, command) };
 }

@@ -44,12 +44,12 @@ Custom measurements are gone. To upgrade:
 
 ## Uninstalling
 
-1. Undo the import swap: in the test files replace `playwright-performance-regression/test` with
-   `@playwright/test`.
+1. If your test files import from `playwright-performance-regression/test`, import from
+   `@playwright/test` again.
 2. Remove `withPerfFixtures(...)` around your test objects and the `trackContext()` /
    `perf.track()` calls.
 3. In `playwright.config` remove `withPerf(...)` around the config and the `pw-perf.config`
    import.
-4. Delete `pw-perf.config.*`, the `pw-perf-thresholds*.json` files, the `perf:test` and
-   `perf:thresholds` scripts, the CI job and the `pw-perf-results/` line in `.gitignore`.
+4. Delete `pw-perf.config.*`, the `pw-perf-thresholds*.json` files, any `perf:*` scripts from an
+   earlier wizard, the CI jobs and the `pw-perf-results/` line in `.gitignore`.
 5. `npm uninstall playwright-performance-regression`.

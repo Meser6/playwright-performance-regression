@@ -4,21 +4,16 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import typescript from 'typescript';
 import { describe, expect, test } from 'vitest';
-import { CI_COMMAND, CI_TARGETS, ciFiles } from '../../../src/cli/init/ci.ts';
+import { CI_COMMAND, CI_PATHS, ciFile } from '../../../src/cli/init/ci.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
 import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
 import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
 import type { InitAnswers } from '../../../src/cli/init/index.ts';
-import {
-  addScripts,
-  swapTestImport,
-  wrapPlaywrightConfig,
-  wrapTestObject,
-} from '../../../src/cli/init/patterns.ts';
+import { wrapPlaywrightConfig, wrapTestObject } from '../../../src/cli/init/patterns.ts';
 import { CONFIG_OPTIONS } from '../../../src/cli/init/generated/config-options.ts';
 import { LANGUAGES } from '../../../src/cli/init/messages.ts';
 import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
-import { renderPerfConfig, ts } from '../../../src/cli/init/perf-config.ts';
+import { IMPORTANT_SETTINGS, renderPerfConfig, ts } from '../../../src/cli/init/perf-config.ts';
 import { DEFAULT_CONFIG } from '../../../src/core/config/index.ts';
 import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
 import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
@@ -29,7 +24,10 @@ const ROOT = join(import.meta.dirname, '../../..');
 interface InitGolden {
   name: string;
   input: { project: string; answers: InitAnswers | null };
-  expected: { manualSteps: { code: string; message: string }[] };
+  expected: {
+    manualSteps: { code: string; message: string }[];
+    testObject: { extendFiles: string[]; importingFiles: number } | null;
+  };
 }
 
 const goldenFiles = readdirSync(INIT_GOLDEN)
@@ -45,13 +43,19 @@ function files(entries: Record<string, string>): Map<string, string> {
 }
 
 const ANSWERS: InitAnswers = {
+  script: null,
+  projects: 'auto',
   scope: 'all',
   passesTest: 5,
-  warnOnly: true,
   steps: false,
-  envLabels: [],
+  preset: 'normal',
   addCi: false,
+  runCheck: false,
 };
+
+/** Lines of the config that are code, not comments or blank lines. */
+const activeLines = (config: string): string[] =>
+  config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
 
 describe('detectProject', () => {
   test('reads the project as text: config, version, package manager, module type, tests, CI', async () => {
@@ -135,17 +139,19 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       const plan = planInitChanges(info, golden.input.answers ?? defaultAnswers(info));
       const diff = planDiff(plan);
       const manualSteps = plan.manualSteps.map(({ code, message }) => ({ code, message }));
+      const testObject = plan.testObject;
       const diffFile = join(INIT_GOLDEN, file.replace(/\.json$/u, '.diff'));
       if (update) {
         writeFileSync(diffFile, diff);
         writeFileSync(
           join(INIT_GOLDEN, file),
-          `${JSON.stringify({ ...golden, expected: { manualSteps } }, null, 2)}\n`,
+          `${JSON.stringify({ ...golden, expected: { manualSteps, testObject } }, null, 2)}\n`,
         );
         return;
       }
       expect(diff).toBe(readFileSync(diffFile, 'utf8'));
       expect(manualSteps).toEqual(golden.expected.manualSteps);
+      expect(testObject).toEqual(golden.expected.testObject);
     });
   }
 
@@ -158,66 +164,89 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(paths).not.toContain('tests/a11y.ts');
     const messages = plan.manualSteps.map((s) => `${s.code} ${s.message}`);
     expect(messages.some((m) => m.startsWith('INIT_MANUAL_STEP playwright.config.ts'))).toBe(true);
-    expect(
-      messages.some((m) => m.startsWith('INIT_MANUAL_STEP tests/a11y.ts, tests/fixtures.ts')),
-    ).toBe(true);
-    // The instruction of 03, chapter 3.4 (other config wrapper, several test objects, mergeTests).
+    // Several test objects: the red box instead of a change (04-REQ-67).
+    expect(plan.testObject).toEqual({
+      extendFiles: ['tests/a11y.ts', 'tests/fixtures.ts'],
+      importingFiles: info.filesImportingPlaywrightTest.length,
+    });
+    // The instruction of 03, chapter 3.4 (other config wrapper).
     const hints = plan.manualSteps.map((s) => s.hint).join('\n');
     expect(hints).toContain('withPerf(otherWrapper(defineConfig({ ... })), perfConfig)');
-    expect(hints).toContain('withPerfFixtures(mergeTests(a, b))');
   });
 
-  test('04-REQ-42 (scripts until WP-22) @perf with environments qa and staging: scripts per label, run.env unchanged, existing script kept', () => {
+  test('04-AC-32 @perf becomes run.grep, package.json is never changed, no environments', () => {
+    const pkg = `${JSON.stringify({ scripts: { e2e: 'playwright test' } }, null, 2)}\n`;
     const info = detectProject(
       files({
-        'package.json': `${JSON.stringify({ scripts: { 'perf:test:qa': 'echo own' } }, null, 2)}\n`,
+        'package.json': pkg,
         'playwright.config.ts': 'export default defineConfig({});\n',
         'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a @perf', () => {});\n",
       }),
     );
-    const plan = planInitChanges(info, {
-      ...ANSWERS,
-      scope: 'tagged',
-      envLabels: ['qa', 'staging'],
-    });
-    const pkg = plan.changes.find((c) => c.path === 'package.json');
-    expect(JSON.parse(pkg?.after ?? '{}')).toEqual({
-      scripts: {
-        'perf:test:qa': 'echo own',
-        'perf:thresholds:qa': 'pw-perf thresholds --grep @perf --env qa',
-        'perf:test:staging': 'pw-perf test --grep @perf --env staging',
-        'perf:thresholds:staging': 'pw-perf thresholds --grep @perf --env staging',
-      },
-    });
-    expect(plan.manualSteps).toEqual([
-      expect.objectContaining({
-        code: 'INIT_MANUAL_STEP',
-        message: 'package.json: the script "perf:test:qa" exists and was not changed.',
-        hint: expect.stringContaining('"perf:test:qa": "pw-perf test --grep @perf --env qa"'),
-      }),
-    ]);
+    const plan = planInitChanges(info, { ...ANSWERS, script: 'e2e', scope: 'tagged' });
+    expect(plan.changes.map((c) => c.path)).not.toContain('package.json');
     const config = plan.changes.find((c) => c.path === 'pw-perf.config.ts')?.after ?? '';
+    expect(activeLines(config)).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '  run: {',
+      "    grep: '@perf',",
+      '  },',
+      '});',
+    ]);
     // run.env stays the default: only a commented line.
-    const active = config.split('\n').filter((l) => !/^\s*\/\//u.test(l));
-    expect(active.join('\n')).not.toMatch(/\benv\b/u);
-    expect(config).toMatch(/^ {2}\/\/ {3}env: null,$/mu);
+    expect(config).toMatch(/^ {4}\/\/ env: null,$/mu);
+  });
+
+  test('04-AC-48 the preset and the projects become active code only when they differ', () => {
+    const config = renderPerfConfig({ ...ANSWERS, preset: 'loose', projects: ['E2E'] });
+    expect(activeLines(config)).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '  run: {',
+      "    projects: ['E2E'],",
+      '  },',
+      '  thresholds: {',
+      "    preset: 'loose',",
+      '  },',
+      '});',
+    ]);
+    expect(config).toMatch(/Default: 'normal'\.\n {4}preset: 'loose',/u);
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, preset: 'normal' }))).toHaveLength(3);
+  });
+
+  test('04-AC-48 04-REQ-46 the file starts with "Most important settings" and every option exists', () => {
+    const config = renderPerfConfig(ANSWERS);
+    const head = config.slice(0, config.indexOf('import { definePerfConfig }'));
+    expect(head).toContain('// Most important settings\n');
+    const paths = new Set(CONFIG_OPTIONS.map((o) => o.path));
+    expect(IMPORTANT_SETTINGS.map((s) => s.option)).toEqual([
+      'run.passes',
+      'run.grep',
+      'run.projects',
+      'thresholds.preset',
+      'run.env',
+      'keys.origins',
+      'measure.steps',
+      'gate.tolerance',
+    ]);
+    for (const setting of IMPORTANT_SETTINGS) {
+      expect(paths, setting.option).toContain(setting.option);
+      expect(head, setting.option).toContain(`// ${setting.option}: `);
+      expect(head, setting.option).toContain(`//   ${setting.example}\n`);
+    }
   });
 
   test('04-AC-17 04-REQ-46 pw-perf.config.ts holds only values that differ from the defaults as active code', () => {
     const config = renderPerfConfig(ANSWERS);
-    const active = config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
-    expect(active).toEqual([
+    expect(activeLines(config)).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
-      '  gate: {',
-      '    warnOnly: true,',
-      '  },',
       '});',
     ]);
-    expect(config).toContain('    // Report violations but never fail the run. Default: false.\n');
     // No origin labels from the wizard: they follow the baseURL (07-REQ-03).
     expect(config).toContain('  //   origins: {},\n');
-    const other = renderPerfConfig({ ...ANSWERS, warnOnly: false, passesTest: 7 });
+    const other = renderPerfConfig({ ...ANSWERS, passesTest: 7 });
     expect(other.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l))).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
@@ -228,22 +257,21 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       '  },',
       '});',
     ]);
-    expect(other).toContain('  //   warnOnly: false,\n');
+    expect(other).toContain('      // Passes in a measurement run. Default: 5.\n');
   });
 
   test('04-REQ-46 every other option is a comment with its default and a description, in schema order', () => {
     const config = renderPerfConfig(ANSWERS);
     const lines = config.split('\n');
-    let at = 0;
+    // After the "Most important settings" block, whose examples look like options.
+    let at = lines.indexOf('export default definePerfConfig({');
     for (const option of CONFIG_OPTIONS) {
       const name = option.path.split('.').at(-1) as string;
       const depth = option.path.split('.').length - 1;
       const value =
-        option.path === 'gate.warnOnly'
-          ? 'true'
-          : option.default === undefined
-            ? '({ method, url, resourceType }) => undefined'
-            : ts(option.default);
+        option.default === undefined
+          ? '({ method, url, resourceType }) => undefined'
+          : ts(option.default);
       const code =
         option.leaf && !Array.isArray(option.default) ? `${name}: ${value},` : `${name}: `;
       const index = lines.findIndex(
@@ -256,8 +284,8 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       );
       expect(index, option.path).toBeGreaterThanOrEqual(at);
       // Nested as in the config object: two more spaces per level.
-      const commented = option.path !== 'gate' && option.path !== 'gate.warnOnly';
-      expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth + (commented ? 3 : 0));
+      // With the default answers every option is commented out.
+      expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth + 3);
       // The description comes right before, wrapped.
       expect(lines.slice(0, index).join(' '), option.path).toContain(
         option.description.split(' ').slice(0, 3).join(' '),
@@ -311,7 +339,8 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       )?.after ?? '';
     const en = text('en');
     for (const lang of LANGUAGES) expect(text(lang), lang).toBe(en);
-    for (const config of [en, renderPerfConfig({ ...ANSWERS, warnOnly: false })]) {
+    const answers = { ...ANSWERS, preset: 'strict', scope: 'tagged', projects: ['E2E'] } as const;
+    for (const config of [en, renderPerfConfig({ ...answers, projects: ['E2E'] })]) {
       const out = typescript.transpileModule(config, { reportDiagnostics: true });
       expect(out.diagnostics ?? []).toEqual([]);
     }
@@ -330,9 +359,8 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(plan.manualSteps.map((s) => s.message)).toEqual([
       'pw-perf.config.json exists and was not changed.',
       'playwright.config.ts was not changed: the package config is pw-perf.config.json.',
-      'No test object was found to measure: no file imports test from @playwright/test.',
-      'package.json was not found.',
     ]);
+    expect(plan.testObject).toEqual({ extendFiles: [], importingFiles: 0 });
   });
 });
 
@@ -392,30 +420,35 @@ describe('recognized layouts (04-REQ-39)', () => {
     expect(wrapTestObject('export const adminTest = base.extend({});\n')).toBeNull();
   });
 
-  test('import swap: test and expect move to the package, other names and aliases stay', () => {
-    expect(swapTestImport("import { test, expect } from '@playwright/test';\n")).toBe(
-      "import { test, expect } from 'playwright-performance-regression/test';\n",
+  test('04-AC-46 test files are never changed; only a fixtures module is wrapped', () => {
+    const config = 'export default defineConfig({});\n';
+    const module =
+      "import { test as base } from '@playwright/test';\nexport const test = base.extend({});\n";
+    const spec = `${module}test('checkout', async () => {});\n`;
+    const wrapped = planInitChanges(
+      detectProject(files({ 'playwright.config.ts': config, 'tests/fixtures.ts': module })),
+      ANSWERS,
     );
-    expect(
-      swapTestImport('import {\n  expect,\n  test,\n  type Page,\n} from "@playwright/test"\n'),
-    ).toBe(
-      'import { expect, test } from "playwright-performance-regression/test"\nimport { type Page } from "@playwright/test"\n',
+    expect(wrapped.changes.map((c) => c.path)).toContain('tests/fixtures.ts');
+    expect(wrapped.testObject).toBeNull();
+    const inSpec = planInitChanges(
+      detectProject(files({ 'playwright.config.ts': config, 'tests/a.spec.ts': spec })),
+      ANSWERS,
     );
-    expect(swapTestImport("const { test, expect: e } = require('@playwright/test');\n")).toBe(
-      "const { test } = require('playwright-performance-regression/test');\nconst { expect: e } = require('@playwright/test');\n",
+    expect(inSpec.changes.map((c) => c.path)).not.toContain('tests/a.spec.ts');
+    expect(inSpec.testObject).toEqual({ extendFiles: ['tests/a.spec.ts'], importingFiles: 1 });
+    const imports = planInitChanges(
+      detectProject(
+        files({
+          'playwright.config.ts': config,
+          'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
+          'tests/b.spec.ts': "import { test, expect } from '@playwright/test';\n",
+        }),
+      ),
+      ANSWERS,
     );
-    expect(swapTestImport("import { test as setup } from '@playwright/test';\n")).toBeNull();
-    expect(swapTestImport("import { expect } from '@playwright/test';\n")).toBeNull();
-    expect(swapTestImport("import type { Page } from '@playwright/test';\n")).toBeNull();
-  });
-
-  test('package.json keeps its indentation and line endings', () => {
-    expect(addScripts('{\r\n\t"name": "a"\r\n}\r\n', { 'perf:test': 'pw-perf test' })).toBe(
-      '{\r\n\t"name": "a",\r\n\t"scripts": {\r\n\t\t"perf:test": "pw-perf test"\r\n\t}\r\n}\r\n',
-    );
-    expect(addScripts('[]', {})).toBeNull();
-    expect(addScripts('{"scripts": 1}', {})).toBeNull();
-    expect(addScripts('{', {})).toBeNull();
+    expect(imports.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([]);
+    expect(imports.testObject).toEqual({ extendFiles: [], importingFiles: 2 });
   });
 
   test('scanning skips strings, comments, templates and regular expressions', () => {
@@ -463,40 +496,49 @@ describe('CI templates', () => {
     for (const [platform, file] of Object.entries(RECIPES)) {
       const recipe = readFileSync(join(ROOT, 'examples/ci', file), 'utf8').replaceAll('\r\n', '\n');
       expect(CI_TEMPLATES[platform as keyof typeof RECIPES], file).toBe(recipe);
-      // One command to fill in the flags of the answers (04-REQ-42).
-      expect(recipe.split(CI_COMMAND).length - 1, file).toBe(1);
     }
     expect(readdirSync(join(ROOT, 'examples/ci')).sort()).toEqual(Object.values(RECIPES).sort());
   });
 
-  test('13-AC-11 with the default answers the wizard writes the recipe unchanged', async () => {
-    for (const platform of Object.keys(RECIPES) as (keyof typeof RECIPES)[]) {
-      expect(ciFiles(platform, 'all', [])).toEqual([
-        { path: CI_TARGETS[platform].path(null), text: CI_TEMPLATES[platform] },
-      ]);
+  test('04-AC-49 every recipe has a manual thresholds job and a weekly measurement job', () => {
+    for (const [platform, file] of Object.entries(RECIPES)) {
+      const recipe = CI_TEMPLATES[platform as keyof typeof RECIPES];
+      expect(recipe, file).toContain(CI_COMMAND);
+      expect(recipe, file).toMatch(/thresholds/u);
+      expect(recipe, file).toContain('pw-perf-thresholds');
+      // GitLab schedules live in the project settings; the others have a weekly cron.
+      expect(recipe, file).toMatch(platform === 'gitlab' ? /"schedule"/u : /\* \* 1'/u);
+      expect(recipe, file).toContain('outcome.json');
+      expect(recipe, file).not.toMatch(/npx pw-perf|pw-perf (test|thresholds)/u);
     }
-    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
-    const plan = planInitChanges(info, defaultAnswers(info));
-    expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
-      readFileSync(join(ROOT, 'examples/ci/github-actions.yml'), 'utf8'),
-    );
+    expect(CI_TEMPLATES.github).toContain('PW_PERF_MODE: thresholds');
+    expect(CI_TEMPLATES.github).toContain('PW_PERF_MODE: test');
+    expect(CI_TEMPLATES.github).toContain('workflow_dispatch');
+    expect(CI_TEMPLATES.gitlab).toContain('PW_PERF_MODE: thresholds');
+    expect(CI_TEMPLATES.gitlab).toContain('when: manual');
+    expect(CI_TEMPLATES.jenkins).toContain("choices: ['test', 'thresholds']");
+    expect(CI_TEMPLATES.azure).toContain('PW_PERF_MODE: ${{ parameters.mode }}');
   });
 
-  test('04-REQ-42 only --grep and --env are filled in; one job file per environment', () => {
-    const [qa, staging] = ciFiles('gitlab', 'tagged', ['qa', 'staging']);
-    expect(qa?.path).toBe('.gitlab/perf-qa.gitlab-ci.yml');
-    expect(qa?.text).toContain('    - npx pw-perf test --grep @perf --env qa\n');
-    expect(qa?.text).toContain('\nperf-qa:\n');
-    expect(staging?.path).toBe('.gitlab/perf-staging.gitlab-ci.yml');
-    const [jenkins] = ciFiles('jenkins', 'all', ['prod']);
-    expect(jenkins?.text).toBe(
-      CI_TEMPLATES.jenkins.replace(CI_COMMAND, `${CI_COMMAND} --env prod`),
+  test('04-AC-30 04-AC-49 the wizard writes the recipe with the project command only', async () => {
+    for (const platform of Object.keys(RECIPES) as (keyof typeof RECIPES)[]) {
+      expect(ciFile(platform, CI_COMMAND)).toEqual({
+        path: CI_PATHS[platform],
+        text: CI_TEMPLATES[platform],
+      });
+      const qa = ciFile(platform, 'npm run e2e:qa');
+      expect(qa.text).toBe(CI_TEMPLATES[platform].replaceAll(CI_COMMAND, 'npm run e2e:qa'));
+    }
+    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
+    const plan = planInitChanges(info, { ...defaultAnswers(info), script: null });
+    expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
+      CI_TEMPLATES.github.replaceAll(CI_COMMAND, 'npx playwright test'),
     );
   });
 });
 
-describe('04-REQ-47 step 5a', () => {
-  test('counts the source files with test.step( and answers yes by default only then', () => {
+describe('04-REQ-47 step 6', () => {
+  test('04-AC-28 counts the source files with test.step( and answers yes by default only then', () => {
     const files = new Map([
       ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],
       [
@@ -514,10 +556,9 @@ describe('04-REQ-47 step 5a', () => {
     );
   });
 
-  test('a yes writes measure.steps: true as active code', () => {
-    const config = renderPerfConfig({ ...ANSWERS, warnOnly: false, steps: true });
-    const active = config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
-    expect(active).toEqual([
+  test('04-AC-28 a yes writes measure.steps: true as active code', () => {
+    const config = renderPerfConfig({ ...ANSWERS, steps: true });
+    expect(activeLines(config)).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
       '  measure: {',

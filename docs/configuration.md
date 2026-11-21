@@ -56,6 +56,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
     - [`run.passes.test`](#runpassestest)
     - [`run.passes.thresholds`](#runpassesthresholds)
   - [`run.projects`](#runprojects)
+  - [`run.grep`](#rungrep)
   - [`run.keepReporters`](#runkeepreporters)
 - [`measure`](#measure)
   - [`measure.resourceTypes`](#measureresourcetypes)
@@ -159,9 +160,9 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   - [`gate.tolerance`](#gatetolerance)
   - [`gate.hardLimitFactor`](#gatehardlimitfactor)
   - [`gate.defaultThresholds`](#gatedefaultthresholds)
-  - [`gate.warnOnly`](#gatewarnonly)
   - [`gate.maxFailedTestShare`](#gatemaxfailedtestshare)
 - [`thresholds`](#thresholds)
+  - [`thresholds.preset`](#thresholdspreset)
   - [`thresholds.dir`](#thresholdsdir)
   - [`thresholds.filePrefix`](#thresholdsfileprefix)
   - [`thresholds.update`](#thresholdsupdate)
@@ -189,7 +190,7 @@ Optional, for editor support in a JSON config file: `"./node_modules/playwright-
 
 How the measurement run is executed.
 
-Options: [`env`](#runenv), [`passes`](#runpasses), [`projects`](#runprojects), [`keepReporters`](#runkeepreporters).
+Options: [`env`](#runenv), [`passes`](#runpasses), [`projects`](#runprojects), [`grep`](#rungrep), [`keepReporters`](#runkeepreporters).
 
 ### `run.env`
 
@@ -224,6 +225,13 @@ Which Playwright projects are measured in perf mode. 'auto': projects whose effe
 
 - Type: `"auto"` or array of string; at least 1 item, no duplicates
 - Default: `"auto"`
+
+### `run.grep`
+
+Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'. Applied case-insensitively to the measured projects only; their setup and teardown projects run in full. null: all tests.
+
+- Type: `null` or string (at least 1 character)
+- Default: `null`
 
 ### `run.keepReporters`
 
@@ -891,7 +899,7 @@ Minimum derived limit.
 
 Gate policy: when violations fail the run.
 
-Options: [`tolerance`](#gatetolerance), [`hardLimitFactor`](#gatehardlimitfactor), [`defaultThresholds`](#gatedefaultthresholds), [`warnOnly`](#gatewarnonly), [`maxFailedTestShare`](#gatemaxfailedtestshare).
+Options: [`tolerance`](#gatetolerance), [`hardLimitFactor`](#gatehardlimitfactor), [`defaultThresholds`](#gatedefaultthresholds), [`maxFailedTestShare`](#gatemaxfailedtestshare).
 
 ### `gate.tolerance`
 
@@ -914,13 +922,6 @@ A time check exceeding limit x factor always blocks, regardless of tolerance. Nu
 - Type: one of `"block"`, `"warn"`
 - Default: `"block"`
 
-### `gate.warnOnly`
-
-Report violations but never fail the run.
-
-- Type: boolean
-- Default: `false`
-
 ### `gate.maxFailedTestShare`
 
 Highest share of failed test executions (unexpected / executed, skipped excluded) for which the run result is still trustworthy. Above it the run ends with tool error TESTS_FAILED_TOO_MANY (exit code 3). Failed tests below it are a warning only: in perf mode the performance result decides.
@@ -932,7 +933,14 @@ Highest share of failed test executions (unexpected / executed, skipped excluded
 
 Thresholds files and derivation.
 
-Options: [`dir`](#thresholdsdir), [`filePrefix`](#thresholdsfileprefix), [`update`](#thresholdsupdate), [`smallSampleN`](#thresholdssmallsamplen), [`hysteresis`](#thresholdshysteresis), [`loosenWarnRelative`](#thresholdsloosenwarnrelative).
+Options: [`preset`](#thresholdspreset), [`dir`](#thresholdsdir), [`filePrefix`](#thresholdsfileprefix), [`update`](#thresholdsupdate), [`smallSampleN`](#thresholdssmallsamplen), [`hysteresis`](#thresholdshysteresis), [`loosenWarnRelative`](#thresholdsloosenwarnrelative).
+
+### `thresholds.preset`
+
+Headroom preset for derived thresholds: sets the defaults of every `checks.*.margin`; margin fields set explicitly win. strict: small headroom, catches smaller regressions, more false alarms on a noisy environment. normal: recommended start. loose: large headroom, only clear regressions, for shared noisy environments.
+
+- Type: one of `"strict"`, `"normal"`, `"loose"`
+- Default: `"normal"`
 
 ### `thresholds.dir`
 

@@ -513,6 +513,25 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(JSON.stringify(migrated)).not.toMatch(/"kind":"custom"/u);
   });
 
+  test('02-REQ-38 v1 and v2 reports lose gate.warnOnly and get thresholds.preset and run.grep', () => {
+    for (const [version, text] of [
+      ['v1', raw('run-report', 'v1', 'full-run.json')],
+      ['v2', reportV2Text],
+    ] as const) {
+      expect(text, version).toContain('"warnOnly"');
+      const result = parseRunReport(text, `${version}.json`);
+      if (!result.ok) throw new Error(JSON.stringify(result.issues));
+      const config = result.value.config as unknown as {
+        gate: Json;
+        thresholds: Json;
+        run: Json;
+      };
+      expect(config.gate, version).not.toHaveProperty('warnOnly');
+      expect(config.thresholds['preset'], version).toBe('normal');
+      expect(config.run['grep'], version).toBeNull();
+    }
+  });
+
   test('02-AC-19 v1 and v2 reports migrate to one pass and run.passes from run.repeat', () => {
     for (const [version, text] of [
       ['v1', raw('run-report', 'v1', 'full-run.json')],

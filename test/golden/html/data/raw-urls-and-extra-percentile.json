@@ -118,8 +118,7 @@
         "defaultThresholds": "block",
         "hardLimitFactor": 2,
         "maxFailedTestShare": 0.1,
-        "tolerance": 0,
-        "warnOnly": false
+        "tolerance": 0
       },
       "keys": {
         "dropQueryParams": [],
@@ -192,6 +191,7 @@
       },
       "run": {
         "env": null,
+        "grep": null,
         "keepReporters": [],
         "passes": {
           "test": 5,
@@ -207,6 +207,7 @@
           "relative": 0.1
         },
         "loosenWarnRelative": 0.5,
+        "preset": "normal",
         "smallSampleN": 20,
         "update": "all"
       }
@@ -694,8 +695,7 @@
         "defaultThresholds": "block",
         "hardLimitFactor": 2,
         "maxFailedTestShare": 0.1,
-        "tolerance": 0,
-        "warnOnly": false
+        "tolerance": 0
       },
       "keys": {
         "dropQueryParams": [],
@@ -768,6 +768,7 @@
       },
       "run": {
         "env": null,
+        "grep": null,
         "keepReporters": [],
         "passes": {
           "test": 5,
@@ -783,6 +784,7 @@
           "relative": 0.1
         },
         "loosenWarnRelative": 0.5,
+        "preset": "normal",
         "smallSampleN": 20,
         "update": "all"
       }

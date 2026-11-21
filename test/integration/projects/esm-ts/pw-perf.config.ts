@@ -9,6 +9,7 @@ export default definePerfConfig({
     projects: process.env.INTEGRATION_PROJECTS
       ? process.env.INTEGRATION_PROJECTS.split(',')
       : 'auto',
+    grep: process.env.INTEGRATION_GREP ?? null,
   },
   keys: { origins: { 'https://api.example.com': 'ts' } },
 });

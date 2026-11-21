@@ -6,6 +6,10 @@ import {
   CONFIG_FILE_EXTENSIONS,
   PACKAGE_NAME,
 } from '../../core/types/index.ts';
+import { literalProjects } from './projects.ts';
+import type { LiteralProject } from './projects.ts';
+import { detectTestScripts } from './scripts.ts';
+import type { DetectedScript } from './scripts.ts';
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn';
 export type CiPlatform = 'github' | 'gitlab' | 'jenkins' | 'azure';
@@ -23,6 +27,10 @@ export interface ProjectInfo {
   stepFiles: number;
   baseUrls: string[];
   projectNames: string[];
+  /** 04-REQ-57: literal projects; null when the projects array cannot be read as text. */
+  projects: LiteralProject[] | null;
+  /** 04-REQ-54: scripts that run playwright test, in package.json order. */
+  testScripts: DetectedScript[];
   ciPlatform: CiPlatform | null;
   existing: {
     perfConfig: string | null;
@@ -187,6 +195,11 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     ),
   ];
   const scripts = pkg?.['scripts'];
+  const scriptMap = new Map(
+    typeof scripts === 'object' && scripts !== null
+      ? Object.entries(scripts).filter((e): e is [string, string] => typeof e[1] === 'string')
+      : [],
+  );
   const paths = [...files.keys()];
   return {
     playwrightConfig: configPath === null ? null : { path: configPath, text: configText },
@@ -200,6 +213,8 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
     baseUrls,
     projectNames,
+    projects: configPath === null ? null : literalProjects(configText),
+    testScripts: detectTestScripts(scriptMap),
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
     existing: {
       perfConfig: PERF_CONFIG_NAMES.find((name) => files.has(name)) ?? null,

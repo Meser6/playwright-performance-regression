@@ -4,19 +4,32 @@
 // list is generated from the schema (generated/config-options.ts). The text is English and does
 // not depend on the wizard language (04-REQ-43). Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
+import type { MarginPreset } from '../../core/config/index.ts';
 import { DOCS_CONFIG_URL, PACKAGE_NAME } from '../../core/types/index.ts';
 import { CONFIG_OPTIONS } from './generated/config-options.ts';
 import type { TemplateOption } from './generated/config-options.ts';
 
 export interface InitAnswers {
+  /** Step 2: the test script; null = plain `playwright test` (04-REQ-54). */
+  script: string | null;
+  /** Step 3: run.projects (04-REQ-57). */
+  projects: string[] | 'auto';
+  /** Step 4: 'tagged' → run.grep '@perf' (03-REQ-25). */
   scope: 'all' | 'tagged';
+  /** Step 5: run.passes.test (D-39). */
   passesTest: number;
-  warnOnly: boolean;
-  /** measure.steps (04-REQ-47). */
+  /** Step 6: measure.steps (04-REQ-47). */
   steps: boolean;
-  envLabels: string[];
+  /** Step 7: thresholds.preset (D-41). */
+  preset: MarginPreset;
+  /** Step 8: write the CI jobs. */
   addCi: boolean;
+  /** Step 10: run a check (04-REQ-58). */
+  runCheck: boolean;
 }
+
+/** The tag of step 4 written to run.grep (03-REQ-25). */
+export const PERF_TAG = '@perf';
 
 /** Width of the written lines. */
 const WIDTH = 100;
@@ -31,9 +44,11 @@ export function activeValues(answers: InitAnswers): Map<string, unknown> {
   const values = new Map<string, unknown>();
   if (answers.passesTest !== DEFAULT_CONFIG.run.passes.test)
     values.set('run.passes.test', answers.passesTest);
-  if (answers.warnOnly !== DEFAULT_CONFIG.gate.warnOnly)
-    values.set('gate.warnOnly', answers.warnOnly);
+  if (answers.projects !== 'auto') values.set('run.projects', answers.projects);
+  if (answers.scope === 'tagged') values.set('run.grep', PERF_TAG);
   if (answers.steps) values.set('measure.steps', true);
+  if (answers.preset !== DEFAULT_CONFIG.thresholds.preset)
+    values.set('thresholds.preset', answers.preset);
   return values;
 }
 
@@ -145,6 +160,64 @@ class Renderer {
   }
 }
 
+/**
+ * The "Most important settings" block at the top of the file (04-REQ-46, note #30): a short
+ * paragraph per option with an example line. Every option named here exists in the schema (test).
+ */
+export const IMPORTANT_SETTINGS: readonly { option: string; text: string; example: string }[] = [
+  {
+    option: 'run.passes',
+    text: 'How many times your test command runs in one measurement run. More passes give more samples per endpoint and steadier thresholds, but the run takes longer (tests x passes on 1 worker).',
+    example: 'run: { passes: { test: 5, thresholds: 10 } },',
+  },
+  {
+    option: 'run.grep',
+    text: 'Measure only the tests whose title or tags match, e.g. tests tagged @perf. Setup and teardown projects still run in full.',
+    example: "run: { grep: '@perf' },",
+  },
+  {
+    option: 'run.projects',
+    text: "Which Playwright projects are measured. 'auto' measures the Chromium projects that are not setup or teardown projects; tests that only use the request fixture measure nothing.",
+    example: "run: { projects: ['chromium'] },",
+  },
+  {
+    option: 'thresholds.preset',
+    text: "Headroom added to the measured times when thresholds are derived. 'strict' catches smaller regressions but alarms more often on a noisy environment, 'loose' only flags clear regressions.",
+    example: "thresholds: { preset: 'normal' },",
+  },
+  {
+    option: 'run.env',
+    text: 'Environment label: each label has its own thresholds files (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see docs/dynamic-environments.md.',
+    example: "run: { env: 'staging' },",
+  },
+  {
+    option: 'keys.origins',
+    text: 'Short labels for backend hosts in endpoint keys; the baseURL host has no label. Host patterns with * merge random CI hosts, e.g. pr-123.ci.example.com.',
+    example:
+      "keys: { origins: { 'https://auth.example.com': 'auth', 'https://pr-*.ci.example.com': '' } },",
+  },
+  {
+    option: 'measure.steps',
+    text: 'Also measure the duration of your test.step blocks, with their own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not reach the keys.',
+    example: 'measure: { steps: true },',
+  },
+  {
+    option: 'gate.tolerance',
+    text: 'How many endpoints may exceed their thresholds before the run fails (a number or a share like "5%"). Values far above a threshold (hardLimitFactor) fail the run anyway.',
+    example: 'gate: { tolerance: 0 },',
+  },
+];
+
+function importantSettings(): string[] {
+  const lines = ['// Most important settings', '//'];
+  IMPORTANT_SETTINGS.forEach((setting, i) => {
+    if (i > 0) lines.push('//');
+    const words = wrap(`${setting.option}: ${setting.text}`, WIDTH - 3);
+    lines.push(...words.map((l) => `// ${l}`), `//   ${setting.example}`);
+  });
+  return lines;
+}
+
 /** Text of pw-perf.config.ts for the answers. */
 export function renderPerfConfig(answers: InitAnswers): string {
   const renderer = new Renderer(activeValues(answers));
@@ -159,6 +232,8 @@ export function renderPerfConfig(answers: InitAnswers): string {
     '// with its default value: uncomment a line (and its enclosing objects) to change it. Objects',
     '// are merged with the defaults; an array you set replaces the default array. All options:',
     `// ${DOCS_CONFIG_URL}`,
+    '//',
+    ...importantSettings(),
     `import { definePerfConfig } from '${PACKAGE_NAME}';`,
     '',
     'export default definePerfConfig({',

@@ -54,66 +54,97 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     for (const name of readdirSync(DIR)) expect(docs).toContain(`../examples/ci/${name}`);
   });
 
-  test('GitHub Actions: workflow structure, report upload always', () => {
+  /** The run step of every job: outcome.json removed, the project command, exit code from it. */
+  const RUN =
+    /rm -f pw-perf-results\/outcome\.json\n.*npm run e2e \|\| true\n.*outcome\.json'\)\.exitCode/su;
+
+  test('04-AC-49 GitHub Actions: manual thresholds job, weekly measure job, uploads always', () => {
     const wf = yaml('github-actions.yml');
     onlyKeys(wf, ['name', 'on', 'jobs', 'permissions', 'env', 'concurrency'], 'workflow');
     const on = obj(wf.on, 'on');
-    onlyKeys(on, ['pull_request', 'schedule', 'workflow_dispatch', 'push'], 'on');
+    onlyKeys(on, ['schedule', 'workflow_dispatch'], 'on');
     for (const entry of list(on.schedule, 'on.schedule')) {
       expect(obj(entry, 'schedule').cron).toMatch(CRON);
     }
+    const inputs = obj(obj(on.workflow_dispatch, 'workflow_dispatch').inputs, 'inputs');
+    expect(obj(inputs.mode, 'mode').options).toEqual(['test', 'thresholds']);
     const jobs = obj(wf.jobs, 'jobs');
+    expect(Object.keys(jobs)).toEqual(['thresholds', 'measure']);
     for (const [id, value] of Object.entries(jobs)) {
-      expect(id).toMatch(/^[A-Za-z_][\w-]*$/u);
       const job = obj(value, id);
       onlyKeys(job, ['runs-on', 'timeout-minutes', 'steps', 'env', 'if', 'name'], id);
       expect(job['runs-on'], 'runs-on').toBeTypeOf('string');
       expect(job['timeout-minutes'], 'timeout-minutes').toBeTypeOf('number');
+      expect(obj(job.env, 'env').PW_PERF_MODE).toBe(id === 'measure' ? 'test' : 'thresholds');
       const steps = list(job.steps, 'steps').map((s, i) => obj(s, `step ${i}`));
       for (const [i, step] of steps.entries()) {
         onlyKeys(step, ['name', 'uses', 'run', 'with', 'if', 'env', 'id'], `step ${i}`);
         const kind = oneOf(step, ['uses', 'run'], `step ${i}`);
         if (kind === 'uses') expect(step.uses).toMatch(/^[\w.-]+\/[\w.-]+@\S+$/u);
       }
-      expect(steps.some((s) => s.run === 'npx pw-perf test')).toBe(true);
+      expect(steps.some((s) => RUN.test(String(s.run)))).toBe(true);
       const upload = steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
       expect(upload?.if).toBe('always()');
-      expect(obj(upload?.with, 'with').path).toBe('pw-perf-results/');
+      const path = String(obj(upload?.with, 'with').path);
+      expect(path).toContain('pw-perf-results/');
+      if (id === 'thresholds') expect(path).toContain('pw-perf-thresholds*.json');
     }
   });
 
-  test('GitLab CI: job structure, exit code 2 as a soft failure, artifacts always', () => {
+  test('04-AC-49 GitLab CI: manual thresholds job, scheduled perf job, code 2 soft, artifacts always', () => {
     const file = yaml('gitlab-ci.yml');
-    const job = obj(file.perf, 'perf');
-    onlyKeys(
-      job,
-      ['image', 'timeout', 'rules', 'script', 'allow_failure', 'artifacts', 'stage'],
-      'perf',
-    );
-    expect(job.image).toBeTypeOf('string');
-    expect(job.timeout).toMatch(/^\d+\s*(h|m|min|minutes|hours?)$/u);
-    for (const rule of list(job.rules, 'rules')) expect(obj(rule, 'rule').if).toBeTypeOf('string');
-    const script = list(job.script, 'script');
+    onlyKeys(file, ['.perf', 'perf-thresholds', 'perf'], 'file');
+    const base = obj(file['.perf'], '.perf');
+    expect(base.image).toBeTypeOf('string');
+    const script = list(base.script, 'script');
     expect(script.every((line) => typeof line === 'string')).toBe(true);
-    expect(script).toContain('npx pw-perf test');
-    expect(obj(job.allow_failure, 'allow_failure').exit_codes).toBe(2);
-    const artifacts = obj(job.artifacts, 'artifacts');
-    expect(artifacts.when).toBe('always');
-    expect(artifacts.paths).toEqual(['pw-perf-results/']);
+    expect(RUN.test(script.join('\n'))).toBe(true);
+    for (const [id, mode] of [
+      ['perf-thresholds', 'thresholds'],
+      ['perf', 'test'],
+    ] as const) {
+      const job = obj(file[id], id);
+      onlyKeys(
+        job,
+        ['extends', 'timeout', 'variables', 'rules', 'allow_failure', 'artifacts', 'stage'],
+        id,
+      );
+      expect(job.extends).toBe('.perf');
+      expect(job.timeout).toMatch(/^\d+\s*(h|m|min|minutes|hours?)$/u);
+      expect(obj(job.variables, 'variables').PW_PERF_MODE).toBe(mode);
+      const artifacts = obj(job.artifacts, 'artifacts');
+      expect(artifacts.when).toBe('always');
+      expect(artifacts.paths).toContain('pw-perf-results/');
+    }
+    const thresholds = obj(file['perf-thresholds'], 'perf-thresholds');
+    expect(list(thresholds.rules, 'rules')).toEqual([{ when: 'manual' }]);
+    expect(obj(thresholds.artifacts, 'artifacts').paths).toContain('pw-perf-thresholds*.json');
+    const perf = obj(file.perf, 'perf');
+    expect(obj(list(perf.rules, 'rules')[0], 'rule').if).toBe('$CI_PIPELINE_SOURCE == "schedule"');
+    expect(obj(perf.allow_failure, 'allow_failure').exit_codes).toBe(2);
   });
 
-  test('Azure Pipelines: pipeline structure, code 2 succeeded with issues, publish always', () => {
+  test('04-AC-49 Azure Pipelines: mode parameter, weekly schedule, code 2 succeeded with issues', () => {
     const file = yaml('azure-pipelines.yml');
-    onlyKeys(file, ['trigger', 'pr', 'schedules', 'pool', 'jobs'], 'pipeline');
+    onlyKeys(file, ['trigger', 'pr', 'parameters', 'schedules', 'pool', 'jobs'], 'pipeline');
+    expect(obj(list(file.parameters, 'parameters')[0], 'parameter').values).toEqual([
+      'test',
+      'thresholds',
+    ]);
     for (const entry of list(file.schedules, 'schedules')) {
       expect(obj(entry, 'schedule').cron).toMatch(CRON);
     }
     expect(obj(file.pool, 'pool').vmImage).toBeTypeOf('string');
     for (const value of list(file.jobs, 'jobs')) {
       const job = obj(value, 'job');
-      onlyKeys(job, ['job', 'timeoutInMinutes', 'steps', 'displayName', 'pool'], 'job');
+      onlyKeys(
+        job,
+        ['job', 'timeoutInMinutes', 'steps', 'displayName', 'pool', 'variables'],
+        'job',
+      );
       expect(job.job).toMatch(/^[A-Za-z_]\w*$/u);
       expect(job.timeoutInMinutes).toBeTypeOf('number');
+      expect(obj(job.variables, 'variables').PW_PERF_MODE).toBe('${{ parameters.mode }}');
       const steps = list(job.steps, 'steps').map((s, i) => obj(s, `step ${i}`));
       for (const [i, step] of steps.entries()) {
         const kind = oneOf(step, ['task', 'script', 'bash', 'publish'], `step ${i}`);
@@ -124,14 +155,16 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
         );
         if (kind === 'task') expect(step.task).toMatch(/^\w+@\d+$/u);
       }
-      const run = steps.find((s) => String(s.bash).includes('npx pw-perf test'));
+      const run = steps.find((s) => RUN.test(String(s.bash)));
       expect(run?.bash).toContain('##vso[task.complete result=SucceededWithIssues;]');
-      const publish = steps.find((s) => s.publish === 'pw-perf-results');
-      expect(publish?.condition).toBe('always()');
+      expect(steps.find((s) => s.publish === 'pw-perf-results')?.condition).toBe('always()');
+      expect(steps.find((s) => s.publish === 'pw-perf-thresholds')?.condition).toContain(
+        "'thresholds'",
+      );
     }
   });
 
-  test('Jenkins: balanced declarative pipeline, UNSTABLE on 2, archive always', () => {
+  test('04-AC-49 Jenkins: balanced declarative pipeline, MODE parameter, UNSTABLE on 2, archive always', () => {
     const text = read('Jenkinsfile');
     // Lexical check: strings and comments removed, then brackets must balance.
     const code = text
@@ -148,11 +181,23 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     }
     expect(stack).toEqual([]);
     expect(code).toMatch(/^pipeline \{/mu);
-    for (const block of ['agent', 'options', 'triggers', 'stages', 'post']) {
+    for (const block of [
+      'agent',
+      'parameters',
+      'options',
+      'triggers',
+      'environment',
+      'stages',
+      'post',
+    ]) {
       expect(code).toMatch(new RegExp(`^ {2}${block}\\b`, 'mu'));
     }
-    expect(text).toContain("sh(script: 'npx pw-perf test', returnStatus: true)");
-    expect(text).toMatch(/if \(code == 2\) \{\s+unstable\(/u);
-    expect(text).toMatch(/always \{\s+archiveArtifacts artifacts: 'pw-perf-results\/\*\*'/u);
+    expect(text).toContain("choices: ['test', 'thresholds']");
+    expect(text).toContain("cron('H 3 * * 1')");
+    expect(text).toContain("sh(script: 'npm run e2e', returnStatus: true)");
+    expect(text).toMatch(/if \(code == '2'\) \{\s+unstable\(/u);
+    expect(text).toMatch(
+      /always \{\s+archiveArtifacts artifacts: 'pw-perf-thresholds\*\.json, pw-perf-results\/\*\*'/u,
+    );
   });
 });

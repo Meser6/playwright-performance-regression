@@ -10,6 +10,7 @@
           "thresholds": 10
         },
         "projects": "auto",
+        "grep": null,
         "keepReporters": []
       },
       "measure": {
@@ -160,10 +161,10 @@
         "tolerance": 0,
         "hardLimitFactor": 2,
         "defaultThresholds": "block",
-        "warnOnly": false,
         "maxFailedTestShare": 0.1
       },
       "thresholds": {
+        "preset": "normal",
         "dir": ".",
         "filePrefix": "pw-perf-thresholds",
         "update": "all",

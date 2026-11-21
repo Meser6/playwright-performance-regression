@@ -114,8 +114,7 @@
         "defaultThresholds": "block",
         "hardLimitFactor": 2,
         "maxFailedTestShare": 0.1,
-        "tolerance": 0,
-        "warnOnly": false
+        "tolerance": 0
       },
       "keys": {
         "dropQueryParams": [],
@@ -190,12 +189,14 @@
         "env": null,
         "keepReporters": [],
         "projects": "auto",
+        "grep": null,
         "passes": {
           "test": 5,
           "thresholds": 10
         }
       },
       "thresholds": {
+        "preset": "normal",
         "dir": ".",
         "filePrefix": "pw-perf-thresholds",
         "hysteresis": {

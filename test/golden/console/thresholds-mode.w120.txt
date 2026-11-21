@@ -49,5 +49,5 @@ Endpoints: 22 keys · 22 from file
   ! api   GET /api/items/03               p95   1030 ms  1000 ms   +3%  20  file
   … and 2 more violations (see report)
 
- ! PASSED WITH WARNINGS  22 keys with violations, none blocking (gate.warnOnly) (informational, gate disabled)
+ ! PASSED WITH WARNINGS  22 keys with violations, none blocking (tolerance: 0) (informational, gate disabled)
 Report: /work/app/pw-perf-results/report.html

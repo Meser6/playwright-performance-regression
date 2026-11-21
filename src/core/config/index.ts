@@ -18,3 +18,5 @@ export type {
 } from './types.ts';
 export { STEP_DEFAULTS, expandSteps } from './steps.ts';
 export type { StepCategory, StepsSettingsJson } from './steps.ts';
+export { MARGIN_PRESETS, presetLayer, presetOf } from './presets.ts';
+export type { MarginPreset } from './presets.ts';

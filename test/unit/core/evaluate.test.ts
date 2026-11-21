@@ -106,14 +106,6 @@ describe('gate policy (09, chapter 6)', () => {
     expect(e.status).toBe('warned');
   });
 
-  test('09-AC-01 G6: warnOnly never blocks, also hard violations; warned', () => {
-    const e = golden('G6');
-    expect(new Set(failed(e).map((c) => c.key)).size).toBe(5);
-    expect(failed(e).some((c) => c.hardLimitExceeded)).toBe(true);
-    expect(failed(e).some((c) => c.blocking)).toBe(false);
-    expect(e.status).toBe('warned');
-  });
-
   test('09-AC-01 G7: an invalid api file gives error without violations', () => {
     const e = golden('G7');
     expect(failed(e)).toEqual([]);

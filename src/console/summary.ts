@@ -340,12 +340,7 @@ function resultLine(report: RunReport, paint: Paint): string {
   const sum = (field: 'violations' | 'blockingViolations' | 'keys' | 'notEvaluated'): number =>
     KINDS.reduce((total, kind) => total + counts[kind][field], 0);
   const gate = report.config.gate;
-  const policy =
-    gate?.warnOnly === true
-      ? ' (gate.warnOnly)'
-      : gate?.tolerance === undefined
-        ? ''
-        : ` (tolerance: ${gate.tolerance})`;
+  const policy = gate?.tolerance === undefined ? '' : ` (tolerance: ${gate.tolerance})`;
   let badge: string;
   let style: ColorStyle;
   let reason: string;

@@ -16,6 +16,7 @@ import type {
   ResolvedUrlPattern,
 } from './types.ts';
 import { expandSteps } from './steps.ts';
+import { presetLayer, presetOf } from './presets.ts';
 import { issue, PATTERN_LISTS, regexIssues, relationalIssues, schemaIssues } from './validate.ts';
 
 const KEY_BUILDER_SNAPSHOT = '[function]';
@@ -214,7 +215,8 @@ function compilePattern(pattern: JsonPattern): ResolvedUrlPattern {
 }
 
 /**
- * Resolves the package config: schema defaults, then `input`, then `overrides` (03-REQ-04).
+ * Resolves the package config: schema defaults, the margins of thresholds.preset, then `input`,
+ * then `overrides` (03-REQ-04).
  * Returns every problem at once (03-REQ-09); warnings come with a successful result.
  */
 export function resolveConfig(
@@ -236,7 +238,9 @@ export function resolveConfig(
   // The checks between options run on the merged config even when some options are invalid,
   // so that all problems are reported together; they skip values of the wrong type.
   const { $schema: _schema, ...withoutSchema } = isRecord(document) ? document : {};
-  const merged = merge(DEFAULT_CONFIG, withoutSchema) as ResolvedConfigJson;
+  // The margins of thresholds.preset sit between the defaults and the input (03-REQ-24).
+  const defaults = merge(DEFAULT_CONFIG, presetLayer(presetOf(withoutSchema)));
+  const merged = merge(defaults, withoutSchema) as ResolvedConfigJson;
   if (errors.length === 0) applyOverrides(merged, overrides);
   const relational = relationalIssues(merged, (path) => order.has(formatPath(path)));
   errors.push(...relational.errors);

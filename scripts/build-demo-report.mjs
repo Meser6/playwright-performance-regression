@@ -3,7 +3,7 @@
 // Builds the demo HTML report for GitHub Pages (13-REQ-17): a copy of examples/with-setup runs
 // through the built CLI against the demo server of this repository (test/demo-server): first
 // `thresholds`, then `test` with one endpoint 300 ms slower (S-02), so the report shows a
-// blocking violation. The copy turns gate.warnOnly off, so the violation blocks (exit code 2).
+// blocking violation (exit code 2).
 // Only data of this repository goes into the report: the demo server listens on the example's
 // default ports (3000 and 3001), and the temporary project directory in the run report is
 // replaced by examples/with-setup before the HTML is rendered again (`pw-perf report`).
@@ -68,10 +68,6 @@ export async function buildDemoReport({ out, repeat = 10, log = () => {} }) {
       recursive: true,
       filter: (path) => !/[\\/](node_modules|pw-perf-results|test-results|\.auth)$/u.test(path),
     });
-    const config = join(project, 'pw-perf.config.ts');
-    const source = readFileSync(config, 'utf8');
-    if (!source.includes('warnOnly: true')) throw new Error(`${config}: no "warnOnly: true"`);
-    writeFileSync(config, source.replace('warnOnly: true', 'warnOnly: false'));
     const type = process.platform === 'win32' ? 'junction' : 'dir';
     mkdirSync(join(project, 'node_modules/@playwright'), { recursive: true });
     symlinkSync(

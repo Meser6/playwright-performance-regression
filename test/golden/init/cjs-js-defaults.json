@@ -14,6 +14,7 @@
         "code": "INIT_MANUAL_STEP",
         "message": ".gitlab/perf.gitlab-ci.yml installs the dependencies with npm."
       }
-    ]
+    ],
+    "testObject": null
   }
 }

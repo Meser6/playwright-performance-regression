@@ -1,31 +1,39 @@
-// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and ten
-// steps, each with a short lesson. Origin labels are not asked (07-REQ-03). Interactive only when stdin and stdout are terminals; --yes
+// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and eleven
+// steps, each with a short lesson. Origin labels and environments are not asked (07-REQ-03,
+// note #26). Interactive only when stdin and stdout are terminals; --yes
 // takes the default answers and writes, and without a terminal and without --yes it only shows
 // the plan, like --dry-run (04-REQ-37, 04-D-20). Declining the tutorial (or --no-tutorial) prints
 // the manual setup and changes nothing (04-REQ-45). Texts in the chosen language (04-REQ-43),
 // colors by 04-REQ-44. Nothing is written before the changes step (04-REQ-41).
+import { asciiTerminal, box as renderBox } from '../../console/box.ts';
+import type { BoxLine } from '../../console/box.ts';
 import { colorEnabled, painter } from '../../console/color.ts';
 import type { ColorStyle, Painter } from '../../console/color.ts';
-import { DEFAULT_CONFIG, resolveConfig } from '../../core/config/index.ts';
+import { DEFAULT_CONFIG, MARGIN_PRESETS, resolveConfig } from '../../core/config/index.ts';
+import type { MarginPreset } from '../../core/config/index.ts';
 import { CLI_COMMAND, PACKAGE_NAME, REPOSITORY_URL } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
-import { isEnvLabel, parsePasses } from '../../mode/index.ts';
+import { parsePasses } from '../../mode/index.ts';
 import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
-import { runTests, versionAtLeast } from '../run.ts';
-import { CI_TARGETS } from './ci.ts';
+import { versionAtLeast } from '../run.ts';
+import { CI_PATHS } from './ci.ts';
+import { asksProjects, DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
 import { readProjectFiles } from './files.ts';
-import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers } from './perf-config.ts';
-import { isProtected, planInitChanges, plannedScripts } from './plan.ts';
-import type { FileChange } from './plan.ts';
+import { isProtected, planInitChanges } from './plan.ts';
+import type { FileChange, TestObjectBox } from './plan.ts';
+import { defaultProjects, scriptProjects } from './projects.ts';
+import type { LiteralProject } from './projects.ts';
 import { PromptAborted } from './prompt.ts';
+import { breakingFlags, commandSpawn, defaultScript, runCommands } from './scripts.ts';
+import type { DetectedScript, FlagEffect, RunCommands } from './scripts.ts';
 
 export interface InitCommand {
   yes: boolean;
@@ -34,8 +42,8 @@ export interface InitCommand {
   noTutorial?: boolean;
 }
 
-/** Steps shown as [n/10]: the steps of 04-REQ-38 without the removed step 3. */
-const STEPS = 10;
+/** Steps shown as [n/11] (04-REQ-38); skipped steps keep their number. */
+const STEPS = 11;
 const PLATFORM_NAMES: Record<CiPlatform, string> = {
   github: 'GitHub Actions',
   gitlab: 'GitLab CI',
@@ -47,6 +55,9 @@ const DOCS = `${REPOSITORY_URL}/blob/main/docs`;
 const TUTORIAL_QUESTION = `Set up ${PACKAGE_NAME} with a guided tutorial?`;
 const LANGUAGE_QUESTION = `Language / Język? [${LANGUAGES.join('/')}]`;
 
+/** Warning code of the red box (04-REQ-67). */
+const TEST_OBJECT_CODE = 'INIT_TEST_OBJECT_MANUAL';
+
 class WriteFailed extends Error {}
 
 /** Asks questions in a terminal, or prints the default answer without one. */
@@ -56,13 +67,18 @@ class Dialog {
   readonly #style: OutputStyle;
   /** Colors of stdout (04-REQ-44). */
   readonly paint: Painter;
+  readonly colors: boolean;
+  /** TERM=dumb: ASCII frames. */
+  readonly ascii: boolean;
   t: Translate = translator('en');
 
   constructor(host: CliHost, prompt: Prompt | null, style: OutputStyle) {
     this.#host = host;
     this.#prompt = prompt;
     this.#style = style;
-    this.paint = painter(colorEnabled(host.stdout, host.env));
+    this.colors = colorEnabled(host.stdout, host.env);
+    this.paint = painter(this.colors);
+    this.ascii = asciiTerminal(host.env);
   }
 
   get interactive(): boolean {
@@ -149,10 +165,6 @@ class Dialog {
   }
 }
 
-function runCommand(manager: ProjectInfo['packageManager'], script: string): string {
-  return manager === 'npm' ? `npm run ${script}` : `${manager} ${script}`;
-}
-
 function describeProject(info: ProjectInfo, t: Translate): string[] {
   const config = info.playwrightConfig;
   const lines = [
@@ -215,7 +227,7 @@ function printManualSetup(dialog: Dialog): void {
     `  ${paint(t('declinedSteps'), 'bold')}`,
     `    1. ${t('declinedConfig', { config: `${PACKAGE_NAME}/config` })}`,
     `    2. ${t('declinedTest', { fixture: `${PACKAGE_NAME}/fixture`, test: `${PACKAGE_NAME}/test` })}`,
-    `    3. ${t('declinedRun', { thresholds: cmd(`${CLI_COMMAND} thresholds`), test: cmd(`${CLI_COMMAND} test`) })}`,
+    `    3. ${t('declinedRun', { example: cmd('PW_PERF_MODE=test npx playwright test') })}`,
   );
   dialog.line(t('declinedDocs', { url: `${DOCS}/adoption.md` }), 'dim');
   dialog.say(`  ${t('declinedLater', { init: cmd(`${CLI_COMMAND} init`) })}`);
@@ -241,40 +253,151 @@ async function askLanguage(
   });
 }
 
+/** Numbers separated by commas (1-based) → indexes, or null when one is out of range. */
+function parseNumbers(answer: string, count: number): number[] | null {
+  const parts = answer
+    .split(',')
+    .map((p) => p.trim())
+    .filter((p) => p !== '');
+  if (parts.length === 0) return null;
+  const indexes = parts.map((p) => (/^\d+$/u.test(p) ? Number(p) - 1 : -1));
+  if (indexes.some((i) => i < 0 || i >= count)) return null;
+  return [...new Set(indexes)].sort((a, b) => a - b);
+}
+
+/** Step 2 (04-REQ-54, 04-REQ-56): the test script and its warnings. */
+async function askScript(dialog: Dialog, info: ProjectInfo): Promise<DetectedScript | null> {
+  const { t, paint } = dialog;
+  const scripts = info.testScripts;
+  if (scripts.length === 0) return null;
+  dialog.step(2, t('stepScript'), t('scriptLesson'));
+  const options = [...scripts.map((s) => s.name), null];
+  options.forEach((name, i) => {
+    const script = scripts[i];
+    const text = script === undefined ? '' : paint(` ${shorten(script.text, 70)}`, 'dim');
+    dialog.say(`    ${i + 1}. ${name ?? t('scriptPlain')}${text}`);
+  });
+  const fallback = defaultScript(scripts);
+  const fallbackIndex = options.indexOf(fallback);
+  const index = await dialog.ask(
+    t('scriptQuestion', { count: options.length }),
+    String(fallbackIndex + 1),
+    fallbackIndex,
+    (a) => parseNumbers(a, options.length)?.[0] ?? null,
+    `${fallbackIndex + 1}. ${fallback ?? t('scriptPlain')}`,
+  );
+  const chosen = scripts[index] ?? null;
+  if (chosen === null) return null;
+  const flags = breakingFlags(chosen);
+  if (flags.length > 0) {
+    dialog.warn([
+      {
+        code: 'INIT_SCRIPT_FLAG',
+        message: t('scriptFlagMessage', {
+          name: chosen.name,
+          flags: flags.map((f) => `${f.flag} (${t(FLAG_EFFECT_KEYS[f.effect])})`).join('; '),
+        }),
+        hint: t('scriptFlagHint', { name: chosen.name }),
+      },
+    ]);
+  }
+  if (chosen.laterSegments.length > 0) {
+    dialog.warn([
+      {
+        code: 'INIT_SCRIPT_LATER_STEPS',
+        message: t('laterStepsMessage', {
+          name: chosen.name,
+          steps: chosen.laterSegments.join(' && '),
+        }),
+        hint: t('laterStepsHint'),
+      },
+    ]);
+  }
+  return chosen;
+}
+
+const FLAG_EFFECT_KEYS: Readonly<Record<FlagEffect, MessageKey>> = {
+  interactive: 'flagInteractive',
+  sharded: 'flagSharded',
+  reporter: 'flagReporter',
+  changingTests: 'flagChangingTests',
+  conditions: 'flagConditions',
+};
+
+function shorten(text: string, width: number): string {
+  const chars = Array.from(text);
+  return chars.length <= width ? text : `${chars.slice(0, width - 1).join('')}…`;
+}
+
+/** Step 3 (04-REQ-57): the measured projects, only with at least 2 non-helper projects. */
+async function askProjects(
+  dialog: Dialog,
+  info: ProjectInfo,
+  script: DetectedScript | null,
+): Promise<string[] | 'auto'> {
+  const { t, paint } = dialog;
+  const projects = info.projects;
+  if (projects === null || !asksProjects(info)) return 'auto';
+  const listed = projects.filter((p) => !p.helper);
+  dialog.step(3, t('stepProjects'), t('projectsLesson'));
+  const fallback = defaultProjects(projects, script);
+  listed.forEach((p, i) => {
+    const mark = fallback.includes(p.name) ? paint('[x]', 'green') : '[ ]';
+    const note = p.looksLikeApi ? paint(` (${t('projectApi')})`, 'dim') : '';
+    dialog.say(`    ${i + 1}. ${mark} ${p.name}${note}`);
+  });
+  const helpers = projects.filter((p) => p.helper).map((p) => p.name);
+  if (helpers.length > 0)
+    dialog.line(`${helpers.join(', ')}: ${t('projectHelper')}`, 'dim', '    ');
+  const required = scriptProjects(projects, script);
+  const fallbackText = fallback
+    .map((name) => String(listed.findIndex((p) => p.name === name) + 1))
+    .join(',');
+  for (;;) {
+    const answer = await dialog.ask(
+      t('projectsQuestion'),
+      fallbackText,
+      fallback,
+      (a) => parseNumbers(a, listed.length)?.map((i) => (listed[i] as LiteralProject).name) ?? null,
+      fallback.join(', '),
+    );
+    const missing = required.filter((name) => !answer.includes(name));
+    if (missing.length === 0 || !dialog.interactive) return answer;
+    dialog.line(`⚠ ${t('projectsNeedScript', { names: required.join(', ') })}`, 'yellow');
+  }
+}
+
 async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswers> {
   const { t } = dialog;
-  dialog.step(
-    2,
-    t('stepHow'),
-    `1. ${t('how1', { test: `${CLI_COMMAND} test` })}`,
-    `2. ${t('how2')}`,
-    `3. ${t('how3')}`,
-    `4. ${t('how4', { thresholds: `${CLI_COMMAND} thresholds` })}`,
-    `5. ${t('how5')}`,
-  );
-  await dialog.pause();
+  const script = await askScript(dialog, info);
+  const projects = await askProjects(dialog, info, script);
 
-  const tagged = info.taggedPerfTestFiles > 0;
-  dialog.step(
-    3,
-    t('stepTests'),
-    t('testsLesson'),
-    t('taggedFiles', { count: info.taggedPerfTestFiles }),
-  );
-  if (!tagged) {
-    // Information only: the default is all tests either way.
-    const code = 'INIT_NO_TAGGED_TESTS';
-    dialog.say(`  ${dialog.paint(`ℹ ${code}`, 'cyan')} ${t('noTaggedMessage')}`);
-    dialog.line(t('noTaggedHint'), 'dim', '    ');
+  let scope: 'all' | 'tagged' = 'all';
+  if (script?.selectsTests === true) {
+    dialog.step(4, t('stepTests'), t('scriptSelectsTests'));
+  } else {
+    dialog.step(
+      4,
+      t('stepTests'),
+      t('testsLesson'),
+      t('taggedFiles', { count: info.taggedPerfTestFiles }),
+    );
+    if (info.taggedPerfTestFiles === 0) {
+      // Information only: the default is all tests either way.
+      const code = 'INIT_NO_TAGGED_TESTS';
+      dialog.say(`  ${dialog.paint(`ℹ ${code}`, 'cyan')} ${t('noTaggedMessage')}`);
+      dialog.line(t('noTaggedHint'), 'dim', '    ');
+    }
+    const all = t('scopeAll');
+    scope = await dialog.ask<'all' | 'tagged'>(t('scopeQuestion', { all }), all, 'all', (a) => {
+      const answer = a.toLowerCase();
+      if (answer === 'all' || answer === all) return 'all';
+      return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
+    });
+    if (scope === 'tagged') dialog.line(t('taggedSaved'), 'dim');
   }
-  const all = t('scopeAll');
-  const scope = await dialog.ask<'all' | 'tagged'>(t('scopeQuestion', { all }), all, 'all', (a) => {
-    const answer = a.toLowerCase();
-    if (answer === 'all' || answer === all) return 'all';
-    return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
-  });
 
-  dialog.stepOf(4, 'stepPasses', 'passesLesson');
+  dialog.stepOf(5, 'stepPasses', 'passesLesson');
   const passesTest = await dialog.ask(
     t('passesQuestion'),
     String(DEFAULT_ANSWERS_PASSES),
@@ -285,33 +408,21 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     },
   );
 
-  dialog.stepOf(5, 'stepTrial', 'trialLesson');
-  const warnOnly = await dialog.confirm(t('warnOnlyQuestion'), true);
-
-  // 5a only when the project has test.step calls (04-REQ-47).
+  // Step 6 only when the project has test.step calls (04-REQ-47).
   let steps = false;
   if (info.stepFiles > 0) {
-    dialog.step('5a', t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
+    dialog.step(6, t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
     steps = await dialog.confirm(t('stepsQuestion', { count: info.stepFiles }), true);
   }
 
-  dialog.stepOf(6, 'stepEnvs', 'envsLesson');
-  let envLabels: string[] = [];
-  if (await dialog.confirm(t('envsQuestion'), false)) {
-    envLabels = await dialog.ask(t('envLabelsQuestion'), t('none'), [] as string[], (a) => {
-      const labels = [
-        ...new Set(
-          a
-            .split(',')
-            .map((l) => l.trim())
-            .filter((l) => l !== ''),
-        ),
-      ];
-      return labels.length > 0 && labels.every(isEnvLabel) ? labels : null;
-    });
-  }
+  dialog.stepOf(7, 'stepPreset', 'presetLesson', 'presetStrict', 'presetNormal', 'presetLoose');
+  const normal = DEFAULT_CONFIG.thresholds.preset;
+  const preset = await dialog.ask<MarginPreset>(t('presetQuestion'), normal, normal, (a) => {
+    const answer = a.toLowerCase() as MarginPreset;
+    return MARGIN_PRESETS.includes(answer) ? answer : null;
+  });
 
-  dialog.stepOf(7, 'stepCi', 'ciLesson');
+  dialog.stepOf(8, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
   let addCi = false;
   if (info.ciPlatform === null) {
     dialog.say(`  ${t('noCi', { url: `${DOCS}/ci.md` })}`);
@@ -321,7 +432,60 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
       true,
     );
   }
-  return { scope, passesTest, warnOnly, steps, envLabels, addCi };
+  return {
+    script: script?.name ?? null,
+    projects,
+    scope,
+    passesTest,
+    steps,
+    preset,
+    addCi,
+    runCheck: false,
+  };
+}
+
+/** Words of `text` in lines of at most `width` characters. */
+function wrapText(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    if (line !== '' && line.length + 1 + word.length > width) {
+      lines.push(line);
+      line = word;
+    } else line = line === '' ? word : `${line} ${word}`;
+  }
+  if (line !== '') lines.push(line);
+  return lines;
+}
+
+/** The red box of 04-REQ-67: what to paste so that the tests are measured. */
+function testObjectBox(dialog: Dialog, host: CliHost, box: TestObjectBox): string {
+  const { t } = dialog;
+  const width = Math.min(100, Math.max(40, host.stdout.columns ?? 100));
+  const inner = width - 4;
+  const text = (s: string, style?: ColorStyle): BoxLine[] =>
+    wrapText(s, inner).map((l) => (style === undefined ? { text: l } : { text: l, style }));
+  const lines: BoxLine[] = [
+    {
+      text: `${dialog.ascii ? '!' : '✖'} ${TEST_OBJECT_CODE} · ${t('boxTitle')}`,
+      style: 'bold',
+    },
+    { text: '' },
+    ...text(t('boxWhy')),
+    { text: '' },
+    ...text(`(a) ${t('boxFixtures')}`, 'bold'),
+    ...(box.extendFiles.length > 0
+      ? text(t('boxFixturesFiles', { files: box.extendFiles.join(', ') }), 'dim')
+      : []),
+    { text: `    import { withPerfFixtures } from '${PACKAGE_NAME}/fixture';`, style: 'cyan' },
+    { text: '    export const test = withPerfFixtures(base.extend({ ... }));', style: 'cyan' },
+    { text: '' },
+    ...text(`(b) ${t('boxImports', { count: box.importingFiles })}`, 'bold'),
+    { text: `    import { test, expect } from '${PACKAGE_NAME}/test';`, style: 'cyan' },
+    { text: '' },
+    ...text(t('boxDocs', { url: `${DOCS}/adoption.md` }), 'dim'),
+  ];
+  return renderBox(lines, { width, color: dialog.colors, ascii: dialog.ascii, border: 'red' });
 }
 
 function changeKind(change: FileChange, t: Translate): string {
@@ -386,31 +550,94 @@ async function applyChanges(
   return written;
 }
 
+/** Names of the thresholds files the runs will write (04-REQ-59 step 3). */
+function thresholdsFiles(answers: InitAnswers): string[] {
+  const prefix = DEFAULT_CONFIG.thresholds.filePrefix;
+  return answers.steps ? [`${prefix}.json`, `${prefix}.steps.json`] : [`${prefix}.json`];
+}
+
+/** Next steps of the summary (04-REQ-59). */
 function nextSteps(
   dialog: Dialog,
   info: ProjectInfo,
   answers: InitAnswers,
+  commands: RunCommands,
   written: readonly string[],
+  checkRan: boolean,
 ): string[] {
   const { t, paint } = dialog;
-  const scripts = Object.keys(plannedScripts(answers));
-  const thresholds = scripts.find((s) => s.startsWith('perf:thresholds')) as string;
-  const test = scripts.find((s) => s.startsWith('perf:test')) as string;
-  const command = (script: string): string =>
-    paint(runCommand(info.packageManager, script), 'cyan');
-  const steps = [
-    t('nextThresholds', { command: command(thresholds) }),
-    t('nextTest', { command: command(test) }),
-  ];
+  const cmd = (text: string): string => paint(text, 'cyan');
+  if (written.length === 0) return [t('nextApply')];
+  const dir = DEFAULT_CONFIG.report.dir;
   const platform = info.ciPlatform;
-  if (answers.addCi && platform !== null) {
-    const ci = CI_TARGETS[platform].path(answers.envLabels[0] ?? null);
-    if (platform === 'jenkins') steps.push(t('nextJenkins', { path: ci }));
-    if (platform === 'azure') steps.push(t('nextAzure', { path: ci }));
+  const ciPath = answers.addCi && platform !== null ? CI_PATHS[platform] : null;
+  const estimate = t(checkRan ? 'estimateAbove' : 'estimateUnknown');
+  const steps: string[] = [];
+  if (!checkRan) steps.push(t('nextCheck', { command: cmd(commands.check) }));
+  steps.push(
+    ciPath === null
+      ? t('nextThresholdsNoCi', {
+          command: cmd(commands.thresholds),
+          url: `${DOCS}/ci.md`,
+          estimate,
+        })
+      : t('nextThresholds', { command: cmd(commands.thresholds), estimate }),
+    t('nextCommit', { files: thresholdsFiles(answers).join(', ') }),
+    t('nextTest', {
+      command: cmd(commands.test),
+      report: `${dir}/report.html`,
+      outcome: `${dir}/outcome.json`,
+    }),
+  );
+  if (ciPath !== null && platform !== null) {
+    const ci = [t('nextCiJobs', { path: ciPath })];
+    if (platform === 'jenkins') ci.push(t('nextJenkins', { path: ciPath }));
+    if (platform === 'azure') ci.push(t('nextAzure', { path: ciPath }));
+    steps.push(ci.join(' '));
   }
-  if (answers.warnOnly) steps.push(t('nextWarnOnly'));
-  if (written.length === 0 && scripts.length > 0) steps.unshift(t('nextApply'));
   return steps;
+}
+
+/** Step 10 (04-REQ-58): runs the check command as a child process with the terminal. */
+async function runCheck(
+  dialog: Dialog,
+  host: CliHost,
+  info: ProjectInfo,
+  answers: InitAnswers,
+  commands: RunCommands,
+): Promise<number | null> {
+  const spec = commandSpawn({
+    script: answers.script,
+    packageManager: info.packageManager,
+    npmExecPath: host.env.npm_execpath,
+    nodePath: host.execPath,
+    playwrightCli: host.resolvePlaywright(host.cwd)?.cliPath ?? null,
+    platform: host.platform,
+  });
+  if (!spec.ok) {
+    dialog.line(dialog.t('checkManual', { command: commands.check }), 'yellow');
+    return null;
+  }
+  const env: Record<string, string> = {};
+  for (const [name, value] of Object.entries(host.env)) if (value !== undefined) env[name] = value;
+  env.PW_PERF_MODE = 'check';
+  dialog.line(`$ ${commands.check}`, 'dim');
+  // Ctrl+C goes to the whole process group: the check stops and the wizard reports 130.
+  const stop = host.onSignal('SIGINT', () => undefined);
+  try {
+    const child = host.spawnProcess(spec.value.file, spec.value.args, {
+      cwd: host.cwd,
+      env,
+      stdio: 'inherit',
+      shell: spec.value.shell,
+    });
+    return await new Promise<number>((resolve) => {
+      child.once('exit', (code, signal) => resolve(signal === 'SIGINT' ? 130 : (code ?? 1)));
+      child.once('error', () => resolve(1));
+    });
+  } finally {
+    stop();
+  }
 }
 
 export async function runInit(
@@ -441,8 +668,18 @@ export async function runInit(
 
     if (!write) host.stderr.write(infoLine(t(cmd.dryRun ? 'dryRun' : 'noTerminal')));
     const info = detectProject(await readProjectFiles(host, host.cwd));
-    dialog.step(1, t('stepProject'), ...describeProject(info, t));
+    // Step 1: the package in four sentences, then the project (04-REQ-38, note #23).
+    dialog.step(
+      1,
+      t('stepProject'),
+      t('about1', { pkg: PACKAGE_NAME }),
+      t('about2'),
+      t('about3'),
+      t('about4'),
+    );
+    dialog.say(...describeProject(info, t).map((line) => `  ${line}`));
     if (info.playwrightConfig === null) {
+      // Before any question and without writing anything (04-REQ-41).
       return dialog.error('INIT_NO_PLAYWRIGHT_CONFIG', 'noConfigMessage', 'noConfigHint', {
         dir: host.cwd,
         command: CLI_COMMAND,
@@ -459,12 +696,14 @@ export async function runInit(
         command: CLI_COMMAND,
       });
     }
+    await dialog.pause();
 
     const answers = await askAnswers(dialog, info);
     const plan = planInitChanges(info, answers, lang);
+    const commands = runCommands(answers.script, info.packageManager, host.platform);
 
     dialog.stepOf(
-      8,
+      9,
       'stepChanges',
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
@@ -478,21 +717,28 @@ export async function runInit(
       });
     }
     dialog.warn(plan.manualSteps);
+    const redBox = plan.testObject === null ? null : testObjectBox(dialog, host, plan.testObject);
+    if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
-    dialog.step(
-      9,
-      t('stepFirstRun'),
-      t('firstRunLesson', { dir: DEFAULT_CONFIG.report.dir }),
-      t('firstRunLaptop'),
-    );
-    let firstRun = false;
-    if (dialog.interactive && written.length > 0) {
-      firstRun = await dialog.confirm(t('firstRunQuestion'), false);
+    // Step 10: a check only when something was written and playwright.config is wrapped.
+    dialog.stepOf(10, 'stepCheck', 'checkLesson');
+    const configPath = info.playwrightConfig.path;
+    const wrapped = info.existing.wrappedConfig || written.includes(configPath);
+    let checkCode: number | null = null;
+    if (dialog.interactive && written.length > 0 && wrapped) {
+      if (await dialog.confirm(t('checkQuestion'), true)) {
+        prompt?.close();
+        checkCode = await runCheck(dialog, host, info, answers, commands);
+        if (checkCode === 130) {
+          host.stderr.write(infoLine(t('interrupted')));
+          return 130;
+        }
+      }
     } else {
       dialog.line(t('skipped'), 'dim');
     }
 
-    dialog.step(10, t('stepSummary'));
+    dialog.step(11, t('stepSummary'));
     if (written.length > 0)
       dialog.say(
         `  ${t('changedFiles')}`,
@@ -506,25 +752,25 @@ export async function runInit(
       );
     if (plan.manualSteps.length > 0)
       dialog.line(`⚠ ${t('manualSteps', { count: plan.manualSteps.length })}`, 'yellow');
+    if (redBox !== null) host.stdout.write(redBox);
+    if (checkCode !== null && checkCode !== 0)
+      dialog.say(`  ${t('checkExit', { code: checkCode })}`);
+    dialog.say('', `  ${paint(t('runLine', { command: commands.test }), 'bold')}`);
+    dialog.line(t('runLesson'), 'dim');
+    if (host.platform === 'win32') dialog.line(t('windowsNote'), 'dim');
     dialog.say(
       `  ${paint(t('nextSteps'), 'bold')}`,
-      ...nextSteps(dialog, info, answers, written).map((s, i) => `    ${i + 1}. ${s}`),
+      ...nextSteps(dialog, info, answers, commands, written, checkCode !== null).map(
+        (s, i) => `    ${i + 1}. ${s}`,
+      ),
     );
+    const oldScripts = info.existing.scripts.filter((name) => name.startsWith('perf:'));
+    if (oldScripts.length > 0) dialog.say(`  ${t('oldScripts', { names: oldScripts.join(', ') })}`);
     dialog.say(`  ${t('originsNote')}`);
-    dialog.line(
-      t('docs', { links: `${DOCS}/adoption.md · ${DOCS}/ci.md · ${DOCS}/configuration.md` }),
-      'dim',
-    );
+    const links = [`${DOCS}/adoption.md`, `${DOCS}/cli.md`, `${DOCS}/ci.md`];
+    if (answers.script !== null) links.push(`${DOCS}/dynamic-environments.md`);
+    dialog.line(t('docs', { links: links.join(' · ') }), 'dim');
     if (write) dialog.line(`✔ ${t('finished')}`, 'green');
-    prompt?.close();
-
-    if (firstRun) {
-      const args = answers.scope === 'tagged' ? ['--grep', '@perf'] : [];
-      return await runTests(
-        { kind: 'run', mode: 'thresholds', prune: false, playwrightArgs: args, listOnly: false },
-        host,
-      );
-    }
     return 0;
   } catch (error) {
     if (error instanceof PromptAborted) {

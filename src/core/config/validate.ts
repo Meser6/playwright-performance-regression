@@ -21,6 +21,10 @@ export type ConfigIssueCode =
   | 'CONFIG_PERCENTILE_IS_P99';
 
 const SCHEMA_FILE = 'schemas/config.schema.json';
+/** Hint for gate.warnOnly, removed with the trial mode (03-REQ-26, D-40). */
+export const REMOVED_WARN_ONLY_HINT =
+  "The trial mode was removed in 0.1.0-next.2; to keep a CI job green on a regression, set continue-on-error on the job (see docs/ci.md), or use gate.tolerance or gate.defaultThresholds: 'warn'.";
+
 /** Hint for the options of the removed custom measurements (03-REQ-19, D-32). */
 const REMOVED_CUSTOM_HINT =
   'custom measurements were removed in 0.1.0-next.2; use measure.steps and limit.step (test.step durations) instead.';
@@ -159,6 +163,9 @@ function problemToIssue(problem: Problem, document: unknown): ConfigIssue {
         'Renamed to run.passes: the test command now runs once per pass (repeatEach is 1); e.g. run: { passes: { test: 5, thresholds: 10 } }.',
       );
     }
+    if (problem.property === 'warnOnly' && segments.length === 1 && segments[0] === 'gate') {
+      return issue('CONFIG_UNKNOWN_OPTION', option, 'unknown option', REMOVED_WARN_ONLY_HINT);
+    }
     const suggestion = suggestOption(segments, problem.property);
     return issue(
       'CONFIG_UNKNOWN_OPTION',
@@ -211,6 +218,23 @@ export function regexIssues(document: unknown): ConfigIssue[] {
         );
       }
     });
+  }
+  // run.grep is the source of a RegExp (03-REQ-25).
+  const grep = valueAt(document, ['run', 'grep']);
+  if (typeof grep === 'string' && grep !== '') {
+    try {
+      new RegExp(grep, 'i');
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      issues.push(
+        issue(
+          'CONFIG_INVALID_REGEX',
+          ['run', 'grep'],
+          `regular expression does not compile (${reason})`,
+          "Fix the expression; it uses JavaScript RegExp syntax, e.g. '@perf' or '@perf|@smoke'.",
+        ),
+      );
+    }
   }
   return issues;
 }
@@ -328,15 +352,15 @@ export function relationalIssues(
     );
   }
 
-  // At least one rule enabled unless the gate only warns.
+  // At least one rule enabled (D-40: without an exception).
   const enabled = RULES.some((rule) => valueAt(config, [...rule, 'enabled']) !== false);
-  if (!enabled && valueAt(config, ['gate', 'warnOnly']) !== true) {
+  if (!enabled) {
     errors.push(
       issue(
         'CONFIG_INVALID_VALUE',
         ['checks'],
         'every rule is disabled, so nothing would be checked',
-        'Enable at least one rule in checks, or set gate.warnOnly to true.',
+        'Enable at least one rule in checks.',
       ),
     );
   }

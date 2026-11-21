@@ -75,7 +75,7 @@ function runCli(args: string[], cwd: string): Promise<CliRun> {
 }
 
 describe('pw-perf init', () => {
-  for (const name of ['esm-ts', 'cjs-js', 'import-swap']) {
+  for (const name of ['esm-ts', 'cjs-js']) {
     test(
       `04-AC-17 init --yes in ${name} gives a working integration with the golden diff`,
       async () => {
@@ -98,6 +98,19 @@ describe('pw-perf init', () => {
     );
   }
 
+  test('04-AC-46 init --yes in import-swap changes no test file and shows the red box', async () => {
+    const dir = linkedCopy('init-import-swap');
+    const before = snapshot(dir);
+    const init = await runCli(['init', '--yes'], dir);
+    expect(init.status, init.stdout + init.stderr).toBe(0);
+    expect(snapshotDiff(before, snapshot(dir))).toBe(
+      readFileSync(join(INIT_GOLDEN, 'imports-only-defaults.diff'), 'utf8'),
+    );
+    expect(init.stdout).toContain(
+      'INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet',
+    );
+  });
+
   test('04-AC-18 init in existing-project keeps the config wrapper and the test objects and prints INIT_MANUAL_STEP', async () => {
     const dir = linkedCopy('init-existing-project');
     const before = snapshot(dir);
@@ -108,9 +121,7 @@ describe('pw-perf init', () => {
       expect(after.get(file), file).toBe(before.get(file));
     }
     expect(run.stderr).toContain('warning INIT_MANUAL_STEP: playwright.config.ts was not changed');
-    expect(run.stderr).toContain(
-      'warning INIT_MANUAL_STEP: tests/a11y.ts, tests/fixtures.ts were not changed',
-    );
+    expect(run.stdout).toContain('Files with .extend(): tests/a11y.ts, tests/fixtures.ts');
     expect(run.stderr).toContain('withPerf(otherWrapper(defineConfig({ ... })), perfConfig)');
   });
 

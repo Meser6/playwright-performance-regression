@@ -1,26 +1,37 @@
-// Performance measurement run with playwright-performance-regression (pw-perf).
-// Use as the script of a pipeline job, e.g. "Jenkinsfile.perf". Exit code 2 (performance
-// regression) marks the build UNSTABLE, 3 (tool or config error) fails it. The report in
-// pw-perf-results/ is archived also when the run fails.
+// Performance runs with playwright-performance-regression (pw-perf). Use as the script of a
+// pipeline job, e.g. "Jenkinsfile.perf". Recommended path (docs/ci.md):
+//   1. Build with parameters, MODE=thresholds. Thresholds come from the same agents that measure.
+//   2. Download the archived pw-perf-thresholds*.json files and commit them.
+//   3. The job runs every Monday with MODE=test and fails on a regression.
+// The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) marks the
+// build UNSTABLE, 3 (tool or config error) fails it.
 pipeline {
   agent any
+  parameters {
+    choice(name: 'MODE', choices: ['test', 'thresholds'], description: 'test: measurement run, thresholds: derive the thresholds files')
+  }
   options {
-    timeout(time: 60, unit: 'MINUTES')
+    timeout(time: 120, unit: 'MINUTES')
   }
   triggers {
-    cron('H 3 * * *')
+    cron('H 3 * * 1')
+  }
+  environment {
+    PW_PERF_MODE = "${params.MODE ?: 'test'}"
   }
   stages {
     stage('Performance') {
       steps {
         sh 'npm ci'
         sh 'npx playwright install --with-deps chromium'
+        sh 'rm -f pw-perf-results/outcome.json'
+        sh(script: 'npm run e2e', returnStatus: true)
         script {
-          def code = sh(script: 'npx pw-perf test', returnStatus: true)
-          if (code == 2) {
+          def code = sh(script: 'node -p "require(\'./pw-perf-results/outcome.json\').exitCode" 2>/dev/null || echo 3', returnStdout: true).trim()
+          if (code == '2') {
             unstable('Performance regression (exit code 2)')
-          } else if (code != 0) {
-            error("Measurement run failed with exit code ${code}")
+          } else if (code != '0') {
+            error("Performance run failed with exit code ${code}")
           }
         }
       }
@@ -28,7 +39,7 @@ pipeline {
   }
   post {
     always {
-      archiveArtifacts artifacts: 'pw-perf-results/**', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'pw-perf-thresholds*.json, pw-perf-results/**', allowEmptyArchive: true
     }
   }
 }

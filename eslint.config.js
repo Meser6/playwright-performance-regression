@@ -175,6 +175,7 @@ export default tseslint.config(
     '../output.ts',
     '../run.ts',
     '../../console/color.ts',
+    '../../console/box.ts',
     '../../core/',
     '../../mode/',
     'node:',

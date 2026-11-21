@@ -164,8 +164,8 @@ npx pw-perf test --env staging
 or `run.env` in the config. The label selects `pw-perf-thresholds.<kind>.staging.json`. A run with a
 label never falls back to the file without a label; when the labelled file is missing it warns
 with `THRESHOLDS_FILE_MISSING` and uses default thresholds. `thresholds --from` uses the label
-stored in the report unless `--env` is given. `init` creates `perf:test:<env>` and
-`perf:thresholds:<env>` scripts for each label you enter.
+stored in the report unless `--env` is given. With your own test command, set the label with
+`PW_PERF_ENV=staging` (see [Dynamic environments](dynamic-environments.md)).
 
 ## Hand-written entries
 

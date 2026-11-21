@@ -4,7 +4,13 @@ import type { DefaultConfigJson } from '../types.ts';
 
 /** The schema's `default` keywords applied to an empty config (03-REQ-05, 03-D-01). */
 export const DEFAULT_CONFIG: DefaultConfigJson = {
-  run: { env: null, passes: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
+  run: {
+    env: null,
+    passes: { test: 5, thresholds: 10 },
+    projects: 'auto',
+    grep: null,
+    keepReporters: [],
+  },
   measure: {
     resourceTypes: ['document', 'xhr', 'fetch'],
     ignoreExtensions: [
@@ -90,14 +96,9 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
       margin: { factor: 1.5, add: 0.02, min: 0.05 },
     },
   },
-  gate: {
-    tolerance: 0,
-    hardLimitFactor: 2,
-    defaultThresholds: 'block',
-    warnOnly: false,
-    maxFailedTestShare: 0.1,
-  },
+  gate: { tolerance: 0, hardLimitFactor: 2, defaultThresholds: 'block', maxFailedTestShare: 0.1 },
   thresholds: {
+    preset: 'normal',
     dir: '.',
     filePrefix: 'pw-perf-thresholds',
     update: 'all',

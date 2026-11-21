@@ -43,10 +43,16 @@ describe('init wizard', () => {
     );
     expect(out).toContain("tag them with test('title', { tag: '@perf' }, ...)");
     expect(fake.stderr.join('')).not.toContain('INIT_NO_TAGGED_TESTS');
-    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toMatchObject({
-      'perf:test': 'pw-perf test',
-      'perf:thresholds': 'pw-perf thresholds',
+    // package.json is never changed (D-35); the summary shows the command with the variable.
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toEqual({
+      test: 'playwright test',
     });
+    expect(out).toContain('Run: PW_PERF_MODE=test npm run test');
+    expect(out).toContain('PW_PERF_MODE=check npm run test: see what will be measured');
+    expect(out).toContain('pw-perf-results/report.html');
+    expect(out).toContain('pw-perf-results/outcome.json');
+    expect(out).toContain('Commit pw-perf-thresholds.json.');
+    expect(out).not.toMatch(/warnOnly|warn-only/u);
   });
 
   test('04-AC-17 with tests tagged @perf the default is still all tests, also with --yes', async () => {
@@ -57,19 +63,38 @@ describe('init wizard', () => {
     expect(out).toContain('Files with tests tagged @perf: 1.');
     expect(out).toContain('Measure all tests or only tests tagged @perf? [all/@perf] (all) → all');
     expect(out).not.toContain('INIT_NO_TAGGED_TESTS');
-    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toMatchObject({
-      'perf:test': 'pw-perf test',
-      'perf:thresholds': 'pw-perf thresholds',
-    });
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))).not.toHaveProperty(
+      'scripts',
+    );
+    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).not.toMatch(/^\s*grep: /mu);
   });
 
-  test('04-AC-17 no origin label question: steps [1/10] to [10/10], keys.origins named in the summary', async () => {
+  test('04-AC-17 04-AC-48 steps [0/11] to [11/11] without skipped ones; no origin, trial or environment question', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = fakeCliHost({ cwd: dir, playwright: null });
     expect(await main(['init', '--yes'], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
-    expect(steps).toEqual(['0/10', ...Array.from({ length: 10 }, (_, i) => `${i + 1}/10`)]);
+    // 3 (one project) and 6 (no test.step) are skipped.
+    expect(steps).toEqual([
+      '0/11',
+      '1/11',
+      '2/11',
+      '4/11',
+      '5/11',
+      '7/11',
+      '8/11',
+      '9/11',
+      '10/11',
+      '11/11',
+    ]);
+    expect(out).toContain('[1/11] Package and project');
+    expect(out).toContain('measures the response times of backend endpoints');
+    expect(out).not.toMatch(/warn-only|several environments|Environment labels/u);
+    expect(out).toContain(
+      'How much headroom should derived thresholds have? [strict/normal/loose] (normal) → normal',
+    );
+    expect(out).toContain('A CI job you start by hand with PW_PERF_MODE=thresholds');
     expect(out).not.toMatch(/Label for|Backend/u);
     expect(out).toContain(
       'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
@@ -83,7 +108,7 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const first = fakeCliHost({ cwd: dir, playwright: null });
     expect(await main(['init', '--yes'], first.host)).toBe(0);
-    expect(first.written.length).toBe(6);
+    expect(first.written.length).toBe(5);
     const after = snapshot(dir);
     const second = fakeCliHost({ cwd: dir, playwright: null });
     expect(await main(['init', '--yes'], second.host)).toBe(0);
@@ -101,8 +126,9 @@ describe('init wizard', () => {
     expect(noTty.stderr.join('')).toContain(
       'no terminal: the default answers are used and nothing is written',
     );
-    // The plan is shown in full.
-    expect(noTty.stdout.join('')).toContain('+++ b/tests/shop.spec.ts');
+    // The plan is shown in full; test files are never changed (04-REQ-67).
+    expect(noTty.stdout.join('')).toContain('+++ b/pw-perf.config.ts');
+    expect(noTty.stdout.join('')).not.toContain('+++ b/tests/shop.spec.ts');
     const dry = fakeCliHost({ cwd: dir, playwright: null, prompt: scriptedPrompt([]).prompt });
     expect(await main(['init', '--dry-run'], dry.host)).toBe(0);
     expect(dry.written).toEqual([]);
@@ -112,8 +138,8 @@ describe('init wizard', () => {
   test('04-AC-19 Ctrl+C before the changes step leaves no changes and ends with 130', async () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
-    // Questions before the changes step: tutorial (0a), language (0), Enter (2), scope (3),
-    // repeats (4), warn-only (5), environments (6), CI (7).
+    // Questions before the changes step: tutorial (0a), language (0), Enter (1), script (2),
+    // scope (4), passes (5), preset (7), CI (8).
     for (let at = 0; at < 8; at += 1) {
       const script = scriptedPrompt([], at);
       const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
@@ -131,13 +157,20 @@ describe('init wizard', () => {
       '', // tutorial: yes
       '', // language: en
       '', // Enter
+      '3', // invalid script number, asked again
+      '2', // plain playwright test
       '@perf', // scope
-      '0', // invalid repeat, asked again
+      '0', // invalid passes, asked again
       '3',
-      'n', // warn-only
-      'y', // environments
-      'qa, staging',
+      'tight', // invalid preset, asked again
+      'loose',
       'yes', // CI
+      '', // apply: pw-perf.config.ts
+      '', // playwright.config.ts
+      '', // tests/fixtures.ts
+      '', // .gitignore
+      '', // CI file
+      'n', // no check
     ];
     const input = new PassThrough();
     let output = '';
@@ -157,7 +190,8 @@ describe('init wizard', () => {
     });
     expect(await main(['init'], fake.host)).toBe(0);
     expect(output).toContain('Passes of the test command in measurement runs? (5)');
-    expect(output).toContain('Run a first thresholds run now? (y/N)');
+    expect(output).toContain('Run a check now? (Y/n)');
+    expect(fake.stdout.join('')).toContain('Run: PW_PERF_MODE=test npx playwright test');
     const golden = readFileSync(join(INIT_GOLDEN, 'esm-ts-answers.diff'), 'utf8');
     expect(snapshotDiff(before, snapshot(dir))).toBe(golden);
   });
@@ -228,25 +262,129 @@ describe('init wizard', () => {
     expect(existsSync(join(dir, 'pw-perf.config.ts'))).toBe(false);
   });
 
-  test('a first thresholds run after the setup starts Playwright in thresholds mode', async () => {
-    const dir = copyProject('init-import-swap');
-    const asked: string[] = [];
+  test('04-AC-38 step 10 runs the check through the package manager with PW_PERF_MODE=check', async () => {
+    const dir = copyProject('init-esm-ts');
+    const script = scriptedPrompt([]);
     const fake = fakeCliHost({
       cwd: dir,
       playwright: null,
-      prompt: () => ({
-        ask: async (question) => {
-          asked.push(question);
-          return stripAnsi(question).includes('Run a first thresholds run') ? 'y' : '';
-        },
-        close: () => undefined,
-      }),
-      onSpawn: (f) => f.child.exit(0),
+      env: { NO_COLOR: '1', npm_execpath: '/usr/lib/node_modules/npm/bin/npm-cli.js' },
+      prompt: script.prompt,
+      onSpawn: (f) => f.child.exit(1),
     });
-    // No Playwright installed in the fake host: the run ends with CLI_PLAYWRIGHT_NOT_FOUND.
-    expect(await main(['init'], fake.host)).toBe(3);
-    expect(stripAnsi(asked.at(-1) ?? '')).toBe('  Run a first thresholds run now? (y/N) ');
-    expect(fake.stderr.join('')).toContain('CLI_PLAYWRIGHT_NOT_FOUND');
+    // A failing check does not change the exit code of the wizard.
+    expect(await main(['init'], fake.host)).toBe(0);
+    expect(script.asked).toContain('  Run a check now? (Y/n) ');
+    expect(fake.spawned).toHaveLength(1);
+    const [spawned] = fake.spawned;
+    expect(spawned?.file).toBe('/usr/bin/node');
+    expect(spawned?.args).toEqual(['/usr/lib/node_modules/npm/bin/npm-cli.js', 'run', 'test']);
+    expect(spawned?.options).toMatchObject({ shell: false, stdio: 'inherit' });
+    expect(spawned?.options.env['PW_PERF_MODE']).toBe('check');
+    const out = fake.stdout.join('');
+    expect(out).toContain('The check ended with exit code 1.');
+    // The check ran: no check step in the next steps.
+    expect(out).not.toContain('PW_PERF_MODE=check npm run test: see what');
+    expect(out).toContain('(The check above shows an estimate.)');
+
+    // --yes never runs it.
+    const yes = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
+    expect(await main(['init', '--yes'], yes.host)).toBe(0);
+    expect(yes.spawned).toEqual([]);
+  });
+
+  test('04-AC-46 tests importing @playwright/test: no test file changes and the red box', async () => {
+    for (const env of [{ NO_COLOR: '1' }, { TERM: 'dumb' }] as Record<string, string>[]) {
+      const dir = copyProject('init-import-swap');
+      const before = snapshot(dir);
+      const fake = fakeCliHost({ cwd: dir, playwright: null, env });
+      expect(await main(['init', '--yes'], fake.host)).toBe(0);
+      const after = snapshot(dir);
+      for (const path of before.keys())
+        if (path.startsWith('tests/')) expect(after.get(path), path).toBe(before.get(path));
+      const out = fake.stdout.join('');
+      // In step 9 and again in the summary.
+      expect(
+        out.split('INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet'),
+      ).toHaveLength(3);
+      expect(out).toContain(
+        "import { test, expect } from 'playwright-performance-regression/test';",
+      );
+      expect(out).toContain(
+        "import { withPerfFixtures } from 'playwright-performance-regression/fixture';",
+      );
+      expect(out).toContain('(3 files)');
+      if (env.TERM === 'dumb') {
+        expect(out).toContain('+---');
+        expect(out).not.toContain('╭');
+      } else expect(out).toContain('╭');
+    }
+  });
+
+  test('04-AC-33 the projects question selects the --project projects and keeps them', async () => {
+    const dir = copyProject('init-esm-ts');
+    writeFileSync(
+      join(dir, 'playwright.config.ts'),
+      `import { defineConfig, devices } from '@playwright/test';
+export default defineConfig({
+  testDir: 'tests',
+  projects: [
+    { name: 'setup', testMatch: /global.setup.ts/ },
+    { name: 'E2E', dependencies: ['setup'] },
+    { name: 'API', testDir: './api' },
+    { name: 'smoke-eu' },
+  ],
+});
+`,
+    );
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({ type: 'module', scripts: { e2e: 'playwright test --project=E2E' } }),
+    );
+    // tutorial, language, Enter, script, projects: "3" without E2E (asked again), then "1,3".
+    const script = scriptedPrompt(['', '', '', '', '3', '1,3']);
+    const fake = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      prompt: script.prompt,
+      env: { NO_COLOR: '1' },
+    });
+    expect(await main(['init'], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    expect(out).toContain('1. [x] E2E');
+    expect(out).toContain('2. [ ] API (looks like API tests');
+    expect(out).toContain('setup: setup/teardown, runs as a dependency');
+    expect(out).toContain('The script runs --project E2E: keep these projects selected.');
+    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toContain(
+      "    projects: ['E2E', 'smoke-eu'],",
+    );
+    const yes = copyProject('init-esm-ts');
+    for (const name of ['playwright.config.ts', 'package.json'])
+      writeFileSync(join(yes, name), readFileSync(join(dir, name), 'utf8'));
+    expect(await main(['init', '--yes'], fakeCliHost({ cwd: yes, playwright: null }).host)).toBe(0);
+    expect(readFileSync(join(yes, 'pw-perf.config.ts'), 'utf8')).toContain(
+      "    projects: ['E2E'],",
+    );
+  });
+
+  test('04-AC-41 04-AC-46 without playwright.config the wizard stops before any question', async () => {
+    const dir = copyProject('init-esm-ts');
+    writeFileSync(join(dir, 'playwright.config.ts'), '');
+    const empty = join(dir, 'tests');
+    const script = scriptedPrompt([]);
+    const fake = fakeCliHost({
+      cwd: empty,
+      playwright: null,
+      prompt: script.prompt,
+      env: { NO_COLOR: '1' },
+    });
+    expect(await main(['init', '--lang', 'en'], fake.host)).toBe(3);
+    // Only the tutorial question comes before the language is known.
+    expect(script.asked).toEqual([
+      '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
+    ]);
+    expect(fake.written).toEqual([]);
+    expect(fake.stderr.join('')).toContain('error INIT_NO_PLAYWRIGHT_CONFIG');
   });
 
   test('04-AC-23 init --yes --lang pl gives Polish wizard texts and the same files as --lang en', async () => {
@@ -259,7 +397,7 @@ describe('init wizard', () => {
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
-    expect(out).toContain('[1/10] Projekt');
+    expect(out).toContain('[1/11] Paczka i projekt');
     expect(out).toContain('Zastosować tę zmianę?');
     expect(out).toContain('Następne kroki:');
     expect(out).not.toContain('Apply this change?');
@@ -290,7 +428,9 @@ describe('init wizard', () => {
     expect(script.asked[1]).toBe('  Language / Język? [en/es/fr/pl/it/uk/ru] (en) ');
     expect(script.asked[2]).toBe('  Naciśnij Enter, aby kontynuować. ');
     expect(script.asked).toContain('  Ile przebiegów polecenia testów w pomiarze? (5) ');
-    expect(script.asked).toContain('  Zacząć w trybie warn-only przez pierwsze tygodnie? (T/n) ');
+    expect(script.asked).toContain(
+      '  Jaki zapas mają mieć wyznaczone progi? [strict/normal/loose] (normal) ',
+    );
   });
 
   test('04-AC-24 wizard colors in a terminal; none with NO_COLOR, TERM=dumb or without a terminal; FORCE_COLOR without one', async () => {
@@ -337,7 +477,7 @@ describe('init wizard', () => {
     expect(out).toContain('playwright-performance-regression is installed; no file was changed.');
     expect(out).toContain('withPerf() from playwright-performance-regression/config');
     expect(out).toContain('withPerfFixtures() from playwright-performance-regression/fixture');
-    expect(out).toContain('npx pw-perf thresholds');
+    expect(out).toContain('PW_PERF_MODE=test npx playwright test');
     expect(out).toContain('docs/adoption.md');
   });
 
@@ -362,7 +502,7 @@ describe('init wizard', () => {
     expect(await main(['init', '--yes'], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).not.toContain('guided tutorial');
-    expect(out).toContain('[0/10] Language');
-    expect(fake.written.length).toBe(6);
+    expect(out).toContain('[0/11] Language');
+    expect(fake.written.length).toBe(5);
   });
 });

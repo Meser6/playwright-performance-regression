@@ -46,6 +46,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const plan = planPerfRun(config, {
     projects: perf.run.projects,
     keepReporters: perf.run.keepReporters,
+    grep: perf.run.grep,
     reporterPath: reporterEntryPath(),
   });
   if (!plan.ok) throw new ConfigError(plan.issues);

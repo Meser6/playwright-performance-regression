@@ -10,20 +10,44 @@ the one for your platform into the project; you can also copy it by hand.
 | Jenkins         | [`Jenkinsfile`](../examples/ci/Jenkinsfile)                 | `Jenkinsfile.perf`, as the script of its own pipeline job              |
 | Azure Pipelines | [`azure-pipelines.yml`](../examples/ci/azure-pipelines.yml) | `azure-pipelines.perf.yml`, registered as its own pipeline             |
 
-All recipes install dependencies with `npm ci`; in a pnpm or yarn project replace that line (and
-`npx` with `pnpm exec` or `yarn`).
+All recipes install dependencies with `npm ci` and run `npm run e2e`; `pw-perf init` writes the
+recipe with your own test command (e.g. `npm run e2e:qa`). In a pnpm or yarn project replace the
+install line (and `npx` with `pnpm exec` or `yarn`).
+
+## The recommended path
+
+1. **Thresholds job, started by hand.** It runs your test command with `PW_PERF_MODE=thresholds`
+   on the same runners that will measure (times from a laptop do not carry over) and keeps the
+   `pw-perf-thresholds*.json` files as an artifact (GitHub: Actions → Performance → Run workflow,
+   mode `thresholds`; GitLab: the manual `perf-thresholds` job; Jenkins and Azure: the `MODE` /
+   `mode` parameter).
+2. **Commit the files.** Download the artifact and commit the thresholds files. Until they exist,
+   measurement runs use the loose default thresholds.
+3. **Measurement job, every week.** It runs with `PW_PERF_MODE=test` (cron `0 3 * * 1`; on GitLab
+   create a weekly pipeline schedule) and can be started by hand. It fails on a regression.
+
+Re-run the thresholds job after a deliberate change in performance or when the infrastructure
+changes; review the diff before committing.
 
 ## What every recipe does
 
-- **Triggers:** pull requests (merge requests) and a nightly schedule. A good split is a small
-  tagged subset on pull requests and the full measured suite at night, e.g. `npx pw-perf test
---grep @perf` in the pull-request job and `npx pw-perf test` in the nightly one.
+- **Sets `PW_PERF_MODE`** in the job environment and runs your usual test command, so its setup
+  steps, variables and flags work as they are. The recipes never call `pw-perf`.
 - **Installs Chromium** with its system libraries (`npx playwright install --with-deps chromium`).
-- **Runs** `npx pw-perf test`.
+- **Reads the exit code from `pw-perf-results/outcome.json`**: Playwright itself exits with 0 or 1,
+  so the run step removes the file first, runs the command and exits with `exitCode` from the
+  file (3 when it is missing: the measurement did not run).
 - **Uploads `pw-perf-results/` always**, also when the run fails, because that is when you need the
   report: GitHub `if: always()`, GitLab `artifacts: when: always`, Jenkins `post { always { ... } }`,
-  Azure `condition: always()`.
-- **Has a time limit** (60 minutes), because a measurement run runs the tests in several passes.
+  Azure `condition: always()`. The thresholds job also uploads `pw-perf-thresholds*.json`.
+- **Has a time limit** (60 minutes for measuring, 120 for thresholds, which use more passes).
+
+## Not ready to block builds?
+
+Set `continue-on-error: true` on the measurement job (GitLab: `allow_failure: true`, Jenkins:
+`catchError(buildResult: 'SUCCESS')`, Azure: `continueOnError: true`). Violations still appear in
+the log, the report and `outcome.json`. The package itself has no trial mode (`gate.warnOnly` was
+removed); `gate.tolerance` and `gate.defaultThresholds: 'warn'` soften the gate permanently.
 
 ## Exit codes
 
@@ -67,16 +91,8 @@ environment loaded by other pipelines cause false alarms. Prefer:
 The reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the machine, browser or Playwright
 version differs from the run the thresholds came from.
 
-## Manual mode
+## Alternative: the pw-perf runner
 
-If your CI cannot call `pw-perf`, set the mode variable yourself:
-
-```sh
-PW_PERF_MODE=test npx playwright test --grep @perf
-```
-
-The run measures and reports as usual, but without the CLI's guards: `--ui`, `--debug`, `--shard`
-and `--prune` with a test filter are not refused (sharding is still detected by the reporter as
-`RUN_SHARDED`), a `--reporter` flag replaces the package reporter, and the exit code is
-Playwright's (1 for a failed gate or failed tests) instead of 0/2/3. Prefer `npx pw-perf test`
-wherever possible.
+`npx pw-perf test` and `npx pw-perf thresholds` run Playwright themselves and exit with 0/2/3
+directly, so a recipe would not need to read `outcome.json`; but they bypass your test script and
+its setup steps. See [Advanced: the pw-perf runner](cli.md#advanced-the-pw-perf-runner).

@@ -5,6 +5,7 @@
     "answers": null
   },
   "expected": {
-    "manualSteps": []
+    "manualSteps": [],
+    "testObject": null
   }
 }

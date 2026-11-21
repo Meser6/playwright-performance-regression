@@ -269,16 +269,16 @@ describe('package config of the commands without tests', () => {
           run: { env: 'a' },
           report: { dir: 'x' },
           thresholds: { dir: 'a', hysteresis: 0.1 },
-          gate: { warnOnly: false },
+          gate: { tolerance: 0 },
         },
         {
           run: { env: 'b' },
           report: { dir: 'y' },
           thresholds: { dir: 'b', hysteresis: 0.2 },
-          gate: { warnOnly: true },
+          gate: { tolerance: 2 },
         },
       ),
-    ).toEqual(['gate.warnOnly', 'thresholds.hysteresis']);
+    ).toEqual(['gate.tolerance', 'thresholds.hysteresis']);
     expect(snapshotDifferences({ a: [1, 2] }, { a: [1, 2] })).toEqual([]);
   });
 
@@ -300,12 +300,12 @@ describe('package config of the commands without tests', () => {
               'ExperimentalWarning',
             );
             process.emitWarning('something else', 'DeprecationWarning');
-            return { default: { gate: { warnOnly: true } } };
+            return { default: { gate: { tolerance: 3 } } };
           },
         },
       );
       if (!result.ok) throw new Error(JSON.stringify(result.issues));
-      expect(result.value.config.gate.warnOnly).toBe(true);
+      expect(result.value.config.gate.tolerance).toBe(3);
       expect(result.value.notes).toEqual([
         'note: Node printed a warning while loading pw-perf.config.ts: Type Stripping is an experimental feature and might change at any time',
       ]);
@@ -322,11 +322,11 @@ describe('package config of the commands without tests', () => {
         { searchDirs: [cwd], mode: 'thresholds' },
         { exists, importModule: async () => module },
       );
-    const cjs = await load({ default: { default: { gate: { warnOnly: true } } } });
-    expect(cjs.ok && cjs.value.config.gate.warnOnly).toBe(true);
+    const cjs = await load({ default: { default: { gate: { tolerance: 3 } } } });
+    expect(cjs.ok && cjs.value.config.gate.tolerance).toBe(3);
     const none = await load({ other: 1 });
     expect(none.ok && none.value.warnings.map((w) => w.code)).toEqual(['CONFIG_FILE_LOAD_FAILED']);
-    const invalid = await load({ default: { gate: { warnOnly: 'yes' } } });
+    const invalid = await load({ default: { report: { html: 'yes' } } });
     expect(invalid.ok).toBe(false);
     if (!invalid.ok) expect(invalid.issues[0]?.code).toBe('CONFIG_INVALID_TYPE');
   });

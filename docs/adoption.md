@@ -9,7 +9,8 @@ for you.
 - [Situation → what to do](#situation--what-to-do)
 - [What `init` changes by itself](#what-init-changes-by-itself)
 - [Choosing the tests to measure](#choosing-the-tests-to-measure)
-- [Start in warn-only mode](#start-in-warn-only-mode)
+- [Start without blocking builds](#start-without-blocking-builds)
+- [Threshold headroom](#threshold-headroom)
 - [Settings in test files win](#settings-in-test-files-win)
 - [Long polling, streaming and server-sent events](#long-polling-streaming-and-server-sent-events)
 - [Tests that create data](#tests-that-create-data)
@@ -82,29 +83,32 @@ last to avoid that.
 
 ## What `init` changes by itself
 
-`pw-perf init` reads your project as text and changes only layouts it recognises. Everything else
-is printed as an `INIT_MANUAL_STEP` instruction from the table above.
+`pw-perf init` reads your project as text and changes only layouts it recognises. It never changes
+your test files or `package.json`. Everything else is printed as an `INIT_MANUAL_STEP` instruction
+from the table above, or, for the test object, as a red box with the code to paste
+(`INIT_TEST_OBJECT_MANUAL`).
 
-| File                  | Recognised layout                                                                                                                                      | Change                                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `playwright.config.*` | `export default defineConfig({...})`, `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as the last statement | wraps it in `withPerf(..., perfConfig)` and adds the imports (CommonJS: `require('./pw-perf.config').default`)                            |
-| test object           | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`     | wraps it in `withPerfFixtures(...)`                                                                                                       |
-| test files            | no `.extend(` and no `mergeTests` anywhere; files import an unaliased `test` from `@playwright/test`                                                   | switches that import to `playwright-performance-regression/test`; other names stay in an `@playwright/test` import, `test as setup` stays |
-| `pw-perf.config.ts`   | missing                                                                                                                                                | created with the answers that differ from the defaults; every other option is a comment with its default and a description                |
-| `.gitignore`          | any                                                                                                                                                    | adds `pw-perf-results/`                                                                                                                   |
-| `package.json`        | scripts missing                                                                                                                                        | adds `perf:test` and `perf:thresholds` (one pair per environment)                                                                         |
-| CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                         | adds a separate job file from [the CI recipes](ci.md)                                                                                     |
+| File                  | Recognised layout                                                                                                                                                           | Change                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `playwright.config.*` | `export default defineConfig({...})`, `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as the last statement                      | wraps it in `withPerf(..., perfConfig)` and adds the imports (CommonJS: `require('./pw-perf.config').default`)                             |
+| fixtures module       | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`, in a file without tests | wraps it in `withPerfFixtures(...)`                                                                                                        |
+| test files            | never changed                                                                                                                                                               | when the tests import `test` from `@playwright/test`, the wizard shows the import to use instead: `playwright-performance-regression/test` |
+| `pw-perf.config.ts`   | missing                                                                                                                                                                     | created with the answers that differ from the defaults; every other option is a comment with its default and a description                 |
+| `.gitignore`          | any                                                                                                                                                                         | adds `pw-perf-results/`                                                                                                                    |
+| `package.json`        | never changed                                                                                                                                                               | the wizard detects your test scripts and shows the commands with `PW_PERF_MODE`                                                            |
+| CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                                              | adds a separate file from [the CI recipes](ci.md): a manual thresholds job and a weekly measurement job running your test command          |
 
 Not recognised, so left to you: other config wrappers, several test objects, `mergeTests`, a
-`.json` package config, and existing scripts or CI files with other content. Running `init` again
+`.json` package config, and existing CI files with other content. Running `init` again
 changes nothing that is already set up.
 
 ## Choosing the tests to measure
 
 A measurement run executes every measured test several times in one worker, so it is much slower
 than your normal suite. `init` measures all tests by default; to measure a subset, tag a few representative tests with
-`@perf` and run `pw-perf test --grep @perf` (or answer `@perf` in `init`, or select projects with
-`--project`). Good candidates load the main
+`@perf` and set `run: { grep: '@perf' }` in `pw-perf.config.ts` (answering `@perf` in `init` does
+this); it applies only in perf mode, to the measured projects, so setup projects still run in
+full. You can also select projects with `run.projects`. Good candidates load the main
 pages and call the endpoints you care about; tests that mostly wait for timers or animations add
 time without useful samples.
 
@@ -132,17 +136,28 @@ the steps of your test script run once per pass. With 20 tests of 6 s and 5 pass
 10 minutes on one worker. A thresholds run uses 10 passes by default (`run.passes.thresholds`),
 so it takes about twice as long. The start banner of every run shows an estimate.
 
-## Start in warn-only mode
+## Start without blocking builds
 
-For the first weeks, let the gate report without failing:
+For the first weeks, let the measurement job report without failing the pipeline: set
+`continue-on-error: true` on the job (GitHub Actions; GitLab `allow_failure: true`, Jenkins
+`catchError`, Azure `continueOnError: true`). Violations still appear in the summary, the report
+and `outcome.json`. Once the thresholds are stable on your CI runners, remove it. Inside the
+package, `gate.tolerance` (a number of keys or a share like `"5%"`) and
+`gate.defaultThresholds: 'warn'` soften the gate for good; a single key can be muted in the
+thresholds file (`gate: "warn"` with `note` and `until`, see [Thresholds](thresholds.md)).
 
-```ts
-export default definePerfConfig({ gate: { warnOnly: true } });
-```
+## Threshold headroom
 
-Violations still appear in the summary and the report, but the exit code stays 0. Once the
-thresholds are stable on your CI runners, remove `warnOnly`. `init` asks about this and sets it by
-default.
+Derived thresholds are the times of a thresholds run plus headroom. `thresholds.preset` sets the
+headroom of every rule at once:
+
+| Preset   | Headroom of median and percentile limits | For                                                         |
+| -------- | ---------------------------------------- | ----------------------------------------------------------- |
+| `strict` | +25%, at least 50 ms                     | stable, dedicated environments; catches smaller regressions |
+| `normal` | +40%, at least 100 ms (default)          | a good start                                                |
+| `loose`  | +60%, at least 200 ms                    | shared or noisy environments; only clear regressions        |
+
+Fields set in `checks.*.margin` win over the preset. See [Configuration](configuration.md).
 
 ## Settings in test files win
 

@@ -323,3 +323,36 @@ describe('reporter entry path', () => {
     expect(reporterPathNextTo('C:\\a b\\dist\\config.cjs')).toBe('C:\\a b\\dist\\reporter.cjs');
   });
 });
+
+describe('run.grep (03-REQ-25)', () => {
+  const projects: PlaywrightTestConfig = {
+    projects: [
+      { name: 'setup', testMatch: /.*\.setup\.ts/ },
+      { name: 'E2E', dependencies: ['setup'] },
+      { name: 'smoke', dependencies: ['setup'], grep: /@smoke/ },
+    ],
+  };
+
+  test('03-AC-18 measured projects get run.grep, setup projects run in full', () => {
+    const result = plan(projects, { projects: ['E2E', 'smoke'], grep: '@perf' });
+    const byName = new Map(result.config.projects?.map((p) => [p.name, p]));
+    expect(byName.get('setup')?.grep).toBeUndefined();
+    const e2e = byName.get('E2E')?.grep as RegExp;
+    expect(e2e).toEqual(/@perf/i);
+    expect(e2e.test('checkout @PERF')).toBe(true);
+    const smoke = byName.get('smoke')?.grep as RegExp;
+    expect(smoke.test('checkout @perf @smoke')).toBe(true);
+    expect(smoke.test('checkout @smoke @perf')).toBe(true);
+    expect(smoke.test('checkout @perf')).toBe(false);
+    expect(smoke.test('checkout @smoke')).toBe(false);
+  });
+
+  test('03-AC-18 without projects the config grep is combined; without run.grep nothing changes', () => {
+    const single = plan({ grep: [/@a/, /@b/] }, { grep: '@perf' }).config.grep as RegExp;
+    expect(single.test('x @b @perf')).toBe(true);
+    expect(single.test('x @perf')).toBe(false);
+    expect(plan({}, { grep: '@perf' }).config.grep).toEqual(/@perf/i);
+    expect(plan(projects, { projects: ['E2E'] }).config.projects?.[1]?.grep).toBeUndefined();
+    expect(plan({}).config.grep).toBeUndefined();
+  });
+});

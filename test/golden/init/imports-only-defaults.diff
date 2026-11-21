@@ -1,20 +1,27 @@
 --- /dev/null
 +++ b/azure-pipelines.perf.yml
-@@ -0,0 +1,46 @@
-+# Performance measurement run with playwright-performance-regression (pw-perf).
-+# Register as its own pipeline, e.g. azure-pipelines.perf.yml. Runs on pull requests and every
-+# night. Exit code 2 (performance regression) ends the job as "succeeded with issues", 3 (tool or
-+# config error) fails it. The report in pw-perf-results/ is published also when the run fails.
+@@ -0,0 +1,63 @@
++# Performance runs with playwright-performance-regression (pw-perf). Register as its own
++# pipeline, e.g. azure-pipelines.perf.yml. Recommended path (docs/ci.md):
++#   1. Run the pipeline by hand with mode "thresholds". Thresholds come from the same agents
++#      that measure.
++#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
++#   3. The pipeline runs every Monday with mode "test" and fails on a regression.
++# The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) ends the job
++# as "succeeded with issues", 3 (tool or config error) fails it.
 +trigger: none
++pr: none
 +
-+pr:
-+  branches:
-+    include:
-+      - '*'
++parameters:
++  - name: mode
++    displayName: 'test: measurement run, thresholds: derive the thresholds files'
++    type: string
++    default: test
++    values: [test, thresholds]
 +
 +schedules:
-+  - cron: '0 3 * * *'
-+    displayName: Nightly measurement run
++  - cron: '0 3 * * 1'
++    displayName: Weekly measurement run
 +    branches:
 +      include:
 +        - main
@@ -25,7 +32,9 @@
 +
 +jobs:
 +  - job: perf
-+    timeoutInMinutes: 60
++    timeoutInMinutes: 120
++    variables:
++      PW_PERF_MODE: ${{ parameters.mode }}
 +    steps:
 +      - task: NodeTool@0
 +        inputs:
@@ -35,30 +44,26 @@
 +      - script: npx playwright install --with-deps chromium
 +        displayName: Install Chromium
 +      - bash: |
-+          code=0
-+          npx pw-perf test || code=$?
++          rm -f pw-perf-results/outcome.json
++          npx playwright test || true
++          code=$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)
 +          if [ "$code" -eq 2 ]; then
 +            echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
 +            exit 0
 +          fi
 +          exit $code
-+        displayName: Measurement run
++        displayName: Performance run
++      - bash: mkdir -p pw-perf-thresholds && cp pw-perf-thresholds*.json pw-perf-thresholds/
++        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
++        displayName: Collect the thresholds files
++      - publish: pw-perf-thresholds
++        artifact: pw-perf-thresholds
++        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
++        displayName: Publish the thresholds files
 +      - publish: pw-perf-results
 +        artifact: pw-perf-results
 +        condition: always()
 +        displayName: Publish the performance report
---- a/package.json
-+++ b/package.json
-@@ -4,5 +4,9 @@
-   "type": "module",
-   "devDependencies": {
-     "@playwright/test": "~1.57.0"
-+  },
-+  "scripts": {
-+    "perf:test": "pw-perf test",
-+    "perf:thresholds": "pw-perf thresholds"
-   }
- }
 --- a/playwright.config.ts
 +++ b/playwright.config.ts
 @@ -1,8 +1,10 @@
@@ -81,12 +86,50 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,322 @@
+@@ -0,0 +1,364 @@
 +// Configuration of playwright-performance-regression, written by "npx pw-perf init".
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
 +// are merged with the defaults; an array you set replaces the default array. All options:
 +// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
++//
++// Most important settings
++//
++// run.passes: How many times your test command runs in one measurement run. More passes give more
++// samples per endpoint and steadier thresholds, but the run takes longer (tests x passes on 1
++// worker).
++//   run: { passes: { test: 5, thresholds: 10 } },
++//
++// run.grep: Measure only the tests whose title or tags match, e.g. tests tagged @perf. Setup and
++// teardown projects still run in full.
++//   run: { grep: '@perf' },
++//
++// run.projects: Which Playwright projects are measured. 'auto' measures the Chromium projects that
++// are not setup or teardown projects; tests that only use the request fixture measure nothing.
++//   run: { projects: ['chromium'] },
++//
++// thresholds.preset: Headroom added to the measured times when thresholds are derived. 'strict'
++// catches smaller regressions but alarms more often on a noisy environment, 'loose' only flags
++// clear regressions.
++//   thresholds: { preset: 'normal' },
++//
++// run.env: Environment label: each label has its own thresholds files
++// (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see
++// docs/dynamic-environments.md.
++//   run: { env: 'staging' },
++//
++// keys.origins: Short labels for backend hosts in endpoint keys; the baseURL host has no label.
++// Host patterns with * merge random CI hosts, e.g. pr-123.ci.example.com.
++//   keys: { origins: { 'https://auth.example.com': 'auth', 'https://pr-*.ci.example.com': '' } },
++//
++// measure.steps: Also measure the duration of your test.step blocks, with their own thresholds file
++// (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not
++// reach the keys.
++//   measure: { steps: true },
++//
++// gate.tolerance: How many endpoints may exceed their thresholds before the run fails (a number or
++// a share like "5%"). Values far above a threshold (hardLimitFactor) fail the run anyway.
++//   gate: { tolerance: 0 },
 +import { definePerfConfig } from 'playwright-performance-regression';
 +
 +export default definePerfConfig({
@@ -104,6 +147,9 @@
 +  //   },
 +  //   // Which Playwright projects are measured in perf mode.
 +  //   projects: 'auto',
++  //   // Only tests whose title or tags match this regular expression run in perf mode, e.g.
++  //   // '@perf'.
++  //   grep: null,
 +  //   // Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit',
 +  //   // 'allure-playwright').
 +  //   keepReporters: [],
@@ -346,24 +392,25 @@
 +  // },
 +
 +  // Gate policy: when violations fail the run.
-+  gate: {
-+    // Number of keys with violations that is still tolerated: an integer, or a percentage of
-+    // evaluated keys like '5%'.
-+    // tolerance: 0,
-+    // A time check exceeding limit x factor always blocks, regardless of tolerance.
-+    // hardLimitFactor: 2,
-+    // 'block': violations on keys evaluated with default thresholds can fail the run; 'warn': they
-+    // only warn.
-+    // defaultThresholds: 'block',
-+    // Report violations but never fail the run. Default: false.
-+    warnOnly: true,
-+    // Highest share of failed test executions (unexpected / executed, skipped excluded) for which
-+    // the run result is still trustworthy.
-+    // maxFailedTestShare: 0.1,
-+  },
++  // gate: {
++  //   // Number of keys with violations that is still tolerated: an integer, or a percentage of
++  //   // evaluated keys like '5%'.
++  //   tolerance: 0,
++  //   // A time check exceeding limit x factor always blocks, regardless of tolerance.
++  //   hardLimitFactor: 2,
++  //   // 'block': violations on keys evaluated with default thresholds can fail the run; 'warn':
++  //   // they only warn.
++  //   defaultThresholds: 'block',
++  //   // Highest share of failed test executions (unexpected / executed, skipped excluded) for
++  //   // which the run result is still trustworthy.
++  //   maxFailedTestShare: 0.1,
++  // },
 +
 +  // Thresholds files and derivation.
 +  // thresholds: {
++  //   // Headroom preset for derived thresholds: sets the defaults of every checks.*.margin; margin
++  //   // fields set explicitly win.
++  //   preset: 'normal',
 +  //   // Directory of thresholds files, relative to the Playwright config directory.
 +  //   dir: '.',
 +  //   // File name prefix; files are <prefix>[.steps][.<env>].json.
@@ -404,20 +451,3 @@
 +  //   seed: 1,
 +  // },
 +});
---- a/tests/home.spec.ts
-+++ b/tests/home.spec.ts
-@@ -1,4 +1,5 @@
--import { expect, test, type Page } from '@playwright/test';
-+import { expect, test } from 'playwright-performance-regression/test';
-+import { type Page } from '@playwright/test';
- 
- async function open(page: Page): Promise<void> {
-   await page.goto('/page');
---- a/tests/shop.spec.ts
-+++ b/tests/shop.spec.ts
-@@ -1,4 +1,4 @@
--import { test, expect } from '@playwright/test';
-+import { test, expect } from 'playwright-performance-regression/test';
- 
- test('item @perf', async ({ page }) => {
-   await page.goto('/page');
