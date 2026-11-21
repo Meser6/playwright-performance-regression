@@ -36,7 +36,7 @@ Things to know:
 - Run the measurement in its own CI job, not in the job of the functional tests: it runs the tests
   several times on one worker.
 
-On Windows prefix the command with `npx cross-env`; see [CLI](cli.md#run-through-your-own-test-command-recommended).
+On Windows prefix the command with `npx cross-env`; see [Running](cli.md#windows).
 
 ## baseURL from an environment module
 

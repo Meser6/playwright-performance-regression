@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
-    "perf:test": "pw-perf test --grep @perf",
-    "perf:thresholds": "pw-perf thresholds --grep @perf"
+    "test:perf": "playwright test --grep @perf"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

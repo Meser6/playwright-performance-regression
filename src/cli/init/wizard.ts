@@ -11,7 +11,7 @@ import { colorEnabled, painter } from '../../console/color.ts';
 import type { ColorStyle, Painter } from '../../console/color.ts';
 import { DEFAULT_CONFIG, MARGIN_PRESETS, resolveConfig } from '../../core/config/index.ts';
 import type { MarginPreset } from '../../core/config/index.ts';
-import { CLI_COMMAND, PACKAGE_NAME, REPOSITORY_URL } from '../../core/types/index.ts';
+import { INIT_COMMAND, PACKAGE_NAME, REPOSITORY_URL } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
 import { parsePasses } from '../../mode/index.ts';
 import type { CliHost, Prompt } from '../host.ts';
@@ -230,7 +230,7 @@ function printManualSetup(dialog: Dialog): void {
     `    3. ${t('declinedRun', { example: cmd('PW_PERF_MODE=test npx playwright test') })}`,
   );
   dialog.line(t('declinedDocs', { url: `${DOCS}/adoption.md` }), 'dim');
-  dialog.say(`  ${t('declinedLater', { init: cmd(`${CLI_COMMAND} init`) })}`);
+  dialog.say(`  ${t('declinedLater', { init: cmd(INIT_COMMAND) })}`);
 }
 
 /** Step 0: the language from --lang, the answer in a terminal, or English (04-REQ-43). */
@@ -687,7 +687,7 @@ export async function runInit(
       // Before any question and without writing anything (04-REQ-41).
       return dialog.error('INIT_NO_PLAYWRIGHT_CONFIG', 'noConfigMessage', 'noConfigHint', {
         dir: host.cwd,
-        command: CLI_COMMAND,
+        command: INIT_COMMAND,
       });
     }
     if (
@@ -698,7 +698,7 @@ export async function runInit(
         version: info.playwrightVersion,
         min: host.minPlaywrightVersion,
         pkg: PACKAGE_NAME,
-        command: CLI_COMMAND,
+        command: INIT_COMMAND,
       });
     }
     await dialog.pause();

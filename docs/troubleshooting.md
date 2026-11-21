@@ -13,8 +13,8 @@ it and how to fix it. Search the page for the code you see.
 - **`pw-perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
   run with its code, message and hint.
 - **`pw-perf-results/report.html`**: the same warnings and tool errors near the top of the page.
-- **CLI output (stderr)**: errors of the `pw-perf` command itself (`CLI_*`, `INIT_*`, config file
-  problems of the commands that run no tests).
+- **Setup output (stderr)**: errors of the guided setup (`INIT_*`) and of the old `pw-perf`
+  runner (`CLI_*`).
 - **Playwright output**: an invalid package config stops Playwright while it loads
   `playwright.config` with a list of `CONFIG_*` problems; a few rare collector and reporter
   failures are printed as a single line on stderr.
@@ -50,8 +50,8 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 ## Configuration and perf mode
 
 Configuration errors are collected and reported together, each with the option path. Inside a
-test run they stop Playwright while it loads the config, so the `pw-perf` command then ends with
-[`CLI_OUTCOME_MISSING`](#cli_outcome_missing) and exit code 3; read the list printed above it.
+test run they stop Playwright while it loads the config, so no `outcome.json` is written; read the
+list printed above Playwright's error.
 
 ### CONFIG_UNKNOWN_OPTION
 
@@ -73,7 +73,7 @@ config snapshot in a report was edited. Fix the value as shown in the hint.
 allowed values, or inconsistent with another option. Examples: time limits that decrease from
 median to percentile to p99, a lower bound above its upper bound, a percentile level below
 `p50`, a rule with a smaller `minSamples` than the median rule, every rule disabled, a
-`thresholds.preset` other than `strict`, `normal` or `loose`, an `--env` / `--passes` value (or `PW_PERF_ENV` / `PW_PERF_PASSES`) out of
+`thresholds.preset` other than `strict`, `normal` or `loose`, a `PW_PERF_ENV` or `PW_PERF_PASSES` value out of
 range, or the environment label `steps` or `requests`, which are parts of the thresholds file
 names (`pw-perf-thresholds.steps.json`). The message names the option and the value received.
 
@@ -143,8 +143,7 @@ actually run.
 **Warning.** Perf mode is on, but `withPerf()` was not applied to the Playwright config, so the
 default package config is used and every project is treated as measured. Wrap the config:
 `export default withPerf(defineConfig({ ... }), perfConfig)` with `withPerf` from
-`playwright-performance-regression/config`, or run `npx pw-perf init`. Through the CLI this
-usually ends in [`CLI_OUTCOME_MISSING`](#cli_outcome_missing).
+`playwright-performance-regression/config`, or run `npm init playwright-performance-regression`.
 
 ### MODE_INVALID_VALUE
 
@@ -158,16 +157,14 @@ e.g. `PW_PERF_MODE=test npm run e2e` (see [cli.md](cli.md)).
 
 ### CONFIG_FILE_NOT_FOUND
 
-**Error (exit code 3).** The file given with `--config` to `pw-perf thresholds --from` or
-`pw-perf report` does not exist. The path is resolved against the current directory.
+**Error (exit code 3).** The package config file given to the old `pw-perf` runner does not
+exist. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CONFIG_FILE_LOAD_FAILED
 
-**Error with `--config`, warning otherwise.** The package config file (`pw-perf.config.*`) could
-not be loaded by a command that runs no tests. Node loads TypeScript files itself, without a
-bundler, so imports without a file extension, `tsconfig` path aliases and `enum`s fail; the hint
-names the fix. Without `--config` the command falls back to the config snapshot stored in the
-report.
+**Error or warning.** The package config file (`pw-perf.config.*`) could not be loaded by the
+old `pw-perf` runner. Node loads TypeScript files itself, without a bundler, so imports without a
+file extension, `tsconfig` path aliases and `enum`s fail; the hint names the fix.
 
 ### CONFIG_SNAPSHOT_DIFFERS
 
@@ -178,50 +175,43 @@ current config.
 
 ## CLI
 
-Errors of the `pw-perf` command end it with exit code 3 before Playwright starts, unless noted.
+These codes come from the old `pw-perf` runner. Its errors end it with exit code 3 before
+Playwright starts, unless noted. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CLI_UNKNOWN_COMMAND
 
-**Error.** No command or an unknown command was given. The commands are `test`, `thresholds`,
-`report` and `init`; run `npx pw-perf --help`.
+**Error.** The runner got no command or an unknown one. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CLI_INVALID_OPTION
 
-**Error.** An option has an invalid value (for example `--passes 0`), was renamed (`--repeat` is
-now `--passes`), takes no value but got one,
-belongs to another command (`--prune` or `--from` with `test`, `--input` with
-`thresholds --from`), or the command does not take the argument. Run
-`npx pw-perf <command> --help` for the options.
+**Error.** The runner got an invalid, renamed or misplaced option. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CLI_MISSING_ARGUMENT
 
-**Error.** An option that needs a value has none, for example `--env` at the end of the command
-line or `--env=`. Write `--env <value>` or `--env=<value>`.
+**Error.** An option of the runner that needs a value has none. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CLI_UNSUPPORTED_PLAYWRIGHT_OPTION
 
-**Error.** `--ui`, `--ui-host`, `--ui-port`, `--debug` or `--shard` was passed. UI mode and
-debugging change how tests run and their timings; with sharding each machine would see only part
-of the samples. Use `npx playwright test` for these.
+**Error.** `--ui`, `--ui-host`, `--ui-port`, `--debug` or `--shard` was passed to the runner. UI
+mode and debugging change how tests run and their timings; with sharding each machine would see
+only part of the samples. Use `npx playwright test` without `PW_PERF_MODE` for these.
 
 ### CLI_PRUNE_WITH_FILTER
 
-**Error.** `--prune` was combined with a test filter (`--grep`, `--grep-invert`, `--project`,
-`--last-failed`, `--only-changed`, `--test-list` or file paths). Pruning removes entries of keys
-not seen in the run, so it would delete the entries of every test left out. Run `--prune` on the
-full measurement set, or leave it out.
+**Error.** The runner was asked to prune together with a test filter (`--grep`, `--grep-invert`,
+`--project`, `--last-failed`, `--only-changed`, `--test-list` or file paths). Pruning removes
+entries of keys not seen in the run, so it would delete the entries of every test left out. Prune
+in a thresholds run of all tests: `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 npm run e2e`.
 
 ### CLI_FROM_WITH_PLAYWRIGHT_ARGS
 
-**Error.** `pw-perf thresholds --from <report.json>` runs no tests, so it takes no Playwright
-arguments and no `--passes`. Use only `--from`, `--env`, `--prune` and `--config`, or drop
-`--from` to run the tests.
+**Error.** Deriving thresholds from an existing report with the runner takes no Playwright
+arguments. Derive thresholds with a thresholds run instead: `PW_PERF_MODE=thresholds npm run e2e`.
 
 ### CLI_MODE_ALREADY_SET
 
-**Warning.** Some `PW_PERF_*` variables were already set in the environment. The CLI removes them
-and sets its own for this run. Use the CLI options (`--env`, `--passes`, `--prune`) instead; set
-the variables yourself only for manual mode with `npx playwright test`.
+**Warning.** Some `PW_PERF_*` variables were already set in the environment when the runner
+started. The runner removes them and sets its own for this run. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
 
 ### CLI_PLAYWRIGHT_NOT_FOUND
 
@@ -252,7 +242,8 @@ helps.
 **Error (exit code 3).** Playwright finished, but the package reporter wrote no outcome file, so
 the result is unknown. The message gives Playwright's own exit code. Common causes:
 
-- `playwright.config` does not use `withPerf()` (set it up with `npx pw-perf init`);
+- `playwright.config` does not use `withPerf()` (set it up with
+  `npm init playwright-performance-regression`);
 - a configuration error, printed above this message;
 - no test matched the filters, so the reporter had nothing to do;
 - Playwright stopped before the reporters finished, for example after a crash.
@@ -265,27 +256,25 @@ monorepo). Make sure the project resolves a single version and run again.
 
 ### CLI_REPORT_NOT_FOUND
 
-**Error.** The run report for `pw-perf report` or `pw-perf thresholds --from` does not exist. By
-default the commands look for `report.json` in `report.dir` (`pw-perf-results/`). Pass the file with
-`--input` (report) or `--from` (thresholds), or run a measurement first (`PW_PERF_MODE=test npm run e2e`).
+**Error.** The run report the runner should read does not exist. Run a measurement first
+(`PW_PERF_MODE=test npm run e2e`).
 
 ### CLI_REPORT_TESTS_FAILED
 
-**Warning.** The report given to `thresholds --from` comes from a run whose tests did not all pass.
-Thresholds are derived anyway. Review the diff before you commit the files.
+**Warning.** The report the runner derived thresholds from comes from a run whose tests did not
+all pass. Thresholds are derived anyway. Review the diff before you commit the files.
 
 ### CLI_CONFIG_DIR_MISSING
 
-**Warning.** A command that runs no tests did not load a package config file and the config
-directory recorded in the report does not exist on this machine (or the report has none).
-Relative paths such as `thresholds.dir` and `report.dir` are resolved against the current
-directory instead. Run the command from the directory of `playwright.config`, or pass the
-package config with `--config`.
+**Warning.** The runner did not load a package config file and the config directory recorded in
+the report does not exist on this machine (or the report has none). Relative paths such as
+`thresholds.dir` and `report.dir` are resolved against the current directory instead. Run the
+command from the directory of `playwright.config`.
 
 ### CLI_WRITE_FAILED
 
-**Error (exit code 3).** `thresholds --from` could not write a thresholds file, or `report` could
-not write the HTML file. Check that the directory is writable, or pass another `--output`.
+**Error (exit code 3).** The runner could not write a thresholds file or the HTML file. Check
+that the directory is writable.
 
 ### CLI_INTERNAL_ERROR
 
@@ -296,7 +285,7 @@ open an issue with the full message.
 
 ### INIT_NO_PLAYWRIGHT_CONFIG
 
-**Error (exit code 3).** `pw-perf init` found no `playwright.config.*` in the current directory.
+**Error (exit code 3).** The guided setup found no `playwright.config.*` in the current directory.
 Run it in the directory of `playwright.config`; in a monorepo, in the package with the Playwright
 tests.
 
@@ -528,7 +517,7 @@ failure limit stops the run (perf mode sets Playwright's own `globalTimeout` and
 
 **Tool error (exit code 3).** The perf-mode run was started with `--shard`. Each shard would
 evaluate only part of the keys with only part of the samples. Run perf mode on one machine
-without sharding. (The CLI refuses `--shard` already; this code appears in manual mode.)
+without sharding.
 
 ### RUN_CONDITIONS_CHANGED
 
@@ -571,8 +560,8 @@ may be affected by the repetitions (for example tests that create the same data)
 
 **Tool error (exit code 3).** More test executions failed than `gate.maxFailedTestShare` allows,
 so samples of a large part of the tests are missing and the result is not trustworthy. The
-summary ends with `✖ ERROR  too many failed tests (F of N executions)` and the CLI with
-`performance result not trustworthy · exit code 3`. Fix the
+summary ends with `✖ ERROR  too many failed tests (F of N executions)` and `outcome.json` has
+`exitCode` 3. Fix the
 failing tests (run them without perf mode first), or raise `gate.maxFailedTestShare` if the
 failures are expected.
 
@@ -599,9 +588,8 @@ directory is writable and the disk is not full.
 
 ### OUTCOME_WRITE_FAILED
 
-**Error line on stderr.** The reporter could not write the outcome file that tells the CLI the
-result; the CLI then ends with [`CLI_OUTCOME_MISSING`](#cli_outcome_missing). Check that the
-temporary directory is writable.
+**Error line on stderr.** The reporter could not write the outcome file (`outcome.json` in
+`report.dir`), so the exact result is missing. Check that the directory is writable.
 
 ### REPORTER_INTERNAL_ERROR
 
@@ -635,7 +623,7 @@ a file exists. See [thresholds.md](thresholds.md).
 ### THRESHOLDS_FILE_OUTDATED
 
 **Warning.** The thresholds file has an older format version and was migrated while reading. The
-next `pw-perf thresholds` run writes it in the current format and keeps locked entries.
+next thresholds run (`PW_PERF_MODE=thresholds`) writes it in the current format and keeps locked entries.
 
 ### THRESHOLDS_UNSEEN_ENTRIES
 
@@ -654,8 +642,8 @@ measurement set, or remove stale entries with `PW_PERF_PRUNE=1 PW_PERF_MODE=thre
 
 **Warning.** The environment label recorded in a thresholds file does not match the label of the
 run. When evaluating, the file was probably copied or renamed by hand; when deriving (thresholds
-mode or `--from`), the source report was recorded for another environment than the files are
-written for. Check `--env` and `run.env`, and derive thresholds for each environment separately.
+mode), the source report was recorded for another environment than the files are
+written for. Check `PW_PERF_ENV` and `run.env`, and derive thresholds for each environment separately.
 
 ### THRESHOLDS_SOURCE_MISMATCH
 
@@ -683,7 +671,7 @@ extend `until` on purpose.
 
 ## Thresholds derivation
 
-These codes come from `pw-perf thresholds` and `pw-perf thresholds --from`. A refusal is a tool
+These codes come from thresholds runs (`PW_PERF_MODE=thresholds`). A refusal is a tool
 error (exit code 3) and writes no thresholds file.
 
 ### THRESHOLDS_SOURCE_INCOMPLETE
@@ -722,8 +710,8 @@ thresholds. Review the diff before committing, or fix the tests and derive again
 
 ### THRESHOLDS_SOURCE_TEST_MODE
 
-**Warning.** The report given to `--from` comes from a `test` run, which usually has fewer
-repetitions than a `thresholds` run. Prefer a report of `pw-perf thresholds` as the source.
+**Warning.** The source report comes from a `test` run, which usually has fewer passes than a
+`thresholds` run. Prefer a thresholds run (`PW_PERF_MODE=thresholds`) as the source.
 
 ### THRESHOLDS_LOOSENED_MUCH
 
@@ -734,8 +722,7 @@ not accept a regression before you commit them.
 ### THRESHOLDS_WRITE_FAILED
 
 **Tool error (exit code 3).** A thresholds file could not be written in a thresholds run. Check
-that `thresholds.dir` is writable, then derive again (or use `--from` with the report of this
-run).
+that `thresholds.dir` is writable, then derive again.
 
 ### THRESHOLDS_DIFF_WRITE_FAILED
 
@@ -792,5 +779,4 @@ and records the error. This is a bug in the package; please report it with the m
 ### HTML_WRITE_FAILED
 
 **Tool error (exit code 3).** `report.html` could not be written to `report.dir`; `report.json`
-is kept. Check that the directory is writable; `npx pw-perf report` renders the page again from
-`report.json`.
+is kept. Check that the directory is writable, then run again.

@@ -3,7 +3,7 @@
 // the place to point at the wizard.
 import { asciiTerminal, box } from '../console/box.ts';
 import { colorEnabled } from '../console/color.ts';
-import { CLI_COMMAND, CONFIG_FILE_BASENAME, CONFIG_FILE_EXTENSIONS } from '../core/types/index.ts';
+import { CONFIG_FILE_BASENAME, CONFIG_FILE_EXTENSIONS, INIT_COMMAND } from '../core/types/index.ts';
 import type { CliHost } from './host.ts';
 
 const PLAYWRIGHT_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map(
@@ -24,7 +24,7 @@ export async function hasPerfSetup(host: CliHost): Promise<boolean> {
 
 /** The yellow box with the init command (04-REQ-68). */
 export function initBox(host: CliHost): string {
-  const command = `${CLI_COMMAND} init`;
+  const command = INIT_COMMAND;
   return `${box(
     [
       { text: 'No pw-perf config found in this project', style: 'bold' },

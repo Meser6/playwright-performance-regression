@@ -14,6 +14,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Set `measure: { steps: false }` to measure only backend requests. A run without any
   `test.step` prints one informational line instead of the `STEPS_NONE_FOUND` warning, which is
   removed.
+- Hints, the help, the `Next:` line, the wizard, the README and `docs/` show only the
+  environment form, `PW_PERF_*=… <your test command>`, and
+  `npm init playwright-performance-regression` for the guided setup; they no longer suggest `npx pw-perf`
+  commands or their options (e.g. `THRESHOLDS_FILE_MISSING` now says "Derive thresholds with
+  `PW_PERF_MODE=thresholds <your test command>`"). `docs/cli.md` is now "Running". The examples
+  run with `PW_PERF_MODE=… npm test` instead of `perf:*` scripts.
 
 ### Fixed
 

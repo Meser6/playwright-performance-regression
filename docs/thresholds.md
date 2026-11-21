@@ -53,34 +53,25 @@ Derive thresholds on the same infrastructure that runs the gate, usually your CI
 laptop. A laptop is faster or slower than CI in ways that have nothing to do with your backend,
 and the limits would be wrong in both directions.
 
-1. Run a thresholds run in CI, for example a manually triggered job:
+1. Run a thresholds run in CI, for example the manually triggered job of the
+   [CI recipes](ci.md), which runs your test command with the variable:
 
    ```sh
-   npx pw-perf thresholds --grep @perf
+   PW_PERF_MODE=thresholds npm run e2e
    ```
 
-   It runs the measured tests (10 repetitions by default), never fails on violations, and writes
-   `pw-perf-results/report.json`, the thresholds files and `pw-perf-results/thresholds-diff.md`.
+   It runs the measured tests (10 passes by default), never fails on violations, and writes the
+   thresholds files, `pw-perf-results/report.json` and `pw-perf-results/thresholds-diff.md`.
 
-2. Download the `pw-perf-results` artifact of that job.
-3. Derive the files locally from the downloaded report, without running any test:
+2. Download the artifact of that job (the recipes keep the `pw-perf-thresholds*.json` files and
+   `pw-perf-results/`).
+3. Review the diff and commit the thresholds files.
 
-   ```sh
-   npx pw-perf thresholds --from path/to/pw-perf-results/report.json
-   ```
+Locally you can still run `PW_PERF_MODE=thresholds npm run e2e` to try the setup, but do not
+commit limits measured on your machine.
 
-   This gives byte-identical files to the ones the CI run derived, using your committed thresholds
-   files and package config (or the config snapshot stored in the report).
-
-4. Review the diff and commit the thresholds files.
-
-Locally you can still run `npx pw-perf thresholds` to try the setup, but do not commit limits
-measured on your machine.
-
-Nothing is written when the source run was interrupted, timed out, had tool errors or had too many
-failed tests (`THRESHOLDS_SOURCE_INCOMPLETE`, `TESTS_FAILED_TOO_MANY`). A report from a `test` run
-can be used with `--from`, but its fewer repetitions give fewer samples
-(`THRESHOLDS_SOURCE_TEST_MODE`).
+Nothing is written when the run was interrupted, timed out, had tool errors or had too many
+failed tests (`THRESHOLDS_SOURCE_INCOMPLETE`, `TESTS_FAILED_TOO_MANY`).
 
 ## When to derive
 
@@ -98,7 +89,7 @@ added. A time limit that grows by more than `thresholds.loosenWarnRelative` (50%
 
 ## Reviewing the diff
 
-Every thresholds run (and `--from`) prints the diff per file and writes it as Markdown to
+Every thresholds run prints the diff per file and writes it as Markdown to
 `pw-perf-results/thresholds-diff.md`, ready to paste into the pull request description. Each key is
 listed as added, removed, loosened, tightened, mixed, unchanged, locked, unseen or skipped, with
 the old and new limits.
@@ -109,14 +100,15 @@ the old and new limits.
   default thresholds (see [Keys without an entry](#keys-without-an-entry)).
 - An endpoint that no longer appears keeps its entry, so a run that measured only a subset does
   not delete the rest. The test run warns with `THRESHOLDS_UNSEEN_ENTRIES`. To remove such
-  entries, derive from a run of the full measured suite with `--prune`:
+  entries, derive from a run of the full measured suite with `PW_PERF_PRUNE=1`:
 
   ```sh
-  npx pw-perf thresholds --prune
+  PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 npm run e2e
   ```
 
-  `--prune` refuses test filters (`--grep`, `--project`, file names, ...), because a filtered run
-  would remove the entries of every test it did not run.
+  Pruning is skipped with a test filter (`--grep`, `--project`, file names, ...) and the run warns
+  with `RUN_PRUNE_SKIPPED`, because a filtered run would remove the entries of every test it did
+  not run.
 
 ## Locked entries
 
@@ -157,15 +149,14 @@ When the same tests run against several environments (staging, a pre-production 
 needs its own limits. Use an environment label:
 
 ```sh
-npx pw-perf thresholds --env staging
-npx pw-perf test --env staging
+PW_PERF_MODE=thresholds PW_PERF_ENV=staging npm run e2e
+PW_PERF_MODE=test PW_PERF_ENV=staging npm run e2e
 ```
 
 or `run.env` in the config. The label selects `pw-perf-thresholds.<kind>.staging.json`. A run with a
 label never falls back to the file without a label; when the labelled file is missing it warns
-with `THRESHOLDS_FILE_MISSING` and uses default thresholds. `thresholds --from` uses the label
-stored in the report unless `--env` is given. With your own test command, set the label with
-`PW_PERF_ENV=staging` (see [Dynamic environments](dynamic-environments.md)).
+with `THRESHOLDS_FILE_MISSING` and uses default thresholds (see
+[Dynamic environments](dynamic-environments.md)).
 
 ## Hand-written entries
 

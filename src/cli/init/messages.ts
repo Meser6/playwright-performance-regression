@@ -30,7 +30,7 @@ const en = {
   declinedDocs: 'Guide: {url}',
   declinedLater: 'Run {init} any time for the guided setup.',
   noTerminal:
-    'no terminal: the default answers are used and nothing is written (like --dry-run). Use --yes to write the changes.',
+    'no terminal: the default answers are used and nothing is written Run the setup again in a terminal to write the changes.',
   dryRun: 'dry run: the planned changes are shown and nothing is written.',
   interrupted: 'interrupted.',
   answerAgain: 'Please answer again: that value is not valid here.',
@@ -75,7 +75,7 @@ const en = {
   newFile: 'new file',
   modifiedFile: 'change',
   overwriteQuestion: '{path} exists. Overwrite it?',
-  keptWithYes: '{path} exists and is kept (--yes does not overwrite it).',
+  keptWithYes: '{path} exists and is kept (the default answers do not overwrite it).',
   kept: '{path} exists and is kept.',
   applyQuestion: 'Apply this change?',
   fileWritten: 'Written: {path}',
@@ -88,17 +88,17 @@ const en = {
   nextSteps: 'Next steps:',
   nextJenkins: 'Create a Pipeline job in Jenkins with the script path {path}.',
   nextAzure: 'Create a pipeline in Azure DevOps from {path}.',
-  nextApply: 'Apply the changes above (run init again in a terminal or with --yes).',
+  nextApply: 'Apply the changes above (run the setup again in a terminal).',
   originsNote:
     'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
   docs: 'Docs: {links}',
   finished: 'Setup finished.',
   noConfigMessage: 'No playwright.config.* in {dir}.',
   noConfigHint:
-    'Run "{command} init" in the directory of playwright.config (in a monorepo: the package with the Playwright tests).',
+    'Run "{command}" in the directory of playwright.config (in a monorepo: the package with the Playwright tests).',
   tooOldMessage:
     '@playwright/test {version} is older than {min}, the lowest version {pkg} supports.',
-  tooOldHint: 'Update @playwright/test to {min} or later, then run "{command} init" again.',
+  tooOldHint: 'Update @playwright/test to {min} or later, then run "{command}" again.',
   writeFailedMessage: 'Could not write {detail}',
   writeFailedHint: 'Check the permissions of the file and its directory, then run init again.',
   manualPerfConfigKept: '{file} exists and was not changed.',
@@ -209,8 +209,8 @@ const pl: Messages = {
   declinedDocs: 'Przewodnik: {url}',
   declinedLater: 'Konfigurację z przewodnikiem uruchomisz w każdej chwili poleceniem {init}.',
   noTerminal:
-    'brak terminala: kreator przyjmuje odpowiedzi domyślne i niczego nie zapisuje (jak --dry-run). Użyj --yes, aby zapisać zmiany.',
-  dryRun: 'tryb --dry-run: kreator pokazuje planowane zmiany i niczego nie zapisuje.',
+    'brak terminala: kreator przyjmuje odpowiedzi domyślne i niczego nie zapisuje Uruchom konfigurację ponownie w terminalu, aby zapisać zmiany.',
+  dryRun: 'próba: kreator pokazuje planowane zmiany i niczego nie zapisuje.',
   interrupted: 'przerwano.',
   answerAgain: 'Odpowiedz jeszcze raz: ta wartość nie jest tu poprawna.',
   pressEnter: 'Naciśnij Enter, aby kontynuować.',
@@ -254,7 +254,7 @@ const pl: Messages = {
   newFile: 'nowy plik',
   modifiedFile: 'zmiana',
   overwriteQuestion: '{path} już istnieje. Nadpisać go?',
-  keptWithYes: '{path} już istnieje i zostaje bez zmian (--yes go nie nadpisuje).',
+  keptWithYes: '{path} już istnieje i zostaje bez zmian (odpowiedzi domyślne go nie nadpisują).',
   kept: '{path} już istnieje i zostaje bez zmian.',
   applyQuestion: 'Zastosować tę zmianę?',
   fileWritten: 'Zapisano: {path}',
@@ -267,18 +267,18 @@ const pl: Messages = {
   nextSteps: 'Następne kroki:',
   nextJenkins: 'Utwórz w Jenkinsie job typu Pipeline ze ścieżką skryptu {path}.',
   nextAzure: 'Utwórz w Azure DevOps pipeline z pliku {path}.',
-  nextApply: 'Zastosuj powyższe zmiany (uruchom init ponownie w terminalu albo z --yes).',
+  nextApply: 'Zastosuj powyższe zmiany (uruchom konfigurację ponownie w terminalu).',
   originsNote:
     'Klucze endpointów originu z baseURL nie mają etykiety, a inne hosty są oznaczone nazwą hosta; krótsze etykiety dla nich ustawisz w keys.origins w pw-perf.config.ts.',
   docs: 'Dokumentacja: {links}',
   finished: 'Konfiguracja zakończona.',
   noConfigMessage: 'Brak playwright.config.* w {dir}.',
   noConfigHint:
-    'Uruchom "{command} init" w katalogu z playwright.config (w monorepo: w pakiecie z testami Playwrighta).',
+    'Uruchom "{command}" w katalogu z playwright.config (w monorepo: w pakiecie z testami Playwrighta).',
   tooOldMessage:
     '@playwright/test {version} jest starszy niż {min}, najniższa wersja obsługiwana przez {pkg}.',
   tooOldHint:
-    'Zaktualizuj @playwright/test do {min} lub nowszej, potem uruchom ponownie "{command} init".',
+    'Zaktualizuj @playwright/test do {min} lub nowszej, potem uruchom ponownie "{command}".',
   writeFailedMessage: 'Nie udało się zapisać {detail}',
   writeFailedHint: 'Sprawdź uprawnienia pliku i jego katalogu, potem uruchom init ponownie.',
   manualPerfConfigKept: '{file} już istnieje i nie został zmieniony.',
@@ -386,7 +386,7 @@ const es: Messages = {
   declinedDocs: 'Guía: {url}',
   declinedLater: 'Ejecuta {init} cuando quieras para la configuración guiada.',
   noTerminal:
-    'sin terminal: se usan las respuestas por defecto y no se escribe nada (como --dry-run). Usa --yes para escribir los cambios.',
+    'sin terminal: se usan las respuestas por defecto y no se escribe nada Ejecuta la configuración de nuevo en un terminal para escribir los cambios.',
   dryRun: 'simulación: se muestran los cambios previstos y no se escribe nada.',
   interrupted: 'interrumpido.',
   answerAgain: 'Responde de nuevo: ese valor no es válido aquí.',
@@ -432,7 +432,7 @@ const es: Messages = {
   newFile: 'archivo nuevo',
   modifiedFile: 'cambio',
   overwriteQuestion: '{path} ya existe. ¿Sobrescribirlo?',
-  keptWithYes: '{path} ya existe y se conserva (--yes no lo sobrescribe).',
+  keptWithYes: '{path} ya existe y se conserva (las respuestas por defecto no lo sobrescriben).',
   kept: '{path} ya existe y se conserva.',
   applyQuestion: '¿Aplicar este cambio?',
   fileWritten: 'Escrito: {path}',
@@ -445,17 +445,17 @@ const es: Messages = {
   nextSteps: 'Siguientes pasos:',
   nextJenkins: 'Crea un job Pipeline en Jenkins con la ruta de script {path}.',
   nextAzure: 'Crea un pipeline en Azure DevOps a partir de {path}.',
-  nextApply: 'Aplica los cambios de arriba (ejecuta init de nuevo en un terminal o con --yes).',
+  nextApply: 'Aplica los cambios de arriba (ejecuta la configuración de nuevo en un terminal).',
   originsNote:
     'Las claves de endpoint del origen de baseURL no llevan etiqueta y los demás hosts se etiquetan con su host; define etiquetas más cortas para ellos en keys.origins de pw-perf.config.ts.',
   docs: 'Documentación: {links}',
   finished: 'Configuración terminada.',
   noConfigMessage: 'No hay playwright.config.* en {dir}.',
   noConfigHint:
-    'Ejecuta "{command} init" en el directorio de playwright.config (en un monorepo: el paquete con los tests de Playwright).',
+    'Ejecuta "{command}" en el directorio de playwright.config (en un monorepo: el paquete con los tests de Playwright).',
   tooOldMessage:
     '@playwright/test {version} es anterior a {min}, la versión mínima que admite {pkg}.',
-  tooOldHint: 'Actualiza @playwright/test a {min} o posterior y ejecuta "{command} init" de nuevo.',
+  tooOldHint: 'Actualiza @playwright/test a {min} o posterior y ejecuta "{command}" de nuevo.',
   writeFailedMessage: 'No se pudo escribir {detail}',
   writeFailedHint: 'Revisa los permisos del archivo y de su directorio y ejecuta init de nuevo.',
   manualPerfConfigKept: '{file} ya existe y no se modificó.',
@@ -567,7 +567,7 @@ const fr: Messages = {
   declinedDocs: 'Guide : {url}',
   declinedLater: 'Lancez {init} à tout moment pour la configuration guidée.',
   noTerminal:
-    "pas de terminal : les réponses par défaut sont utilisées et rien n'est écrit (comme --dry-run). Utilisez --yes pour écrire les modifications.",
+    "pas de terminal : les réponses par défaut sont utilisées et rien n'est écrit Relancez la configuration dans un terminal pour écrire les modifications.",
   dryRun: "simulation : les modifications prévues sont affichées et rien n'est écrit.",
   interrupted: 'interrompu.',
   answerAgain: "Répondez à nouveau : cette valeur n'est pas valide ici.",
@@ -612,7 +612,7 @@ const fr: Messages = {
   newFile: 'nouveau fichier',
   modifiedFile: 'modification',
   overwriteQuestion: '{path} existe déjà. L’écraser ?',
-  keptWithYes: '{path} existe déjà et est conservé (--yes ne l’écrase pas).',
+  keptWithYes: '{path} existe déjà et est conservé (les réponses par défaut ne l’écrasent pas).',
   kept: '{path} existe déjà et est conservé.',
   applyQuestion: 'Appliquer cette modification ?',
   fileWritten: 'Écrit : {path}',
@@ -625,18 +625,17 @@ const fr: Messages = {
   nextSteps: 'Étapes suivantes :',
   nextJenkins: 'Créez dans Jenkins un job Pipeline avec le chemin de script {path}.',
   nextAzure: 'Créez un pipeline dans Azure DevOps à partir de {path}.',
-  nextApply:
-    'Appliquez les modifications ci-dessus (relancez init dans un terminal ou avec --yes).',
+  nextApply: 'Appliquez les modifications ci-dessus (relancez la configuration dans un terminal).',
   originsNote:
     'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de pw-perf.config.ts.',
   docs: 'Documentation : {links}',
   finished: 'Configuration terminée.',
   noConfigMessage: 'Aucun playwright.config.* dans {dir}.',
   noConfigHint:
-    'Lancez "{command} init" dans le répertoire de playwright.config (dans un monorepo : le paquet qui contient les tests Playwright).',
+    'Lancez "{command}" dans le répertoire de playwright.config (dans un monorepo : le paquet qui contient les tests Playwright).',
   tooOldMessage:
     '@playwright/test {version} est antérieur à {min}, la version minimale prise en charge par {pkg}.',
-  tooOldHint: 'Mettez à jour @playwright/test en {min} ou plus, puis relancez "{command} init".',
+  tooOldHint: 'Mettez à jour @playwright/test en {min} ou plus, puis relancez "{command}".',
   writeFailedMessage: 'Impossible d’écrire {detail}',
   writeFailedHint: 'Vérifiez les droits du fichier et de son répertoire, puis relancez init.',
   manualPerfConfigKept: "{file} existe déjà et n'a pas été modifié.",
@@ -751,7 +750,7 @@ const it: Messages = {
   declinedDocs: 'Guida: {url}',
   declinedLater: 'Esegui {init} in qualsiasi momento per la configurazione guidata.',
   noTerminal:
-    'nessun terminale: vengono usate le risposte predefinite e non viene scritto nulla (come --dry-run). Usa --yes per scrivere le modifiche.',
+    'nessun terminale: vengono usate le risposte predefinite e non viene scritto nulla Esegui di nuovo la configurazione in un terminale per scrivere le modifiche.',
   dryRun: 'simulazione: vengono mostrate le modifiche previste e non viene scritto nulla.',
   interrupted: 'interrotto.',
   answerAgain: 'Rispondi di nuovo: quel valore non è valido qui.',
@@ -796,7 +795,8 @@ const it: Messages = {
   newFile: 'nuovo file',
   modifiedFile: 'modifica',
   overwriteQuestion: '{path} esiste già. Sovrascriverlo?',
-  keptWithYes: '{path} esiste già e viene mantenuto (--yes non lo sovrascrive).',
+  keptWithYes:
+    '{path} esiste già e viene mantenuto (le risposte predefinite non lo sovrascrivono).',
   kept: '{path} esiste già e viene mantenuto.',
   applyQuestion: 'Applicare questa modifica?',
   fileWritten: 'Scritto: {path}',
@@ -809,18 +809,17 @@ const it: Messages = {
   nextSteps: 'Prossimi passi:',
   nextJenkins: 'Crea in Jenkins un job Pipeline con il percorso dello script {path}.',
   nextAzure: 'Crea una pipeline in Azure DevOps da {path}.',
-  nextApply: 'Applica le modifiche sopra (esegui di nuovo init in un terminale o con --yes).',
+  nextApply: 'Applica le modifiche sopra (esegui di nuovo la configurazione in un terminale).',
   originsNote:
     'Le chiavi di endpoint dell’origine di baseURL non hanno etichetta e gli altri host sono etichettati con il loro host; imposta etichette più brevi in keys.origins di pw-perf.config.ts.',
   docs: 'Documentazione: {links}',
   finished: 'Configurazione completata.',
   noConfigMessage: 'Nessun playwright.config.* in {dir}.',
   noConfigHint:
-    'Esegui "{command} init" nella cartella di playwright.config (in un monorepo: il pacchetto con i test Playwright).',
+    'Esegui "{command}" nella cartella di playwright.config (in un monorepo: il pacchetto con i test Playwright).',
   tooOldMessage:
     '@playwright/test {version} è precedente a {min}, la versione minima supportata da {pkg}.',
-  tooOldHint:
-    'Aggiorna @playwright/test a {min} o successiva, poi esegui di nuovo "{command} init".',
+  tooOldHint: 'Aggiorna @playwright/test a {min} o successiva, poi esegui di nuovo "{command}".',
   writeFailedMessage: 'Impossibile scrivere {detail}',
   writeFailedHint: 'Controlla i permessi del file e della sua cartella, poi esegui di nuovo init.',
   manualPerfConfigKept: '{file} esiste già e non è stato modificato.',
@@ -934,7 +933,7 @@ const uk: Messages = {
   declinedDocs: 'Посібник: {url}',
   declinedLater: 'Запустіть {init} будь-коли для налаштування з підказками.',
   noTerminal:
-    'немає термінала: використовуються типові відповіді, нічого не записується (як --dry-run). Додайте --yes, щоб записати зміни.',
+    'немає термінала: використовуються типові відповіді, нічого не записується Запустіть налаштування ще раз у терміналі, щоб записати зміни.',
   dryRun: 'пробний запуск: показано заплановані зміни, нічого не записується.',
   interrupted: 'перервано.',
   answerAgain: 'Відповідайте ще раз: це значення тут не підходить.',
@@ -979,7 +978,7 @@ const uk: Messages = {
   newFile: 'новий файл',
   modifiedFile: 'зміна',
   overwriteQuestion: '{path} уже існує. Перезаписати?',
-  keptWithYes: '{path} уже існує і залишається без змін (--yes його не перезаписує).',
+  keptWithYes: '{path} уже існує і залишається без змін (типові відповіді його не перезаписують).',
   kept: '{path} уже існує і залишається без змін.',
   applyQuestion: 'Застосувати цю зміну?',
   fileWritten: 'Записано: {path}',
@@ -992,18 +991,17 @@ const uk: Messages = {
   nextSteps: 'Наступні кроки:',
   nextJenkins: 'Створіть у Jenkins job типу Pipeline зі шляхом до скрипта {path}.',
   nextAzure: 'Створіть pipeline в Azure DevOps з {path}.',
-  nextApply: 'Застосуйте зміни вище (запустіть init ще раз у терміналі або з --yes).',
+  nextApply: 'Застосуйте зміни вище (запустіть налаштування ще раз у терміналі).',
   originsNote:
     'Ключі ендпоінтів origin з baseURL не мають мітки, а інші хости позначаються своїм хостом; коротші мітки для них задайте в keys.origins у pw-perf.config.ts.',
   docs: 'Документація: {links}',
   finished: 'Налаштування завершено.',
   noConfigMessage: 'У {dir} немає playwright.config.*.',
   noConfigHint:
-    'Запустіть "{command} init" у каталозі з playwright.config (у монорепозиторії: у пакеті з тестами Playwright).',
+    'Запустіть "{command}" у каталозі з playwright.config (у монорепозиторії: у пакеті з тестами Playwright).',
   tooOldMessage:
     '@playwright/test {version} старіший за {min}, найнижчу версію, яку підтримує {pkg}.',
-  tooOldHint:
-    'Оновіть @playwright/test до {min} або новішої, потім знову запустіть "{command} init".',
+  tooOldHint: 'Оновіть @playwright/test до {min} або новішої, потім знову запустіть "{command}".',
   writeFailedMessage: 'Не вдалося записати {detail}',
   writeFailedHint: 'Перевірте права доступу до файлу та його каталогу, потім знову запустіть init.',
   manualPerfConfigKept: '{file} уже існує і не змінювався.',
@@ -1112,7 +1110,7 @@ const ru: Messages = {
   declinedDocs: 'Руководство: {url}',
   declinedLater: 'Запустите {init} в любой момент для настройки с подсказками.',
   noTerminal:
-    'нет терминала: используются ответы по умолчанию, ничего не записывается (как --dry-run). Добавьте --yes, чтобы записать изменения.',
+    'нет терминала: используются ответы по умолчанию, ничего не записывается Запустите настройку ещё раз в терминале, чтобы записать изменения.',
   dryRun: 'пробный запуск: показаны запланированные изменения, ничего не записывается.',
   interrupted: 'прервано.',
   answerAgain: 'Ответьте ещё раз: это значение здесь не подходит.',
@@ -1157,7 +1155,8 @@ const ru: Messages = {
   newFile: 'новый файл',
   modifiedFile: 'изменение',
   overwriteQuestion: '{path} уже существует. Перезаписать?',
-  keptWithYes: '{path} уже существует и остаётся без изменений (--yes его не перезаписывает).',
+  keptWithYes:
+    '{path} уже существует и остаётся без изменений (ответы по умолчанию его не перезаписывают).',
   kept: '{path} уже существует и остаётся без изменений.',
   applyQuestion: 'Применить это изменение?',
   fileWritten: 'Записано: {path}',
@@ -1170,18 +1169,17 @@ const ru: Messages = {
   nextSteps: 'Дальнейшие шаги:',
   nextJenkins: 'Создайте в Jenkins job типа Pipeline с путём к скрипту {path}.',
   nextAzure: 'Создайте pipeline в Azure DevOps из {path}.',
-  nextApply: 'Примените изменения выше (запустите init ещё раз в терминале или с --yes).',
+  nextApply: 'Примените изменения выше (запустите настройку ещё раз в терминале).',
   originsNote:
     'Ключи эндпоинтов origin из baseURL не имеют метки, а другие хосты помечаются своим хостом; более короткие метки для них задайте в keys.origins в pw-perf.config.ts.',
   docs: 'Документация: {links}',
   finished: 'Настройка завершена.',
   noConfigMessage: 'В {dir} нет playwright.config.*.',
   noConfigHint:
-    'Запустите "{command} init" в каталоге с playwright.config (в монорепозитории: в пакете с тестами Playwright).',
+    'Запустите "{command}" в каталоге с playwright.config (в монорепозитории: в пакете с тестами Playwright).',
   tooOldMessage:
     '@playwright/test {version} старше {min}, минимальной версии, которую поддерживает {pkg}.',
-  tooOldHint:
-    'Обновите @playwright/test до {min} или новее, затем снова запустите "{command} init".',
+  tooOldHint: 'Обновите @playwright/test до {min} или новее, затем снова запустите "{command}".',
   writeFailedMessage: 'Не удалось записать {detail}',
   writeFailedHint: 'Проверьте права доступа к файлу и его каталогу, затем снова запустите init.',
   manualPerfConfigKept: '{file} уже существует и не изменялся.',

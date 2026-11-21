@@ -267,7 +267,7 @@ describe('pw-perf test and thresholds', () => {
       expect(run.status, run.output).toBe(3);
       expect(run.stderr).toContain(`${PACKAGE_NAME}: error CLI_OUTCOME_MISSING`);
       expect(run.stderr).toContain('Playwright exited with code 1');
-      expect(run.stderr).toContain('npx pw-perf init');
+      expect(run.stderr).toContain('npm init playwright-performance-regression');
     },
     RUN_TIMEOUT,
   );
@@ -421,7 +421,7 @@ describe('pw-perf without tests', () => {
   test('--help and --version', async () => {
     const help = await runCli(['--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout).toContain('Usage: npx pw-perf <command>');
+    expect(help.stdout).toContain('Run your usual test command with PW_PERF_MODE');
     const version = await runCli(['--version']);
     expect(version.status).toBe(0);
     expect(version.stdout.trim()).toBe(

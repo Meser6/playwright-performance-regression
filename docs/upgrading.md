@@ -20,10 +20,10 @@ changes and are always listed with migration steps:
   thresholds files may then no longer match the keys of a run. The run warns with
   `THRESHOLDS_SOURCE_MISMATCH` (normalization) and `THRESHOLDS_UNSEEN_ENTRIES`. Re-derive the
   thresholds on CI ([Thresholds](thresholds.md#deriving-thresholds-the-recommended-flow)) and
-  remove old keys with `--prune`.
+  remove old keys with `PW_PERF_PRUNE=1` in a thresholds run of the full suite.
 
-After upgrading, run `npx pw-perf thresholds --from <a recent report.json>` and review the diff
-before committing anything.
+After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
+and review the diff before committing anything.
 
 ### From 0.1.0-next.1 to 0.1.0-next.3: custom measurements removed
 

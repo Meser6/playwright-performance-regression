@@ -172,7 +172,7 @@ describe('resolveExitCode', () => {
     expect(missing.issues[0]?.code).toBe('CLI_OUTCOME_MISSING');
     expect(missing.issues[0]?.message).toContain('Playwright exited with code 0');
     expect(missing.issues[0]?.hint).toContain('withPerf()');
-    expect(missing.issues[0]?.hint).toContain('npx pw-perf init');
+    expect(missing.issues[0]?.hint).toContain('npm init playwright-performance-regression');
     const invalid = resolveExitCode({
       outcome: { ok: false, reason: 'invalid', detail: 'bad' },
       childExitCode: 1,
@@ -395,24 +395,25 @@ describe('main', () => {
     expect(await main(['--version'], fake.host)).toBe(0);
     expect(fake.stdout).toEqual(['1.2.3\n']);
     expect(await main(['--help'], fake.host)).toBe(0);
-    expect(fake.stdout[1]).toContain('Usage: npx pw-perf <command>');
-    // 04-REQ-60: the recommended form comes first, the pw-perf runner is the advanced one.
+    // 04-REQ-60, 04-REQ-70: only the environment form, no runner commands or options.
     const general = fake.stdout[1] ?? '';
-    expect(general.startsWith('Recommended: run your usual test command with PW_PERF_MODE')).toBe(
-      true,
+    expect(general.startsWith('Run your usual test command with PW_PERF_MODE')).toBe(true);
+    expect(general).not.toMatch(
+      /pw-perf (test|thresholds|check|report|init)|--(env|passes|prune|max-tests|from|config|yes)\b/u,
     );
     for (const mode of ['test', 'thresholds', 'check']) {
       expect(general).toContain(`PW_PERF_MODE=${mode} npm run e2e`);
     }
     expect(general).toContain('npx cross-env PW_PERF_MODE=test npm run e2e');
     expect(general).toContain('pw-perf-results/outcome.json');
-    expect(general.indexOf('Advanced:')).toBeLessThan(general.indexOf('Usage:'));
-    expect(general).toContain('--max-tests <n>');
+    expect(general).toContain('PW_PERF_MAX_TESTS=<n>');
+    expect(general).toContain('npm init playwright-performance-regression');
+    // 04-REQ-21: the pass warning; the same help for every command.
+    expect(general).toContain('--grep-invert');
     expect(await main(['test', '--help'], fake.host)).toBe(0);
-    // 04-REQ-21: the repetition warning in the help of test and thresholds.
-    expect(fake.stdout[2]).toContain('--grep-invert');
+    expect(fake.stdout[2]).toBe(general);
     expect(await main(['thresholds', '-h'], fake.host)).toBe(0);
-    expect(fake.stdout[3]).toContain('--grep-invert');
+    expect(fake.stdout[3]).toBe(general);
     expect(await main(['nope'], fake.host)).toBe(3);
     expect(fake.stderr.join('')).toContain('error CLI_UNKNOWN_COMMAND: Unknown command "nope".');
   });
@@ -424,9 +425,9 @@ describe('main', () => {
       expect(await main([], bare.host)).toBe(0);
       const out = bare.stdout.join('');
       expect(out).toContain('No pw-perf config found in this project');
-      expect(out).toContain('Run: npx pw-perf init');
+      expect(out).toContain('Run: npm init playwright-performance-regression');
       expect(out).toContain('╭');
-      expect(out.indexOf('npx pw-perf init')).toBeLessThan(out.indexOf('Usage:'));
+      expect(out.indexOf('Run: npm init')).toBeLessThan(out.indexOf('Variables'));
       const dumb = fakeCliHost({ cwd: project, env: { TERM: 'dumb' } });
       expect(await main([], dumb.host)).toBe(0);
       expect(dumb.stdout.join('')).toContain('+---');
@@ -440,7 +441,7 @@ describe('main', () => {
       const configured = fakeCliHost({ cwd: project });
       expect(await main([], configured.host)).toBe(0);
       expect(configured.stdout.join('')).not.toContain('No pw-perf config found');
-      expect(configured.stdout.join('')).toContain('Usage:');
+      expect(configured.stdout.join('')).toContain('Variables');
     } finally {
       rmSync(project, { recursive: true, force: true });
     }

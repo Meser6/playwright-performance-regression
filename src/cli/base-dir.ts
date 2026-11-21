@@ -35,7 +35,7 @@ export function resolveBaseDir(input: BaseDirInput): { dir: string; issues: CliI
           input.reportConfigDir === undefined
             ? `No package config file was loaded; relative paths (thresholds.dir, report.dir) are resolved against the current directory ${input.cwd}.`
             : `The config directory of the report (${input.reportConfigDir}) does not exist on this machine; relative paths (thresholds.dir, report.dir) are resolved against the current directory ${input.cwd}.`,
-        hint: 'Run the command from the directory of playwright.config, or pass the package config with --config.',
+        hint: 'Run the command from the directory of playwright.config.',
       },
     ],
   };

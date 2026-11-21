@@ -76,7 +76,7 @@ function skipInCheck(testInfo: TestInfo): void {
   if (!state.measuredProjects.includes(testInfo.project.name)) return;
   const max = state.mode.maxTests ?? DEFAULT_MAX_TESTS;
   if (!checkRunsTest(state.mode.runId, max, testInfo.project.name, testInfo.file)) {
-    testInfo.skip(true, 'pw-perf check: only the first test of each file runs');
+    testInfo.skip(true, 'PW_PERF_MODE=check: only the first test of each file runs');
   }
 }
 

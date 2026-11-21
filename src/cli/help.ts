@@ -1,164 +1,40 @@
-// Help texts of the CLI (04, chapters 3 and 6; 04-REQ-21). Printed on stdout.
-import { LANGUAGES } from './init/messages.ts';
+// Help text of the CLI (04, chapters 3 and 6; 04-REQ-21). Printed on stdout. It shows only the
+// environment form, the user's own test command with PW_PERF_* variables, and the setup command
+// (04-REQ-70): never runner subcommands or options.
 import { DEFAULT_CONFIG } from '../core/config/index.ts';
-import { CLI_COMMAND } from '../core/types/index.ts';
-import type { HelpTopic } from './parse.ts';
+import { INIT_COMMAND } from '../core/types/index.ts';
 
-const PASSES_NOTE = [
-  'Note: the test command runs once per pass (run.passes), with its data setup steps, in one',
-  'worker. Tests that create data with unique constraints must make it unique per pass, or be',
-  'left out with --grep-invert. PW_PERF_YES=1 skips the "Continue?" question.',
-];
-
-const EXIT_CODES = [
-  'Exit codes: 0 ok (failed tests are reported as a warning) · 2 performance regression ·',
-  '3 tool or config error, or an untrustworthy result (too many failed tests, incomplete run)',
-  '· 130/143 interrupted (SIGINT/SIGTERM)',
-];
-
-const PASS_THROUGH = [
-  'All other arguments go to "playwright test" unchanged; arguments after "--" are never read',
-  `as ${CLI_COMMAND} options. --ui, --debug and --shard are not supported. By default only`,
-  'Chromium projects are measured; other projects are left out of the run (option',
-  '"run.projects").',
-];
-
-const GENERAL = [
-  'Recommended: run your usual test command with PW_PERF_MODE set, e.g.',
+const HELP = [
+  'Run your usual test command with PW_PERF_MODE set, e.g.',
   '  PW_PERF_MODE=test npm run e2e         Measurement run: evaluate against the thresholds',
   '  PW_PERF_MODE=thresholds npm run e2e   Thresholds run: write the thresholds files',
   '  PW_PERF_MODE=check npm run e2e        Dry run: what would be measured and how long it takes',
+  'Without a script: PW_PERF_MODE=test npx playwright test --grep @perf.',
   'Windows: npx cross-env PW_PERF_MODE=test npm run e2e (PowerShell and cmd: see docs/cli.md).',
-  `The exit code is the one of Playwright; the result is in ${DEFAULT_CONFIG.report.dir}/outcome.json.`,
   '',
-  'Advanced: the pw-perf runner, with exit codes 0/2/3 (see docs/cli.md).',
+  'Variables (set in front of the test command):',
+  '  PW_PERF_MODE           test, thresholds or check; perf mode is off when it is unset',
+  '  PW_PERF_ENV=<label>    Environment label; selects pw-perf-thresholds[.steps].<label>.json',
+  '  PW_PERF_PASSES=<n>     Passes of the test command (each test runs once per pass)',
+  '  PW_PERF_PRUNE=1        (thresholds) Remove unlocked entries of keys not seen in this run',
+  '  PW_PERF_MAX_TESTS=<n>  (check) At most n measured tests, the first of each file (default 10)',
+  '  PW_PERF_YES=1          Skip the "Continue?" question of the start banner',
   '',
-  `Usage: ${CLI_COMMAND} <command> [options] [playwright test arguments]`,
+  `Setup: ${INIT_COMMAND} (guided; changes nothing without asking).`,
   '',
-  'Commands:',
-  '  test                       Measurement run: measure, evaluate against the thresholds, fail on regression',
-  '  thresholds                 Thresholds run: measure without the gate, then write the thresholds files',
-  '  check                      Dry run: what would be measured and how long a full run takes',
-  '  thresholds --from <file>   Derive the thresholds from an existing report.json (no tests)',
-  '  report                     Render the HTML report again from report.json',
-  '  init                       Guided setup in this project (--yes: accept defaults, --dry-run: show changes only)',
+  'By default only Chromium projects are measured; other projects are left out of the run',
+  '(option "run.projects"). --ui and --debug are not measured reliably.',
   '',
-  'Options (test, thresholds, check):',
-  '  --env <label>      Environment label; selects pw-perf-thresholds[.steps].<label>.json',
-  '  --passes <n>       Passes of the test command for this run (each test runs once per pass)',
-  '  --prune            (thresholds) Remove unlocked entries of keys not seen in this run',
-  '  --max-tests <n>    (check) Run at most n measured tests, the first of each file (default 10)',
+  'Note: the test command runs once per pass (run.passes), with its data setup steps, in one',
+  'worker. Tests that create data with unique constraints must make it unique per pass, or be',
+  'left out with --grep-invert.',
   '',
-  ...PASS_THROUGH,
-  '',
-  `Run "${CLI_COMMAND} <command> --help" for the options of a command, "${CLI_COMMAND} --version"`,
-  'for the version.',
-  '',
-  ...PASSES_NOTE,
-  '',
-  ...EXIT_CODES,
+  `The exit code is the one of Playwright; the result is in ${DEFAULT_CONFIG.report.dir}/outcome.json:`,
+  'exitCode 0 ok (failed tests are reported as a warning) · 2 performance regression · 3 tool or',
+  'config error, or an untrustworthy result (too many failed tests, incomplete run).',
 ];
 
-const TEST = [
-  `Usage: ${CLI_COMMAND} test [--env <label>] [--passes <n>] [playwright test arguments]`,
-  '',
-  'Runs the tests in perf mode, measures the backend requests, evaluates them against the',
-  'thresholds files and fails on a regression.',
-  '',
-  'Options:',
-  '  --env <label>   Environment label; selects pw-perf-thresholds[.steps].<label>.json (overrides run.env)',
-  '  --passes <n>    Passes of the test command for this run (overrides run.passes.test)',
-  '  -h, --help      Show this help',
-  '',
-  ...PASS_THROUGH,
-  '',
-  `Example: ${CLI_COMMAND} test --grep @perf`,
-  '',
-  ...PASSES_NOTE,
-  '',
-  ...EXIT_CODES,
-];
-
-const THRESHOLDS = [
-  `Usage: ${CLI_COMMAND} thresholds [--env <label>] [--passes <n>] [--prune] [playwright test arguments]`,
-  `       ${CLI_COMMAND} thresholds --from <report.json> [--env <label>] [--prune] [--config <file>]`,
-  '',
-  'Runs the tests in perf mode without the gate and writes the thresholds files, or derives them',
-  'from an existing run report without running tests (--from).',
-  '',
-  'Options:',
-  '  --env <label>      Environment label; the files pw-perf-thresholds[.steps].<label>.json are written',
-  '                     (with --from: default is the label of the report)',
-  '  --passes <n>       Passes of the test command for this run (overrides run.passes.thresholds)',
-  '  --prune            Remove unlocked entries of keys not seen in the run; not with a test filter',
-  '  --from <file>      Derive the thresholds from this report.json; no Playwright arguments',
-  '  --config <file>    (with --from) Package config file; default: pw-perf.config.* in the current',
-  '                     directory or the config directory of the report, else the report snapshot',
-  '  -h, --help         Show this help',
-  '',
-  ...PASS_THROUGH,
-  '',
-  ...PASSES_NOTE,
-  '',
-  'Exit codes: 0 ok · 3 tool or config error, or an untrustworthy run (nothing is written)',
-  '· 130/143 interrupted (SIGINT/SIGTERM)',
-];
-
-const REPORT = [
-  `Usage: ${CLI_COMMAND} report [--input <report.json>] [--output <report.html>] [--config <file>]`,
-  '',
-  'Renders the HTML report again from a run report, without running tests.',
-  '',
-  'Options:',
-  '  --input <file>     Run report; default: report.json in report.dir',
-  '  --output <file>    HTML file; default: report.html next to the input',
-  '  --config <file>    Package config file; default: pw-perf.config.* in the current directory',
-  '  -h, --help         Show this help',
-  '',
-  'Exit codes: 0 ok · 3 error',
-];
-
-const INIT = [
-  `Usage: ${CLI_COMMAND} init [--yes] [--dry-run] [--lang <code>] [--no-tutorial]`,
-  '',
-  'Guided setup of the package in this project: asks a few questions, shows a diff of every',
-  'change and applies it after confirmation. Files it does not recognize are left unchanged',
-  'with instructions. Without a terminal and without --yes it only shows the planned changes.',
-  '',
-  'Options:',
-  '  -y, --yes      Accept the default answers and write the changes',
-  '  --dry-run      Show the planned changes only',
-  `  --lang <code>  Language of the wizard: ${LANGUAGES.join(', ')} (default: en, or asked)`,
-  '  --no-tutorial  Print the manual setup steps and change nothing',
-  '  -h, --help     Show this help',
-  '',
-  'Exit codes: 0 done (also with manual steps left) · 3 error · 130 interrupted',
-];
-
-const CHECK = [
-  `Usage: ${CLI_COMMAND} check [--max-tests <n>] [--env <label>] [playwright test arguments]`,
-  '',
-  'Dry run before the first measurement: runs the first test of each file once and shows what',
-  'would be measured (projects, origins and labels, top keys, thresholds files) and how long a',
-  'full run would take (an order of magnitude). Nothing is evaluated and no file is written.',
-  'Recommended form: PW_PERF_MODE=check <your test command>, e.g. PW_PERF_MODE=check npm run e2e.',
-  '',
-  'Options:',
-  '  --max-tests <n>    Measured tests to run, 1-1000 (default 10)',
-  '  --env <label>      Environment label; selects the thresholds files that are shown',
-  '  -h, --help         Show this help',
-  '',
-  'Exit codes: 0 done (also with warnings and failed tests) · 3 error · 130/143 interrupted',
-];
-
-const TOPICS: Record<HelpTopic, string[]> = {
-  test: TEST,
-  thresholds: THRESHOLDS,
-  check: CHECK,
-  report: REPORT,
-  init: INIT,
-};
-
-export function helpText(command?: HelpTopic): string {
-  return `${(command === undefined ? GENERAL : TOPICS[command]).join('\n')}\n`;
+/** The help, the same for `--help` of every command (04-REQ-70: no runner options to show). */
+export function helpText(): string {
+  return `${HELP.join('\n')}\n`;
 }

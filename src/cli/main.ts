@@ -46,7 +46,7 @@ export async function main(
     switch (cmd.kind) {
       case 'help':
         if (cmd.noArgs === true && !(await hasPerfSetup(host))) host.stdout.write(initBox(host));
-        host.stdout.write(helpText(cmd.command));
+        host.stdout.write(helpText());
         return 0;
       case 'version':
         host.stdout.write(`${host.packageVersion}\n`);

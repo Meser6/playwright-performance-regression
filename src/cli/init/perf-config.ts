@@ -227,7 +227,7 @@ export function renderPerfConfig(answers: InitAnswers): string {
     renderer.option(section, top);
   });
   return [
-    `// Configuration of ${PACKAGE_NAME}, written by "npx pw-perf init".`,
+    `// Configuration of ${PACKAGE_NAME}, written by its guided setup.`,
     '// Only the values that differ from the defaults are set. Every other option is commented out',
     '// with its default value: uncomment a line (and its enclosing objects) to change it. Objects',
     '// are merged with the defaults; an array you set replaces the default array. All options:',

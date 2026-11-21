@@ -4,7 +4,6 @@ import { nextHint, perfCommand, suggestCommand } from '../../../src/core/report/
 import type { CommandContext, NextHintInput } from '../../../src/core/report/index.ts';
 
 const CTX: CommandContext = {
-  viaCli: false,
   env: null,
   lifecycleEvent: 'e2e:qa',
   lifecycleScript: 'npm run prepare && npx playwright test --project=E2E',
@@ -59,9 +58,7 @@ describe('09-AC-27 suggestCommand', () => {
     );
   });
 
-  test('through the CLI and with an environment label', () => {
-    expect(cmd('thresholds', { viaCli: true })).toBe('npx pw-perf thresholds');
-    expect(cmd('thresholds', { viaCli: true, env: 'qa' })).toBe('npx pw-perf thresholds --env qa');
+  test('with an environment label: the variable, never a runner option (04-REQ-70)', () => {
     expect(cmd('thresholds', { env: 'qa' })).toBe(
       'PW_PERF_MODE=thresholds PW_PERF_ENV=qa npm run e2e:qa',
     );

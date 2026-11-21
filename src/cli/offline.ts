@@ -1,14 +1,12 @@
 // Commands without tests (04, chapter 4.6): `thresholds --from <report.json>` derives the
 // thresholds files with the same core functions as the reporter (01-REQ-01, 04-REQ-27), and
 // `report` renders the HTML report again (04-REQ-28).
-import { DEFAULT_CONFIG } from '../core/config/index.ts';
 import { parseRunReport, schemaIssueToIssue } from '../core/schema/index.ts';
 import {
   deriveThresholds,
   diffThresholds,
   formatThresholdsDiffMarkdown,
 } from '../core/thresholds/index.ts';
-import { CLI_COMMAND } from '../core/types/index.ts';
 import type { Issue, RunReport } from '../core/types/index.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import {
@@ -66,7 +64,7 @@ function reportNotFound(path: string, how: string): Issue {
   return {
     code: 'CLI_REPORT_NOT_FOUND',
     message: `The run report ${path} does not exist (${how}).`,
-    hint: `Pass the report explicitly, e.g. --input apps/web/${DEFAULT_CONFIG.report.dir}/report.json, or run "${CLI_COMMAND} test" first.`,
+    hint: 'Run a measurement first (PW_PERF_MODE=test <your test command>).',
   };
 }
 
@@ -328,7 +326,7 @@ export async function renderReport(
       {
         code: 'CLI_WRITE_FAILED',
         message: `The HTML report could not be written to ${outputPath}: ${message(error)}`,
-        hint: 'Check that the directory is writable, or pass another --output.',
+        hint: 'Check that the directory is writable.',
       },
     ]);
   }

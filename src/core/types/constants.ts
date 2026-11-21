@@ -16,8 +16,17 @@ export const PACKAGE_NAME = 'playwright-performance-regression';
  */
 export const SAMPLES_ATTACHMENT_NAME = 'pw-perf-samples';
 
-/** Command used in hints of issues, e.g. "npx pw-perf thresholds" (04). */
+/** The pw-perf runner; only for its own messages (04). Hints never show it (04-REQ-70). */
 export const CLI_COMMAND = 'npx pw-perf';
+
+/** A thresholds run in hints: the user's own test command with the variable (D-35, 04-REQ-70). */
+export const THRESHOLDS_COMMAND = 'PW_PERF_MODE=thresholds <your test command>';
+
+/** A thresholds run that removes unseen entries, in hints (10-REQ-10, 04-REQ-70). */
+export const PRUNE_COMMAND = 'PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>';
+
+/** The guided setup in hints; it also runs in a project with the package installed (04-REQ-70). */
+export const INIT_COMMAND = 'npm init playwright-performance-regression';
 
 /** Project page (repository), linked from the footer of the HTML report (11-REQ-20). */
 export const REPOSITORY_URL = 'https://github.com/Meser6/playwright-performance-regression';

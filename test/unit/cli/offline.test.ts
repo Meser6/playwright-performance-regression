@@ -359,7 +359,7 @@ describe('report', () => {
     expect(err).toContain(
       `error CLI_REPORT_NOT_FOUND: The run report ${join(cwd, 'pw-perf-results', 'report.json')} does not exist`,
     );
-    expect(err).toContain('--input apps/web/pw-perf-results/report.json');
+    expect(err).toContain('Run a measurement first (PW_PERF_MODE=test <your test command>).');
   });
 
   test('04-REQ-28 the HTML file goes next to the input, also with report.html false', async () => {
