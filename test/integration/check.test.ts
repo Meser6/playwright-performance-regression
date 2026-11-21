@@ -39,7 +39,7 @@ describe('check', () => {
       expect(run.output).toContain('CHECKED');
       expect(run.output).toContain('check finished · exit code 0');
       expect(run.output).toMatch(
-        /Next: derive thresholds on the CI machines: PW_PERF_MODE=thresholds /u,
+        /Next: derive thresholds on the CI machines: (?:npx cross-env )?PW_PERF_MODE=thresholds /u,
       );
       expect(existsSync(join(dir, 'pw-perf-results', 'report.json'))).toBe(false);
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'))).toEqual([]);
