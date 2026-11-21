@@ -5,6 +5,7 @@ import { toHtmlReportData } from './data.ts';
 import type { HtmlAggregate, HtmlReportData } from './data.ts';
 import { html } from './escape.ts';
 import type { HtmlValue, SafeHtml } from './escape.ts';
+import { keyView } from './keyview.ts';
 
 /** Evaluated percentile when the config snapshot omits it: the schema default (03). */
 const DEFAULT_PERCENTILE = 'p95';
@@ -128,8 +129,17 @@ export function keyAnchor(ctx: Ctx, kind: LinkKind, key: string): string | null 
   return n === undefined ? null : `key-${kind}-${String(n)}`;
 }
 
-/** Link to the details of a key; plain text when the key is not in the report. */
-export function keyLink(ctx: Ctx, kind: LinkKind, key: string, text: HtmlValue): SafeHtml {
+/** Keys longer than this are shortened in the middle in tables and lists (11, chapter 6.4). */
+export const KEY_COLUMN_MAX = 80;
+
+/**
+ * Link to the details of a key with the key view of 11-REQ-53, shortened to `max` code points;
+ * the view without a link when the key is not in the report.
+ */
+export function keyLink(ctx: Ctx, kind: LinkKind, key: string, max = KEY_COLUMN_MAX): SafeHtml {
   const anchor = keyAnchor(ctx, kind, key);
-  return anchor === null ? html`${text}` : html`<a href="#${anchor}">${text}</a>`;
+  const view = keyView(kind, key, max);
+  return anchor === null
+    ? html`<span class="kl">${view}</span>`
+    : html`<a class="kl" href="#${anchor}">${view}</a>`;
 }

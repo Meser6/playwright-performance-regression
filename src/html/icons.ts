@@ -1,21 +1,53 @@
-// Icons of the page as inline SVG from the template (11-REQ-41): decorative, never the only
-// carrier of a status (the text next to them says it).
+// Icons of the page (11-REQ-59): one hidden SVG sprite at the start of <body> with a <symbol> per
+// icon, used through <use href="#i-…">. Line icons in currentColor; decorative, never the only
+// carrier of a status (the text next to them says it), so every use is aria-hidden.
 import { trustedHtml } from './escape.ts';
 import type { SafeHtml } from './escape.ts';
 
-const PATHS = {
-  pass: 'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
-  fail: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m5 13.6L15.6 17 12 13.4 8.4 17 7 15.6 10.6 12 7 8.4 8.4 7l3.6 3.6L15.6 7 17 8.4 13.4 12z',
-  warn: 'M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z',
-  error: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m1 15h-2v-2h2zm0-4h-2V7h2z',
-  logo: 'M3 13h2v8H3zm4-5h2v13H7zm4 3h2v10h-2zm4-7h2v17h-2zm4 9h2v8h-2z',
+const SYMBOLS = {
+  ok: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',
+  bad: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',
+  warn: '<path d="M10.3 4.2 2.6 17.6A2 2 0 0 0 4.3 20.6h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 10v4m0 3h.01"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+  bulb: '<path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  l: '<path d="m15 6-6 6 6 6"/>',
+  r: '<path d="m9 6 6 6-6 6"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  dl: '<path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/>',
+  mute: '<path d="M9 4.6A6 6 0 0 1 18 9c0 3 .7 5 1.5 6.5M6.3 6.3C6.1 7.1 6 8 6 9c0 5-2 7-2 7h12M10 20a2 2 0 0 0 4 0M3 3l18 18"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  branch:
+    '<circle cx="6" cy="18" r="2.5"/><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 8.5v7M18 10.5c0 4-4 5-9.5 6.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  env: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  play: '<path d="M7 5v14l11-7z"/>',
+  inbox: '<path d="M3 13h5l1.5 3h5l1.5-3h5M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/>',
 } as const;
 
-export type IconName = keyof typeof PATHS;
+export type IconName = keyof typeof SYMBOLS;
 
-/** A 24×24 icon hidden from assistive technology. */
-export function icon(name: IconName): SafeHtml {
+/** Ids of the symbols in the sprite, for the check that every <use> points to one (11-AC-35). */
+export const ICON_NAMES = Object.keys(SYMBOLS) as IconName[];
+
+/** The hidden sprite with every icon of the page (11-REQ-59). */
+export function iconSprite(): SafeHtml {
+  const symbols = ICON_NAMES.map(
+    (name) => `<symbol id="i-${name}" viewBox="0 0 24 24">${SYMBOLS[name]}</symbol>`,
+  ).join('');
   return trustedHtml(
-    `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${PATHS[name]}"/></svg>`,
+    `<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">${symbols}</svg>`,
+  );
+}
+
+/** A 16 px line icon from the sprite, hidden from assistive technology. */
+export function icon(name: IconName): SafeHtml {
+  return trustedHtml(`<svg class="i" aria-hidden="true"><use href="#i-${name}"/></svg>`);
+}
+
+/** The logo of the app bar (11-REQ-49): bars of a chart on an accent tile. */
+export function logo(): SafeHtml {
+  return trustedHtml(
+    '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="24" height="24" rx="6"/><path d="M6 17v-3m4 3V9m4 8v-5m4 5V6"/></svg>',
   );
 }

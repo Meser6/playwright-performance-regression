@@ -1,6 +1,6 @@
-// Key tables and key details (11, chapters 6.4–6.9): one row per key in the default order
-// (11-REQ-09) and its details block, a <details> under the row that the script shows in the
-// drawer (11-REQ-37).
+// Key tables and key details (11, chapters 6.4–6.9, 8a): one row per key in the default order
+// (11-REQ-09) and its details block, a <details> under the row that the script shows in the key
+// dialog (11-REQ-37).
 import type { Check, KeyEvaluation, RunReport } from '../core/types/index.ts';
 import { percentileBar } from './bar.ts';
 import { histogramSvg, ttfbSplitSvg } from './charts.ts';
@@ -12,6 +12,7 @@ import {
   isBlocking,
   join,
   keyAnchor,
+  keyLink,
   rowGroup,
   topCheck,
 } from './context.ts';
@@ -19,18 +20,18 @@ import type { Ctx, LinkKind } from './context.ts';
 import type { HtmlAggregate } from './data.ts';
 import { html } from './escape.ts';
 import type { HtmlValue, SafeHtml } from './escape.ts';
-import { formatDate, formatMs, formatRatio, plural, truncateMiddle, usageText } from './format.ts';
+import { formatDate, formatMs, formatPercent, formatRatio, plural, usageText } from './format.ts';
 import { hintText, ruleLabel } from './hints.ts';
+import { icon } from './icons.ts';
+import { stepDepth } from './keyview.ts';
 
-/** Keys longer than this are shortened in the middle in tables and lists (11, chapter 6.4). */
-export const KEY_COLUMN_MAX = 80;
+export { KEY_COLUMN_MAX } from './context.ts';
 
-/**
- * Checks of a key show a meter from this usage on (the `low` mark of the meter); checks far from
- * their limit show the text only. This keeps the reference report within its size budget (NF-08, 11-REQ-43);
- * the key's own headroom always has a meter in the table.
- */
-const NEAR_LIMIT = 0.8;
+/** Headroom from which the text and the meter turn orange (11-REQ-30, HINT_NEAR_LIMIT). */
+export const NEAR_LIMIT = 0.9;
+
+/** Error statuses when the config snapshot omits them: the schema default (03). */
+const DEFAULT_ERROR_STATUSES = ['5xx', 'FAILED', 'PENDING'];
 
 const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'median',
@@ -39,23 +40,35 @@ const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
 ]);
 
 // ---------------------------------------------------------------------------------------------
-// Pills (11-REQ-41): text and shape; colour only reinforces them
+// Pills and tokens (11-REQ-41, 11-REQ-51): text and shape; colour only reinforces them
 
 export function pill(cls: string, text: HtmlValue): SafeHtml {
-  return html`<span class="p ${cls}">${text}</span>`;
+  return html`<span class="pill${cls === '' ? '' : ` ${cls}`}">${text}</span>`;
 }
 
 export function resultPill(evaluation: KeyEvaluation): SafeHtml {
   if (evaluation.result === 'fail') {
-    return isBlocking(evaluation) ? pill('p-block', 'fail · blocking') : pill('p-fail', 'fail');
+    return isBlocking(evaluation) ? pill('fb', 'fail · blocking') : pill('f', 'fail');
   }
-  return evaluation.result === 'pass' ? pill('p-pass', 'pass') : pill('p-ne', 'not evaluated');
+  return evaluation.result === 'pass' ? pill('p', 'pass') : pill('ne', 'not evaluated');
 }
 
 export function mutedPill(muted: KeyEvaluation['muted']): SafeHtml | null {
   if (muted === null) return null;
   const until = muted.until.slice(0, 10);
-  return muted.expired ? pill('p-exp', 'mute expired') : pill('p-mute', `muted until ${until}`);
+  return muted.expired
+    ? pill('w', 'mute expired')
+    : pill('', html`${icon('mute')}muted until ${until}`);
+}
+
+/** Source of the thresholds (`file`, `default`) as a small monospace token. */
+export function sourceToken(source: string): SafeHtml {
+  return html`<span class="src">${source}</span>`;
+}
+
+/** Kind of a key (`endpoint`, `step`) as a small token. */
+export function kindToken(kind: LinkKind): SafeHtml {
+  return html`<span class="kind">${KIND_LABEL[kind]}</span>`;
 }
 
 export function reasonText(reason: KeyEvaluation['reason']): string | null {
@@ -71,17 +84,33 @@ export function reasonText(reason: KeyEvaluation['reason']): string | null {
   }
 }
 
+/** Class of a headroom text: red over the limit, orange from 0.9 (11-REQ-30). */
+function usageClass(usage: number | null, failed: boolean): string {
+  if (failed || usage === null || usage > 1) return 'ov';
+  return usage >= NEAR_LIMIT ? 'nr' : '';
+}
+
 /**
- * `<meter>` of a usage with its text (11-REQ-30, 11-D-20). The meter is inside a <label> with
- * the text, which gives it its accessible name with less markup than an id reference.
+ * `<meter>` of a usage with its text (11-REQ-30). The meter is inside a <label> with the text,
+ * which gives it its accessible name without an id per check.
  */
-export function usageMeter(usage: number | null, text: string): SafeHtml {
+export function usageMeter(usage: number | null, failed: boolean, long = false): SafeHtml {
   const value = usage === null ? 1.25 : Math.min(usage, 1.25);
-  return html`<label><meter max="1.25" low="0.8" high="1" optimum="0" value="${value}"></meter> ${text}</label>`;
+  const cls = usageClass(usage, failed);
+  return html`<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="${value}"></meter><b${cls === '' ? null : html` class="${cls}"`}>${usageText(usage, failed, long)}</b></label>`;
+}
+
+/**
+ * A value of a check (11-REQ-19): a time for the time rules, a percentage for the error rate and
+ * a share with three decimals for Apdex and the slow share.
+ */
+export function checkValue(check: Pick<Check, 'rule'>, value: number): string {
+  if (TIME_RULES.has(check.rule)) return formatMs(value);
+  return check.rule === 'errors' ? formatPercent(value) : formatRatio(value);
 }
 
 // ---------------------------------------------------------------------------------------------
-// Key details (11, chapter 6.5)
+// Key details (11, chapter 6.5, 11-REQ-60)
 
 function lowestMinSamples(report: RunReport, level: string): { rule: string; n: number } | null {
   const checks = report.config.checks;
@@ -102,8 +131,15 @@ function lowestMinSamples(report: RunReport, level: string): { rule: string; n: 
   return best;
 }
 
-function checkValue(check: Check, value: number): string {
-  return TIME_RULES.has(check.rule) ? formatMs(value) : formatRatio(value);
+/** A section of the details block: a small heading with a muted note on the right. */
+function part(title: string, note: HtmlValue, ...content: HtmlValue[]): SafeHtml {
+  return html`<div class="ds"><h4>${title}${note === null ? null : html` <span class="sub">${note}</span>`}</h4>${content}</div>`;
+}
+
+function checkPill(c: Check): SafeHtml {
+  if (c.passed) return pill('p', 'pass');
+  if (c.hardLimitExceeded) return pill('fb', 'hard limit');
+  return c.blocking ? pill('fb', 'blocking') : pill('f', 'fail');
 }
 
 function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
@@ -111,7 +147,9 @@ function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   if (ev.result === 'not-evaluated') {
     const reason = reasonText(ev.reason);
     const lowest = lowestMinSamples(ctx.report, ctx.level);
-    return join(
+    return part(
+      'Checks',
+      null,
       html`<p>Not evaluated${reason === null ? '' : `: ${reason}`}.`,
       lowest === null
         ? null
@@ -119,46 +157,62 @@ function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
       html`</p>`,
     );
   }
-  const row = (c: Check): SafeHtml => {
-    const notes = [c.blocking ? 'blocking' : null, c.hardLimitExceeded ? 'hard limit' : null]
-      .filter((n) => n !== null)
-      .join(' · ');
-    return join(
-      html`<tr><th scope="row">${ruleLabel(c.rule, ctx.level)}</th><td>${c.n}</td>`,
-      html`<td>${checkValue(c, c.actual)}</td><td>${c.observed === null ? null : formatRatio(c.observed)}</td>`,
+  const ns = new Set(ev.checks.map((c) => c.n));
+  const commonN = ns.size === 1 ? [...ns][0] : undefined;
+  const observed = ev.checks.some((c) => c.observed !== null);
+  const row = (c: Check): SafeHtml =>
+    join(
+      html`<tr${c.passed ? null : html` class="ov"`}><th scope="row">${ruleLabel(c.rule, ctx.level)}</th>`,
+      // Numbers are right-aligned by the table style, without a class per cell.
+      commonN === undefined ? html`<td>${c.n}</td>` : null,
+      html`<td>${checkValue(c, c.actual)}</td>`,
+      observed ? html`<td>${c.observed === null ? null : checkValue(c, c.observed)}</td>` : null,
       html`<td>${checkValue(c, c.limit)}</td><td>`,
-      ctx.migrated
-        ? DASH
-        : c.usage === null || c.usage >= NEAR_LIMIT
-          ? usageMeter(c.usage, usageText(c.usage, !c.passed, true))
-          : usageText(c.usage, false, true),
-      html`</td><td>${c.passed ? 'pass' : 'fail'}${notes === '' ? '' : ` · ${notes}`}</td></tr>`,
+      ctx.migrated ? DASH : usageMeter(c.usage, !c.passed, true),
+      html`</td><td>${checkPill(c)}</td></tr>`,
     );
-  };
-  return join(
-    html`<table class="ck"><caption>Checks</caption><thead><tr>`,
-    html`<th>Rule</th><th>n</th><th>Value</th><th>Observed</th>`,
-    html`<th>Limit</th><th>Headroom</th><th>Result</th></tr></thead>`,
-    html`<tbody>${ev.checks.map(row)}</tbody></table>`,
+  return part(
+    'Checks',
+    commonN === undefined ? null : `n = ${String(commonN)} for every rule`,
+    html`<div class="ct" tabindex="0"><table class="ck"><caption>Checks</caption><thead><tr><th scope="col">Rule</th>`,
+    commonN === undefined ? html`<th scope="col" class="num">n</th>` : null,
+    html`<th scope="col" class="num">Actual</th>`,
+    observed ? html`<th scope="col" class="num">Observed</th>` : null,
+    html`<th scope="col" class="num">Limit</th><th scope="col">Headroom</th><th scope="col">Result</th></tr></thead>`,
+    html`<tbody>${ev.checks.map(row)}</tbody></table></div>`,
   );
 }
 
-function testRef(t: { title: string; project: string; file: string; line: number }): SafeHtml {
-  const project = t.project === '' ? 'default project' : t.project;
-  return html`${t.title} · ${project} · ${t.file}:${t.line}`;
+/** Value with a smaller unit: `640<small> ms</small>` (11-REQ-60). */
+export function msValue(value: number): SafeHtml {
+  const [number, unit] = formatMs(value).split(' ');
+  return html`${number}<small> ${unit}</small>`;
 }
 
-/** One fact of a key: label and value in a line of the facts paragraph. */
-function fact(label: string, value: HtmlValue): SafeHtml {
-  return html`<span>${label}: ${value}</span> `;
-}
-
-/** Histogram (11-REQ-32), the percentile bar of a migrated report (11-REQ-11) or a message. */
-function distribution(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
+/** p50, the evaluated percentile and p99 with their limits, and max (11-REQ-60). */
+function statsGrid(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   const stats = agg.stats;
-  if (stats === null) return html`<p>No successful timed samples.</p>`;
+  if (stats === null) return html`<div class="ds"><p>No successful timed samples.</p></div>`;
+  const limits = agg.evaluation.limits;
+  const cell = (label: string, value: number | undefined, limit: number | null): SafeHtml => {
+    const over = value !== undefined && limit !== null && value > limit;
+    return html`<div${over ? html` class="ov"` : null}><dt>${label}${limit === null ? null : ` · limit ${formatMs(limit)}`}</dt><dd>${value === undefined ? DASH : msValue(value)}</dd></div>`;
+  };
+  return html`<div class="ds"><dl class="stats">${[
+    cell('p50', stats.percentiles['p50'], null),
+    cell(ctx.level, stats.percentiles[ctx.level], limits.percentile),
+    cell('p99', stats.percentiles['p99'], limits.p99),
+    cell('max', stats.max, null),
+  ]}</dl></div>`;
+}
+
+/** Histogram (11-REQ-32), the percentile bar of a migrated report (11-REQ-11), or nothing. */
+function distribution(ctx: Ctx, agg: HtmlAggregate): SafeHtml | null {
+  const stats = agg.stats;
+  if (stats === null) return null;
   if (agg.histogram === null) {
-    return percentileBar(stats, agg.evaluation.limits, ctx.level) ?? html`<p>${DASH}</p>`;
+    const bar = percentileBar(stats, agg.evaluation.limits, ctx.level);
+    return bar === null ? null : part('Percentiles', null, bar);
   }
   const markers: Mark[] = [];
   for (const name of ['p50', ctx.level, 'p99']) {
@@ -168,14 +222,21 @@ function distribution(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
     }
   }
   const limit = agg.evaluation.limits.percentile;
-  return histogramSvg({
-    edges: agg.histogram.edges,
-    counts: agg.histogram.counts,
-    markers,
-    limit: { label: 'limit', value: limit, limit: true },
-    retained: agg.samples.retained,
-    sampled: agg.samples.sampled,
-  });
+  return part(
+    'Distribution',
+    agg.samples.sampled
+      ? `${String(agg.samples.retained)} retained samples (uniform sample)`
+      : plural(agg.samples.retained, 'retained sample'),
+    histogramSvg({
+      edges: agg.histogram.edges,
+      counts: agg.histogram.counts,
+      markers,
+      limit: { label: 'limit', value: limit, limit: true },
+      retained: agg.samples.retained,
+      sampled: agg.samples.sampled,
+    }),
+    html`<p class="legend"><span><i class="s-neu"></i>within limit</span><span><i class="s-bad"></i>above limit</span><span><i class="lg-lim"></i>${ctx.level} limit</span></p>`,
+  );
 }
 
 /** `file:line` of a step key, a dash without one (11-REQ-47). */
@@ -191,99 +252,147 @@ function ttfbSplit(agg: HtmlAggregate): SafeHtml | null {
   const svg = ttfbSplitSvg(ttfb.p50, ttfb.otherP50);
   if (svg === null) return null;
   const sum = Math.round((ttfb.p50 + ttfb.otherP50) * 10) / 10;
-  return join(
+  return part(
+    'Server wait vs rest',
+    'p50 of each part',
     svg,
-    html`<p class="lg"><span class="sw st"></span>Server wait (TTFB p50) ${formatMs(ttfb.p50)} <span class="sw so"></span>Rest (p50 of duration − TTFB) ${formatMs(ttfb.otherP50)}</p>`,
-    html`<p class="mu">Medians of each part: their sum (${formatMs(sum)}) can differ from p50 of the duration (${formatMs(agg.stats.percentiles['p50'] ?? 0)}).</p>`,
+    html`<p class="legend"><span><i class="s-acc"></i>Server wait (TTFB p50) ${formatMs(ttfb.p50)}</span><span><i class="s-trk"></i>Rest (p50 of duration − TTFB) ${formatMs(ttfb.otherP50)}</span></p>`,
+    html`<p class="sub">Medians of each part: their sum (${formatMs(sum)}) can differ from p50 of the duration (${formatMs(agg.stats.percentiles['p50'] ?? 0)}).</p>`,
   );
 }
 
-function keyHeader(key: string, agg: HtmlAggregate, kind: LinkKind): SafeHtml {
+/** Whether a status label counts as an error (`checks.errors.statuses`, 08). */
+function isErrorStatus(label: string, statuses: readonly string[]): boolean {
+  return statuses.some(
+    (s) => s === label || (/^\dxx$/u.test(s) && /^\d{3}$/u.test(label) && s[0] === label[0]),
+  );
+}
+
+/** The header of a details block: full key, pills and counts (11-REQ-60). */
+function keyHeader(kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
   const ev = agg.evaluation;
-  return join(
-    html`<p class="kh"><code class="fk">${key}</code><br>`,
-    pill('p-kind', KIND_LABEL[kind]),
+  return html`<div class="kh"><p class="fkl"><code class="fk">${key}</code></p><p class="pills">${[
     resultPill(ev),
-    pill('p-src', ev.thresholdSource),
+    kindToken(kind),
+    sourceToken(ev.thresholdSource),
     mutedPill(ev.muted),
-    html`</p>`,
+  ]}<span class="sub">${plural(agg.count, 'sample')} · ${plural(agg.testCount, 'test')}</span></p></div>`;
+}
+
+function testRef(t: { project: string; file: string; line: number }): SafeHtml {
+  const project = t.project === '' ? 'default project' : t.project;
+  return html`<code>${t.file}:${t.line}</code> · ${project}`;
+}
+
+/** Statuses as tokens, then the facts of the key (11, chapter 6.5). */
+function statusesPart(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
+  const errors = ctx.report.config.checks?.errors?.statuses ?? DEFAULT_ERROR_STATUSES;
+  const labels = Object.keys(agg.statuses).sort();
+  const facts: HtmlValue[] = [
+    html`<span>From failed tests: ${agg.fromFailedTests}</span>`,
+    agg.timeSources.node > 0
+      ? html`<span>Time sources: browser ${agg.timeSources.browser}, node ${agg.timeSources.node}</span>`
+      : null,
+    kind === 'step' ? html`<span>Defined at: <code>${locationText(agg)}</code></span>` : null,
+    kind === 'step' && (agg.stepErrorsFromFailedTests ?? 0) > 0
+      ? html`<span>Step errors in failed tests (not counted): ${agg.stepErrorsFromFailedTests ?? 0}</span>`
+      : null,
+    kind === 'api'
+      ? html`<span>TTFB: ${agg.ttfb === null ? DASH : `p50 ${formatMs(agg.ttfb.p50)}, p95 ${formatMs(agg.ttfb.p95)}`}</span>`
+      : null,
+    html`<span>Retained samples: ${
+      agg.samples.sampled
+        ? `${String(agg.samples.retained)} (uniform sample of ${String(agg.successCount)}; the histogram shows them)`
+        : `${String(agg.samples.retained)} (all successful)`
+    }</span>`,
+  ];
+  return part(
+    'Statuses',
+    null,
+    labels.length === 0
+      ? null
+      : html`<p class="stc">${labels.map(
+          (s) =>
+            html`<span${isErrorStatus(s, errors) ? html` class="e"` : null}><b>${s}</b> × ${agg.statuses[s] ?? 0}</span>`,
+        )}</p>`,
+    html`<p class="facts">${facts}</p>`,
   );
 }
 
-/** Content of the details block of a key; `id` is its anchor (11-REQ-37). */
+/** Content of the details block of a key (11-REQ-60). */
 export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
-  const statuses = Object.keys(agg.statuses).sort();
-  const statusList = statuses.map(
-    (s, i) => html`${i > 0 ? ', ' : ''}${s} → ${agg.statuses[s] ?? 0}`,
-  );
   const hints = ctx.migrated ? [] : agg.hints;
   return join(
     html`<div class="kd">`,
-    keyHeader(key, agg, kind),
+    keyHeader(kind, key, agg),
     hints.length === 0
       ? null
-      : html`<ul class="hints">${hints.map((h) => html`<li>${hintText(h, ctx.level, agg.evaluation.muted)}</li>`)}</ul>`,
-    checksTable(ctx, agg),
+      : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted)}</li>`)}</ul>`,
+    statsGrid(ctx, agg),
     distribution(ctx, agg),
+    checksTable(ctx, agg),
     kind === 'api' ? ttfbSplit(agg) : null,
-    html`<p class="facts">`,
-    fact('Statuses', statuses.length === 0 ? DASH : statusList),
-    fact('From failed tests', agg.fromFailedTests),
-    agg.timeSources.node > 0
-      ? fact(
-          'Time sources',
-          `browser ${String(agg.timeSources.browser)}, node ${String(agg.timeSources.node)}`,
-        )
-      : null,
-    kind === 'step' ? fact('Defined at', locationText(agg)) : null,
-    kind === 'step' && (agg.stepErrorsFromFailedTests ?? 0) > 0
-      ? fact('Step errors in failed tests (not counted)', agg.stepErrorsFromFailedTests ?? 0)
-      : null,
-    kind === 'api'
-      ? fact(
-          'TTFB',
-          agg.ttfb === null ? DASH : `p50 ${formatMs(agg.ttfb.p50)}, p95 ${formatMs(agg.ttfb.p95)}`,
-        )
-      : null,
-    fact(
-      'Retained samples',
-      agg.samples.sampled
-        ? `${String(agg.samples.retained)} (uniform sample of ${String(agg.successCount)}; the histogram shows them)`
-        : `${String(agg.samples.retained)} (all successful)`,
-    ),
-    html`</p>`,
+    statusesPart(ctx, kind, agg),
     agg.slowest.length === 0
       ? null
-      : html`<h4>Slowest samples</h4><ol class="ls">${agg.slowest.map((s) =>
-          join(
-            html`<li><b>${formatMs(s.duration)}</b> ${formatDate(s.startedAt)} · `,
-            html`${testRef(s.test)} · repeat ${s.test.repeatEachIndex}`,
-            s.url === undefined ? null : html`<br><span class="url">${s.url}</span>`,
-            html`</li>`,
-          ),
-        )}</ol>`,
+      : part(
+          'Slowest samples',
+          null,
+          html`<ol class="samples">${agg.slowest.map((s) =>
+            join(
+              html`<li><b>${formatMs(s.duration)}</b><span class="tt"><span>${s.test.title}</span>`,
+              html`<span class="sub">${testRef(s.test)} · rep ${s.test.repeatEachIndex} · ${formatDate(s.startedAt)}</span>`,
+              s.url === undefined ? null : html`<span class="url">${s.url}</span>`,
+              html`</span></li>`,
+            ),
+          )}</ol>`,
+        ),
     agg.topTests.length === 0
       ? null
-      : html`<h4>Top tests</h4><ol class="ls">${agg.topTests.map(
-          (t) =>
-            html`<li>${t.title} · ${t.file}:${t.line} · ${plural(t.sampleCount, 'sample')}</li>`,
-        )}</ol>`,
+      : part(
+          'Top tests',
+          'by samples',
+          html`<ul class="tl two">${agg.topTests.map(
+            (t) =>
+              html`<li><span class="tt"><span>${t.title}</span><span class="sub">${t.file}:${t.line}</span></span><span class="num">${plural(t.sampleCount, 'sample')}</span></li>`,
+          )}</ul>`,
+        ),
     html`</div>`,
   );
 }
 
 // ---------------------------------------------------------------------------------------------
-// Key table (11, chapter 6.4)
+// Key table (11, chapter 6.4, 11-REQ-54)
 
-function percentileCell(value: number | undefined, limit: number): HtmlValue {
-  return value === undefined ? DASH : html`${formatMs(value)}<small> / ${formatMs(limit)}</small>`;
+/** Status class of a row (11-REQ-54). */
+export function rowClass(evaluation: KeyEvaluation): string {
+  const group = rowGroup(evaluation);
+  if (group === 0) return 'blocking';
+  if (group === 1) {
+    return evaluation.muted !== null && !evaluation.muted.expired ? 'muted' : 'violation';
+  }
+  return group === 2 ? 'pass' : 'not-evaluated';
+}
+
+/** A time of a key table: whole ms without a unit (11-REQ-19, 11-D-25). */
+function timeCell(value: number | undefined): SafeHtml {
+  return value === undefined
+    ? html`<td class="num z">${DASH}</td>`
+    : html`<td class="num">${Math.round(value)}</td>`;
+}
+
+/** Percentile with its limit, `1240 / 900`; red and bold over the limit. */
+function limitCell(value: number | undefined, limit: number | null): SafeHtml {
+  if (value === undefined) return html`<td class="num z">${DASH}</td>`;
+  const over = limit !== null && value > limit;
+  return html`<td class="num${over ? ' ov' : ''}">${Math.round(value)}${limit === null ? null : html`<span class="lim"> / ${Math.round(limit)}</span>`}</td>`;
 }
 
 /** Headroom cell: the key's largest usage (11-REQ-30); — without checks or in a v1 report. */
-function headroomCell(ctx: Ctx, agg: HtmlAggregate): HtmlValue {
+function headroomCell(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   const top = ctx.migrated ? undefined : topCheck(agg.evaluation.checks);
-  if (top === undefined) return DASH;
-  return usageMeter(top.usage, usageText(top.usage, !top.passed));
+  if (top === undefined) return html`<td class="z">${DASH}</td>`;
+  return html`<td>${usageMeter(top.usage, !top.passed)}</td>`;
 }
 
 function keyRow(
@@ -297,27 +406,26 @@ function keyRow(
   const s = agg.stats;
   const id = keyAnchor(ctx, kind, key) ?? '';
   const group = rowGroup(ev);
-  const short = truncateMiddle(key, KEY_COLUMN_MAX);
   const reason = reasonText(ev.reason);
-  const time = (value: number | undefined): HtmlValue =>
-    value === undefined ? DASH : formatMs(value);
   const muted = ev.muted !== null && !ev.muted.expired;
   return join(
-    html`<tbody data-g="${group}" data-s="${ev.thresholdSource}"${muted ? html` data-m=""` : null}><tr>`,
-    html`<th scope="row"><a href="#${id}"${short === key ? null : html` title="${key}"`}>${short}</a></th>`,
-    html`<td>${resultPill(ev)}`,
-    pill('p-src', ev.thresholdSource),
-    mutedPill(ev.muted),
-    reason === null ? null : html`<br><small>${reason}</small>`,
-    html`</td><td>${headroomCell(ctx, agg)}</td>`,
-    html`<td>${agg.successCount} / ${agg.count}</td><td>${agg.errorCount === 0 ? null : agg.errorCount}</td>`,
-    html`<td>${time(s?.percentiles['p50'])}</td>`,
-    html`<td>${s === null ? DASH : percentileCell(s.percentiles[ctx.level], ev.limits.percentile)}</td>`,
-    html`<td>${s === null ? DASH : percentileCell(s.percentiles['p99'], ev.limits.p99)}</td>`,
-    html`<td>${time(s?.max)}</td>`,
-    kind === 'api' ? html`<td>${time(agg.ttfb?.p50)}</td>` : null,
-    kind === 'step' ? html`<td>${locationText(agg)}</td>` : null,
-    html`<td>${agg.testCount}</td></tr>`,
+    html`<tbody data-g="${group}" data-s="${ev.thresholdSource}"${muted ? html` data-m=""` : null}><tr class="${rowClass(ev)}">`,
+    html`<th scope="row" class="k">${kind === 'step' ? stepDepth(key) : null}${keyLink(ctx, kind, key)}</th>`,
+    html`<td class="r">${resultPill(ev)}${sourceToken(ev.thresholdSource)}${mutedPill(ev.muted)}`,
+    reason === null ? null : html`<small class="why">${reason}</small>`,
+    html`</td>`,
+    headroomCell(ctx, agg),
+    html`<td class="num">${agg.successCount} / ${agg.count}</td>`,
+    agg.errorCount === 0
+      ? html`<td class="num"></td>`
+      : html`<td class="num e">${agg.errorCount}</td>`,
+    timeCell(s?.percentiles['p50']),
+    s === null ? timeCell(undefined) : limitCell(s.percentiles[ctx.level], ev.limits.percentile),
+    s === null ? timeCell(undefined) : limitCell(s.percentiles['p99'], ev.limits.p99),
+    timeCell(s?.max),
+    kind === 'api' ? timeCell(agg.ttfb?.p50) : null,
+    kind === 'step' ? html`<td class="loc">${locationText(agg)}</td>` : null,
+    html`<td class="num">${agg.testCount}</td></tr>`,
     html`<tr class="drow"><td colspan="${columns}"><details id="${id}"${group <= 1 ? html` data-v=""` : null}>`,
     html`<summary>Details</summary>`,
     keyDetails(ctx, kind, key, agg),
@@ -325,26 +433,36 @@ function keyRow(
   );
 }
 
-function chip(group: string, value: string, label: string): SafeHtml {
-  return html`<button type="button" class="chip" aria-pressed="false" data-f="${group}" data-v="${value}">${label}</button>`;
+function chip(group: string, value: string, label: HtmlValue): SafeHtml {
+  return html`<button type="button" class="flt" aria-pressed="false" data-f="${group}" data-v="${value}">${label}</button>`;
 }
 
-/** Search, filter chips and the counter of a key table (11-REQ-13); shown by the script. */
+/** Search box of a table toolbar (11-REQ-54). */
+export function searchBox(label: string, placeholder: string): SafeHtml {
+  return html`<label class="search">${icon('search')}<input type="search" aria-label="${label}" placeholder="${placeholder}" autocomplete="off"></label>`;
+}
+
+/** Search, filter chips, reset and counter of a key table (11-REQ-13); shown by the script. */
 function keyFilters(kind: LinkKind, total: number): SafeHtml {
   return join(
-    html`<div class="tools js-only" data-for="table-${kind}" hidden>`,
-    html`<input type="search" class="search" aria-label="Search keys" placeholder="Search keys" autocomplete="off">`,
-    html`<div class="chips" role="group" aria-label="Result">${[
+    html`<div class="toolbar js-only" hidden>`,
+    searchBox('Search keys', kind === 'step' ? 'Filter steps…' : 'Filter endpoints…'),
+    html`<div class="fg" role="group" aria-label="Result"><span aria-hidden="true">Result</span>${[
       chip('g', '0', 'blocking'),
       chip('g', '1', 'violation'),
       chip('g', '2', 'pass'),
       chip('g', '3', 'not evaluated'),
     ]}</div>`,
-    html`<div class="chips" role="group" aria-label="Thresholds">${[chip('s', 'file', 'file'), chip('s', 'default', 'default')]}</div>`,
-    html`<div class="chips" role="group" aria-label="Muted">${chip('m', '', 'muted')}</div>`,
-    html`<button type="button" class="btn" data-reset>Reset</button>`,
+    html`<div class="fg" role="group" aria-label="Thresholds"><span aria-hidden="true">Thresholds</span>${[chip('s', 'file', 'file'), chip('s', 'default', 'default')]}</div>`,
+    html`<div class="fg" role="group" aria-label="Muted">${chip('m', '', html`${icon('mute')}muted`)}</div>`,
+    html`<button type="button" class="btn sm" data-reset>Reset</button>`,
     html`<span class="count" role="status" data-count>showing ${total} of ${total}</span></div>`,
   );
+}
+
+/** Empty state of a table after filtering (11-REQ-58), shown by the script. */
+export function noMatch(text: string): SafeHtml {
+  return html`<div class="empty sm" data-none hidden>${icon('search')}<p>${text}</p><button type="button" class="btn sm" data-reset>Reset</button></div>`;
 }
 
 /** The key table of one kind (11, chapter 6.4). */
@@ -365,17 +483,39 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
     ...(kind === 'step' ? [['defined', 'Defined at'] as [string, string]] : []),
     ['tests', 'Tests'],
   ];
+  const numeric = new Set([
+    'samples',
+    'errors',
+    'p50',
+    'percentile',
+    'p99',
+    'max',
+    'ttfb',
+    'tests',
+  ]);
+  const notes = [
+    'All times in ms',
+    'the tick on each headroom bar marks the limit',
+    `${ctx.level} is the evaluated percentile`,
+    kind === 'step' ? 'step keys are title paths joined with ›' : null,
+  ].filter((n) => n !== null);
   return join(
+    html`<div class="card" data-for="table-${kind}">`,
     keyFilters(kind, keys.length),
-    html`<div class="scroll"><table class="keys" id="table-${kind}" data-kind="${kind}" data-level="${ctx.level}">`,
+    html`<div class="scroll" tabindex="0" role="region" aria-label="${title} table"><table class="keys" id="table-${kind}" data-kind="${kind}" data-level="${ctx.level}">`,
     html`<caption>${title}: ${plural(keys.length, 'key')}, violations first</caption>`,
     html`<thead><tr>${cols.map(([column, label]) =>
       // The location is text, not a number to sort by (11-REQ-47).
       column === 'defined'
         ? html`<th scope="col">${label}</th>`
-        : html`<th scope="col" data-sort="${column}"><button type="button">${label}</button></th>`,
+        : html`<th scope="col" data-sort="${column}"${numeric.has(column) ? html` class="num"` : null}><button type="button">${label}</button></th>`,
     )}</tr></thead>`,
     keys.map((key) => keyRow(ctx, kind, key, aggregates[key] as HtmlAggregate, cols.length)),
     html`</table></div>`,
+    noMatch('No keys match the filters'),
+    html`<p class="tfoot">${notes.join(' · ')}</p></div>`,
   );
 }
+
+/** Keys of a ranking or list shortened to this many code points (narrow columns). */
+export const LIST_KEY_MAX = 56;

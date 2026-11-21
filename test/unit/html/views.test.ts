@@ -22,6 +22,7 @@ import {
   migratedCase,
   readCase,
   referenceReport,
+  stepsRun,
 } from './fixtures.ts';
 
 const PATHS = { reportJson: null, reportHtml: null, thresholds: [], thresholdsDiff: null };
@@ -90,19 +91,26 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
       'nothing',
       noThresholds(),
       'PASSED',
-      'All 2 evaluated keys are within their limits. Evaluated with default thresholds only; run `npx pw-perf thresholds` to create thresholds files.',
+      'All 2 evaluated keys are within their limits.',
     ]);
     const exitOf = { ERROR: 3, FAILED: 2, 'PASSED WITH WARNINGS': 0, PASSED: 0 } as const;
     for (const [name, report, status, sentence] of cases) {
       const b = banner(report);
-      expect(b, name).toEqual({ status, sentence });
+      expect({ status: b.status, sentence: b.sentence }, name).toEqual({ status, sentence });
       expect(buildOutcome(report, PATHS).exitCode, name).toBe(exitOf[b.status]);
+      expect(b.exitCode, name).toBe(exitOf[b.status]);
       const html = page(report);
-      expect(html, name).toContain(
-        `<h1 id="banner-h">${status}</h1><p>${escapeHtml(sentence)}</p>`,
-      );
+      expect(html, name).toContain(`<h1 class="status" id="vh">${status}`);
+      expect(html, name).toContain(`<p class="summary">${escapeHtml(sentence)}<span class="sub">`);
+      expect(html, name).toContain(`exit code ${String(exitOf[b.status])}</span>`);
       expect(html.includes('>gate off<'), name).toBe(!report.evaluation.gateEnabled);
     }
+    // Default thresholds only: an info box with the command under the sentence (11, chapter 12).
+    expect(banner(noThresholds()).defaultsOnly).toBe(true);
+    expect(page(noThresholds())).toContain(
+      'Evaluated with default thresholds only; run your test command with <code>PW_PERF_MODE=thresholds</code> to create thresholds files.',
+    );
+    expect(page(fullRun())).not.toContain('PW_PERF_MODE=thresholds</code>');
     const none = noThresholds();
     for (const agg of Object.values(none.endpoints)) agg.evaluation.result = 'not-evaluated';
     none.evaluation.counts.api.fromDefaults = 0;
@@ -121,25 +129,47 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
     report.finishedAt = '2026-11-18T11:02:03.000Z';
     report.passes = { planned: 5, completed: 4, failed: [3] };
     const html = page(report);
-    const tiles = [
-      ...html.matchAll(
-        /<div class="kpi"><p class="kl">(.*?)<\/p><p class="kv">(.*?)<\/p><p class="kn">(.*?)<\/p><\/div>/gu,
-      ),
-    ].map((m) => [m[1], m[2], m[3]]);
+    const fields = (h: string) =>
+      [
+        ...h.matchAll(
+          /<div class="kpi[^"]*"><dt>(.*?)<\/dt><dd class="kv">(.*?)<\/dd>(?:<dd class="viz">.*?<\/dd>)?<dd class="ks">(.*?)<\/dd><\/div>/gu,
+        ),
+      ].map((m) => [m[1], text(m[2] ?? ''), m[3]]);
     const endpoints = Object.values(report.endpoints);
     const requests = endpoints.reduce((n, a) => n + a.count, 0);
     const errors = endpoints.reduce((n, a) => n + a.errorCount, 0);
-    expect(tiles).toEqual([
-      ['Endpoints', String(endpoints.length), ''],
+    const api = report.evaluation.counts.api;
+    expect(fields(html)).toEqual([
+      [
+        'Endpoints',
+        String(endpoints.length),
+        `${api.fromFile + api.fromDefaults} evaluated · ${api.tooFewSamples} too few`,
+      ],
+      ['Tests', '3', '0 failed · 0 flaky · 0 skipped'],
       ['Violations', '1', '1 blocking · 1 muted'],
       ['Error rate', formatPercent(errors / requests), `${errors} of ${requests} requests`],
-      ['Run duration', '1 h 02 min', '2026-11-18 10:00:00 UTC'],
+      ['Duration', '1 h 02 min', '10:00 → 11:02 UTC'],
       ['Passes', '4 of 5', '2 measured projects'],
-      ['Tests', '3', '0 failed · 0 flaky · 0 skipped'],
     ]);
     expect(formatPercent(errors / requests)).toBe('35.3%');
+    // A failed pass is a muted pip; the violations field is red with a split bar.
+    expect(html).toContain(
+      '<span class="pips" aria-hidden="true"><span></span><span></span><span class="off"></span><span></span><span></span></span>',
+    );
+    expect(html).toMatch(
+      /<div class="kpi bad"><dt>Violations<\/dt><dd class="kv">1<\/dd><dd class="viz"><span class="vsplit" aria-hidden="true"><span class="s-bad w-\d+"><\/span>/u,
+    );
+    // Steps replace Tests when the report has step keys (11-REQ-28).
+    expect(fields(page(stepsRun())).map((f) => f[0])).toEqual([
+      'Endpoints',
+      'Steps',
+      'Violations',
+      'Error rate',
+      'Duration',
+      'Passes',
+    ]);
     const empty = page(readCase(join(GOLDEN_DIR, 'run-report', 'valid', 'empty-run.json')).input);
-    expect(empty).toContain('<p class="kl">Error rate</p><p class="kv">—</p>');
+    expect(empty).toContain('<dt>Error rate</dt><dd class="kv">—</dd>');
   });
 });
 
@@ -159,10 +189,11 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
   }
 
   function ranking(html: string, id: string): [string, boolean][] {
-    const list = new RegExp(`<ol data-rank="${id}">(.*?)</ol>`, 'su').exec(html)?.[1] ?? '';
-    return [...list.matchAll(/<li data-k="(\w+)"( hidden)?><a href="#[^"]+">(.*?)<\/a>/gu)].map(
-      (m) => [`${m[1] ?? ''}:${m[3] ?? ''}`, m[2] !== undefined],
-    );
+    const list =
+      new RegExp(`<ol class="rank" data-rank="${id}">(.*?)</ol>`, 'su').exec(html)?.[1] ?? '';
+    return [
+      ...list.matchAll(/<li data-k="(\w+)"( hidden)?><a class="kl" href="#[^"]+">(.*?)<\/a>/gu),
+    ].map((m) => [`${m[1] ?? ''}:${text(m[3] ?? '')}`, m[2] !== undefined]);
   }
 
   test('11-AC-19 rankings: order and ties equal the reference computation; no error-free keys in the error ranking', () => {
@@ -213,7 +244,9 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
       'api:GET /api/b',
       'api:GET /api/tickets/:id',
     ]);
-    expect(html).toMatch(/GET \/api\/near<\/a> <span class="mu">median at 95% of limit<\/span>/u);
+    expect(html).toMatch(
+      /\/api\/near<\/span><\/a><span class="tb warn"><span class="w-100"><\/span><\/span><span class="v">median <b>95%<\/b><\/span>/u,
+    );
     expect(page(migratedCase())).not.toContain('data-rank="closest"');
   });
 
@@ -228,7 +261,7 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     expect(usageText(60, true, true)).toBe('>999% of limit');
     const html = page(fullRun());
     expect(html).toContain(
-      '<meter max="1.25" low="0.8" high="1" optimum="0" value="1.25"></meter> &gt;999%',
+      '<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="1.25"></meter><b class="ov">&gt;999%</b></label>',
     );
   });
 
@@ -236,9 +269,12 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     const html = page(fullRun());
     const list = section(html, 'viol-h');
     expect(list.replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|')).toContain(
-      '|fail · blocking|endpoint| |POST /api/orders| |· error rate &gt;999% of limit|Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).|',
+      '|fail · blocking|endpoint|default|POST| |/api/orders|error rate |60.0%| · limit 1.0%|&gt;999%|Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).|',
     );
-    expect(list).toContain('<a href="#tab-endpoints" data-show-violations="">All 1 violation</a>');
+    expect(list).toContain('<article class="card vio">');
+    expect(list).toContain(
+      '<a class="more" href="#tab-endpoints" data-show-violations="">All 1 violation →</a>',
+    );
     expect(page(noThresholds())).not.toContain('id="viol-h"');
   });
 });
@@ -248,8 +284,10 @@ describe('charts (11-REQ-32, 11-REQ-33)', () => {
     const report = fullRun();
     const agg = report.endpoints['GET /api/tickets/:id'] as RunReport['endpoints'][string];
     const html = page(report);
-    const svg = /<svg class="hist"[^>]*>.*?<\/svg>/su.exec(html)?.[0] ?? '';
-    const d = /<path class="hb" d="([^"]+)"/u.exec(svg)?.[1] ?? '';
+    const svg = /<svg class="hist ch"[^>]*>.*?<\/svg>/su.exec(html)?.[0] ?? '';
+    // The limit is beyond the last edge, so every bin is within it: one neutral outline.
+    expect(svg).not.toContain('bars-hi');
+    const d = /<path class="bars" d="([^"]+)"/u.exec(svg)?.[1] ?? '';
     const histogram = agg.histogram;
     if (histogram === null) throw new Error('fixture');
     expect(d.match(/h/gu)?.length).toBe(histogram.counts.length);
@@ -279,6 +317,17 @@ describe('charts (11-REQ-32, 11-REQ-33)', () => {
     expect(histogramX([100, 200], 50)).toEqual({ x: 8, side: 'left' });
     // A migrated report shows the percentile bar (11-REQ-11).
     expect(page(migratedCase())).toContain('<svg class="bar"');
+    // A limit inside the range: bins whose lower edge is at or above it are red (bars-hi).
+    const inside = fullRun();
+    const key = inside.endpoints['GET /api/tickets/:id'] as RunReport['endpoints'][string];
+    const lower = histogram.edges[2] ?? 0;
+    key.evaluation.limits.percentile = lower;
+    const svg2 = /<svg class="hist ch"[^>]*>.*?<\/svg>/su.exec(page(inside))?.[0] ?? '';
+    const neutral = /<path class="bars" d="([^"]+)"/u.exec(svg2)?.[1] ?? '';
+    const high = /<path class="bars-hi" d="([^"]+)"/u.exec(svg2)?.[1] ?? '';
+    expect(neutral.match(/h/gu)?.length).toBe(2);
+    expect((high.match(/h/gu)?.length ?? 0) + 2).toBe(histogram.counts.length);
+    expect(high.startsWith(`M${String(Math.round((8 + 2 * width) * 10) / 10)} `)).toBe(true);
   });
 
   test('11-AC-20 a sampled key says so; equal durations give one bin; no stats give a message', () => {
@@ -328,7 +377,7 @@ describe('hints (11-REQ-34)', () => {
   test('11-AC-22 hints appear in the key details, escaped; none in a migrated report', () => {
     const html = page(fullRun());
     expect(html).toContain(
-      '<ul class="hints"><li>Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).</li><li>100.0% of the samples come from failed tests: the results may be distorted.</li></ul>',
+      '<ul class="hints"><li><svg class="i" aria-hidden="true"><use href="#i-bulb"/></svg>Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).</li><li><svg class="i" aria-hidden="true"><use href="#i-bulb"/></svg>100.0% of the samples come from failed tests: the results may be distorted.</li></ul>',
     );
     expect(page(migratedCase())).not.toContain('class="hints"');
     const markup = markupCase();
@@ -350,13 +399,17 @@ describe('Tests tab and waterfall (11-REQ-35, 11-REQ-36)', () => {
     if (breakdown === null) throw new Error('fixture');
     breakdown.omitted = 7;
     const html = page(report);
-    const rows = [...html.matchAll(/<tr data-i="(\d+)"[^>]*><th scope="row">(.*?)<br>/gu)].map(
-      (m) => [Number(m[1]), text(m[2] ?? '')],
-    );
+    const rows = [
+      ...html.matchAll(
+        /<tr data-i="(\d+)"[^>]*><th scope="row" class="tc"><span class="tn">(.*?)<\/span>/gu,
+      ),
+    ].map((m) => [Number(m[1]), text(m[2] ?? '')]);
     expect(rows).toEqual(breakdown.tests.map((t, i) => [i, t.title]));
     expect(html).toContain('and 7 more tests with a smaller total wait (not stored in the report)');
     const first = breakdown.tests[0];
-    expect(html).toContain(`<a href="#key-api-`);
+    expect(html).toContain(`<a class="kl" href="#key-api-`);
+    // Total wait bars are relative to the largest total wait, with width classes (11-REQ-55).
+    expect(html).toContain('<span class="tb neu tw"><span class="w-100"></span></span>');
     expect(first?.violatedKeyCount).toBe(2);
     const migrated = page(migratedCase());
     expect(migrated).toContain(
@@ -372,12 +425,15 @@ describe('Tests tab and waterfall (11-REQ-35, 11-REQ-36)', () => {
     const waterfalls = report.testBreakdown?.waterfalls ?? [];
     const html = page(report);
     const charts = [
-      ...html.matchAll(/<figure class="wfb"><figcaption><b>(.*?)<\/b>.*?<\/figure>/gsu),
+      ...html.matchAll(
+        /<figure class="card wfb"><figcaption class="wf-h"><div><h4>(.*?)<\/h4>.*?<\/figure>/gsu,
+      ),
     ];
     expect(charts.map((m) => text(m[1] ?? ''))).toEqual(waterfalls.map((w) => w.test.title));
     const first = charts[0]?.[0] ?? '';
     expect(first.match(/<g class="w\w">/gu)?.length).toBe(200);
-    expect(first).toContain('<p class="mu">and 30 more requests not shown</p>');
+    expect(first).toContain('<p class="tfoot">and 30 more requests not shown</p>');
+    expect(first).toContain('<dt>Span</dt><dd>45.7 s</dd>');
     const w = waterfalls[0];
     if (w === undefined) throw new Error('fixture');
     const failed = w.requests[0];
@@ -385,17 +441,23 @@ describe('Tests tab and waterfall (11-REQ-35, 11-REQ-36)', () => {
     expect(first).toContain(
       `<g class="we"><title>${escapeHtml(failed?.key ?? '')} · FAILED · start +0.0 ms · no duration</title>`,
     );
-    expect(first).toMatch(/<path d="M300 24l5 5-5 5-5-5z"\/><text x="308" y="33">FAILED<\/text>/u);
+    expect(first).toContain(
+      '<path d="M350 28l6 6-6 6-6-6z"/><text class="d" x="360" y="38">FAILED</text>',
+    );
     const second = w.requests[1];
     expect(first).toContain(
       `<title>${escapeHtml(second?.key ?? '')} · 200 · start +220 ms · 124 ms</title>`,
     );
     // The axis ends at spanMs, with + labels at 0, ¼, ½, ¾ and the end.
-    expect(first).toContain('x="952" y="12">+45.7 s</text>');
+    expect(first).toContain('x="880" y="12">+45.7 s</text>');
+    // The time after the bar, with the status when it is not 2xx/3xx.
+    expect(first).toMatch(
+      /height="12" rx="2"\/><text class="d(?: ae)?" x="[\d.]+" y="58">124 ms<\/text>/u,
+    );
     expect([...first.matchAll(/<text class="wt[^"]*" x="[\d.]+" y="12">\+/gu)]).toHaveLength(5);
     const svg = waterfallSvg(w, 't').text;
     expect(svg).toMatch(
-      /^<svg class="wf" viewBox="0 0 960 \d+" role="img" aria-label="Waterfall of 230 requests over 45.7 s; longest request /u,
+      /^<svg class="wf ch" viewBox="0 0 960 \d+" role="img" aria-label="Waterfall of 230 requests over 45.7 s; longest request /u,
     );
   });
 
@@ -419,7 +481,7 @@ describe('migrated reports and golden pages (11-REQ-44, 11-AC-28)', () => {
     // Headroom column: — for every key.
     const rows = [
       ...html.matchAll(
-        /<tbody data-g[^>]*><tr><th scope="row">.*?<\/th><td>.*?<\/td><td>(.*?)<\/td>/gsu,
+        /<tbody data-g[^>]*><tr class="[^"]+"><th scope="row" class="k">.*?<\/th><td class="r">.*?<\/td><td class="z">(.*?)<\/td>/gsu,
       ),
     ];
     expect(rows.length).toBeGreaterThan(0);
@@ -475,14 +537,14 @@ describe('size budget (11-REQ-43)', () => {
     total: 10 * 1024 * 1024,
     assets: kB(60),
     keyData: kB(3.2),
-    keyRow: kB(0.5),
-    keyDetails: kB(4.3),
-    histogram: kB(1.0),
-    checks: kB(1.1),
-    hints: kB(0.35),
-    test: kB(1.5),
+    keyRow: kB(0.75),
+    keyDetails: kB(6.6),
+    histogram: kB(1.1),
+    checks: kB(1.8),
+    hints: kB(0.55),
+    test: kB(2.4),
     waterfallData: kB(25),
-    waterfallSvg: kB(45),
+    waterfallSvg: kB(60),
     rest: kB(0.1 * 1024),
   };
   const report = referenceReport();
@@ -503,11 +565,13 @@ describe('size budget (11-REQ-43)', () => {
     expect(max(keys.map((k) => B(stableJson(data.endpoints[k]))))).toBeLessThanOrEqual(
       BUDGET.keyData,
     );
-    expect(max(all(/<tbody data-g[^>]*><tr>.*?<\/tr>/gsu))).toBeLessThanOrEqual(BUDGET.keyRow);
+    const keyRows = all(/<tbody data-g[^>]*><tr class=.*?<\/tr>/gsu);
+    expect(keyRows).toHaveLength(keys.length);
+    expect(max(keyRows)).toBeLessThanOrEqual(BUDGET.keyRow);
     expect(max(all(/<div class="kd">.*?<\/div><\/details>/gsu))).toBeLessThanOrEqual(
       BUDGET.keyDetails,
     );
-    expect(max(all(/<svg class="hist".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.histogram);
+    expect(max(all(/<svg class="hist ch".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.histogram);
     expect(max(all(/<table class="ck">.*?<\/table>/gsu))).toBeLessThanOrEqual(BUDGET.checks);
     expect(max(all(/<ul class="hints">.*?<\/ul>/gsu))).toBeLessThanOrEqual(BUDGET.hints);
     const tests = data.testBreakdown?.tests ?? [];
@@ -518,7 +582,7 @@ describe('size budget (11-REQ-43)', () => {
     );
     const waterfalls = data.testBreakdown?.waterfalls ?? [];
     expect(max(waterfalls.map((w) => B(stableJson(w))))).toBeLessThanOrEqual(BUDGET.waterfallData);
-    expect(max(all(/<svg class="wf".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.waterfallSvg);
+    expect(max(all(/<svg class="wf ch".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.waterfallSvg);
   });
 
   test('11-AC-25 adding one key, test or waterfall grows the page by at most its budget', () => {
@@ -546,7 +610,7 @@ describe('size budget (11-REQ-43)', () => {
       all(/<tbody data-g.*?<\/details><\/td><\/tr><\/tbody>/gsu).reduce((a, b) => a + b, 0) -
       all(/<tr data-i=.*?<\/tr>/gsu).reduce((a, b) => a + b, 0) -
       B(stableJson(data.testBreakdown)) -
-      all(/<figure class="wfb">.*?<\/figure>/gsu).reduce((a, b) => a + b, 0) -
+      all(/<figure class="card wfb">.*?<\/figure>/gsu).reduce((a, b) => a + b, 0) -
       B(STYLES) -
       B(SCRIPT) -
       2 * B(stableJson(report.config, '  '));
