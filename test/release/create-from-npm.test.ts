@@ -120,7 +120,7 @@ describe.runIf(VERSION !== '')('create package from npm', () => {
       expect(thresholds.status, thresholds.output).toBe(0);
       expect(thresholds.output).toContain('thresholds derived');
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
-        'pw-perf-thresholds.api.json',
+        'pw-perf-thresholds.json',
       ]);
     },
     TIMEOUT,
