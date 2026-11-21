@@ -8,14 +8,16 @@ import { LANGUAGES, isWizardLanguage } from './init/messages.ts';
 import type { WizardLanguage } from './init/messages.ts';
 import { isListOnly, testFilters, unsupportedOptions } from '../mode/playwright-args.ts';
 
-export type HelpTopic = 'test' | 'thresholds' | 'report' | 'init';
+export type HelpTopic = 'test' | 'thresholds' | 'check' | 'report' | 'init';
 
 export type ParsedCommand =
   | {
       kind: 'run';
-      mode: 'test' | 'thresholds';
+      mode: 'test' | 'thresholds' | 'check';
       env?: string;
       repeat?: number;
+      /** check only: --max-tests (04-REQ-49). */
+      maxTests?: number;
       prune: boolean;
       playwrightArgs: string[];
       listOnly: boolean;
@@ -34,14 +36,14 @@ export type ParsedCommand =
   | { kind: 'help'; command?: HelpTopic }
   | { kind: 'version' };
 
-export const COMMANDS: readonly HelpTopic[] = ['test', 'thresholds', 'report', 'init'];
+export const COMMANDS: readonly HelpTopic[] = ['test', 'thresholds', 'check', 'report', 'init'];
 
 const HELP = new Set(['--help', '-h']);
 const VERSION = new Set(['--version', '-v']);
 const USAGE_HINT = `Commands: ${COMMANDS.join(', ')}. Run "${CLI_COMMAND} --help" for the usage.`;
 
 /** Own options of each command form (04, chapter 3). */
-const RUN_OPTIONS = ['--env', '--repeat', '--prune', '--from'] as const;
+const RUN_OPTIONS = ['--env', '--repeat', '--prune', '--from', '--max-tests'] as const;
 const FROM_OPTIONS = ['--env', '--prune', '--from', '--config'] as const;
 const REPORT_OPTIONS = ['--input', '--output', '--config'] as const;
 const INIT_OPTIONS = ['--yes', '-y', '--dry-run', '--lang', '--no-tutorial'] as const;
@@ -49,6 +51,7 @@ const INIT_OPTIONS = ['--yes', '-y', '--dry-run', '--lang', '--no-tutorial'] as 
 const VALUED: ReadonlySet<string> = new Set([
   '--env',
   '--repeat',
+  '--max-tests',
   '--from',
   '--config',
   '--input',
@@ -142,7 +145,7 @@ function fail(issues: CliIssue[]): Result<ParsedCommand, CliIssue> {
 }
 
 function parseRun(
-  mode: 'test' | 'thresholds',
+  mode: 'test' | 'thresholds' | 'check',
   args: readonly string[],
 ): Result<ParsedCommand, CliIssue> {
   const sep = args.indexOf('--');
@@ -158,6 +161,7 @@ function parseRun(
   let env: string | undefined;
   let repeat: number | undefined;
   let prune = false;
+  let maxTests: number | undefined;
   for (let i = 0; i < before.length;) {
     const own = ownOption(before, i, RUN_OPTIONS, issues);
     if (own === null) {
@@ -178,10 +182,32 @@ function parseRun(
       });
       continue;
     }
+    // A check runs every test once, writes nothing and has no --prune (04-REQ-48).
+    if (mode === 'check' && (name === '--repeat' || name === '--prune' || name === '--from')) {
+      issues.push({
+        code: 'CLI_INVALID_OPTION',
+        message: `${name} is not an option of check: a check runs the first test of each file once and writes no files.`,
+        hint: `Remove ${name}; use --max-tests to choose how many tests run.`,
+      });
+      continue;
+    }
+    if (mode !== 'check' && name === '--max-tests') {
+      issues.push({
+        code: 'CLI_INVALID_OPTION',
+        message: `--max-tests is an option of check, not of ${mode}.`,
+        hint: `Run "${CLI_COMMAND} check --max-tests <n>", or remove the option.`,
+      });
+      continue;
+    }
     if (name === '--prune') prune = true;
     else if (value === undefined) continue;
-    else if (name === '--env') env = checkEnv(value, issues);
-    else if (name === '--repeat') repeat = checkRepeat(value, mode, issues);
+    else if (name === '--max-tests') {
+      const n = parseRepeat(value);
+      if (n === null || n > 1000)
+        issues.push(invalidValue('--max-tests', 'an integer from 1 to 1000, like "10"', value));
+      else maxTests = n;
+    } else if (name === '--env') env = checkEnv(value, issues);
+    else if (name === '--repeat' && mode !== 'check') repeat = checkRepeat(value, mode, issues);
   }
   playwrightArgs.push(...after);
 
@@ -211,6 +237,7 @@ function parseRun(
       mode,
       ...(env === undefined ? {} : { env }),
       ...(repeat === undefined ? {} : { repeat }),
+      ...(maxTests === undefined ? {} : { maxTests }),
       prune,
       playwrightArgs,
       listOnly: isListOnly(playwrightArgs),
@@ -363,6 +390,7 @@ export function parseArgs(argv: readonly string[]): Result<ParsedCommand, CliIss
   switch (first) {
     case 'test':
     case 'thresholds':
+    case 'check':
       return parseRun(first, rest);
     case 'report':
       return parseReport(rest);

@@ -2,7 +2,8 @@
 import type { BrowserContext, Page, TestInfo, TestType } from '@playwright/test';
 import { perfDefaults } from '../core/config/index.ts';
 import { ConfigError } from '../core/types/index.ts';
-import { readModeState } from '../mode/index.ts';
+import { DEFAULT_MAX_TESTS, readModeState } from '../mode/index.ts';
+import { checkRunsTest } from './check-skip.ts';
 import {
   activeCollector,
   getRegistered,
@@ -65,6 +66,20 @@ function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer 
   return { collector, api: collector.api };
 }
 
+/**
+ * A check runs the first test of each file of the measured projects, up to PW_PERF_MAX_TESTS;
+ * the others are skipped before their body (04-REQ-49). Dependency projects run in full.
+ */
+function skipInCheck(testInfo: TestInfo): void {
+  const state = getRegistered();
+  if (state === undefined || state.mode.mode !== 'check') return;
+  if (!state.measuredProjects.includes(testInfo.project.name)) return;
+  const max = state.mode.maxTests ?? DEFAULT_MAX_TESTS;
+  if (!checkRunsTest(state.mode.runId, max, testInfo.project.name, testInfo.file)) {
+    testInfo.skip(true, 'pw-perf check: only the first test of each file runs');
+  }
+}
+
 /* eslint-disable no-empty-pattern -- Playwright reads fixture dependencies from the pattern. */
 const passiveFixtures = {
   perf: async ({}, use: (api: PerfApi) => Promise<void>): Promise<void> => {
@@ -80,6 +95,7 @@ const perfFixtures = {
       use: (buffer: PerfBuffer) => Promise<void>,
       testInfo: TestInfo,
     ): Promise<void> => {
+      skipInCheck(testInfo);
       const buffer = openBuffer(browserName ?? null, testInfo);
       const { collector } = buffer;
       if (collector !== null) setActiveCollector(collector);

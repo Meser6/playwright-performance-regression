@@ -11,6 +11,7 @@ const docsDir = join(root, 'docs');
 /** Prefixes of the issue codes. Constants such as env variable names use other prefixes. */
 const PREFIXES = [
   'ATTACHMENT',
+  'CHECK',
   'CLI',
   'COLLECTOR',
   'CONFIG',

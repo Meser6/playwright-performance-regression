@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `check`: a dry run before the first measurement (`PW_PERF_MODE=check npm run e2e`, or
+  `npx pw-perf check`). It runs the first test of each file once (at most `--max-tests`,
+  `PW_PERF_MAX_TESTS`, default 10) and shows the projects, origins with their labels, top keys,
+  the thresholds files and an estimate of the full runs; it evaluates nothing and writes no files.
+  `CHECK_RANDOM_HOST` proposes host patterns for generated CI hosts.
+
 - Host patterns in `keys.origins`: `'https://*.ci.example.com': ''` labels random hosts of CI
   instances; `*` matches inside one host label, an exact entry wins, more literal characters win
   between patterns. `baseURL` origins covered by `keys.origins` no longer change the

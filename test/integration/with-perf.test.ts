@@ -218,7 +218,9 @@ describe('withPerf with real Playwright', () => {
       expect(run.output).toContain(
         'playwright-performance-regression: invalid configuration (1 problem)',
       );
-      expect(run.output).toContain('PW_PERF_MODE: expected "test" or "thresholds", got "perf"');
+      expect(run.output).toContain(
+        'PW_PERF_MODE: expected "test", "thresholds" or "check", got "perf"',
+      );
       expect(run.executions).toEqual([]);
     },
     TIMEOUT,

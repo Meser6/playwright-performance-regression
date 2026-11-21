@@ -129,7 +129,7 @@ function plural(n: number, word: string): string {
 
 /** The number of test executions of the run (04-REQ-20): tests × repetitions. */
 export function executionsLine(
-  mode: 'test' | 'thresholds',
+  mode: 'test' | 'thresholds' | 'check',
   tests: readonly TestLike[],
   measured: ReadonlySet<string>,
   repeat: number,

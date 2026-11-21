@@ -81,7 +81,7 @@ export function registered(
   measured: string[] = ['chromium'],
 ): RegisteredState {
   const resolved = resolveConfig(input, {
-    mode: mode.mode,
+    mode: mode.mode === 'check' ? 'test' : mode.mode,
     ...(mode.env === undefined ? {} : { env: mode.env }),
   });
   if (!resolved.ok) throw new Error(JSON.stringify(resolved.issues));

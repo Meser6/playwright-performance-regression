@@ -110,7 +110,7 @@ describe('parseArgs', () => {
       expect(result.ok).toBe(false);
       if (result.ok) continue;
       expect(result.issues[0]?.code).toBe('CLI_UNKNOWN_COMMAND');
-      expect(result.issues[0]?.hint).toContain('test, thresholds, report, init');
+      expect(result.issues[0]?.hint).toContain('test, thresholds, check, report, init');
     }
   });
 

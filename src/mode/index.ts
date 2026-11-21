@@ -3,7 +3,10 @@
 import type { ModeIssue, Result } from '../core/types/index.ts';
 
 export interface PerfModeState {
-  mode: 'test' | 'thresholds';
+  /** `check`: a dry run, nothing is evaluated or written (04, chapter 4.11). */
+  mode: 'test' | 'thresholds' | 'check';
+  /** PW_PERF_MAX_TESTS: measured tests a check runs, 1–1000 (04-REQ-49). */
+  maxTests?: number;
   repeat?: number;
   env?: string;
   runId?: string;
@@ -19,9 +22,26 @@ const ENV = 'PW_PERF_ENV';
 const RUN_ID = 'PW_PERF_RUN_ID';
 const OUTCOME_FILE = 'PW_PERF_OUTCOME_FILE';
 const PRUNE = 'PW_PERF_PRUNE';
+const MAX_TESTS = 'PW_PERF_MAX_TESTS';
 
 /** Every variable of the contract (01, chapter 6), e.g. for CLI_MODE_ALREADY_SET (04-REQ-09). */
-export const MODE_ENV_NAMES: readonly string[] = [MODE, REPEAT, ENV, RUN_ID, OUTCOME_FILE, PRUNE];
+export const MODE_ENV_NAMES: readonly string[] = [
+  MODE,
+  REPEAT,
+  ENV,
+  RUN_ID,
+  OUTCOME_FILE,
+  PRUNE,
+  MAX_TESTS,
+];
+
+/** Name of the state file of a check in the temporary directory (04-REQ-49). */
+export function checkStateFileName(runId: string): string {
+  return `playwright-performance-regression-${runId}.check.json`;
+}
+
+/** Default of PW_PERF_MAX_TESTS and --max-tests (04-REQ-49). */
+export const DEFAULT_MAX_TESTS = 10;
 
 const POSITIVE_INTEGER = /^[1-9][0-9]*$/u;
 const ENV_LABEL = /^[a-z0-9-]{1,32}$/u;
@@ -79,17 +99,19 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
   if (mode === undefined) return { ok: true, value: null };
 
   const issues: ModeIssue[] = [];
-  if (mode !== 'test' && mode !== 'thresholds') {
+  if (mode !== 'test' && mode !== 'thresholds' && mode !== 'check') {
     issues.push(
       invalid(
         MODE,
-        '"test" or "thresholds"',
+        '"test", "thresholds" or "check"',
         mode,
         `Unset ${MODE} to run without perf mode, or start the run with "npx pw-perf test".`,
       ),
     );
   }
-  const state: PerfModeState = { mode: mode === 'thresholds' ? 'thresholds' : 'test' };
+  const state: PerfModeState = {
+    mode: mode === 'thresholds' || mode === 'check' ? mode : 'test',
+  };
 
   const repeat = read(env, REPEAT);
   if (repeat !== undefined) {
@@ -127,6 +149,22 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
   const outcomeFile = read(env, OUTCOME_FILE);
   if (outcomeFile !== undefined) state.outcomeFile = outcomeFile;
 
+  const maxTests = read(env, MAX_TESTS);
+  if (maxTests !== undefined) {
+    const parsed = parseRepeat(maxTests);
+    if (parsed !== null && parsed <= 1000) state.maxTests = parsed;
+    else {
+      issues.push(
+        invalid(
+          MAX_TESTS,
+          'an integer from 1 to 1000, like "10"',
+          maxTests,
+          `Fix the number of tests a check runs, or unset ${MAX_TESTS} (default ${String(DEFAULT_MAX_TESTS)}).`,
+        ),
+      );
+    }
+  }
+
   const prune = read(env, PRUNE);
   if (prune !== undefined) {
     if (prune === '1') state.prune = true;
@@ -153,6 +191,7 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
   if (state.outcomeFile !== undefined) env[OUTCOME_FILE] = state.outcomeFile;
   if (state.prune === true) env[PRUNE] = '1';
+  if (state.maxTests !== undefined) env[MAX_TESTS] = String(state.maxTests);
   return env;
 }
 

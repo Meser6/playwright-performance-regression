@@ -6,6 +6,7 @@ export {
   relativeSlashPath,
   removeFileSync,
   resolvePath,
+  tempPath,
 } from './files.ts';
 export { writeJsonStable, writeTextAtomic } from './json.ts';
 export { readPackageInfo } from './package-info.ts';

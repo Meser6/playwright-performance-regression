@@ -120,6 +120,10 @@ export default tseslint.config(
     'src/collector',
     [
       './',
+      // The state file of a check in the temporary directory (04-REQ-49).
+      'node:fs',
+      'node:os',
+      'node:path',
       '../core/types/',
       '../core/schema/',
       // perfDefaults: the default config when withPerf() was not applied (01-REQ-07).
