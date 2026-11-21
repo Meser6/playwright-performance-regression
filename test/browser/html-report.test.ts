@@ -1,4 +1,4 @@
-// The HTML report in real Chromium (11, chapter 15): network, JavaScript off, XSS, tabs, drawer,
+// The HTML report in real Chromium (11, chapter 15): network, JavaScript off, XSS, tabs, the key dialog,
 // deep links, sorting and filters, download, print, dark theme, 360 px and accessibility
 // (axe-core). The page is served from a routed origin, so every request it makes is seen. No
 // timing assertions here: the time limits are checked in test/perf/html.test.ts (12-D-05).
@@ -93,7 +93,8 @@ async function axe(page: Page): Promise<string[]> {
   )) as string[];
 }
 
-const drawer = (page: Page) => page.locator('#drawer');
+const dialog = (page: Page) => page.locator('#key-dialog');
+const title = (page: Page) => page.locator('#dlg-title');
 
 describe('HTML report in Chromium', { timeout: 120_000 }, () => {
   test('11-AC-01 the page makes no request besides the file itself', async () => {
@@ -174,7 +175,11 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
       await pw(page.locator(`#tab-${tab}`)).toBeVisible();
       await pw(page.locator(`.tabs a[href="#tab-${tab}"]`)).toBeVisible();
     }
-    await pw(page.locator('.card .status')).toHaveText(['passed', 'failed', 'none']);
+    await pw(page.locator('.subst dd')).toHaveText([
+      'failed 1 blocking · 1 muted',
+      'passed 3 tests',
+      'none',
+    ]);
     const data = toHtmlReportData(report);
     expect(await rowKeys(page, 'api')).toEqual(defaultOrder(data.endpoints, 'p95'));
     await pw(page.locator('#table-api details')).toHaveCount(Object.keys(report.endpoints).length);
@@ -184,7 +189,13 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await pw(timed.locator('svg.hist')).toBeVisible();
     await pw(page.locator('#table-tests')).toBeVisible();
     await pw(page.locator('svg.wf')).toBeVisible();
-    for (const selector of ['.tools', '#download', '[data-copy]', '#drawer', '[data-kinds]']) {
+    for (const selector of [
+      '.toolbar',
+      '#download',
+      '[data-copy]',
+      '#key-dialog',
+      '[data-kinds]',
+    ]) {
       await pw(page.locator(selector).first()).toBeHidden();
     }
     await page.context().close();
@@ -227,40 +238,78 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await plain.page.context().close();
   });
 
-  test('11-AC-16 drawer: open from table, ranking, violations and Tests; focus, #key= link, Esc, deep links', async () => {
+  test('11-AC-16 dialog: open from table, ranking, violations and Tests; focus, #key= link, Esc, deep links', async () => {
     const report = fullRun();
     const { page } = await open(report);
-    // From the violations list in Overview.
+    // From the violations list in Overview; the tab under the dialog does not change.
     const fromList = page.locator('section[aria-labelledby="viol-h"] a[href^="#key-"]').first();
     await fromList.click();
-    await pw(drawer(page)).toBeVisible();
-    await pw(page.locator('#drawer-title')).toBeFocused();
-    await pw(page.locator('#drawer-title')).toHaveText('POST /api/orders');
-    await pw(page.locator('#tab-endpoints')).toBeVisible();
+    await pw(dialog(page)).toBeVisible();
+    expect(await dialog(page).evaluate((d) => d.matches(':modal'))).toBe(true);
+    await pw(title(page)).toBeFocused();
+    await pw(title(page)).toHaveText('POST /api/orders');
+    await pw(page.locator('#dlg-pos')).toHaveText('Endpoint 1 of 2');
+    await pw(page.locator('#tab-overview')).toBeVisible();
+    // The page under the dialog does not scroll; Tab stays in the dialog.
+    await pw(page.locator('html')).toHaveClass(/modal-open/u);
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      // The browser keeps the focus in the modal dialog (or in its own UI, then on <body>).
+      expect(
+        await page.evaluate(
+          'document.activeElement === document.body || document.activeElement.closest("#key-dialog") !== null',
+        ),
+      ).toBe(true);
+    }
     expect(page.url()).toBe(`${URL}#key=api:${encodeURIComponent('POST /api/orders')}`);
-    await pw(drawer(page).getByRole('table', { name: 'Checks' })).toBeVisible();
+    await pw(dialog(page).getByRole('table', { name: 'Checks' })).toBeVisible();
     await page.keyboard.press('Escape');
-    await pw(drawer(page)).toBeHidden();
+    await pw(dialog(page)).toBeHidden();
     await pw(fromList).toBeFocused();
     // The block went back to its row.
     await pw(page.locator('#table-api details .kd')).toHaveCount(2);
     // From a ranking, the table and the Tests tab.
     await page.getByRole('tab', { name: 'Overview' }).click();
     await page.locator('ol[data-rank="called"] a').first().click();
-    await pw(page.locator('#drawer-title')).toHaveText('GET /api/tickets/:id');
-    await page.getByRole('button', { name: 'Close' }).click();
-    // Closing returns to the tab of the link that opened the drawer.
+    await pw(title(page)).toHaveText('GET /api/tickets/:id');
+    // A click on the backdrop closes the dialog too.
+    await page.mouse.click(5, 5);
+    await pw(dialog(page)).toBeHidden();
+    await pw(page).toHaveURL(`${URL}#tab=overview`);
     await pw(page.locator('#tab-overview')).toBeVisible();
     await page.getByRole('tab', { name: /Endpoints/u }).click();
     await page.locator('#table-api a[href^="#key-"]').first().click();
-    await pw(page.locator('#drawer-title')).toHaveText('POST /api/orders');
+    await pw(title(page)).toHaveText('POST /api/orders');
+    await pw(page.locator('#table-api > tbody').first().locator('tr').first()).toHaveClass(
+      /\bsel\b/u,
+    );
     await page.getByRole('button', { name: 'Next key' }).click();
-    await pw(page.locator('#drawer-title')).toHaveText('GET /api/tickets/:id');
+    await pw(title(page)).toHaveText('GET /api/tickets/:id');
+    // The last row: Next key is disabled.
+    await pw(page.getByRole('button', { name: 'Next key' })).toBeDisabled();
     await page.getByRole('button', { name: 'Close' }).click();
+    await pw(page.locator('#table-api details .kd')).toHaveCount(2);
+    // A click on a row (not on the link) opens it as well.
+    await page.locator('#table-api > tbody').nth(1).locator('td').nth(3).click();
+    await pw(title(page)).toHaveText('GET /api/tickets/:id');
+    await page.keyboard.press('Escape');
     await page.getByRole('tab', { name: /Tests/u }).click();
     await page.locator('#table-tests a[href^="#key-"]').first().click();
-    await pw(drawer(page)).toBeVisible();
-    await pw(page.locator('#tab-endpoints')).toBeVisible();
+    await pw(dialog(page)).toBeVisible();
+    await pw(page.locator('#tab-tests')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // Size: 960 px wide and centred at 1280 px, the whole screen at 360 px.
+    for (const [width, expected] of [
+      [1280, 960],
+      [360, 360],
+    ] as const) {
+      const sized = await open(fullRun(), { viewport: { width, height: 800 } }, '#key-api-1');
+      const box = await dialog(sized.page).boundingBox();
+      expect(Math.round(box?.width ?? 0)).toBe(expected);
+      expect(Math.round(box?.x ?? -1)).toBe((width - expected) / 2);
+      await sized.page.context().close();
+    }
     await page.context().close();
 
     // Next key walks only over the visible rows of a filtered table.
@@ -270,12 +319,12 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     const passing = await rowKeys(big.page, 'api');
     await big.page.locator('#table-api > tbody:visible a[href^="#key-"]').first().click();
     await big.page.getByRole('button', { name: 'Next key' }).click();
-    await pw(big.page.locator('#drawer-title')).toHaveText(passing[1] ?? '');
+    await pw(title(big.page)).toHaveText(passing[1] ?? '');
     await big.page.context().close();
 
     // Deep links when the page opens.
     const known = await open(fullRun(), {}, '#key=api:GET%20%2Fapi%2Ftickets%2F%3Aid');
-    await pw(known.page.locator('#drawer-title')).toHaveText('GET /api/tickets/:id');
+    await pw(title(known.page)).toHaveText('GET /api/tickets/:id');
     await known.page.context().close();
     // Links of the removed custom kind open the overview (D-32).
     const removed = await open(fullRun(), {}, '#key=custom:checkout%3Aload-cart');
@@ -284,10 +333,20 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     const unknown = await open(fullRun(), {}, '#key=api:GET%20%2Fnope');
     await pw(unknown.page.locator('#tab-overview')).toBeVisible();
     await pw(unknown.page.getByRole('status').first()).toHaveText('Key not found in this report');
-    await pw(drawer(unknown.page)).toBeHidden();
+    await pw(dialog(unknown.page)).toBeHidden();
+    // Without the script the same anchor scrolls to the details block of the row (browsers that
+    // do not expand it on fragment navigation leave it for the user to expand).
+    const plain = await open(fullRun(), { javaScriptEnabled: false }, '#key-api-1');
+    await pw(plain.page.locator('#key-api-1')).toBeInViewport();
+    await plain.page.context().close();
+    // A deep link opens the dialog over the tab of the key's kind.
+    const step = await open(stepsRun(), {}, '#key=step:login%20%E2%80%BA%20submit');
+    await pw(step.page.locator('#tab-steps')).toBeVisible();
+    await pw(dialog(step.page)).toBeVisible();
+    await step.page.context().close();
     await unknown.page.context().close();
     const anchor = await open(fullRun(), {}, '#key-api-1');
-    await pw(anchor.page.locator('#drawer-title')).toHaveText('POST /api/orders');
+    await pw(title(anchor.page)).toHaveText('POST /api/orders');
     await anchor.page.context().close();
   });
 
@@ -297,9 +356,9 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
       dialogs,
       console: messages,
     } = await open(stepsRun(), {}, '#key=step:login%20%E2%80%BA%20submit');
-    await pw(drawer(page)).toBeVisible();
-    await pw(page.locator('#drawer-title')).toHaveText('login \u203a submit');
-    await pw(drawer(page)).toContainText('pages/login.page.ts:12');
+    await pw(dialog(page)).toBeVisible();
+    await pw(title(page)).toHaveText('login \u203a submit');
+    await pw(dialog(page)).toContainText('pages/login.page.ts:12');
     await page.keyboard.press('Escape');
     await pw(page.locator('#tab-steps-link')).toContainText('Steps 2');
     await page.locator('#tab-steps-link').click();
@@ -342,7 +401,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     const text = defaults.filter((k) => k.toLowerCase().includes('resource-001'));
     expect((await rowKeys(page, 'api')).sort()).toEqual(text.sort());
     await pw(count).toHaveText(`showing ${text.length} of ${keys.length}`);
-    await tools.getByRole('button', { name: 'Reset' }).click();
+    await tools.locator('.toolbar').getByRole('button', { name: 'Reset' }).click();
     await pw(count).toHaveText(`showing ${keys.length} of ${keys.length}`);
     // "All N violations" sets the violation chips.
     await page.getByRole('tab', { name: 'Overview' }).click();
@@ -433,11 +492,11 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.context().close();
   });
 
-  test('11-AC-27 print: panels visible, controls and drawer hidden, details of violations open, light theme', async () => {
+  test('11-AC-27 print: panels visible, controls and dialog hidden, details of violations open, light theme', async () => {
     const { page } = await open(fullRun(), { colorScheme: 'dark' });
     await page.emulateMedia({ media: 'print' });
     for (const tab of TABS) await pw(page.locator(`#tab-${tab}`)).toBeVisible();
-    for (const selector of ['.tabs', '.tools', '#download', '#drawer']) {
+    for (const selector of ['.tabs', '.toolbar', '#download', '#key-dialog']) {
       await pw(page.locator(selector).first()).toBeHidden();
     }
     const violation = page.locator('#table-api > tbody[data-g="0"]').first();
@@ -457,11 +516,11 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     const background = await page.evaluate(
       'getComputedStyle(document.documentElement).backgroundColor',
     );
-    expect(background).toBe('rgb(13, 17, 23)');
+    expect(background).toBe('rgb(11, 13, 18)');
     await page.context().close();
   });
 
-  test('11-AC-27 at 360 px no tab and no open drawer makes the page scroll sideways', async () => {
+  test('11-AC-27 at 360 px no tab and no open dialog makes the page scroll sideways', async () => {
     const report = referenceReport(10);
     const { page } = await open(report, { viewport: { width: 360, height: 800 } });
     for (const tab of TABS) {
@@ -472,7 +531,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
       );
     }
     await page.evaluate(`location.hash = '#key-api-1'`);
-    await pw(drawer(page)).toBeVisible();
+    await pw(dialog(page)).toBeVisible();
     expect(await page.evaluate('document.documentElement.scrollWidth')).toBeLessThanOrEqual(360);
     // Tables and the waterfall scroll inside their containers.
     await page.keyboard.press('Escape');
@@ -485,7 +544,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.context().close();
   });
 
-  test('11-AC-08 11-AC-26 axe-core: no WCAG A or AA violations in every tab and the open drawer, both themes, 360 and 1280 px', async () => {
+  test('11-AC-08 11-AC-26 axe-core: no WCAG A or AA violations in every tab and the open dialog, both themes, 360 and 1280 px', async () => {
     const failures: string[] = [];
     for (const colorScheme of ['light', 'dark'] as const) {
       for (const width of [360, 1280]) {
@@ -498,8 +557,12 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
             for (const v of await axe(page)) failures.push(`${colorScheme} ${width} ${tab}: ${v}`);
           }
           await page.evaluate(`location.hash = '#key-api-1'`);
-          await pw(drawer(page)).toBeVisible();
-          for (const v of await axe(page)) failures.push(`${colorScheme} ${width} drawer: ${v}`);
+          await pw(dialog(page)).toBeVisible();
+          // Colours are checked after the short opening animation.
+          await page.evaluate(
+            'Promise.all(document.getElementById("key-dialog").getAnimations().map((a) => a.finished))',
+          );
+          for (const v of await axe(page)) failures.push(`${colorScheme} ${width} dialog: ${v}`);
           await page.context().close();
         }
       }
@@ -509,7 +572,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
 
   // The time limits of 11-AC-05 and 11-AC-30 are checked in the isolated performance suite
   // (test/perf/html.test.ts, 12-PERF-03, 12-D-05).
-  test('11-AC-05 the reference report loads; tabs, drawer and filters work on 500 rows', async () => {
+  test('11-AC-05 the reference report loads; tabs, dialog and filters work on 500 rows', async () => {
     const { page } = await open(referenceReport(), {}, '#tab=endpoints');
     expect(await page.locator('#table-api > tbody').count()).toBe(500);
     await page.locator('#table-api th[data-sort="max"] button').click();
@@ -517,7 +580,47 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.locator('[data-for="table-api"]').getByRole('searchbox').fill('resource-00');
     expect((await rowKeys(page, 'api')).length).toBe(100);
     await page.locator('#table-api > tbody:visible a[href^="#key-"]').first().click();
-    await pw(drawer(page)).toBeVisible();
+    await pw(dialog(page)).toBeVisible();
+    await page.context().close();
+  });
+
+  test('11-AC-34 sticky tabs after scrolling 2000 px; one ranking kind at a time; row classes and meters', async () => {
+    const { page } = await open(referenceReport(10), { viewport: { width: 1280, height: 700 } });
+    await page.getByRole('tab', { name: /Endpoints/u }).click();
+    await page.evaluate('window.scrollTo(0, 2000)');
+    const box = await page.locator('nav.tabs').boundingBox();
+    expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
+    expect(box?.y ?? 99).toBeLessThan(2);
+    await page.context().close();
+
+    const steps = await open(stepsRun());
+    const kinds = steps.page.getByRole('group', { name: 'Key kind in the rankings' });
+    await pw(kinds.getByRole('button', { name: 'Endpoints' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await kinds.getByRole('button', { name: 'Steps' }).click();
+    await pw(kinds.getByRole('button', { name: 'Steps' })).toHaveAttribute('aria-pressed', 'true');
+    await pw(kinds.getByRole('button', { name: 'Endpoints' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    const shown = await steps.page
+      .locator('ol[data-rank="called"] > li:visible')
+      .evaluateAll((items) => items.map((i) => i.getAttribute('data-k')));
+    expect(shown.length).toBeGreaterThan(0);
+    expect(new Set(shown)).toEqual(new Set(['step']));
+    await steps.page.context().close();
+  });
+
+  test('11-AC-36 a filter without results shows "No keys match the filters" with Reset', async () => {
+    const { page } = await open(fullRun(), {}, '#tab=endpoints');
+    const card = page.locator('[data-for="table-api"]');
+    await card.getByRole('searchbox').fill('no such key');
+    await pw(card.getByText('No keys match the filters')).toBeVisible();
+    await card.locator('[data-none]').getByRole('button', { name: 'Reset' }).click();
+    await pw(card.getByText('No keys match the filters')).toBeHidden();
+    await pw(card.getByRole('status')).toHaveText('showing 2 of 2');
     await page.context().close();
   });
 });

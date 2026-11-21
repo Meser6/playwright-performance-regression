@@ -17,6 +17,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The HTML report has a new look: an app bar with the run details, a verdict card with the three
+  results (performance, tests, tool errors) and the exit code, a KPI strip, sticky tabs, violation
+  cards with the first hint, rankings with bars and an Endpoints/Steps switch, endpoints shown with
+  a colored method badge and highlighted path parameters, and failures in a clear red (light and
+  dark theme). Key details open in a centered dialog (`Esc`, Close or a click outside closes it;
+  full screen on phones) instead of the side panel. The details show p50, the evaluated
+  percentile, p99 and max at a glance, the histogram bars above the limit in red and a headroom
+  meter for every check. Times in the key tables are whole milliseconds without a unit (the table
+  footer says “All times in ms”). Error rates in the checks are shown as percentages.
 - The run summary and the `check` output are easier to scan: errors, warnings and the verdict
   are in framed boxes, the counters and the violations in tables with lines, and statuses carry
   emoji (✅ ⚠ ❌). Long warning messages wrap inside the box. `NO_COLOR` turns off only the

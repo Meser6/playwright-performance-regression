@@ -52,7 +52,7 @@ function embedded(page: string): unknown {
 function rowOf(page: string, key: string): string {
   const bodies = page.split('<tbody data-g=');
   const body = bodies.find((b) => b.includes(`<code class="fk">${escapeHtml(key)}</code>`)) ?? '';
-  return /<tr>(.*?)<\/tr>/su.exec(body)?.[1] ?? '';
+  return /<tr class="[^"]+">(.*?)<\/tr>/su.exec(body)?.[1] ?? '';
 }
 
 function sha256(text: string): string {
@@ -201,11 +201,11 @@ describe('renderHtmlReport', () => {
     const page = renderHtmlReport(fullRun());
     const row = rowOf(page, 'POST /api/orders');
     expect(row).toContain(
-      '<td>0 / 5</td><td>5</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>',
+      '<td class="num">0 / 5</td><td class="num e">5</td><td class="num z">—</td><td class="num z">—</td><td class="num z">—</td><td class="num z">—</td><td class="num z">—</td>',
     );
     const rare = rowOf(renderHtmlReport(markupCase()), 'GET /api/rare');
     expect(rare).toContain('not evaluated');
-    expect(rare).toContain('<small>too few samples</small>');
+    expect(rare).toContain('<small class="why">too few samples</small>');
   });
 
   test('11-REQ-21 report values are escaped; 11-REQ-22 raw URLs are text, never links', () => {
@@ -217,7 +217,7 @@ describe('renderHtmlReport', () => {
     expect(body).toContain('it&#39;s &lt;i&gt;quoted&lt;/i&gt;');
     expect(body).toContain('Old &lt;b&gt;note&lt;/b&gt; &amp; &quot;quotes&quot;');
     expect(body).toContain('feature/&lt;x&gt;');
-    expect(body).not.toMatch(/<img|<i>|<b>[^<]*note|alert\(1\)<\/script>/u);
+    expect(body).not.toMatch(/<img|<i>quoted|<b>[^<]*note|alert\(1\)<\/script>/u);
     expect(page.match(/<script/gu)?.length).toBe(2);
 
     const raw = readCase(join(RUN_REPORTS, 'raw-urls-and-extra-percentile.json')).input;
@@ -282,32 +282,47 @@ describe('renderHtmlReport', () => {
     const page = renderHtmlReport(report);
     const section = /<section aria-labelledby="muted-h">(.*?)<\/section>/su.exec(page)?.[1] ?? '';
     const rows = [
-      ...section.matchAll(/<tr><th scope="row" class="key">(.*?)<\/th>(.*?)<\/tr>/gsu),
+      ...section.matchAll(
+        /<li><span class="tt"><a class="kl"[^>]*>(.*?)<\/a><span class="sub">(.*?)<\/span><\/span><span class="num">(.*?)<\/span><\/li>/gsu,
+      ),
     ].map((m) => [
       (m[1] ?? '').replace(/<[^>]+>/gu, ''),
-      (m[2] ?? '').replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|'),
+      m[2],
+      (m[3] ?? '').replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|'),
     ]);
     expect(rows).toEqual([
       [
         'GET /api/users',
-        '|API|2026-01-31|expired|no|Old &lt;b&gt;note&lt;/b&gt; &amp; &quot;quotes&quot;|',
+        'API · until 2026-01-31 · Old &lt;b&gt;note&lt;/b&gt; &amp; &quot;quotes&quot;',
+        '|mute expired|no violation|',
       ],
       [
         'POST /api/reports/export',
-        '|API|2026-12-31|active|yes|Depends on report service, tracked in backlog|',
+        'API · until 2026-12-31 · Depends on report service, tracked in backlog',
+        '|has violation|',
       ],
     ]);
     const active = report.evaluation.counts.api.muted;
-    expect(section).toContain(`<p>${active} active muting, 1 expired muting.</p>`);
+    expect(section).toContain(`${active} active muting, 1 expired muting.</p>`);
+    expect(section).toContain(`<span class="n">${active}</span>`);
     expect(page).toContain('>mute expired<');
     expect(page).toContain('>muted until 2026-12-31<');
   });
 
   test('11-REQ-08 verdict: three results with text; gate off in thresholds mode; failed-share note', () => {
     const page = renderHtmlReport(fullRun());
-    expect(page).toContain('<h3>Tests</h3><p class="status">passed</p>');
-    expect(page).toContain('<h3>Performance</h3><p class="status">failed</p>');
-    expect(page).toContain('<h3>Tool errors</h3><p class="status">none</p>');
+    const results = (html: string) =>
+      [
+        ...html.matchAll(
+          /<div class="ss"><dt>(.*?)<\/dt><dd><span class="dot (d-\w+)"><\/span>(.*?)<\/dd><\/div>/gu,
+        ),
+      ].map((m) => [m[1], m[2], (m[3] ?? '').replace(/<[^>]+>/gu, '')]);
+    expect(page).toContain('<dl class="subst">');
+    expect(results(page)).toEqual([
+      ['Performance', 'd-bad', 'failed 1 blocking · 1 muted'],
+      ['Tests', 'd-ok', 'passed 3 tests'],
+      ['Tool errors', 'd-ok', 'none'],
+    ]);
     const thresholds = renderHtmlReport(
       readCase(join(RUN_REPORTS, 'thresholds-mode-sparse-config.json')).input,
     );
@@ -317,15 +332,18 @@ describe('renderHtmlReport', () => {
     report.toolErrors = [{ code: 'TESTS_FAILED_TOO_MANY', message: 'too many', hint: 'fix' }];
     report.evaluation.status = 'error';
     const error = renderHtmlReport(report);
-    expect(error).toContain('<p class="status">timed out</p>');
-    expect(error).toContain('the performance result is not trustworthy');
-    expect(error).toContain('<h3>Tool errors</h3><p class="status">1</p>');
-    expect(error).toContain('class="card-in hl-err"');
+    expect(results(error)).toEqual([
+      ['Performance', 'd-bad', 'error 1 blocking · 1 muted'],
+      ['Tests', 'd-warn', 'timed out 3 tests · too many failed: result not trustworthy'],
+      ['Tool errors', 'd-bad', '1'],
+    ]);
+    expect(error).toContain('class="wl hl-err"');
   });
 
   test('11 chapter 12: an empty run shows a message instead of tables and rankings', () => {
     const page = renderHtmlReport(readCase(join(RUN_REPORTS, 'empty-run.json')).input);
-    expect(page).toContain('No requests or steps were recorded.');
+    expect(page).toContain('<h3>No requests or steps were recorded</h3>');
+    expect(page).toContain('>Read the setup guide</a>');
     expect(page).not.toContain('<table class="keys"');
     expect(page).not.toContain('id="rank-h"');
     expect(page).toContain('No test made backend requests in measured projects.');
@@ -339,7 +357,7 @@ describe('renderHtmlReport', () => {
     expect(page).toContain('<button type="button">p99.9 / limit</button>');
     expect(page).not.toContain('>p95 / limit<');
     const value = report.endpoints['GET /api/tickets/:id']?.stats?.percentiles['p99.9'] ?? 0;
-    expect(page).toContain(`${formatMs(value)}<small> / `);
+    expect(page).toContain(`>${Math.round(value)}<span class="lim"> / `);
   });
 
   test('11 chapter 12: keys longer than 80 characters are shortened, full in title and details', () => {
@@ -351,7 +369,11 @@ describe('renderHtmlReport', () => {
     const page = renderHtmlReport(report);
     const short = truncateMiddle(long, 80);
     expect(Array.from(short)).toHaveLength(80);
-    expect(page).toMatch(new RegExp(`<a href="#key-api-\\d" title="${long}">${short}</a>`, 'u'));
+    const path = long.slice(4);
+    const shortPath = truncateMiddle(path, 80 - 4);
+    expect(page).toContain(`<span class="key" title="${long}">${shortPath}</span>`);
+    expect(Array.from(`GET ${shortPath}`)).toHaveLength(80);
+    expect(short.length).toBeGreaterThan(0);
     expect(page).toContain(`<code class="fk">${long}</code>`);
   });
 
@@ -385,7 +407,7 @@ describe('renderHtmlReport', () => {
   test('11-REQ-20 the footer only links the project page', () => {
     const page = renderHtmlReport(fullRun());
     expect(page).toContain(
-      '<footer class="wrap">Generated by <a href="https://github.com/Meser6/playwright-performance-regression" rel="noopener noreferrer">playwright-performance-regression</a> v0.1.0</footer>',
+      '<footer><div class="wrap">Generated by <a href="https://github.com/Meser6/playwright-performance-regression" rel="noopener noreferrer">playwright-performance-regression</a> v0.1.0</div></footer>',
     );
     expect(page).not.toMatch(/waitlist|\bPro\b/u);
   });

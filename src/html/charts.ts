@@ -6,6 +6,12 @@ import type { Waterfall } from '../core/types/index.ts';
 import { html } from './escape.ts';
 import type { SafeHtml } from './escape.ts';
 import { formatMs, plural, truncateMiddle } from './format.ts';
+import { splitEndpoint } from './keyview.ts';
+
+/** Concatenates SVG parts. */
+function join2(...parts: (SafeHtml | null)[]): SafeHtml {
+  return html`${parts}`;
+}
 
 /** Coordinates are rounded to 0.1 (11-REQ-42). */
 function r(x: number): number {
@@ -126,18 +132,35 @@ export function histogramSvg(input: HistogramInput): SafeHtml {
   const base = top + H_BARS;
   const height = base + 16;
 
-  // One path: the outline of all bars, one horizontal step per bin (also empty bins), heights
-  // linear in the counts.
-  // A bin as high as the previous one needs no vertical step.
-  let previous = base;
-  const d = `M${H_LEFT} ${base}${counts
-    .map((count) => {
-      const y = r(base - (H_BARS * count) / most);
-      const step = y === previous ? '' : `V${y}`;
-      previous = y;
-      return `${step}h${r(width)}`;
-    })
-    .join('')}V${base}Z`;
+  // Two outlines, one horizontal step per bin (also empty bins), heights linear in the counts:
+  // `bars` for the bins below the limit of the evaluated percentile and `bars-hi` for the bins
+  // whose lower edge is at or above it (11-REQ-32). The bins above the limit are a suffix,
+  // because the edges grow.
+  const limitValue = input.limit?.value ?? null;
+  let split = bins;
+  if (limitValue !== null) {
+    const at = edges.findIndex((e, i) => i < bins && e >= limitValue);
+    if (at !== -1) split = at;
+  }
+  const outline = (from: number, to: number): string => {
+    let previous = base;
+    const steps = counts
+      .slice(from, to)
+      .map((count) => {
+        const y = r(base - (H_BARS * count) / most);
+        // A bin as high as the previous one needs no vertical step.
+        const step = y === previous ? '' : `V${y}`;
+        previous = y;
+        return `${step}h${r(width)}`;
+      })
+      .join('');
+    return `M${r(H_LEFT + from * width)} ${base}${steps}V${base}Z`;
+  };
+  const bars = join2(
+    split > 0 ? html`<path class="bars" d="${outline(0, split)}"/>` : null,
+    split < bins ? html`<path class="bars-hi" d="${outline(split, bins)}"/>` : null,
+  );
+  const grid = html`<path class="gr" d="M${H_LEFT} ${top}H${H_RIGHT}M${H_LEFT} ${r(top + H_BARS / 2)}H${H_RIGHT}"/>`;
   const markSvg = placed.map((m) => {
     const y = top - 3 - ROW * (rows - 1 - m.row);
     return html`<path class="${m.limit === true ? 'hl' : 'hm'}" d="M${m.x} ${y + 2}V${base}"/><text class="${ANCHOR[m.anchor]}" x="${m.x}" y="${y}">${m.text}</text>`;
@@ -168,7 +191,7 @@ export function histogramSvg(input: HistogramInput): SafeHtml {
     marks.map((m) => `${m.label} ${formatMs(m.value)}`).join(', '),
   ].join('; ');
   const label = input.sampled ? `${summary}; uniform sample of ${String(input.retained)}` : summary;
-  return html`<svg class="hist" viewBox="0 0 ${H_WIDTH} ${height}" role="img" aria-label="${label}"><path class="hb" d="${d}"/><path class="ha" d="M${H_LEFT} ${base}H${H_RIGHT}"/>${markSvg}${tickSvg}</svg>`;
+  return html`<svg class="hist ch" viewBox="0 0 ${H_WIDTH} ${height}" role="img" aria-label="${label}">${grid}${bars}<path class="ha" d="M${H_LEFT} ${base}H${H_RIGHT}"/>${markSvg}${tickSvg}</svg>`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -187,10 +210,12 @@ export function ttfbSplitSvg(ttfb: number, other: number): SafeHtml | null {
 // Waterfall (11-REQ-36)
 
 const W_WIDTH = 960;
-const W_LABEL = 292;
-const W_LEFT = 300;
-const W_RIGHT = 952;
-const W_ROW = 14;
+/** Labels from 0: the method at 0, the rest of the key at W_PATH; bars from W_LEFT to W_RIGHT. */
+const W_PATH = 52;
+const W_SEP = 340;
+const W_LEFT = 350;
+const W_RIGHT = 880;
+const W_ROW = 20;
 const W_TOP = 24;
 /** Keys are shortened in the middle to this many characters in the waterfall. */
 export const WATERFALL_KEY_MAX = 48;
@@ -219,24 +244,48 @@ export function waterfallSvg(waterfall: Waterfall, id: string): SafeHtml {
     return html`<text class="wt ${ANCHOR[anchor]}" x="${x(value)}" y="12">+${formatMs(value)}</text><path class="wg" d="M${x(value)} 16V${height}"/>`;
   });
   let longest: Waterfall['requests'][number] | null = null;
-  const labels = new Map<string, string>();
+  // One label per distinct key: method in its colour, then origin and path (11-REQ-53).
+  const labels = new Map<string, { ref: string; svg: SafeHtml }>();
   for (const req of rows) {
-    const label = truncateMiddle(req.key, WATERFALL_KEY_MAX);
-    if (!labels.has(label)) labels.set(label, `${id}-${String(labels.size)}`);
+    if (labels.has(req.key)) continue;
+    const { method, origin, path } = splitEndpoint(req.key);
+    const rest = truncateMiddle(
+      `${origin}${path}`,
+      Math.max(8, WATERFALL_KEY_MAX - method.length - 1),
+    );
+    const parts = rest.split(/(?<=\/)(:[A-Za-z][\w-]*)/u);
+    const ref = `${id}-${String(labels.size)}`;
+    labels.set(req.key, {
+      ref,
+      svg: html`<text id="${ref}" class="wl"><tspan class="mt m${method}">${method}</tspan><tspan x="${W_PATH}">${parts.map((p, i) => (i % 2 === 1 ? html`<tspan class="p">${p}</tspan>` : p))}</tspan></text>`,
+    });
   }
-  const defs = html`<defs>${[...labels].map(([label, ref]) => html`<text id="${ref}" class="wl" x="${W_LABEL}">${label}</text>`)}</defs>`;
+  const defs = html`<defs>${[...labels.values()].map((l) => l.svg)}</defs>`;
   const rowSvg = rows.map((req, i) => {
     const y = W_TOP + i * W_ROW;
-    const ref = labels.get(truncateMiddle(req.key, WATERFALL_KEY_MAX)) ?? '';
+    const ref = labels.get(req.key)?.ref ?? '';
     const title = `${req.key} · ${req.status} · start +${formatMs(req.offset)} · ${req.duration === null ? 'no duration' : formatMs(req.duration)}`;
     if (req.duration !== null && (longest === null || req.duration > (longest.duration ?? 0))) {
       longest = req;
     }
-    const mark =
-      req.duration === null
-        ? html`<path d="M${x(req.offset)} ${y}l5 5-5 5-5-5z"/><text x="${r(x(req.offset) + 8)}" y="${y + 9}">${req.status}</text>`
-        : html`<rect x="${x(req.offset)}" y="${y + 1}" width="${Math.max(1, r(req.duration * scale))}"/>`;
-    return html`<g class="${waterfallClass(req.status)}"><title>${title}</title><use href="#${ref}" y="${y + 9}"/>${mark}</g>`;
+    let mark: SafeHtml;
+    if (req.duration === null) {
+      const at = x(req.offset);
+      mark = html`<path d="M${at} ${y + 4}l6 6-6 6-6-6z"/><text class="d" x="${r(at + 10)}" y="${y + 14}">${req.status}</text>`;
+    } else {
+      const from = x(req.offset);
+      const width = Math.max(2, r(req.duration * scale));
+      const end = r(from + width);
+      const ok = /^[23]/u.test(req.status);
+      const text = `${formatMs(req.duration)}${ok ? '' : ` · ${req.status}`}`;
+      // The time goes after the bar, or before it when the bar ends near the right edge.
+      const label =
+        end > W_RIGHT - 40
+          ? html`<text class="d ae" x="${r(from - 6)}" y="${y + 14}">${text}</text>`
+          : html`<text class="d" x="${r(end + 6)}" y="${y + 14}">${text}</text>`;
+      mark = html`<rect x="${from}" y="${y + 4}" width="${width}" height="12" rx="2"/>${label}`;
+    }
+    return html`<g class="${waterfallClass(req.status)}"><title>${title}</title><use href="#${ref}" y="${y + 14}"/>${mark}</g>`;
   });
   const top = longest as Waterfall['requests'][number] | null;
   const summary = [
@@ -245,5 +294,5 @@ export function waterfallSvg(waterfall: Waterfall, id: string): SafeHtml {
   ]
     .filter((s) => s !== null)
     .join('; ');
-  return html`<svg class="wf" viewBox="0 0 ${W_WIDTH} ${height}" role="img" aria-label="${summary}">${defs}${ticks}${rowSvg}</svg>`;
+  return html`<svg class="wf ch" viewBox="0 0 ${W_WIDTH} ${height}" role="img" aria-label="${summary}">${defs}${ticks}<path class="sep" d="M${W_SEP} 16V${height}"/>${rowSvg}</svg>`;
 }

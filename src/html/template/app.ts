@@ -1,7 +1,7 @@
-// Script of the HTML report (11, chapter 7): tabs, the key drawer, deep links, search, filters,
+// Script of the HTML report (11, chapter 7): tabs, the key dialog, deep links, search, filters,
 // sorting, copy link and the download of the embedded data. The content is rendered statically
 // (11-REQ-03); the script only changes the order, visibility, parent and attributes of existing
-// elements and the text of counters, the status region and the drawer title (11-REQ-14). It
+// elements and the text of counters, the status region and the dialog title (11-REQ-14). It
 // never builds elements from report data. No dependencies (11-REQ-25).
 
 interface CheckData {
@@ -147,75 +147,116 @@ function kindOf(body: HTMLTableSectionElement): Kind {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Drawer (11-REQ-37)
+// Key dialog (11-REQ-37): a native <dialog> opened with showModal(); the browser keeps the focus
+// in it and makes the rest of the page inert
 
-const drawer = doc.getElementById('drawer');
-const drawerTitle = doc.getElementById('drawer-title');
-const drawerBody = drawer?.querySelector<HTMLElement>('.drawer-body') ?? null;
-const copyOut = drawer?.querySelector<HTMLElement>('.copy-out') ?? null;
-let current: { body: HTMLTableSectionElement; block: HTMLElement; home: HTMLElement } | null = null;
+const KIND_NOUN: Record<Kind, string> = { api: 'Endpoint', step: 'Step' };
+const dialog = doc.getElementById('key-dialog') as HTMLDialogElement | null;
+const dialogTitle = doc.getElementById('dlg-title');
+const dialogPos = doc.getElementById('dlg-pos');
+const dialogSlot = dialog?.querySelector<HTMLElement>('.dh-slot') ?? null;
+const dialogBody = dialog?.querySelector<HTMLElement>('.db') ?? null;
+const copyOut = dialog?.querySelector<HTMLElement>('.copy-out') ?? null;
+const prevButton = dialog?.querySelector<HTMLButtonElement>('[data-act="prev"]') ?? null;
+const nextButton = dialog?.querySelector<HTMLButtonElement>('[data-act="next"]') ?? null;
+let current: {
+  body: HTMLTableSectionElement;
+  block: HTMLElement;
+  head: HTMLElement | null;
+  home: HTMLElement;
+} | null = null;
 let returnFocus: HTMLElement | null = null;
-/** Tab of the link that opened the drawer: closing returns to it with the focus. */
-let returnTab: string | null = null;
 
+/** Puts the details block (and its header, moved into the dialog head) back in its row. */
 function giveBack(): void {
   if (current === null) return;
+  if (current.head !== null) current.block.prepend(current.head);
   current.home.appendChild(current.block);
+  current.body.rows[0]?.classList.remove('sel');
   current = null;
 }
 
-function openKey(body: HTMLTableSectionElement, from: HTMLElement | null): void {
-  const home = body.querySelector<HTMLElement>('details');
-  const block = home?.querySelector<HTMLElement>('.kd') ?? drawerBody?.querySelector('.kd');
-  if (drawer === null || drawerBody === null || home === null || block == null) return;
-  giveBack();
-  if (from !== null) {
-    returnFocus = from;
-    returnTab = currentTab;
-  }
-  drawerBody.appendChild(block);
-  current = { body, block, home };
-  const kind = kindOf(body);
-  const key = keyOfRow.get(body) ?? '';
-  if (drawerTitle !== null) drawerTitle.textContent = key;
-  if (copyOut !== null) copyOut.hidden = true;
-  drawer.hidden = false;
-  doc.documentElement.classList.add('drawer-open');
-  selectTab(KIND_TAB[kind]);
-  setHash(`#key=${kind}:${encodeURIComponent(key)}`);
-  drawerTitle?.focus();
+function visibleRows(body: HTMLTableSectionElement): HTMLTableSectionElement[] {
+  const table = body.closest('table');
+  return table === null ? [body] : Array.from(table.tBodies).filter((b) => !b.hidden);
 }
 
-function closeDrawer(restoreFocus = true): void {
-  if (drawer === null || drawer.hidden) return;
+/**
+ * Shows the details of a key row in the dialog. A click keeps the tab under the dialog; a deep
+ * link (`deep`) selects the tab of the key's kind first.
+ */
+function openKey(body: HTMLTableSectionElement, from: HTMLElement | null, deep = false): void {
+  const home = body.querySelector<HTMLElement>('details');
+  const block = home?.querySelector<HTMLElement>('.kd');
+  if (dialog === null || dialogBody === null || home === null || block == null) return;
   giveBack();
-  drawer.hidden = true;
-  doc.documentElement.classList.remove('drawer-open');
-  if (restoreFocus && returnTab !== null) selectTab(returnTab);
-  setHash(`#tab=${currentTab}`);
-  if (restoreFocus) returnFocus?.focus();
-  returnFocus = null;
-  returnTab = null;
+  if (from !== null) returnFocus = from;
+  const head = block.querySelector<HTMLElement>('.kh');
+  if (head !== null) dialogSlot?.appendChild(head);
+  dialogBody.appendChild(block);
+  current = { body, block, head, home };
+  body.rows[0]?.classList.add('sel');
+  const kind = kindOf(body);
+  const key = keyOfRow.get(body) ?? '';
+  const rowsShown = visibleRows(body);
+  const index = rowsShown.indexOf(body);
+  if (dialogTitle !== null) dialogTitle.textContent = key;
+  if (dialogPos !== null) {
+    dialogPos.textContent =
+      index < 0
+        ? KIND_NOUN[kind]
+        : `${KIND_NOUN[kind]} ${String(index + 1)} of ${String(rowsShown.length)}`;
+  }
+  if (prevButton !== null) prevButton.disabled = index <= 0;
+  if (nextButton !== null) nextButton.disabled = index < 0 || index >= rowsShown.length - 1;
+  if (copyOut !== null) copyOut.hidden = true;
+  if (deep) selectTab(KIND_TAB[kind]);
+  if (!dialog.open) {
+    dialog.showModal();
+    doc.documentElement.classList.add('modal-open');
+  }
+  dialog.scrollTop = 0;
+  setHash(`#key=${kind}:${encodeURIComponent(key)}`);
+  dialogTitle?.focus();
 }
+
+/** Closes the dialog; the `close` event gives the block back and restores the focus. */
+let restoreOnClose = true;
+function closeDialog(restoreFocus = true): void {
+  if (dialog === null || !dialog.open) return;
+  restoreOnClose = restoreFocus;
+  giveBack();
+  dialog.close();
+}
+
+dialog?.addEventListener('close', () => {
+  giveBack();
+  doc.documentElement.classList.remove('modal-open');
+  if (restoreOnClose) {
+    setHash(`#tab=${currentTab}`);
+    returnFocus?.focus();
+  }
+  restoreOnClose = true;
+  returnFocus = null;
+});
 
 function step(delta: number): void {
   if (current === null) return;
-  const table = current.body.closest('table');
-  if (table === null) return;
-  const visible = Array.from(table.tBodies).filter((b) => !b.hidden);
-  const index = visible.indexOf(current.body);
-  const next = visible[index + delta];
+  const rowsShown = visibleRows(current.body);
+  const next = rowsShown[rowsShown.indexOf(current.body) + delta];
   if (next !== undefined) openKey(next, null);
 }
 
-drawer?.addEventListener('click', (event) => {
+dialog?.addEventListener('click', (event) => {
+  // A click on the backdrop targets the dialog itself (its content covers the whole box).
+  if (event.target === dialog) {
+    closeDialog();
+    return;
+  }
   const action = (event.target as Element).closest<HTMLElement>('[data-act]')?.dataset['act'];
-  if (action === 'close') closeDrawer();
+  if (action === 'close') closeDialog();
   else if (action === 'prev') step(-1);
   else if (action === 'next') step(1);
-});
-doc.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && drawer !== null && !drawer.hidden) closeDrawer();
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -224,7 +265,7 @@ doc.addEventListener('keydown', (event) => {
 function route(hash: string, from: HTMLElement | null = null): void {
   let match = /^#tab[=-]([a-z-]+)$/u.exec(hash);
   if (match !== null) {
-    closeDrawer(false);
+    closeDialog(false);
     const id = match[1] ?? '';
     if (panels.has(id)) {
       selectTab(id);
@@ -252,22 +293,30 @@ function route(hash: string, from: HTMLElement | null = null): void {
     body = doc.getElementById(hash.slice(1))?.closest('tbody') ?? undefined;
   }
   if (body === undefined) {
-    closeDrawer(false);
+    closeDialog(false);
     selectTab('overview');
     announce('Key not found in this report');
     return;
   }
-  openKey(body, from);
+  openKey(body, from, from === null);
 }
 
 doc.addEventListener('click', (event) => {
   const target = event.target as Element;
   const link = target.closest<HTMLAnchorElement>('a[href^="#"]');
-  if (link === null) return;
+  if (link === null) {
+    // A click anywhere on a key row opens its details (11-REQ-37).
+    const row = target.closest<HTMLTableRowElement>('table.keys > tbody > tr:first-child');
+    const body = row?.parentElement;
+    if (row == null || !(body instanceof HTMLTableSectionElement)) return;
+    if (target.closest('button, input, label, summary') !== null) return;
+    openKey(body, row.querySelector<HTMLElement>('a[href^="#key-"]'));
+    return;
+  }
   const hash = link.getAttribute('href') ?? '';
   if (link.hasAttribute('data-show-violations')) {
     event.preventDefault();
-    closeDrawer(false);
+    closeDialog(false);
     selectTab('endpoints');
     setHash('#tab=endpoints');
     showViolations();
@@ -401,6 +450,7 @@ function filterable(id: string, items: Filterable[]): void {
   const search = tools.querySelector<HTMLInputElement>('input[type="search"]');
   const chips = all<HTMLButtonElement>('button[data-f]', tools);
   const counter = tools.querySelector<HTMLElement>('[data-count]');
+  const none = tools.querySelector<HTMLElement>('[data-none]');
   function apply(): void {
     const text = (search?.value ?? '').toLowerCase();
     const groups = new Map<string, Set<string>>();
@@ -422,6 +472,8 @@ function filterable(id: string, items: Filterable[]): void {
       if (visible) shown++;
     }
     if (counter !== null) counter.textContent = `showing ${shown} of ${items.length}`;
+    // Empty state after filtering (11-REQ-58).
+    if (none !== null) none.hidden = shown > 0;
   }
   for (const chip of chips) {
     chip.addEventListener('click', () => {
@@ -430,11 +482,13 @@ function filterable(id: string, items: Filterable[]): void {
     });
   }
   search?.addEventListener('input', apply);
-  tools.querySelector('[data-reset]')?.addEventListener('click', () => {
-    if (search !== null) search.value = '';
-    for (const chip of chips) chip.setAttribute('aria-pressed', 'false');
-    apply();
-  });
+  for (const reset of all<HTMLElement>('[data-reset]', tools)) {
+    reset.addEventListener('click', () => {
+      if (search !== null) search.value = '';
+      for (const chip of chips) chip.setAttribute('aria-pressed', 'false');
+      apply();
+    });
+  }
   resets.set(id, (pressed) => {
     if (search !== null) search.value = '';
     for (const chip of chips) {
@@ -443,7 +497,6 @@ function filterable(id: string, items: Filterable[]): void {
     }
     apply();
   });
-  tools.hidden = false;
 }
 
 /** "All N violations": blocking and other violations in the endpoint table (11-REQ-13). */
@@ -512,30 +565,33 @@ if (testsTable !== null && testsBody !== undefined) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Ranking kinds (11-REQ-31): the first 10 entries among the selected kinds
+// Ranking kind (11-REQ-31): a segmented control with one kind selected; each ranking shows the
+// first 10 entries of that kind
 
-const kindChips = doc.querySelector<HTMLElement>('[data-kinds]');
-if (kindChips !== null) {
-  const chips = all<HTMLButtonElement>('button[data-k]', kindChips);
-  const update = (): void => {
-    const selected = new Set(
-      chips.filter((c) => c.getAttribute('aria-pressed') === 'true').map((c) => c.dataset['k']),
-    );
+const kindSwitch = doc.querySelector<HTMLElement>('[data-kinds]');
+if (kindSwitch !== null) {
+  const buttons = all<HTMLButtonElement>('button[data-k]', kindSwitch);
+  const show = (kind: string): void => {
+    for (const button of buttons) {
+      button.setAttribute('aria-pressed', String(button.dataset['k'] === kind));
+    }
     for (const list of all<HTMLElement>('ol[data-rank]')) {
       let shown = 0;
       for (const item of all<HTMLElement>('li', list)) {
-        const visible = selected.has(item.dataset['k']) && shown < 10;
+        const visible = item.dataset['k'] === kind && shown < 10;
         item.hidden = !visible;
         if (visible) shown++;
       }
+      list.hidden = shown === 0;
+      for (const empty of all<HTMLElement>('[data-k-empty]', list.parentElement ?? doc)) {
+        empty.hidden = empty.dataset['kEmpty'] !== kind;
+      }
     }
   };
-  for (const chip of chips) {
-    chip.addEventListener('click', () => {
-      chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true'));
-      update();
-    });
+  for (const button of buttons) {
+    button.addEventListener('click', () => show(button.dataset['k'] ?? 'api'));
   }
+  show(buttons[0]?.dataset['k'] ?? 'api');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -574,11 +630,11 @@ if (download instanceof HTMLButtonElement && downloadLink instanceof HTMLAnchorE
 for (const element of all<HTMLElement>('.js-only')) element.hidden = false;
 
 // ---------------------------------------------------------------------------------------------
-// Printing: the drawer gives its block back; details of violations open (11-REQ-17)
+// Printing: the dialog gives its block back; details of violations open (11-REQ-17)
 
 let opened: HTMLDetailsElement[] = [];
 window.addEventListener('beforeprint', () => {
-  closeDrawer(false);
+  closeDialog(false);
   opened = all<HTMLDetailsElement>('details[data-v]:not([open])');
   for (const details of opened) details.open = true;
 });

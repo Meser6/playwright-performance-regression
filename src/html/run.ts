@@ -1,38 +1,39 @@
-// Warnings tab (11-REQ-45) and Run & config tab (11-REQ-46).
+// Warnings tab (11-REQ-45) and Run & config tab (11-REQ-46), as cards (11-REQ-56, 11-REQ-57).
 import type { Issue, RunReport, ThresholdFileInfo } from '../core/types/index.ts';
 import { DASH, join } from './context.ts';
 import { stableJson } from './data.ts';
 import { html } from './escape.ts';
 import type { HtmlValue, SafeHtml } from './escape.ts';
 import { formatDate, formatRunDuration, plural } from './format.ts';
+import { icon } from './icons.ts';
 import { pill } from './keys.ts';
+import { emptyState } from './overview.ts';
 
-function issueList(issues: readonly Issue[], level: 'error' | 'warning'): SafeHtml {
-  const item = (i: Issue): SafeHtml =>
-    join(
-      html`<li class="${level === 'error' ? 'is-err' : 'is-warn'}"><p>${pill(level === 'error' ? 'p-err' : 'p-warn', level)} <code>${i.code}</code>`,
-      i.count !== undefined && i.count > 1 ? html` <span class="mu">×${i.count}</span>` : null,
-      html`</p><p>${i.message}</p>`,
-      i.hint === undefined ? null : html`<p class="mu">Hint: ${i.hint}</p>`,
-      html`</li>`,
-    );
-  return html`<ul class="issues">${issues.map(item)}</ul>`;
+function issueCard(i: Issue, level: 'error' | 'warning'): SafeHtml {
+  const error = level === 'error';
+  return join(
+    html`<article class="card wn${error ? ' err' : ''}"><span class="wi">${icon(error ? 'bad' : 'warn')}</span>`,
+    html`<code>${i.code}</code><span class="n ${error ? 'bad' : 'warn'}">×${i.count ?? 1}</span>`,
+    html`<p><span class="sr">${error ? 'Tool error' : 'Warning'}: </span>${i.message}</p>`,
+    i.hint === undefined ? null : html`<p class="hint">${icon('info')}<span>${i.hint}</span></p>`,
+    html`</article>`,
+  );
 }
 
 /** Tool errors first, then warnings; tool errors highlighted on an error status (11-REQ-45). */
 export function warningsTab(report: RunReport): SafeHtml {
   const { warnings, toolErrors } = report;
   if (warnings.length === 0 && toolErrors.length === 0) {
-    return html`<p>No warnings or tool errors.</p>`;
+    return emptyState('No warnings', 'No warnings or tool errors.', null);
   }
   const highlight = report.evaluation.status === 'error' ? ' hl-err' : '';
   return join(
     toolErrors.length === 0
       ? null
-      : html`<section class="card-in${highlight}" aria-labelledby="errors-h"><h3 id="errors-h">Tool errors (${toolErrors.length})</h3>${issueList(toolErrors, 'error')}</section>`,
+      : html`<section class="wl${highlight}" aria-labelledby="errors-h"><h3 id="errors-h" class="sh">Tool errors (${toolErrors.length})</h3>${toolErrors.map((i) => issueCard(i, 'error'))}</section>`,
     warnings.length === 0
       ? null
-      : html`<section aria-labelledby="warnings-h"><h3 id="warnings-h">Warnings (${warnings.length})</h3>${issueList(warnings, 'warning')}</section>`,
+      : html`<section class="wl" aria-labelledby="warnings-h"><h3 id="warnings-h" class="sh">Warnings (${warnings.length})</h3>${warnings.map((i) => issueCard(i, 'warning'))}</section>`,
   );
 }
 
@@ -44,19 +45,24 @@ export function buildLink(url: string | null): HtmlValue {
     : html`<code>${url}</code>`;
 }
 
+/** Label and value list in two columns (11-REQ-46). */
 function facts(items: readonly [string, HtmlValue][]): SafeHtml {
-  return html`<dl class="meta">${items.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}</dl>`;
+  return html`<dl class="kvl">${items.map(([k, v]) => html`<dt>${k}</dt><dd>${v}</dd>`)}</dl>`;
+}
+
+function card(id: string, title: string, ...content: HtmlValue[]): SafeHtml {
+  return html`<section aria-labelledby="${id}"><div class="ph"><h3 id="${id}">${title}</h3></div><div class="card">${content}</div></section>`;
 }
 
 function runSection(report: RunReport): SafeHtml {
   const { ci, host } = report;
   const items: [string, HtmlValue][] = [
-    ['Package', `${report.tool.name} v${report.tool.version}`],
+    ['Package', html`<code>${report.tool.name} v${report.tool.version}</code>`],
     ['Run ID', html`<code>${report.runId}</code>`],
     ['Started', formatDate(report.startedAt)],
     ['Finished', formatDate(report.finishedAt)],
     ['Duration', formatRunDuration(report.startedAt, report.finishedAt)],
-    ['Mode', report.mode],
+    ['Mode', `${report.mode} (gate ${report.evaluation.gateEnabled ? 'on' : 'off'})`],
     ['Environment', report.env ?? DASH],
     ['Playwright', report.playwright.version],
     ['Node.js', host.nodeVersion],
@@ -74,22 +80,21 @@ function runSection(report: RunReport): SafeHtml {
       ['Build', buildLink(ci.buildUrl)],
     );
   }
-  return html`<section aria-labelledby="run-h"><h3 id="run-h">Run</h3>${facts(items)}</section>`;
+  return card('run-h', 'Run', facts(items));
 }
 
 function originsSection(report: RunReport): SafeHtml {
-  const origin = (o: RunReport['origins'][number]): SafeHtml =>
-    join(
-      html`<li><code>${o.origin}</code> `,
-      o.label === '' ? html`<span class="mu">(base)</span>` : html`label <code>${o.label}</code>`,
-      html` · ${plural(o.requestCount, 'request')}</li>`,
-    );
-  return join(
-    html`<section aria-labelledby="origins-h"><h3 id="origins-h">Origins</h3>`,
+  return card(
+    'origins-h',
+    'Origins',
     report.origins.length === 0
-      ? html`<p>No request was measured.</p>`
-      : html`<ul class="list">${report.origins.map(origin)}</ul>`,
-    html`</section>`,
+      ? html`<p class="card-p">No request was measured.</p>`
+      : facts(
+          report.origins.map((o) => [
+            o.label === '' ? 'base' : o.label,
+            html`<code>${o.origin}</code> · ${plural(o.requestCount, 'request')}`,
+          ]),
+        ),
   );
 }
 
@@ -127,16 +132,16 @@ function thresholdsFileRow(file: ThresholdFileInfo, report: RunReport): SafeHtml
   else if (fingerprint === report.normalization)
     normalization = html`<code>${fingerprint}</code> matches this run`;
   else
-    normalization = html`file <code>${fingerprint}</code>, run <code>${report.normalization}</code> ${pill('p-warn', 'differs: keys may not match')}`;
+    normalization = html`file <code>${fingerprint}</code>, run <code>${report.normalization}</code> ${pill('w', 'differs: keys may not match')}`;
   const status =
     file.status === 'loaded'
-      ? pill('p-pass', 'loaded')
+      ? pill('p', 'loaded')
       : file.status === 'invalid'
-        ? pill('p-err', 'invalid')
-        : pill('p-ne', 'missing');
+        ? pill('fb', 'invalid')
+        : pill('ne', 'missing');
   const unseen = file.unseenKeys;
   return join(
-    html`<tr><td>${file.kind}</td><td><code>${file.path}</code></td>`,
+    html`<tr><td>${file.kind}</td><td class="loc">${file.path}</td>`,
     html`<td>${status}</td><td>${percentile ?? DASH}</td>`,
     html`<td>${generatedSource(file)}</td><td>${normalization}</td><td>`,
     unseen.length === 0
@@ -148,10 +153,11 @@ function thresholdsFileRow(file: ThresholdFileInfo, report: RunReport): SafeHtml
 
 function thresholdsSection(report: RunReport): SafeHtml {
   const files = report.thresholdFiles;
-  return join(
-    html`<section aria-labelledby="thresholds-h"><h3 id="thresholds-h">Thresholds files</h3>`,
+  return card(
+    'thresholds-h',
+    'Thresholds files',
     files.length === 0
-      ? html`<p>No thresholds files were loaded in this run.</p>`
+      ? html`<p class="card-p">No thresholds files were loaded in this run.</p>`
       : join(
           html`<div class="scroll" tabindex="0" role="region" aria-label="Thresholds files table"><table><caption>Thresholds files of this run</caption><thead><tr>`,
           html`<th scope="col">Kind</th><th scope="col">Path</th><th scope="col">Status</th>`,
@@ -159,11 +165,10 @@ function thresholdsSection(report: RunReport): SafeHtml {
           html`<th scope="col">Normalization fingerprint</th><th scope="col">Unseen keys</th>`,
           html`</tr></thead><tbody>${files.map((f) => thresholdsFileRow(f, report))}</tbody></table></div>`,
         ),
-    html`</section>`,
   );
 }
 
-/** Passes of the run (D-39, 02-REQ-37), e.g. "5 passes." or "4 of 5 passes (no data: pass 3)." */
+/** Passes of the run (D-39, 02-REQ-37), e.g. "5 passes" or "4 of 5 passes (no data: pass 3)". */
 function passesText(passes: RunReport['passes']): string {
   const done =
     passes.completed === passes.planned
@@ -173,7 +178,7 @@ function passesText(passes: RunReport['passes']): string {
     passes.failed.length === 0
       ? ''
       : ` (no data: ${passes.failed.length === 1 ? 'pass' : 'passes'} ${passes.failed.join(', ')})`;
-  return `${done}${failed}.`;
+  return `${done}${failed}`;
 }
 
 function conditionsSection(report: RunReport): SafeHtml {
@@ -185,27 +190,31 @@ function conditionsSection(report: RunReport): SafeHtml {
   const project = (p: RunReport['runConditions']['projects'][number]): SafeHtml =>
     join(
       html`<tr><th scope="row">${p.name === '' ? '(default)' : p.name}</th><td>${p.role}</td>`,
-      html`<td>${p.browserName ?? DASH}</td><td>${p.repeatEach}</td><td>${p.retries}</td></tr>`,
+      html`<td>${p.browserName ?? DASH}</td><td class="num">${p.repeatEach}</td><td class="num">${p.retries}</td></tr>`,
     );
-  return join(
-    html`<section aria-labelledby="conditions-h"><h3 id="conditions-h">Run conditions</h3>`,
-    html`<p>${passesText(report.passes)} ${plural(rc.workers, 'worker')}. Settings overridden by withPerf(): ${overridden}.</p>`,
+  return card(
+    'conditions-h',
+    'Run conditions',
+    facts([
+      ['Passes', passesText(report.passes)],
+      ['Workers', String(rc.workers)],
+      ['Overridden by withPerf()', overridden],
+    ]),
     rc.projects.length === 0
       ? null
       : join(
-          html`<div class="scroll" tabindex="0" role="region" aria-label="Projects table"><table class="num"><caption>Projects</caption><thead><tr>`,
+          html`<div class="scroll" tabindex="0" role="region" aria-label="Projects table"><table><caption>Projects</caption><thead><tr>`,
           html`<th scope="col">Project</th><th scope="col">Role</th><th scope="col">Browser</th>`,
-          html`<th scope="col">repeatEach</th><th scope="col">retries</th>`,
+          html`<th scope="col" class="num">repeatEach</th><th scope="col" class="num">retries</th>`,
           html`</tr></thead><tbody>${rc.projects.map(project)}</tbody></table></div>`,
         ),
-    html`</section>`,
   );
 }
 
 function configurationSection(report: RunReport): SafeHtml {
   return join(
-    html`<section aria-labelledby="config-h"><h3 id="config-h">Configuration</h3>`,
-    html`<details><summary>Configuration snapshot</summary>`,
+    html`<section aria-labelledby="config-h"><div class="ph"><h3 id="config-h">Configuration</h3></div>`,
+    html`<details class="card cfg"><summary>Configuration snapshot (JSON)</summary>`,
     html`<pre><code>${stableJson(report.config, '  ')}</code></pre></details></section>`,
   );
 }
@@ -213,10 +222,13 @@ function configurationSection(report: RunReport): SafeHtml {
 /** Content of the Run & config tab (11-REQ-46). */
 export function runTab(report: RunReport): SafeHtml {
   return join(
+    html`<div class="grid2"><div>`,
     runSection(report),
+    html`</div><div>`,
     originsSection(report),
-    thresholdsSection(report),
     conditionsSection(report),
+    html`</div></div>`,
+    thresholdsSection(report),
     configurationSection(report),
   );
 }
