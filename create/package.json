@@ -1,6 +1,6 @@
 {
   "name": "create-playwright-performance-regression",
-  "version": "0.1.0-next.1",
+  "version": "0.1.0-next.2",
   "description": "Set up playwright-performance-regression in a Playwright project: npm init playwright-performance-regression",
   "keywords": [
     "playwright",

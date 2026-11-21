@@ -7,53 +7,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Removed
-
-- **Breaking:** `gate.warnOnly` (the trial mode). The option is now `CONFIG_UNKNOWN_OPTION` with a
-  hint; to keep a CI job green on a regression, set `continue-on-error` on the job, or use
-  `gate.tolerance` / `gate.defaultThresholds: 'warn'`.
-- **Breaking:** `pw-perf init` no longer writes `perf:*` scripts to `package.json` and no longer
-  changes test files (no import swap). Scripts written by an earlier wizard keep working.
-
-### Changed
-
-- The HTML report has a new look: an app bar with the run details, a verdict card with the three
-  results (performance, tests, tool errors) and the exit code, a KPI strip, sticky tabs, violation
-  cards with the first hint, rankings with bars and an Endpoints/Steps switch, endpoints shown with
-  a colored method badge and highlighted path parameters, and failures in a clear red (light and
-  dark theme). Key details open in a centered dialog (`Esc`, Close or a click outside closes it;
-  full screen on phones) instead of the side panel. The details show p50, the evaluated
-  percentile, p99 and max at a glance, the histogram bars above the limit in red and a headroom
-  meter for every check. Times in the key tables are whole milliseconds without a unit (the table
-  footer says “All times in ms”). Error rates in the checks are shown as percentages.
-- The run summary and the `check` output are easier to scan: errors, warnings and the verdict
-  are in framed boxes, the counters and the violations in tables with lines, and statuses carry
-  emoji (✅ ⚠ ❌). Long warning messages wrap inside the box. `NO_COLOR` turns off only the
-  colors; `TERM=dumb` also turns frames into ASCII and emoji into `✔ ! ✖`.
-- The `TESTS_FAILED` warning now says that the samples of failed tests are counted.
-- `pw-perf init` is rebuilt around your own test command: it detects the scripts that run
-  `playwright test` and shows `Run: PW_PERF_MODE=test npm run <script>`, warns about flags that
-  break a measurement run (`INIT_SCRIPT_FLAG`) and later steps of the script
-  (`INIT_SCRIPT_LATER_STEPS`), asks which projects to measure, writes `@perf` as `run.grep`,
-  asks for the headroom preset, no longer asks about a trial period or environments, and ends
-  with a check. Steps 1 and 2 are one step with a short description of the package.
-- When the wizard cannot wrap your fixtures module it changes no test file and shows a red box
-  with the code to paste (`INIT_TEST_OBJECT_MANUAL`). Without `playwright.config` it stops before
-  the first question.
-- The CI recipes in `examples/ci/` (and the files `init` writes) have two jobs: a thresholds job
-  you start by hand that keeps the thresholds files as an artifact, and a weekly measurement job;
-  both set `PW_PERF_MODE` and run your test command, and read the exit code from
-  `pw-perf-results/outcome.json`.
-- `npx pw-perf` without arguments prints the help instead of an error, with a box pointing to
-  `npx pw-perf init` in a project without config.
-
-- **Breaking:** `run.repeat`, `PW_PERF_REPEAT` and `--repeat` are renamed to `run.passes`,
-  `PW_PERF_PASSES` and `--passes`; the old names are errors with a hint. Every project runs with
-  `repeatEach: 1`.
-- Perf mode no longer forces `retries: 0`: the retries of your Playwright config apply, every
-  attempt is measured and a test that passes on a retry counts as passed. Retries no longer give
-  `RUN_CONDITIONS_CHANGED`.
-- `pw-perf test` and `thresholds` print no mode line before the run; the start banner replaces it.
+## [0.1.0-next.2] - 2026-11-21
 
 ### Added
 
@@ -118,13 +72,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The HTML report has a new look: an app bar with the run details, a verdict card with the three
+  results (performance, tests, tool errors) and the exit code, a KPI strip, sticky tabs, violation
+  cards with the first hint, rankings with bars and an Endpoints/Steps switch, endpoints shown with
+  a colored method badge and highlighted path parameters, and failures in a clear red (light and
+  dark theme). Key details open in a centered dialog (`Esc`, Close or a click outside closes it;
+  full screen on phones). The details show p50, the evaluated percentile, p99 and max at a glance, the histogram bars above the limit in red and a headroom
+  meter for every check. Times in the key tables are whole milliseconds without a unit (the table
+  footer says “All times in ms”). Error rates in the checks are shown as percentages.
+- The run summary and the `check` output are easier to scan: errors, warnings and the verdict
+  are in framed boxes, the counters and the violations in tables with lines, and statuses carry
+  emoji (✅ ⚠ ❌). Long warning messages wrap inside the box. `NO_COLOR` turns off only the
+  colors; `TERM=dumb` also turns frames into ASCII and emoji into `✔ ! ✖`.
+- The `TESTS_FAILED` warning now says that the samples of failed tests are counted.
+- `pw-perf init` is rebuilt around your own test command: it detects the scripts that run
+  `playwright test` and shows `Run: PW_PERF_MODE=test npm run <script>`, warns about flags that
+  break a measurement run (`INIT_SCRIPT_FLAG`) and later steps of the script
+  (`INIT_SCRIPT_LATER_STEPS`), asks which projects to measure, writes `@perf` as `run.grep`,
+  asks for the headroom preset, no longer asks about a trial period or environments, and ends
+  with a check. Steps 1 and 2 are one step with a short description of the package.
+- When the wizard cannot wrap your fixtures module it changes no test file and shows a red box
+  with the code to paste (`INIT_TEST_OBJECT_MANUAL`). Without `playwright.config` it stops before
+  the first question.
+- The CI recipes in `examples/ci/` (and the files `init` writes) have two jobs: a thresholds job
+  you start by hand that keeps the thresholds files as an artifact, and a weekly measurement job;
+  both set `PW_PERF_MODE` and run your test command, and read the exit code from
+  `pw-perf-results/outcome.json`.
+- `npx pw-perf` without arguments prints the help instead of an error, with a box pointing to
+  `npx pw-perf init` in a project without config.
+
+- **Breaking:** `run.repeat`, `PW_PERF_REPEAT` and `--repeat` are renamed to `run.passes`,
+  `PW_PERF_PASSES` and `--passes`; the old names are errors with a hint. Every project runs with
+  `repeatEach: 1`.
+- Perf mode no longer forces `retries: 0`: the retries of your Playwright config apply, every
+  attempt is measured and a test that passes on a retry counts as passed. Retries no longer give
+  `RUN_CONDITIONS_CHANGED`.
+- `pw-perf test` and `thresholds` print no mode line before the run; the start banner replaces it.
 - `npx pw-perf --help` starts with the recommended form (`PW_PERF_MODE=test npm run e2e`, also
   `thresholds` and `check`, with the Windows line) and presents the commands as the advanced
   runner; it lists `--max-tests`. The README quick start uses the same form and says where the
   result is (`pw-perf-results/outcome.json`).
 - The HTML report size limit for 500 keys, 500 tests and 5 waterfalls is 10 MB (was 5 MB).
 - The HTML report is redesigned: a verdict banner and key figures on top, tabs (Overview,
-  Endpoints, Tests, Warnings, Run & config), a side panel with the details of a key and
+  Endpoints, Tests, Warnings, Run & config), the details of a key with
   links to it (`#key=api:<key>`, `#tab=tests`), search and filter chips, rankings (slowest, most
   called, highest error rate, closest to the limit), a histogram per key, the split of TTFB and
   the rest of the time, hints that explain a violation, the headroom to every limit, the backend
@@ -173,6 +163,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- **Breaking:** `gate.warnOnly` (the trial mode). The option is now `CONFIG_UNKNOWN_OPTION` with a
+  hint; to keep a CI job green on a regression, set `continue-on-error` on the job, or use
+  `gate.tolerance` / `gate.defaultThresholds: 'warn'`.
+- **Breaking:** `pw-perf init` no longer writes `perf:*` scripts to `package.json` and no longer
+  changes test files (no import swap). Scripts written by an earlier wizard keep working.
 - Breaking: custom measurements. `perf.measure()`, `perf.start()`, `perf.end()`,
   `perf.sampleStart()` and `perf.sampleEnd()` are removed; the `perf` fixture keeps only
   `perf.track(context)`, so old calls no longer type-check and throw a `TypeError` in JavaScript.
