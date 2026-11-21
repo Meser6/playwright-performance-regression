@@ -1510,8 +1510,8 @@
     "warnings": [
       {
         "code": "TESTS_FAILED",
-        "hint": "Functional failures are reported by your regular test run.",
-        "message": "1 of 128 test executions failed; the performance result still decides."
+        "hint": "Fix the failing tests in your regular test run: a test that fails early records fewer samples.",
+        "message": "1 of 128 test executions failed; their samples are counted and the performance result still decides."
       },
       {
         "code": "THRESHOLDS_UNSEEN_ENTRIES",

@@ -562,8 +562,9 @@ command runs on its own, or set `run.passes` to 1.
 ### TESTS_FAILED
 
 **Warning.** Some test executions failed, but no more than `gate.maxFailedTestShare` (10% by
-default). Their samples are still used and the performance result decides the exit code.
-Functional failures are reported by your regular test run; a test that fails only in perf mode
+default). Their samples are counted, including those recorded before a test failed, and the
+performance result decides the exit code. A test that fails early records fewer samples, so fix
+the failing tests in your regular test run; a test that fails only in perf mode
 may be affected by the repetitions (for example tests that create the same data).
 
 ### TESTS_FAILED_TOO_MANY

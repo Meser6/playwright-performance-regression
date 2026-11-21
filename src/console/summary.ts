@@ -1,12 +1,14 @@
 // Console summary at the end of a perf-mode run (09, chapter 8; F-12). A function of the run
 // report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
-// terminal width and the color decision, and prints the text. Colors follow 09-REQ-27; without
-// them the text is the same apart from the ANSI sequences.
+// terminal width, the color decision and TERM=dumb, and prints the text. Frames, tables, emoji and
+// colors follow 09-REQ-27; without colors the text is the same apart from the ANSI sequences.
 import { KINDS } from '../core/types/index.ts';
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
+import { boxLines, marks, table } from './box.ts';
+import type { BoxLine, Marks, TableColumn, TableRow } from './box.ts';
 import { painter } from './color.ts';
 import type { ColorStyle, Painter } from './color.ts';
-import { compareText, padEnd, padStart, plural, textWidth, truncateMiddle } from './text.ts';
+import { compareText, plural, textWidth, truncateMiddle } from './text.ts';
 
 export { truncateMiddle };
 
@@ -15,6 +17,8 @@ export interface SummaryOptions {
   width: number;
   /** ANSI colors: see colorEnabled (09-REQ-22, 04-REQ-44). */
   color: boolean;
+  /** TERM=dumb: ASCII frames and text marks instead of emoji (09-REQ-27); default false. */
+  ascii?: boolean;
   /** Whether report.html was written; default: report.html of the config snapshot. */
   html?: boolean;
 }
@@ -28,8 +32,8 @@ export const MAX_SLOWEST_LINES = 5;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
 
-/** Label of the counter line of each kind (09-REQ-28). */
-const KIND_LABEL: Record<Kind, string> = { api: 'Endpoints:', step: 'Steps:' };
+/** Column of each kind in the counter table (09-REQ-28). */
+const KIND_LABEL: Record<Kind, string> = { api: 'Endpoints', step: 'Steps' };
 const ALWAYS_SHOWN: ReadonlySet<Kind> = new Set<Kind>(['api']);
 
 /** Aggregates of one kind in the report. */
@@ -125,42 +129,64 @@ function header(report: RunReport, paint: Paint): string {
   return paint(parts.join(' · '), 'bold');
 }
 
-function issueLines(
-  title: string,
+/** Layout shared by the summary and the check output. */
+export interface FrameOptions {
+  width: number;
+  color: boolean;
+  ascii: boolean;
+}
+
+/**
+ * The box of tool errors (red) or warnings (yellow) with the count in the title (09, chapter 8.1);
+ * no box without issues. Long messages wrap inside the box.
+ */
+export function issueBox(
+  level: 'error' | 'warning',
   issues: readonly Issue[],
   limit: number,
-  level: 'error' | 'warning',
-  paint: Paint,
+  opts: FrameOptions,
 ): string[] {
   if (issues.length === 0) return [];
-  const [marker, style, more]: [string, ColorStyle, string] =
-    level === 'error' ? ['✖', 'red', 'error'] : ['!', 'yellow', 'warning'];
-  const lines = [paint(title, 'bold')];
+  const m = marks(opts.ascii);
+  const [mark, style, name, more]: [string, ColorStyle, string, string] =
+    level === 'error'
+      ? [m.error, 'red', 'Errors', 'error']
+      : [m.warn, 'yellow', 'Warnings', 'warning'];
+  const indent = textWidth(mark) + 1;
+  const lines: BoxLine[] = [];
   for (const issue of issues.slice(0, limit)) {
     const times = issue.count !== undefined && issue.count > 1 ? ` (×${issue.count})` : '';
-    lines.push(`  ${paint(`${marker} ${issue.code}`, style)}: ${issue.message}${times}`);
-    if (issue.hint !== undefined) lines.push(paint(`    Hint: ${issue.hint}`, 'dim'));
+    lines.push({
+      spans: [{ text: `${mark} ${issue.code}`, style }, { text: `: ${issue.message}${times}` }],
+      indent,
+    });
+    if (issue.hint !== undefined) {
+      lines.push({
+        text: `${' '.repeat(indent)}Hint: ${issue.hint}`,
+        style: 'dim',
+        indent: indent + 'Hint: '.length,
+      });
+    }
   }
   if (issues.length > limit) {
-    lines.push(
-      paint(
-        `  … and ${plural(issues.length - limit, `more ${more}`, `more ${more}s`)} (see report)`,
-        'dim',
-      ),
-    );
+    lines.push({
+      text: `… and ${plural(issues.length - limit, `more ${more}`, `more ${more}s`)} (see report)`,
+      style: 'dim',
+    });
   }
-  return [...lines, ''];
+  return [
+    ...boxLines(lines, {
+      ...opts,
+      border: style,
+      title: `${opts.ascii ? '' : `${mark} `}${name} (${issues.length})`,
+      wrap: true,
+    }),
+    '',
+  ];
 }
 
-const LABEL_WIDTH = 'Endpoints: '.length;
-
-/** A bold label padded to the label column. */
-function label(text: string, paint: Paint): string {
-  return paint(text, 'bold') + ' '.repeat(Math.max(0, LABEL_WIDTH - textWidth(text)));
-}
-
-/** Counters per kind (09-REQ-28): the number of keys, then only the non-zero counters. */
-function counterLines(report: RunReport, paint: Paint): string[] {
+/** Counters per kind as a table (09-REQ-28): the keys row always, other rows when not all zero. */
+function counterLines(report: RunReport, opts: FrameOptions): string[] {
   const counts = report.evaluation.counts;
   // Endpoints always; another kind only when it has keys or unseen file entries.
   const shown = KINDS.filter(
@@ -170,6 +196,7 @@ function counterLines(report: RunReport, paint: Paint): string[] {
   const percentileOff = report.config.checks?.time?.percentile?.enabled === false;
   const medianOnly = `checked by median only (${percentileOff ? 'percentile rule off' : 'few samples'})`;
   const counters: { text: string; value: (kind: Kind) => number }[] = [
+    { text: 'keys', value: (k) => counts[k].keys },
     { text: 'from file', value: (k) => counts[k].fromFile },
     { text: 'on default thresholds', value: (k) => counts[k].fromDefaults },
     { text: 'skipped (too few samples)', value: (k) => counts[k].tooFewSamples },
@@ -177,24 +204,25 @@ function counterLines(report: RunReport, paint: Paint): string[] {
     { text: medianOnly, value: (k) => counts[k].medianOnly },
     { text: 'file entries not seen', value: (k) => counts[k].unseenThresholdEntries },
   ];
-  return shown.map((kind) => {
-    const cells = [plural(counts[kind].keys, 'key')];
-    for (const c of counters) {
-      const value = c.value(kind);
-      if (value !== 0) cells.push(`${value} ${c.text}`);
-    }
-    return label(KIND_LABEL[kind], paint) + cells.join(' · ');
-  });
+  const rows: TableRow[] = counters
+    .filter((c, i) => i === 0 || shown.some((kind) => c.value(kind) !== 0))
+    .map((c) => ({ cells: [c.text, ...shown.map((kind) => String(c.value(kind)))] }));
+  const columns: TableColumn[] = [
+    { header: '' },
+    ...shown.map((kind): TableColumn => ({ header: KIND_LABEL[kind], align: 'right' })),
+  ];
+  return table(columns, rows, opts);
 }
 
 function mutedLines(report: RunReport, paint: Paint): string[] {
   const lines: string[] = [];
+  const indent = ' '.repeat('Muted: '.length);
   for (const kind of KINDS) {
     const aggregates = aggregatesOf(report, kind);
     for (const key of Object.keys(aggregates).sort(compareText)) {
       const muted = aggregates[key]?.evaluation.muted;
       if (muted === undefined || muted === null || muted.expired) continue;
-      const head = lines.length === 0 ? label('Muted:', paint) : ' '.repeat(LABEL_WIDTH);
+      const head = lines.length === 0 ? `${paint('Muted:', 'bold')} ` : indent;
       lines.push(`${head}${key} until ${muted.until} — "${muted.note}"`);
     }
   }
@@ -215,79 +243,46 @@ function formatLimit(check: Check): string {
   return TIME_RULES.has(check.rule) ? formatTime(check.limit) : check.limit.toFixed(3);
 }
 
-function tableLines(report: RunReport, list: Violation[], width: number, paint: Paint): string[] {
+function tableLines(
+  report: RunReport,
+  list: Violation[],
+  opts: FrameOptions,
+  m: Marks,
+  paint: Paint,
+): string[] {
   const level = report.config.checks?.time?.percentile?.level ?? 'percentile';
   const shown = list.slice(0, MAX_VIOLATION_ROWS);
-  const rows = shown.map((v) => ({
-    marker: v.check.blocking ? '✖' : '!',
-    kind: v.kind,
-    key: v.key,
-    rule: v.check.rule === 'percentile' ? level : v.check.rule,
-    actual: formatActual(v.check),
-    limit: formatLimit(v.check),
-    over: overText(v.check),
-    n: String(v.check.n),
-    src: v.evaluation.thresholdSource,
-    flag: [v.check.hardLimitExceeded ? 'HARD' : '', isMuted(v.evaluation) ? 'MUTED' : '']
-      .filter((f) => f !== '')
-      .join(' '),
-  }));
-  const head = {
-    marker: ' ',
-    kind: 'kind',
-    key: 'key',
-    rule: 'rule',
-    actual: 'actual',
-    limit: 'limit',
-    over: 'over',
-    n: 'n',
-    src: 'src',
-    flag: 'flag',
-  };
-  const all = [head, ...rows];
-  const w = (field: keyof typeof head): number => Math.max(...all.map((r) => textWidth(r[field])));
-  const widths = {
-    kind: w('kind'),
-    rule: w('rule'),
-    actual: w('actual'),
-    limit: w('limit'),
-    over: w('over'),
-    n: w('n'),
-    src: w('src'),
-    flag: w('flag'),
-  };
-  // "  M " + 9 gaps of 2 spaces between the remaining 10 columns.
-  const fixed =
-    4 +
-    widths.kind +
-    widths.rule +
-    widths.actual +
-    widths.limit +
-    widths.over +
-    widths.n +
-    widths.src +
-    widths.flag +
-    2 * 8;
-  const keyWidth = Math.max(MIN_KEY_WIDTH, Math.min(width - fixed, w('key')));
-  // The whole row in one color: red when the violation blocks, yellow otherwise (09-REQ-27).
-  const line = (r: typeof head): string =>
-    [
-      `  ${r.marker} ${padEnd(r.kind, widths.kind)}`,
-      padEnd(truncateMiddle(r.key, keyWidth), keyWidth),
-      padEnd(r.rule, widths.rule),
-      padStart(r.actual, widths.actual),
-      padStart(r.limit, widths.limit),
-      padStart(r.over, widths.over),
-      padStart(r.n, widths.n),
-      padEnd(r.src, widths.src),
-      r.flag,
-    ]
-      .join('  ')
-      .trimEnd();
-  const lines = [
-    paint(line(head), 'bold'),
-    ...rows.map((r) => paint(line(r), r.marker === '✖' ? 'red' : 'yellow')),
+  const columns: TableColumn[] = [
+    { header: '' },
+    { header: 'kind' },
+    { header: 'key', flex: true, minWidth: MIN_KEY_WIDTH },
+    { header: 'rule' },
+    { header: 'actual', align: 'right' },
+    { header: 'limit', align: 'right' },
+    { header: 'over', align: 'right' },
+    { header: 'n', align: 'right' },
+    { header: 'src' },
+    { header: 'flag' },
   ];
+  // The whole row in one color: red when the violation blocks, yellow otherwise (09-REQ-27).
+  const rows: TableRow[] = shown.map((v) => ({
+    cells: [
+      v.check.blocking ? m.error : m.warn,
+      v.kind,
+      v.key,
+      v.check.rule === 'percentile' ? level : v.check.rule,
+      formatActual(v.check),
+      formatLimit(v.check),
+      overText(v.check),
+      String(v.check.n),
+      v.evaluation.thresholdSource,
+      [v.check.hardLimitExceeded ? 'HARD' : '', isMuted(v.evaluation) ? 'MUTED' : '']
+        .filter((f) => f !== '')
+        .join(' '),
+    ],
+    style: v.check.blocking ? 'red' : 'yellow',
+  }));
+  const lines = table(columns, rows, opts);
   if (list.length > shown.length) {
     const more = plural(list.length - shown.length, 'more violation', 'more violations');
     lines.push(paint(`  … and ${more} (see report)`, 'dim'));
@@ -334,37 +329,54 @@ function errorCauses(report: RunReport): string[] {
   return causes;
 }
 
-/** The verdict (09-REQ-29): a badge " <marker> <WORD> " and one sentence with the reason. */
-function resultLine(report: RunReport, paint: Paint): string {
+/** The verdict (09-REQ-29): a box in the verdict color with mark, badge and one sentence. */
+function resultLines(report: RunReport, opts: FrameOptions, m: Marks): string[] {
   const counts = report.evaluation.counts;
   const sum = (field: 'violations' | 'blockingViolations' | 'keys' | 'notEvaluated'): number =>
     KINDS.reduce((total, kind) => total + counts[kind][field], 0);
   const gate = report.config.gate;
   const policy = gate?.tolerance === undefined ? '' : ` (tolerance: ${gate.tolerance})`;
-  let badge: string;
-  let style: ColorStyle;
+  let verdict: [mark: string, word: string, color: ColorStyle, badge: ColorStyle];
   let reason: string;
   const status = report.evaluation.status;
   if (report.toolErrors.length > 0 || status === 'error') {
-    badge = '✖ ERROR';
-    style = 'badge-magenta';
+    verdict = [m.error, 'ERROR', 'magenta', 'badge-magenta'];
     const causes = errorCauses(report);
     reason = `${causes.length === 0 ? '' : `${causes.join(', ')}; `}the performance result is not trustworthy`;
   } else if (status === 'failed') {
-    badge = '✖ FAILED';
-    style = 'badge-red';
+    verdict = [m.error, 'FAILED', 'red', 'badge-red'];
     reason = `${plural(sum('blockingViolations'), 'blocking violation')}${policy}`;
   } else if (status === 'warned') {
-    badge = '! PASSED WITH WARNINGS';
-    style = 'badge-yellow';
+    verdict = [m.warn, 'PASSED WITH WARNINGS', 'yellow', 'badge-yellow'];
     reason = `${plural(sum('violations'), 'key')} with violations, none blocking${policy}`;
   } else {
-    badge = '✔ PASSED';
-    style = 'badge-green';
+    verdict = [m.ok, 'PASSED', 'green', 'badge-green'];
     reason = `no violations in ${plural(sum('keys') - sum('notEvaluated'), 'evaluated key')}`;
   }
   const informational = report.mode === 'thresholds' ? ' (informational, gate disabled)' : '';
-  return `${paint(` ${badge} `, style)} ${reason}${informational}`;
+  const [mark, word, color, badge] = verdict;
+  return verdictBox(mark, word, `${reason}${informational}`, color, badge, opts);
+}
+
+/** One-line verdict box: `<mark> <badge> <reason>` (09-REQ-29, 04-REQ-50). */
+export function verdictBox(
+  mark: string,
+  word: string,
+  reason: string,
+  color: ColorStyle,
+  badge: ColorStyle,
+  opts: FrameOptions,
+): string[] {
+  const indent = textWidth(mark) + word.length + 4;
+  return boxLines(
+    [
+      {
+        spans: [{ text: `${mark} ` }, { text: ` ${word} `, style: badge }, { text: ` ${reason}` }],
+        indent,
+      },
+    ],
+    { ...opts, border: color, wrap: true },
+  );
 }
 
 // Minimal POSIX-style path handling; Windows separators are turned into "/".
@@ -410,21 +422,23 @@ function reportLine(report: RunReport, html: boolean | undefined, paint: Paint):
 /** Console summary of a run report (09, chapter 8). Ends with a newline. */
 export function formatSummary(report: RunReport, opts: SummaryOptions): string {
   const paint: Paint = painter(opts.color);
+  const frame: FrameOptions = { width: opts.width, color: opts.color, ascii: opts.ascii ?? false };
+  const m = marks(frame.ascii);
   const list = violations(report);
   const lines: string[] = [
     paint('─'.repeat(Math.max(1, opts.width)), 'dim'),
     header(report, paint),
     '',
   ];
-  lines.push(...issueLines('Errors:', report.toolErrors, Infinity, 'error', paint));
-  lines.push(...issueLines('Warnings:', report.warnings, MAX_WARNINGS, 'warning', paint));
-  lines.push(...counterLines(report, paint), ...mutedLines(report, paint), '');
+  lines.push(...issueBox('error', report.toolErrors, Infinity, frame));
+  lines.push(...issueBox('warning', report.warnings, MAX_WARNINGS, frame));
+  lines.push(...counterLines(report, frame), ...mutedLines(report, paint), '');
   if (list.length > 0) {
-    lines.push(...tableLines(report, list, opts.width, paint));
+    lines.push(...tableLines(report, list, frame, m, paint));
     const slowest = slowestLines(report, list);
-    if (slowest.length > 0) lines.push('', ...slowest);
+    if (slowest.length > 0) lines.push(...slowest);
     lines.push('');
   }
-  lines.push(resultLine(report, paint), ...reportLine(report, opts.html, paint));
+  lines.push(...resultLines(report, frame, m), ...reportLine(report, opts.html, paint));
   return `${lines.join('\n')}\n`;
 }

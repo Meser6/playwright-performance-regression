@@ -46,8 +46,8 @@ export function assessRun(
   } else if (tests.unexpected > 0) {
     warnings.push({
       code: 'TESTS_FAILED',
-      message: `${failedText}; the performance result still decides.`,
-      hint: 'Functional failures are reported by your regular test run.',
+      message: `${failedText}; their samples are counted and the performance result still decides.`,
+      hint: 'Fix the failing tests in your regular test run: a test that fails early records fewer samples.',
     });
   }
 

@@ -105,16 +105,18 @@ Colors: the CLI messages, the run summary, the thresholds diff and `init` use th
 when the output is a terminal and `TERM` is not `dumb`. Green means success, red an error or a
 blocking result, yellow a warning, magenta a result that is not trustworthy, cyan step headers
 and commands, dim explanations, hints and default answers, bold headings. The run summary starts
-with a separator line and ends with the verdict as a badge (`✔ PASSED`, `! PASSED WITH
-WARNINGS`, `✖ FAILED`, `✖ ERROR` on a green, yellow, red or magenta background), the reason and
-one `Report:` line with the absolute path of the HTML report. Every colored item also has a
-symbol or a word, and the text is the same without colors.
+with a separator line and shows errors and warnings in framed boxes, the counters and the
+violations in tables, and ends with the verdict in a box (`✅ PASSED`, `⚠ PASSED WITH WARNINGS`,
+`❌ FAILED`, `❌ ERROR`, with a badge on a green, yellow, red or magenta background), the reason and
+one `Report:` line with the absolute path of the HTML report. Every colored item also has an
+emoji or a word, and the text is the same without colors.
 
-| Variable        | Effect                                                   |
-| --------------- | -------------------------------------------------------- |
-| `NO_COLOR=1`    | No colors, also in a terminal and with `FORCE_COLOR`.    |
-| `FORCE_COLOR=1` | Colors also without a terminal (for example in CI logs). |
-| `FORCE_COLOR=0` | No colors.                                               |
+| Variable        | Effect                                                       |
+| --------------- | ------------------------------------------------------------ |
+| `NO_COLOR=1`    | No colors, also in a terminal and with `FORCE_COLOR`.        |
+| `FORCE_COLOR=1` | Colors also without a terminal (for example in CI logs).     |
+| `FORCE_COLOR=0` | No colors.                                                   |
+| `TERM=dumb`     | No colors, ASCII frames (`+`, `-`, `\|`), `✔ ! ✖` for emoji. |
 
 ## `pw-perf test`
 

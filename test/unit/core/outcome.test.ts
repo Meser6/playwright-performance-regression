@@ -88,7 +88,7 @@ describe('assessRun (09-REQ-24)', () => {
     expect(outcome.exitCode).toBe(0);
     expect(codes(report.warnings)).toContain('TESTS_FAILED');
     expect(report.warnings.find((w) => w.code === 'TESTS_FAILED')?.message).toBe(
-      '1 of 100 test executions failed; the performance result still decides.',
+      '1 of 100 test executions failed; their samples are counted and the performance result still decides.',
     );
     expect(report.toolErrors).toEqual([]);
   });

@@ -1,7 +1,10 @@
 // Output of a check (04-REQ-50): what would be measured and how long a full run would take.
-// Pure: the reporter collects the data.
+// Errors, warnings and the verdict in frames like the run summary (09-REQ-27). Pure: the reporter
+// collects the data.
 import type { Issue } from '../core/types/index.ts';
+import { marks } from './box.ts';
 import { painter } from './color.ts';
+import { issueBox, verdictBox } from './summary.ts';
 import { padEnd, truncateMiddle } from './text.ts';
 
 export interface CheckProject {
@@ -57,11 +60,12 @@ export interface CheckSummary {
 }
 
 const MAX_WARNINGS = 10;
+const CHECK_REASON = 'nothing was evaluated and no files were written';
 
 /** The check output, ending with the badge line; the Next: line is printed by the caller. */
 export function formatCheckSummary(
   s: CheckSummary,
-  opts: { width: number; color: boolean },
+  opts: { width: number; color: boolean; ascii?: boolean },
 ): string {
   const paint = painter(opts.color);
   const lines: string[] = [];
@@ -121,29 +125,18 @@ export function formatCheckSummary(
     `${paint('Thresholds files:', 'bold')} ${s.thresholdsFiles.map((f) => `${f.kind} ${f.state === 'missing' ? `missing (${f.name})` : f.state === 'not used' ? 'not used' : `${f.state} (${f.name})`}`).join(' · ')}`,
   );
 
-  if (s.toolErrors.length > 0) {
-    lines.push('', paint('Errors:', 'bold'));
-    for (const e of s.toolErrors) {
-      lines.push(`  ${paint(`✖ ${e.code}`, 'red')}: ${e.message}`);
-      if (e.hint !== undefined) lines.push(paint(`    Hint: ${e.hint}`, 'dim'));
-    }
-  }
-  if (s.warnings.length > 0) {
-    lines.push('', paint('Warnings:', 'bold'));
-    for (const w of s.warnings.slice(0, MAX_WARNINGS)) {
-      lines.push(`  ${paint(`! ${w.code}`, 'yellow')}: ${w.message}`);
-      if (w.hint !== undefined) lines.push(paint(`    Hint: ${w.hint}`, 'dim'));
-    }
-    if (s.warnings.length > MAX_WARNINGS) {
-      lines.push(`  … and ${String(s.warnings.length - MAX_WARNINGS)} more`);
-    }
-  }
+  const frame = { width: opts.width, color: opts.color, ascii: opts.ascii ?? false };
+  if (s.toolErrors.length > 0 || s.warnings.length > 0) lines.push('');
+  lines.push(...issueBox('error', s.toolErrors, Infinity, frame));
+  lines.push(...issueBox('warning', s.warnings, MAX_WARNINGS, frame));
+  if (lines[lines.length - 1] === '') lines.pop();
 
   lines.push('', `${paint('Estimate:', 'bold')} ${s.estimate}`, '');
-  const badge =
-    s.toolErrors.length === 0
-      ? paint(' ✔ CHECKED ', 'badge-green')
-      : paint(' ✖ ERROR ', 'badge-magenta');
-  lines.push(`${badge} nothing was evaluated and no files were written`);
+  const m = marks(frame.ascii);
+  lines.push(
+    ...(s.toolErrors.length === 0
+      ? verdictBox(m.ok, 'CHECKED', CHECK_REASON, 'green', 'badge-green', frame)
+      : verdictBox(m.error, 'ERROR', CHECK_REASON, 'magenta', 'badge-magenta', frame)),
+  );
   return `${lines.join('\n')}\n`;
 }

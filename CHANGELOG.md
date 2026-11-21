@@ -17,6 +17,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The run summary and the `check` output are easier to scan: errors, warnings and the verdict
+  are in framed boxes, the counters and the violations in tables with lines, and statuses carry
+  emoji (✅ ⚠ ❌). Long warning messages wrap inside the box. `NO_COLOR` turns off only the
+  colors; `TERM=dumb` also turns frames into ASCII and emoji into `✔ ! ✖`.
+- The `TESTS_FAILED` warning now says that the samples of failed tests are counted.
 - `pw-perf init` is rebuilt around your own test command: it detects the scripts that run
   `playwright test` and shows `Run: PW_PERF_MODE=test npm run <script>`, warns about flags that
   break a measurement run (`INIT_SCRIPT_FLAG`) and later steps of the script
