@@ -29,6 +29,20 @@ function steps(spec: Parameters<typeof aggregates>[0]): Record<string, StepAggre
 const API = aggregates({ 'GET /api/a': { durations: [[30, 100]] } }).endpoints;
 const STEP = steps({ 'login › submit': { durations: [[30, 3000]] } });
 
+describe('09-AC-32 thresholds mode', () => {
+  test('no THRESHOLDS_FILE_MISSING while deriving; two in test mode', () => {
+    const run = (mode: 'test' | 'thresholds') =>
+      evaluate(
+        { endpoints: API, steps: STEP },
+        files(missing('api'), missing('step')),
+        STEPS_ON,
+        options({ mode }),
+      ).warnings.filter((w) => w.code === 'THRESHOLDS_FILE_MISSING');
+    expect(run('thresholds')).toEqual([]);
+    expect(run('test')).toHaveLength(2);
+  });
+});
+
 describe('09-AC-25 step keys', () => {
   test('without the step file: THRESHOLDS_FILE_MISSING for step and default limit.step', () => {
     const e = evaluate(
