@@ -26,23 +26,26 @@ describe('check', () => {
   });
 
   test(
-    '04-AC-34 04-AC-37 --max-tests 2 runs 2 tests, skips 10, runs setup, writes nothing, exit code 0',
+    '04-AC-34 04-AC-37 PW_PERF_MAX_TESTS=2 runs 2 tests, skips 10, runs setup, writes nothing, exit code 0',
     async () => {
       const dir = shared;
       const before = stateFiles();
-      const run = await harness.run(dir, { cli: true, args: ['check', '--max-tests', '2'] });
+      const run = await harness.run(dir, {
+        env: { PW_PERF_MODE: 'check', PW_PERF_MAX_TESTS: '2' },
+        environmentMode: true,
+      });
       expect(run.status, run.output).toBe(0);
       expect(run.output).toContain(
         'pw-perf · check · 2 of 12 tests run (2 passed) · 10 skipped by check',
       );
       expect(run.output).toContain('dependency  setup · runs once, not measured');
       expect(run.output).toContain('CHECKED');
-      expect(run.output).toContain('check finished · exit code 0');
       expect(run.output).toMatch(
         /Next: derive thresholds on the CI machines: (?:npx cross-env )?PW_PERF_MODE=thresholds /u,
       );
       expect(existsSync(join(dir, 'pw-perf-results', 'report.json'))).toBe(false);
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'))).toEqual([]);
+      expect(existsSync(join(dir, 'pw-perf-results', 'outcome.json'))).toBe(false);
       expect(stateFiles()).toEqual(before);
     },
     RUN_TIMEOUT,
@@ -65,10 +68,15 @@ describe('check', () => {
   );
 
   test(
-    '04-AC-37 --shard is refused with exit code 3',
+    '04-AC-37 --shard is RUN_SHARDED with exit code 1 of Playwright',
     async () => {
-      const run = await harness.run(shared, { cli: true, args: ['check', '--shard', '1/2'] });
-      expect(run.status, run.output).toBe(3);
+      const run = await harness.run(shared, {
+        env: { PW_PERF_MODE: 'check' },
+        environmentMode: true,
+        args: ['--shard', '1/2'],
+      });
+      expect(run.status, run.output).toBe(1);
+      expect(run.output).toContain('RUN_SHARDED');
     },
     RUN_TIMEOUT,
   );

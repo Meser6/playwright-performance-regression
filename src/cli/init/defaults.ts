@@ -1,4 +1,4 @@
-// Default answers of the init wizard (04-REQ-38): what --yes and a run without a terminal use.
+// Default answers of the init wizard (04-REQ-38): what a run without a terminal uses.
 // Origin labels and environments are not asked (07-REQ-03, note #26). Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { ProjectInfo } from './detect.ts';
@@ -30,7 +30,7 @@ export function defaultAnswers(info: ProjectInfo): InitAnswers {
     steps: DEFAULT_CONFIG.measure.steps,
     preset: DEFAULT_CONFIG.thresholds.preset,
     addCi: info.ciPlatform !== null,
-    // Never with --yes (04-REQ-58).
+    // Never without a terminal (04-REQ-58).
     runCheck: false,
   };
 }

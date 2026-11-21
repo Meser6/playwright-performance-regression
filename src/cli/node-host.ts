@@ -1,14 +1,12 @@
-// The CLI host on Node (04, chapter 6): process streams and signals, files, and the Playwright
-// child process started with process.execPath and without a shell (04-REQ-13, NF-05, V-03).
+// The wizard host on Node (04, chapter 6): process streams and signals, files, @playwright/test of
+// the project and the check child process (04-REQ-58, NF-05, V-03).
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { fileExists, readTextFile } from '../io/index.ts';
-import { peerDependencies, version } from '../../package.json';
+import { readTextFile } from '../io/index.ts';
+import { peerDependencies } from '../../package.json';
 import type { CliHost, DirEntry, PlaywrightInstall } from './host.ts';
 import { readlinePrompt } from './init/index.ts';
 
@@ -22,8 +20,8 @@ function isModuleNotFound(error: unknown): boolean {
 }
 
 /**
- * @playwright/test resolved from `dir` (never from this package, 04-REQ-13): the `bin.playwright`
- * script of its package.json. MODULE_NOT_FOUND means it is not installed (04-REQ-14).
+ * @playwright/test resolved from `dir` (never from this package): the `bin.playwright` script of
+ * its package.json. MODULE_NOT_FOUND means it is not installed.
  */
 export function resolvePlaywright(dir: string): PlaywrightInstall | null {
   const require = createRequire(join(dir, 'noop.js'));
@@ -56,18 +54,11 @@ export function nodeHost(): CliHost {
     env: process.env,
     platform: process.platform,
     execPath: process.execPath,
-    tmpdir: tmpdir(),
     stdin: process.stdin,
     stdout: process.stdout,
     stderr: process.stderr,
-    now: () => new Date(),
-    random: Math.random,
-    packageVersion: version,
     minPlaywrightVersion: minimumPlaywright(),
-    // dist/cli.js and dist/reporter.js are siblings (ESM build).
-    reporterPath: fileURLToPath(new URL('./reporter.js', import.meta.url)),
     resolvePlaywright,
-    spawnNode: (args, options) => spawn(process.execPath, args, options),
     spawnProcess: (file, args, options) => spawn(file, args, options),
     onSignal: (signal, handler) => {
       process.on(signal, handler);
@@ -76,16 +67,6 @@ export function nodeHost(): CliHost {
       };
     },
     readText: readTextFile,
-    removeFile: (path) => rm(path, { force: true }),
-    exists: fileExists,
-    isDirectory: async (path) => {
-      try {
-        return (await stat(path)).isDirectory();
-      } catch {
-        return false;
-      }
-    },
-    importModule: (url) => import(url),
     listDir: async (path): Promise<DirEntry[]> => {
       try {
         const entries = await readdir(path, { withFileTypes: true });

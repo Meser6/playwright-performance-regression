@@ -1,8 +1,8 @@
 // The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and eleven
 // steps, each with a short lesson. Origin labels and environments are not asked (07-REQ-03,
-// note #26). Interactive only when stdin and stdout are terminals; --yes
-// takes the default answers and writes, and without a terminal and without --yes it only shows
-// the plan, like --dry-run (04-REQ-37, 04-D-20). Declining the tutorial (or --no-tutorial) prints
+// note #26). Interactive only when stdin and stdout are terminals; without a terminal it takes
+// the default answers and only shows the plan, like PW_PERF_DRY_RUN=1 (04-REQ-37, 04-D-20, 04-D-38).
+// Declining the tutorial (or PW_PERF_NO_TUTORIAL=1) prints
 // the manual setup and changes nothing (04-REQ-45). Texts in the chosen language (04-REQ-43),
 // colors by 04-REQ-44. Nothing is written before the changes step (04-REQ-41).
 import { asciiTerminal, box as renderBox } from '../../console/box.ts';
@@ -17,7 +17,6 @@ import { parsePasses } from '../../mode/index.ts';
 import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
-import { versionAtLeast } from '../run.ts';
 import { CI_PATHS } from './ci.ts';
 import { asksProjects, DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
@@ -35,11 +34,26 @@ import { PromptAborted } from './prompt.ts';
 import { breakingFlags, commandSpawn, defaultScript, runCommands } from './scripts.ts';
 import type { DetectedScript, FlagEffect, RunCommands } from './scripts.ts';
 
+/** The wizard settings from PW_PERF_DRY_RUN, PW_PERF_LANG and PW_PERF_NO_TUTORIAL (D-43). */
 export interface InitCommand {
-  yes: boolean;
   dryRun: boolean;
   lang?: WizardLanguage;
   noTutorial?: boolean;
+}
+
+/** "1.57.0" ≥ "1.57.0"; pre-release parts are ignored. */
+export function versionAtLeast(version: string, minimum: string): boolean {
+  const parts = (v: string): number[] =>
+    v
+      .split(/[.+-]/u)
+      .slice(0, 3)
+      .map((p) => Number.parseInt(p, 10) || 0);
+  const a = parts(version);
+  const b = parts(minimum);
+  for (let i = 0; i < 3; i += 1) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  }
+  return true;
 }
 
 /** Steps shown as [n/11] (04-REQ-38); skipped steps keep their number. */
@@ -217,7 +231,7 @@ function describeProject(info: ProjectInfo, t: Translate): string[] {
   return lines;
 }
 
-/** Step 0a declined or --no-tutorial: the manual setup, no changes (04-REQ-45). */
+/** Step 0a declined or PW_PERF_NO_TUTORIAL=1: the manual setup, no changes (04-REQ-45). */
 function printManualSetup(dialog: Dialog): void {
   const { t, paint } = dialog;
   const cmd = (text: string): string => paint(text, 'cyan');
@@ -233,7 +247,7 @@ function printManualSetup(dialog: Dialog): void {
   dialog.say(`  ${t('declinedLater', { init: cmd(INIT_COMMAND) })}`);
 }
 
-/** Step 0: the language from --lang, the answer in a terminal, or English (04-REQ-43). */
+/** Step 0: the language from PW_PERF_LANG, the answer in a terminal, or English (04-REQ-43). */
 async function askLanguage(
   dialog: Dialog,
   given: WizardLanguage | undefined,
@@ -508,7 +522,6 @@ async function applyChanges(
   info: ProjectInfo,
   changes: readonly FileChange[],
   write: boolean,
-  yes: boolean,
 ): Promise<string[]> {
   const { t, paint } = dialog;
   const written: string[] = [];
@@ -526,11 +539,11 @@ async function applyChanges(
     );
     let apply: boolean;
     if (isProtected(info, change.path)) {
-      // Never overwritten without its own confirmation; --yes does not count (04-REQ-40).
+      // Never overwritten without its own confirmation (04-REQ-40).
       if (dialog.interactive)
         apply = await dialog.confirm(t('overwriteQuestion', { path: change.path }), false);
       else {
-        dialog.say(`  ${t(yes ? 'keptWithYes' : 'kept', { path: change.path })}`);
+        dialog.say(`  ${t('kept', { path: change.path })}`);
         apply = false;
       }
     } else {
@@ -650,13 +663,12 @@ export async function runInit(
   host: CliHost,
   style: OutputStyle,
 ): Promise<number> {
-  const interactive =
-    !cmd.yes && !cmd.dryRun && host.stdin.isTTY === true && host.stdout.isTTY === true;
-  const write = !cmd.dryRun && (cmd.yes || interactive);
+  const interactive = !cmd.dryRun && host.stdin.isTTY === true && host.stdout.isTTY === true;
+  const write = interactive;
   const prompt = interactive && cmd.noTutorial !== true ? host.createPrompt() : null;
   const dialog = new Dialog(host, prompt, style);
   try {
-    // Step 0a: with --yes or without a terminal the question is skipped (04-REQ-45).
+    // Step 0a: without a terminal the question is skipped (04-REQ-45).
     if (cmd.noTutorial === true) {
       dialog.t = translator(cmd.lang ?? 'en');
       printManualSetup(dialog);
@@ -714,7 +726,7 @@ export async function runInit(
     );
     let written: string[];
     try {
-      written = await applyChanges(dialog, host, info, plan.changes, write, cmd.yes);
+      written = await applyChanges(dialog, host, info, plan.changes, write);
     } catch (error) {
       if (!(error instanceof WriteFailed)) throw error;
       return dialog.error('INIT_WRITE_FAILED', 'writeFailedMessage', 'writeFailedHint', {

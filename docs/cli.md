@@ -1,6 +1,6 @@
 # Running
 
-The package has no commands of its own to learn. You run the test command your project already
+The package has no commands or options of its own. You run the test command your project already
 has, with environment variables in front of it. Playwright rejects unknown command line flags, so
 every setting of a run is a `PW_PERF_*` variable:
 
@@ -203,8 +203,8 @@ What it can change:
 - a CI file from the [CI recipes](ci.md) with a manual thresholds job and a weekly measurement
   job that run your test command.
 
-`package.json` is never changed. Scripts `perf:*` written by an earlier version of the wizard
-still work; the summary mentions that they are no longer needed.
+`package.json` is never changed. Scripts `perf:*` written by an earlier version of the wizard no
+longer work (they call a runner that was removed); the summary lists them so you can remove them.
 
 Layouts it does not recognize (another wrapper around the config, existing CI files with other
 content) are left as they are, with an
@@ -221,7 +221,20 @@ language.
 
 Without a terminal the wizard prints the plan with the default answers in English and writes
 nothing; run it again in a terminal to apply the changes. Nothing is written before the step that
-applies the changes, so Ctrl+C before that step leaves the project untouched.
+applies the changes, so Ctrl+C before that step leaves the project untouched. In a project with
+the package installed, `npx pw-perf` starts the same wizard.
+
+The setup takes no arguments; these variables change it:
+
+| Variable              | Meaning                                                                        |
+| --------------------- | ------------------------------------------------------------------------------ |
+| `PW_PERF_LANG`        | wizard language without the question: `en`, `es`, `fr`, `pl`, `it`, `uk`, `ru` |
+| `PW_PERF_DRY_RUN`     | `1`: show the planned changes (diffs) only, also in a terminal; write nothing  |
+| `PW_PERF_NO_TUTORIAL` | `1`: print the manual setup steps only and change nothing                      |
+
+For example `PW_PERF_LANG=pl npm init playwright-performance-regression`. An invalid value stops
+the setup with [`MODE_INVALID_VALUE`](troubleshooting.md#mode_invalid_value), and any argument
+with [`CLI_UNKNOWN_COMMAND`](troubleshooting.md#cli_unknown_command).
 
 ## Output files
 

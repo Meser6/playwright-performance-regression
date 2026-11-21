@@ -13,8 +13,8 @@ it and how to fix it. Search the page for the code you see.
 - **`pw-perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
   run with its code, message and hint.
 - **`pw-perf-results/report.html`**: the same warnings and tool errors near the top of the page.
-- **Setup output (stderr)**: errors of the guided setup (`INIT_*`) and of the old `pw-perf`
-  runner (`CLI_*`).
+- **Setup output (stderr)**: errors of the guided setup (`INIT_*`) and of the `pw-perf` binary
+  that starts it (`CLI_*`).
 - **Playwright output**: an invalid package config stops Playwright while it loads
   `playwright.config` with a list of `CONFIG_*` problems; a few rare collector and reporter
   failures are printed as a single line on stderr.
@@ -35,7 +35,7 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 ## Contents
 
 - [Configuration and perf mode](#configuration-and-perf-mode)
-- [CLI](#cli)
+- [Setup command](#setup-command)
 - [init](#init)
 - [Collector](#collector)
 - [Endpoint keys](#endpoint-keys)
@@ -150,136 +150,31 @@ default package config is used and every project is treated as measured. Wrap th
 **Error.** A `PW_PERF_*` environment variable has an invalid value: `PW_PERF_MODE` other than
 `test`, `thresholds` or `check`, `PW_PERF_PASSES` that is not a positive integer, `PW_PERF_PASS`
 that is not `k/N` with 2 ≤ k ≤ N (the package sets it for passes 2 to N), `PW_PERF_ENV` that is
-not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, or `PW_PERF_PRUNE` or
-`PW_PERF_YES` other than `1`. `PW_PERF_REPEAT` was renamed to `PW_PERF_PASSES`: a set
+not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, `PW_PERF_PRUNE` or
+`PW_PERF_YES` other than `1`, or, in the guided setup, `PW_PERF_DRY_RUN` or `PW_PERF_NO_TUTORIAL`
+other than `1` and `PW_PERF_LANG` that is not one of `en`, `es`, `fr`, `pl`, `it`, `uk`, `ru`
+(the setup then stops with exit code 3 before its first question). `PW_PERF_REPEAT` was renamed to `PW_PERF_PASSES`: a set
 `PW_PERF_REPEAT` is an error with that hint. An invalid value never silently turns perf mode off. Fix or unset the variable,
 e.g. `PW_PERF_MODE=test npm run e2e` (see [cli.md](cli.md)).
 
-### CONFIG_FILE_NOT_FOUND
+## Setup command
 
-**Error (exit code 3).** The package config file given to the old `pw-perf` runner does not
-exist. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
-
-### CONFIG_FILE_LOAD_FAILED
-
-**Error or warning.** The package config file (`pw-perf.config.*`) could not be loaded by the
-old `pw-perf` runner. Node loads TypeScript files itself, without a bundler, so imports without a
-file extension, `tsconfig` path aliases and `enum`s fail; the hint names the fix.
-
-### CONFIG_SNAPSHOT_DIFFERS
-
-**Warning.** The package config file differs from the config the report was recorded with, in
-options that change the result (the message lists up to 10 option paths). The file is used. If
-the run used other settings on purpose, check the result, or run the measurement again with the
-current config.
-
-## CLI
-
-These codes come from the old `pw-perf` runner. Its errors end it with exit code 3 before
-Playwright starts, unless noted. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
+The package has no commands or options of its own. `npm init playwright-performance-regression`
+(or `npx pw-perf` in a project with the package installed) starts the guided setup; measurement
+runs are your own test command with the `PW_PERF_*` variables (see [Running](cli.md)).
 
 ### CLI_UNKNOWN_COMMAND
 
-**Error.** The runner got no command or an unknown one. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
-
-### CLI_INVALID_OPTION
-
-**Error.** The runner got an invalid, renamed or misplaced option. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
-
-### CLI_MISSING_ARGUMENT
-
-**Error.** An option of the runner that needs a value has none. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
-
-### CLI_UNSUPPORTED_PLAYWRIGHT_OPTION
-
-**Error.** `--ui`, `--ui-host`, `--ui-port`, `--debug` or `--shard` was passed to the runner. UI
-mode and debugging change how tests run and their timings; with sharding each machine would see
-only part of the samples. Use `npx playwright test` without `PW_PERF_MODE` for these.
-
-### CLI_PRUNE_WITH_FILTER
-
-**Error.** The runner was asked to prune together with a test filter (`--grep`, `--grep-invert`,
-`--project`, `--last-failed`, `--only-changed`, `--test-list` or file paths). Pruning removes
-entries of keys not seen in the run, so it would delete the entries of every test left out. Prune
-in a thresholds run of all tests: `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 npm run e2e`.
-
-### CLI_FROM_WITH_PLAYWRIGHT_ARGS
-
-**Error.** Deriving thresholds from an existing report with the runner takes no Playwright
-arguments. Derive thresholds with a thresholds run instead: `PW_PERF_MODE=thresholds npm run e2e`.
-
-### CLI_MODE_ALREADY_SET
-
-**Warning.** Some `PW_PERF_*` variables were already set in the environment when the runner
-started. The runner removes them and sets its own for this run. Run your test command with the `PW_PERF_*` variables instead (see [Running](cli.md)).
-
-### CLI_PLAYWRIGHT_NOT_FOUND
-
-**Error.** `@playwright/test` cannot be resolved from the project directory (the current
-directory, or the directory of `-c <config>`). Install it, run the command from the project
-directory, or pass `-c path/to/playwright.config.ts`.
-
-### CLI_PLAYWRIGHT_UNSUPPORTED_VERSION
-
-**Warning.** The installed `@playwright/test` is older than the lowest supported version. The run
-continues, but may not work. Update `@playwright/test`.
-
-### CLI_REPORTER_PATH_UNSUPPORTED
-
-**Error.** `--reporter` was passed and the package reporter must be appended to it, but the
-package path contains a comma, which Playwright treats as a separator. Remove `--reporter` from
-the command (then `withPerf()` adds the reporter itself) or move the project to a path without a
-comma.
-
-### CLI_SPAWN_FAILED
-
-**Error.** The Playwright process could not be started. The message contains the system error.
-Check that Node can run the Playwright CLI of the project; reinstalling the dependencies usually
-helps.
-
-### CLI_OUTCOME_MISSING
-
-**Error (exit code 3).** Playwright finished, but the package reporter wrote no outcome file, so
-the result is unknown. The message gives Playwright's own exit code. Common causes:
-
-- `playwright.config` does not use `withPerf()` (set it up with
-  `npm init playwright-performance-regression`);
-- a configuration error, printed above this message;
-- no test matched the filters, so the reporter had nothing to do;
-- Playwright stopped before the reporters finished, for example after a crash.
-
-### CLI_OUTCOME_INVALID
-
-**Error (exit code 3).** The outcome file exists but cannot be read or does not belong to this
-run. This usually means two different versions of the package are installed (for example in a
-monorepo). Make sure the project resolves a single version and run again.
-
-### CLI_REPORT_NOT_FOUND
-
-**Error.** The run report the runner should read does not exist. Run a measurement first
-(`PW_PERF_MODE=test npm run e2e`).
-
-### CLI_REPORT_TESTS_FAILED
-
-**Warning.** The report the runner derived thresholds from comes from a run whose tests did not
-all pass. Thresholds are derived anyway. Review the diff before you commit the files.
-
-### CLI_CONFIG_DIR_MISSING
-
-**Warning.** The runner did not load a package config file and the config directory recorded in
-the report does not exist on this machine (or the report has none). Relative paths such as
-`thresholds.dir` and `report.dir` are resolved against the current directory instead. Run the
-command from the directory of `playwright.config`.
-
-### CLI_WRITE_FAILED
-
-**Error (exit code 3).** The runner could not write a thresholds file or the HTML file. Check
-that the directory is writable.
+**Error (exit code 3).** The `pw-perf` binary or the create package got arguments, e.g.
+`npx pw-perf test` or `npm init playwright-performance-regression -- --yes`. They take none: run
+your test command with `PW_PERF_MODE=test` (or `thresholds`, `check`), and control the setup with
+`PW_PERF_LANG=<code>`, `PW_PERF_DRY_RUN=1` and `PW_PERF_NO_TUTORIAL=1` (see [Running](cli.md)).
+The help is printed after the error.
 
 ### CLI_INTERNAL_ERROR
 
-**Error (exit code 3).** An unexpected error in the CLI. This is a bug in the package; please
-open an issue with the full message.
+**Error (exit code 3).** An unexpected error in the setup command. This is a bug in the package;
+please open an issue with the full message.
 
 ## init
 

@@ -75,7 +75,6 @@ const en = {
   newFile: 'new file',
   modifiedFile: 'change',
   overwriteQuestion: '{path} exists. Overwrite it?',
-  keptWithYes: '{path} exists and is kept (the default answers do not overwrite it).',
   kept: '{path} exists and is kept.',
   applyQuestion: 'Apply this change?',
   fileWritten: 'Written: {path}',
@@ -144,8 +143,7 @@ const en = {
     'The script "{name}" runs more steps after Playwright, also in measurement runs: {steps}.',
   laterStepsHint:
     'If they should not run then, add a script without them; the wizard does not create it.',
-  oldScripts:
-    'The perf:* scripts of an earlier wizard ({names}) are no longer needed; you can remove them.',
+  oldScripts: 'The perf:* scripts of an earlier wizard ({names}) no longer work; remove them.',
   stepProjects: 'Projects',
   projectsLesson:
     'Measured projects run in every pass; setup and teardown projects run once per pass, as usual. Tests that only use the request fixture measure nothing.',
@@ -254,7 +252,6 @@ const pl: Messages = {
   newFile: 'nowy plik',
   modifiedFile: 'zmiana',
   overwriteQuestion: '{path} już istnieje. Nadpisać go?',
-  keptWithYes: '{path} już istnieje i zostaje bez zmian (odpowiedzi domyślne go nie nadpisują).',
   kept: '{path} już istnieje i zostaje bez zmian.',
   applyQuestion: 'Zastosować tę zmianę?',
   fileWritten: 'Zapisano: {path}',
@@ -323,8 +320,7 @@ const pl: Messages = {
     'Skrypt "{name}" wykonuje po Playwrighcie dalsze kroki, także w runie pomiarowym: {steps}.',
   laterStepsHint:
     'Jeśli nie powinny się wtedy wykonać, dodaj skrypt bez nich; kreator go nie tworzy.',
-  oldScripts:
-    'Skrypty perf:* z wcześniejszej wersji kreatora ({names}) nie są już potrzebne; możesz je usunąć.',
+  oldScripts: 'Skrypty perf:* z wcześniejszej wersji kreatora ({names}) już nie działają; usuń je.',
   stepProjects: 'Projekty',
   projectsLesson:
     "Mierzone projekty wykonują się w każdym przebiegu; projekty setup i teardown raz na przebieg, jak zwykle. Testy korzystające tylko z fixture'u request niczego nie mierzą.",
@@ -432,7 +428,6 @@ const es: Messages = {
   newFile: 'archivo nuevo',
   modifiedFile: 'cambio',
   overwriteQuestion: '{path} ya existe. ¿Sobrescribirlo?',
-  keptWithYes: '{path} ya existe y se conserva (las respuestas por defecto no lo sobrescriben).',
   kept: '{path} ya existe y se conserva.',
   applyQuestion: '¿Aplicar este cambio?',
   fileWritten: 'Escrito: {path}',
@@ -502,8 +497,7 @@ const es: Messages = {
     'El script "{name}" ejecuta más pasos después de Playwright, también en las mediciones: {steps}.',
   laterStepsHint:
     'Si no deben ejecutarse entonces, añade un script sin ellos; el asistente no lo crea.',
-  oldScripts:
-    'Los scripts perf:* de un asistente anterior ({names}) ya no son necesarios; puedes eliminarlos.',
+  oldScripts: 'Los scripts perf:* de un asistente anterior ({names}) ya no funcionan; elimínalos.',
   stepProjects: 'Proyectos',
   projectsLesson:
     'Los proyectos medidos se ejecutan en cada pasada; los proyectos setup y teardown una vez por pasada, como siempre. Los tests que solo usan el fixture request no miden nada.',
@@ -612,7 +606,6 @@ const fr: Messages = {
   newFile: 'nouveau fichier',
   modifiedFile: 'modification',
   overwriteQuestion: '{path} existe déjà. L’écraser ?',
-  keptWithYes: '{path} existe déjà et est conservé (les réponses par défaut ne l’écrasent pas).',
   kept: '{path} existe déjà et est conservé.',
   applyQuestion: 'Appliquer cette modification ?',
   fileWritten: 'Écrit : {path}',
@@ -684,7 +677,7 @@ const fr: Messages = {
   laterStepsHint:
     'Si elles ne doivent pas s’exécuter alors, ajoutez un script sans elles ; l’assistant ne le crée pas.',
   oldScripts:
-    'Les scripts perf:* d’un assistant précédent ({names}) ne sont plus nécessaires ; vous pouvez les supprimer.',
+    'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
   stepProjects: 'Projets',
   projectsLesson:
     'Les projets mesurés s’exécutent à chaque passage ; les projets setup et teardown une fois par passage, comme d’habitude. Les tests qui n’utilisent que la fixture request ne mesurent rien.',
@@ -795,8 +788,6 @@ const it: Messages = {
   newFile: 'nuovo file',
   modifiedFile: 'modifica',
   overwriteQuestion: '{path} esiste già. Sovrascriverlo?',
-  keptWithYes:
-    '{path} esiste già e viene mantenuto (le risposte predefinite non lo sovrascrivono).',
   kept: '{path} esiste già e viene mantenuto.',
   applyQuestion: 'Applicare questa modifica?',
   fileWritten: 'Scritto: {path}',
@@ -868,7 +859,7 @@ const it: Messages = {
   laterStepsHint:
     'Se non devono essere eseguiti allora, aggiungi uno script senza di essi; la procedura non lo crea.',
   oldScripts:
-    'Gli script perf:* di una procedura precedente ({names}) non servono più; puoi rimuoverli.',
+    'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
   stepProjects: 'Progetti',
   projectsLesson:
     'I progetti misurati vengono eseguiti a ogni passata; i progetti setup e teardown una volta per passata, come sempre. I test che usano solo la fixture request non misurano nulla.',
@@ -978,7 +969,6 @@ const uk: Messages = {
   newFile: 'новий файл',
   modifiedFile: 'зміна',
   overwriteQuestion: '{path} уже існує. Перезаписати?',
-  keptWithYes: '{path} уже існує і залишається без змін (типові відповіді його не перезаписують).',
   kept: '{path} уже існує і залишається без змін.',
   applyQuestion: 'Застосувати цю зміну?',
   fileWritten: 'Записано: {path}',
@@ -1048,7 +1038,7 @@ const uk: Messages = {
   laterStepsHint:
     'Якщо вони не мають тоді виконуватися, додайте скрипт без них; майстер його не створює.',
   oldScripts:
-    'Скрипти perf:* з попередньої версії майстра ({names}) більше не потрібні; їх можна видалити.',
+    'Скрипти perf:* з попередньої версії майстра ({names}) більше не працюють; видаліть їх.',
   stepProjects: 'Проєкти',
   projectsLesson:
     'Вимірювані проєкти виконуються в кожному проході; проєкти setup і teardown — раз на прохід, як зазвичай. Тести лише з фікстурою request нічого не вимірюють.',
@@ -1155,8 +1145,6 @@ const ru: Messages = {
   newFile: 'новый файл',
   modifiedFile: 'изменение',
   overwriteQuestion: '{path} уже существует. Перезаписать?',
-  keptWithYes:
-    '{path} уже существует и остаётся без изменений (ответы по умолчанию его не перезаписывают).',
   kept: '{path} уже существует и остаётся без изменений.',
   applyQuestion: 'Применить это изменение?',
   fileWritten: 'Записано: {path}',
@@ -1225,8 +1213,7 @@ const ru: Messages = {
     'Скрипт "{name}" выполняет после Playwright другие шаги, в том числе в измерительных запусках: {steps}.',
   laterStepsHint:
     'Если они не должны тогда выполняться, добавьте скрипт без них; мастер его не создаёт.',
-  oldScripts:
-    'Скрипты perf:* из прежней версии мастера ({names}) больше не нужны; их можно удалить.',
+  oldScripts: 'Скрипты perf:* из прежней версии мастера ({names}) больше не работают; удалите их.',
   stepProjects: 'Проекты',
   projectsLesson:
     'Измеряемые проекты выполняются в каждом проходе; проекты setup и teardown — раз за проход, как обычно. Тесты только с фикстурой request ничего не измеряют.',

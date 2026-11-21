@@ -167,17 +167,14 @@ describe('workflows', () => {
     }
   });
 
-  test('13-REQ-10 04-REQ-05 the weekly run tests Playwright next and option collisions and opens an issue on failure', () => {
+  test('13-REQ-10 the weekly run tests Playwright next and opens an issue on failure', () => {
     const weekly = workflow('weekly.yml');
     expect(runs(job(weekly, 'playwright-next')).join('\n')).toContain('@playwright/test@next');
     expect(runs(job(weekly, 'playwright-next'))).toContain('pnpm test');
-    expect(job(weekly, 'option-collisions').strategy?.matrix?.['playwright']).toEqual([
-      'latest',
-      'next',
-    ]);
-    expect(runs(job(weekly, 'option-collisions')).join('\n')).toContain('-t 04-AC-02');
+    // No own CLI options since D-43: the option collision job is gone.
+    expect(weekly.jobs['option-collisions']).toBeUndefined();
     const report = job(weekly, 'report-failure');
-    expect(report.needs).toEqual(['playwright-next', 'option-collisions', 'stats']);
+    expect(report.needs).toEqual(['playwright-next', 'stats']);
     expect(report.if).toBe("failure() && github.event_name == 'schedule'");
     expect(runs(report).join('\n')).toContain('gh issue create');
   });

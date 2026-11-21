@@ -2,7 +2,8 @@
 // create-playwright-performance-regression (01-REQ-39; 04, chapter 4.10): `npm init
 // playwright-performance-regression`, `pnpm create …` and `yarn create …`. Installs the package as
 // a dev dependency with the package manager of the project (found by its lockfile) and hands over
-// to `pw-perf init`. No dependencies, no shell, no network access of its own: only the package
+// to the wizard (the pw-perf binary without arguments, 04-REQ-01). It takes no arguments: the
+// wizard is controlled by the terminal and PW_PERF_* variables (D-43). No dependencies, no shell, no network access of its own: only the package
 // manager is started.
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -85,6 +86,14 @@ function installedCli(cwd) {
 async function main() {
   const cwd = process.cwd();
   const args = process.argv.slice(2);
+  if (args.length > 0) {
+    say(
+      `takes no arguments, got "${args.join(' ')}". The setup runs in a terminal; its variables are ` +
+        'PW_PERF_LANG=<code>, PW_PERF_DRY_RUN=1 and PW_PERF_NO_TUTORIAL=1, e.g. ' +
+        `PW_PERF_LANG=pl npm init ${PKG}.`,
+    );
+    return 3;
+  }
   if (!existsSync(join(cwd, 'package.json'))) {
     say(`no package.json in ${cwd}. Run this command in the directory of your Playwright project.`);
     return 3;
@@ -116,7 +125,7 @@ async function main() {
     );
     return 3;
   }
-  return run(process.execPath, [cli, 'init', ...args], cwd);
+  return run(process.execPath, [cli], cwd);
 }
 
 process.exitCode = await main();

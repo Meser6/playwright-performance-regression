@@ -26,8 +26,8 @@ export function isDerivable(stats: AggregateStats, checks: Checks): boolean {
 }
 
 /**
- * The aggregate with the evaluated percentile `level` in stats.percentiles: a report read with
- * `thresholds --from` after a change of checks.time.percentile.level lacks it, so it is computed
+ * The aggregate with the evaluated percentile `level` in stats.percentiles: a report without it
+ * (e.g. after a change of checks.time.percentile.level) gets it computed
  * from samples.durations with the function of 08 and rounded as in the report (10-REQ-01).
  */
 export function withPercentile(stats: AggregateStats, level: string): AggregateStats {

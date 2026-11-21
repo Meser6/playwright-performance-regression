@@ -1,11 +1,11 @@
 // 12-PERF-01: run-time overhead of perf mode on the demo suite (NF-01, 05-AC-10). The same
 // project and Playwright config run alternately without perf mode (`playwright test --workers=1
-// --retries=0` 5 times in a row) and through the CLI (`pw-perf test --passes 5`), 5 rounds each;
+// --retries=0` 5 times in a row) and in perf mode (`PW_PERF_MODE=test PW_PERF_PASSES=5 playwright
+// test`), 5 rounds each;
 // the medians of the wall times are compared (12-D-04, D-39).
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
-  CLI,
   DEMO_PROJECT,
   median,
   PLAYWRIGHT,
@@ -24,7 +24,7 @@ let workspace: Workspace;
 beforeAll(async () => {
   workspace = await startWorkspace();
   // Constant backend delays like a real application's: the backend time is the same in both
-  // variants, and the fixed cost of a run (CLI process, report files) is not the whole run.
+  // variants, and the fixed cost of a run (report files) is not the whole run.
   const delays = Object.fromEntries(
     [
       'GET /api/items/1',
@@ -61,19 +61,20 @@ describe('12-PERF-01 run-time overhead', () => {
     };
     // Warm-up of both variants (browser start, file system caches), not counted.
     await runPlain('warm-plain');
-    await runNode([CLI, 'test', '--passes', String(PASSES)], DEMO_PROJECT, env('warm-perf'));
+    const perfEnv = (run: string) => ({
+      ...env(run),
+      PW_PERF_MODE: 'test',
+      PW_PERF_PASSES: String(PASSES),
+    });
+    await runNode([PLAYWRIGHT, 'test'], DEMO_PROJECT, perfEnv('warm-perf'));
 
     const plain: number[] = [];
     const perf: number[] = [];
     for (let round = 0; round < ROUNDS; round++) {
       plain.push(await runPlain(`plain-${String(round)}`));
-      const m = await runNode(
-        [CLI, 'test', '--passes', String(PASSES)],
-        DEMO_PROJECT,
-        env(`perf-${round}`),
-      );
+      const m = await runNode([PLAYWRIGHT, 'test'], DEMO_PROJECT, perfEnv(`perf-${round}`));
       expect(m.status, m.output).toBe(0);
-      expect(m.output).toContain('perf mode "test"');
+      expect(m.output).toContain('5 passes');
       perf.push(m.wallMs);
     }
     const overhead = median(perf) / median(plain) - 1;

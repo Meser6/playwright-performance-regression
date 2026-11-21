@@ -1,5 +1,5 @@
 // Locating and reading the thresholds files of a run (09-REQ-01 – 09-REQ-03; 02, chapter 8.1).
-// The reporter and `thresholds --from` read them the same way (10, chapter 3).
+// The reporter reads them (10, chapter 3).
 import type { LoadedThresholds, LoadedThresholdsFile } from '../core/evaluate/index.ts';
 import { parseThresholdsFile } from '../core/schema/index.ts';
 import { KINDS } from '../core/types/index.ts';

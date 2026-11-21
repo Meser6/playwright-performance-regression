@@ -990,7 +990,7 @@ export class RunSession {
     c.tests.set(project, (c.tests.get(project) ?? 0) + 1);
   }
 
-  /** onEnd of a check (04-REQ-50, 04-REQ-53): output, no report, no files; outcome only via the CLI. */
+  /** onEnd of a check (04-REQ-50, 04-REQ-53): output, no report, no files; outcome.json only with the internal PW_PERF_OUTCOME_FILE. */
   private async endCheck(
     result: FullResultLike,
   ): Promise<{ status?: FullResultLike['status'] } | undefined> {
@@ -1006,7 +1006,7 @@ export class RunSession {
       };
     }
     if (!this.environmentMode) await this.writeOutcome(outcome);
-    // The state file of the test selection (04-REQ-49); the CLI removes it too.
+    // The state file of the test selection (04-REQ-49).
     if (this.settings.mode.runId !== undefined) {
       try {
         this.host.io.removeFileSync(
@@ -1156,7 +1156,7 @@ export class RunSession {
 
     const meanMs =
       c.durations.length === 0 ? null : c.durations.reduce((a, b) => a + b, 0) / c.durations.length;
-    // The package reporter by its short name, not by the path the CLI or withPerf() adds.
+    // The package reporter by its short name, not by the path withPerf() adds.
     const reporters = (config?.reporter ?? []).map(([name]) =>
       /playwright-performance-regression|[\\/]dist[\\/]reporter\.c?js$/u.test(name)
         ? 'pw-perf'
@@ -1248,7 +1248,7 @@ export class RunSession {
 
   /**
    * Writes report.html next to report.json (11-REQ-04). The page is rendered from the report as
-   * written to JSON, so `report` renders the same HTML from report.json (11-AC-10). Returns the
+   * written to JSON, so it is a function of report.json only (01-REQ-22). Returns the
    * HTML_RENDER_FAILED or HTML_WRITE_FAILED tool error (11, chapter 13), or null.
    */
   private async writeHtml(
@@ -1374,8 +1374,7 @@ export class RunSession {
 
   /**
    * PW_PERF_PRUNE in the environment mode with a test filter in the arguments: the files are
-   * written without removing entries, with RUN_PRUNE_SKIPPED (04-REQ-35). The CLI rejects the
-   * same case before the run.
+   * written without removing entries, with RUN_PRUNE_SKIPPED (04-REQ-35).
    */
   private prune(warnings: Issue[]): boolean {
     if (this.settings.mode.prune !== true) return false;
@@ -1392,7 +1391,10 @@ export class RunSession {
     return true;
   }
 
-  /** Run without the CLI: the CLI sets PW_PERF_OUTCOME_FILE (04-REQ-62, D-35). */
+  /**
+   * Environment mode: without the internal PW_PERF_OUTCOME_FILE, which only the package tests set
+   * since the CLI was removed (04-REQ-62, D-43).
+   */
   private get environmentMode(): boolean {
     return this.settings.mode.outcomeFile === undefined;
   }

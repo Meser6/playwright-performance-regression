@@ -1,4 +1,4 @@
-// Texts of the result of a run, shared by the CLI line (04-REQ-30) and the Outcome line of the
+// Texts of the result of a run, for the Outcome line (04-REQ-30) of the
 // reporter in the environment mode (04-REQ-62).
 import type { Outcome } from '../core/types/index.ts';
 import { painter } from './color.ts';

@@ -11,7 +11,6 @@ import {
 } from '../../../src/core/check/index.ts';
 import { formatCheckSummary } from '../../../src/console/check-summary.ts';
 import type { CheckSummary } from '../../../src/console/check-summary.ts';
-import { parseArgs } from '../../../src/cli/parse.ts';
 import { readModeState } from '../../../src/mode/index.ts';
 
 describe('04-AC-36 CHECK_RANDOM_HOST', () => {
@@ -164,29 +163,7 @@ describe('04-AC-35 estimate and output', () => {
   });
 });
 
-describe('check in the CLI and the mode contract (04-REQ-48, 04-REQ-49)', () => {
-  test('pw-perf check --max-tests; --passes, --repeat and --prune are refused', () => {
-    const ok = parseArgs(['check', '--max-tests', '2', '--grep', '@perf']);
-    expect(ok.ok && ok.value).toMatchObject({
-      kind: 'run',
-      mode: 'check',
-      maxTests: 2,
-      playwrightArgs: ['--grep', '@perf'],
-    });
-    for (const bad of [
-      ['check', '--passes', '3'],
-      ['check', '--repeat', '3'],
-      ['check', '--prune'],
-      ['test', '--max-tests', '2'],
-      ['check', '--max-tests', '0'],
-    ]) {
-      const result = parseArgs(bad);
-      expect(result.ok ? [] : result.issues.map((i) => i.code), bad.join(' ')).toEqual([
-        'CLI_INVALID_OPTION',
-      ]);
-    }
-  });
-
+describe('check in the mode contract (04-REQ-48, 04-REQ-49)', () => {
   test('PW_PERF_MODE=check and PW_PERF_MAX_TESTS', () => {
     expect(readModeState({ PW_PERF_MODE: 'check', PW_PERF_MAX_TESTS: '3' })).toEqual({
       ok: true,

@@ -1,4 +1,4 @@
-// What the commands need from the process: streams, environment, clock, files and the Playwright
+// What the wizard needs from the process: streams, environment, files, signals and the check
 // process. The Node implementation is in node-host.ts; tests pass fakes (04, chapter 6: I/O and
 // spawn only at the edge).
 
@@ -10,7 +10,7 @@ export interface Stream {
 
 export type ForwardedSignal = 'SIGINT' | 'SIGTERM';
 
-/** The Playwright child process as the CLI uses it. */
+/** The check child process as the wizard uses it (04-REQ-58). */
 export interface ChildProcessLike {
   kill(signal?: NodeJS.Signals): boolean;
   once(
@@ -18,13 +18,6 @@ export interface ChildProcessLike {
     listener: (code: number | null, signal: NodeJS.Signals | null) => void,
   ): unknown;
   once(event: 'error', listener: (error: Error) => void): unknown;
-}
-
-export interface SpawnOptions {
-  cwd: string;
-  env: Record<string, string>;
-  stdio: 'inherit';
-  shell: false;
 }
 
 export interface ProcessOptions {
@@ -65,22 +58,13 @@ export interface CliHost {
   platform: string;
   /** process.execPath: Node of this process. */
   execPath: string;
-  /** os.tmpdir(): directory of the outcome file (04-REQ-11). */
-  tmpdir: string;
   stdin: { isTTY?: boolean };
   stdout: Stream;
   stderr: Stream;
-  now(): Date;
-  random(): number;
-  packageVersion: string;
   /** Lowest supported @playwright/test version (D-07). */
   minPlaywrightVersion: string;
-  /** Absolute path of the package reporter entry point (04-REQ-15). */
-  reporterPath: string;
   /** @playwright/test resolved from `dir`, or null when it is not installed there (V-03). */
   resolvePlaywright(dir: string): PlaywrightInstall | null;
-  /** child_process.spawn(process.execPath, args, options). */
-  spawnNode(args: string[], options: SpawnOptions): ChildProcessLike;
   /**
    * child_process.spawn(file, args, options) for the wizard's check run (04-REQ-58); `shell` is
    * true only for a checked script name on Windows.
@@ -90,11 +74,6 @@ export interface CliHost {
   onSignal(signal: ForwardedSignal, handler: () => void): () => void;
   /** Text of a file, or null when it does not exist. */
   readText(path: string): Promise<string | null>;
-  removeFile(path: string): Promise<void>;
-  exists(path: string): Promise<boolean>;
-  isDirectory(path: string): Promise<boolean>;
-  /** Imports a module by file URL (package config files). */
-  importModule(url: string): Promise<unknown>;
   /** Entries of a directory; empty when it does not exist. */
   listDir(path: string): Promise<DirEntry[]>;
   /** Writes a UTF-8 file, creating its directory. */

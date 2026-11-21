@@ -1,4 +1,4 @@
-// File I/O and process metadata for the reporter and the CLI (01, chapter 4.7).
+// File I/O and process metadata for the reporter and the wizard (01, chapter 4.7).
 export {
   directoryOf,
   fileExists,

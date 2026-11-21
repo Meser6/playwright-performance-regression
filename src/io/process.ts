@@ -36,7 +36,7 @@ export function runPass(
         windowsHide: true,
       });
       // A signal sent to this process alone (not to the whole process group, as Ctrl+C in a
-      // terminal does) reaches the running pass too, e.g. from the CLI (04-REQ-16, 01-REQ-43).
+      // terminal does) reaches the running pass too, e.g. a signal sent to this process only (01-REQ-43).
       const forward = (signal: NodeJS.Signals): void => {
         child.kill(signal);
       };

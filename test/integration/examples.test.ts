@@ -1,6 +1,6 @@
 // The example projects in examples/ (13, chapter 8.3) run as integration tests: copies with the
 // built package linked, against the demo server (BASE_URL, so their webServer is not started),
-// through the built CLI: a thresholds run, then a test run against the derived files.
+// in the environment mode: a thresholds run, then a test run against the derived files.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';

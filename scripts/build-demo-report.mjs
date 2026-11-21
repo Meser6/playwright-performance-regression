@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // @ts-check
 // Builds the demo HTML report for GitHub Pages (13-REQ-17): a copy of examples/with-setup runs
-// through the built CLI against the demo server of this repository (test/demo-server): first
-// `thresholds`, then `test` with one endpoint 300 ms slower (S-02), so the report shows a
-// blocking violation (exit code 2).
+// with the built package in the environment mode (PW_PERF_MODE=… playwright test, D-35) against
+// the demo server of this repository (test/demo-server): first `thresholds`, then `test` with one
+// endpoint 300 ms slower (S-02), so the report shows a blocking violation (exitCode 2 in
+// outcome.json).
 // Only data of this repository goes into the report: the demo server listens on the example's
 // default ports (3000 and 3001), and the temporary project directory in the run report is
-// replaced by examples/with-setup before the HTML is rendered again (`pw-perf report`).
+// replaced by examples/with-setup before the HTML is rendered again with renderHtmlReport.
 // Writes <out>/index.html.
 //
-// Usage: node scripts/build-demo-report.mjs --out <dir> [--repeat <n>]
+// Usage: node scripts/build-demo-report.mjs --out <dir> [--passes <n>]
 // Needs `pnpm build` and the Chromium of the installed Playwright.
 import { spawn } from 'node:child_process';
 import {
@@ -26,6 +27,8 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRunReport } from '../src/core/schema/index.ts';
+import { renderHtmlReport } from '../src/html/index.ts';
 import { startDemoServer } from '../test/demo-server/server.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -53,11 +56,11 @@ function option(name, args) {
 }
 
 /**
- * Builds the demo report into `out` and returns the exit codes of both runs.
- * @param {{ out: string, repeat?: number, log?: (line: string) => void }} options
+ * Builds the demo report into `out` and returns the exitCode of both runs (outcome.json).
+ * @param {{ out: string, passes?: number, log?: (line: string) => void }} options
  */
-export async function buildDemoReport({ out, repeat = 10, log = () => {} }) {
-  if (!existsSync(join(root, 'dist/cli.js'))) {
+export async function buildDemoReport({ out, passes = 10, log = () => {} }) {
+  if (!existsSync(join(root, 'dist/reporter.js'))) {
     throw new Error('The demo report uses the built package: run "pnpm build" first.');
   }
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'pw-perf-demo-')));
@@ -87,47 +90,58 @@ export async function buildDemoReport({ out, repeat = 10, log = () => {} }) {
       if (!response.ok) throw new Error(`POST /__control: ${response.status}`);
     };
     // Asynchronous: the demo server runs in this process.
+    const playwright = join(root, 'node_modules/@playwright/test/cli.js');
+    const outcomeFile = join(project, 'pw-perf-results/outcome.json');
     /**
-     * @param {string[]} args
+     * `PW_PERF_MODE=<mode> playwright test --grep @perf`; status is the exitCode of outcome.json.
+     * @param {'test' | 'thresholds'} mode
      * @returns {Promise<{ status: number | null, output: string }>}
      */
-    const run = (args) =>
+    const run = (mode) =>
       new Promise((done, fail) => {
-        const command = args[0] ?? '';
-        const child = spawn(process.execPath, [join(root, 'dist/cli.js'), ...args], {
+        const child = spawn(process.execPath, [playwright, 'test', '--grep', '@perf'], {
           cwd: project,
-          env: { ...process.env, CI: '', BASE_URL: server.url, API_URL: server.apiUrl },
+          env: {
+            ...process.env,
+            CI: '',
+            BASE_URL: server.url,
+            API_URL: server.apiUrl,
+            PW_PERF_MODE: mode,
+            PW_PERF_PASSES: String(passes),
+          },
         });
         let output = '';
         child.stdout.on('data', (chunk) => (output += String(chunk)));
         child.stderr.on('data', (chunk) => (output += String(chunk)));
         child.on('error', fail);
-        child.on('close', (status) => {
-          log(`${command}: exit code ${status}`);
+        child.on('close', () => {
+          const status = existsSync(outcomeFile)
+            ? JSON.parse(readFileSync(outcomeFile, 'utf8')).exitCode
+            : null;
+          log(`${mode}: exitCode ${status}`);
           done({ status, output });
         });
       });
 
     await control({ delays: DELAYS, noise: { seed: 1, sigma: 0.15 } });
-    const measure = ['--grep', '@perf', '--repeat', String(repeat)];
-    const thresholds = await run(['thresholds', ...measure]);
+    const thresholds = await run('thresholds');
     if (thresholds.status !== 0) {
       throw new Error(`The thresholds run failed:\n${thresholds.output}`);
     }
     const slow = { ...DELAYS, [SLOW_ENDPOINT]: DELAYS[SLOW_ENDPOINT] + SLOWDOWN_MS };
     await control({ delays: slow, noise: { seed: 2, sigma: 0.15 } });
-    const test = await run(['test', ...measure]);
+    const test = await run('test');
     if (test.status !== 2) {
-      throw new Error(`The test run should fail on ${SLOW_ENDPOINT} (exit 2):\n${test.output}`);
+      throw new Error(`The test run should fail on ${SLOW_ENDPOINT} (exitCode 2):\n${test.output}`);
     }
     const reportFile = join(project, 'pw-perf-results/report.json');
     const report = JSON.parse(readFileSync(reportFile, 'utf8'));
     report.configDir = 'examples/with-setup';
-    writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+    const parsed = parseRunReport(JSON.stringify(report), reportFile);
+    if (!parsed.ok) throw new Error(`The run report is invalid: ${JSON.stringify(parsed.issues)}`);
     mkdirSync(out, { recursive: true });
     const html = join(out, 'index.html');
-    const rendered = await run(['report', '--input', reportFile, '--output', html]);
-    if (rendered.status !== 0) throw new Error(`pw-perf report failed:\n${rendered.output}`);
+    writeFileSync(html, renderHtmlReport(parsed.value));
     const page = readFileSync(html, 'utf8');
     if (page.includes(scratch) || page.includes(tmpdir())) {
       throw new Error(`${html} contains a path of the temporary project`);
@@ -143,12 +157,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const out = option('--out', args);
   if (out === undefined) {
-    console.error('Usage: node scripts/build-demo-report.mjs --out <dir> [--repeat <n>]');
+    console.error('Usage: node scripts/build-demo-report.mjs --out <dir> [--passes <n>]');
     process.exit(2);
   }
-  const repeat = Number(option('--repeat', args) ?? 10);
+  const passes = Number(option('--passes', args) ?? 10);
   try {
-    await buildDemoReport({ out: resolve(out), repeat, log: (line) => console.log(line) });
+    await buildDemoReport({ out: resolve(out), passes, log: (line) => console.log(line) });
     console.log(`Demo report written to ${join(resolve(out), 'index.html')}.`);
   } catch (error) {
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);

@@ -16,9 +16,6 @@ export const PACKAGE_NAME = 'playwright-performance-regression';
  */
 export const SAMPLES_ATTACHMENT_NAME = 'pw-perf-samples';
 
-/** The pw-perf runner; only for its own messages (04). Hints never show it (04-REQ-70). */
-export const CLI_COMMAND = 'npx pw-perf';
-
 /** A thresholds run in hints: the user's own test command with the variable (D-35, 04-REQ-70). */
 export const THRESHOLDS_COMMAND = 'PW_PERF_MODE=thresholds <your test command>';
 
@@ -37,7 +34,7 @@ export const DOCS_CONFIG_URL = `${REPOSITORY_URL}/blob/main/docs/configuration.m
 /** Package config file name without extension (00, chapter 14.1; 03, chapter 4). */
 export const CONFIG_FILE_BASENAME = 'pw-perf.config';
 
-/** Extensions of the package config file, in the order the CLI looks for them (01, chapter 7.3). */
+/** Extensions of the package config file, in the order the wizard looks for them (04-REQ-40). */
 export const CONFIG_FILE_EXTENSIONS: readonly string[] = [
   '.ts',
   '.mts',

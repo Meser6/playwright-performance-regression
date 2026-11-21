@@ -1,4 +1,4 @@
-// Reading files and file paths for the reporter and the CLI (01, chapter 4.7). The reporter may
+// Reading files and file paths for the reporter and the wizard (01, chapter 4.7). The reporter may
 // not import node:* itself (01, chapter 5), so the path helpers it needs live here too.
 import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';

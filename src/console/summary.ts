@@ -1,5 +1,5 @@
 // Console summary at the end of a perf-mode run (09, chapter 8; F-12). A function of the run
-// report only (01-REQ-22), so `npx pw-perf report` can print it again. Pure: the caller passes the
+// report only (01-REQ-22). Pure: the caller passes the
 // terminal width, the color decision and TERM=dumb, and prints the text. Frames, tables, emoji and
 // colors follow 09-REQ-27; without colors the text is the same apart from the ANSI sequences.
 import { KINDS } from '../core/types/index.ts';

@@ -66,11 +66,14 @@ function runCreate(
 }
 
 describe.skipIf(process.platform === 'win32')('create-playwright-performance-regression', () => {
-  test('installs the package with npm (no lockfile) and runs init with the arguments', async () => {
+  test('installs the package with npm (no lockfile) and runs the wizard without arguments', async () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
     const bin = fakeManager(dir, 'npm');
-    const run = await runCreate(['--dry-run'], dir, { PATH: `${bin}:${process.env['PATH']}` });
+    const run = await runCreate([], dir, {
+      PATH: `${bin}:${process.env['PATH']}`,
+      PW_PERF_DRY_RUN: '1',
+    });
     expect(run.status, run.output).toBe(0);
     expect(calls(dir)).toEqual([
       `npm install --save-dev playwright-performance-regression@${version}`,
@@ -93,7 +96,7 @@ describe.skipIf(process.platform === 'win32')('create-playwright-performance-reg
         `symlinkSync(${JSON.stringify(root)}, 'node_modules/playwright-performance-regression');`,
       ].join('\n'),
     );
-    const run = await runCreate(['--dry-run'], dir, {
+    const run = await runCreate([], dir, {
       npm_execpath: entry,
       npm_config_user_agent: 'npm/11.0.0 node/v24.0.0',
     });
@@ -102,14 +105,14 @@ describe.skipIf(process.platform === 'win32')('create-playwright-performance-reg
       `pnpm.cjs add --save-dev playwright-performance-regression@${version}`,
     ]);
     // Already installed: a second run goes straight to init.
-    expect((await runCreate(['--dry-run'], dir, {})).status).toBe(0);
+    expect((await runCreate([], dir, {})).status).toBe(0);
     expect(calls(dir)).toHaveLength(1);
   });
 
-  test('yarn by the user agent; a failed installation or no package.json ends with 3', async () => {
+  test('04-AC-01 yarn by the user agent; a failed installation, arguments or no package.json end with 3', async () => {
     const dir = copyProject('init-esm-ts');
     const failing = fakeManager(dir, 'yarn', 'exit 1');
-    const run = await runCreate(['--yes'], dir, {
+    const run = await runCreate([], dir, {
       PATH: `${failing}:${process.env['PATH']}`,
       npm_config_user_agent: 'yarn/4.1.0 npm/? node/v24.0.0',
     });
@@ -117,6 +120,12 @@ describe.skipIf(process.platform === 'win32')('create-playwright-performance-reg
     expect(calls(dir)).toEqual([`yarn add --dev playwright-performance-regression@${version}`]);
     expect(run.output).toContain('the installation ended with exit code 1');
     expect(existsSync(join(dir, 'pw-perf.config.ts'))).toBe(false);
+
+    // 04-AC-01: arguments end with 3 before any installation.
+    const args = await runCreate(['--yes'], dir, { PATH: `${failing}:${process.env['PATH']}` });
+    expect(args.status).toBe(3);
+    expect(args.output).toContain('takes no arguments, got "--yes"');
+    expect(calls(dir)).toHaveLength(1);
 
     rmSync(join(dir, 'package.json'));
     const none = await runCreate([], dir, {});
