@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Host patterns in `keys.origins`: `'https://*.ci.example.com': ''` labels random hosts of CI
+  instances; `*` matches inside one host label, an exact entry wins, more literal characters win
+  between patterns. `baseURL` origins covered by `keys.origins` no longer change the
+  normalization fingerprint, so random `baseURL` hosts stop giving `THRESHOLDS_SOURCE_MISMATCH`.
+  Thresholds files derived before with an exact entry for the `baseURL` origin give
+  `THRESHOLDS_SOURCE_MISMATCH` once. See `docs/dynamic-environments.md`.
+
 - After every run the last line is a `Next:` hint with the exact command of your project: derive
   thresholds (`PW_PERF_MODE=thresholds npm run e2e`), commit the written files, or run the check
   when nothing was measured. The command follows how the run was started (npm, pnpm or yarn

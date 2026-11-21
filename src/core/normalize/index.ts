@@ -11,3 +11,11 @@ export type { ProjectBaseUrl } from './fingerprint.ts';
 export { canonicalOrigin, createKeyBuilder, truncateKey } from './key-builder.ts';
 export type { KeyBuilderContext, KeyResult, KeySample, NormalizeIssue } from './key-builder.ts';
 export { ID_PATTERNS } from './patterns.ts';
+export {
+  compileHostPatterns,
+  isHostPattern,
+  matchingPattern,
+  parseHostPattern,
+} from './host-patterns.ts';
+export type { HostPattern } from './host-patterns.ts';
+export { coveredByOrigins, originLabels } from './key-builder.ts';

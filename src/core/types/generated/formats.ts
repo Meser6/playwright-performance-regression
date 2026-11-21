@@ -297,7 +297,7 @@ export interface PackageConfig {
    */
   keys?: {
     /**
-     * Origin to label mapping, e.g. {"https://api.example.com": "api"}. The origin of Playwright use.baseURL gets the empty label unless mapped here. Other origins are labeled with their host.
+     * Origin to label mapping, e.g. {"https://api.example.com": "api"}. A key with * is a host pattern, e.g. "https://*.ci.example.com" (one * per host label, never across a dot); an exact entry wins over a pattern. The origin of Playwright use.baseURL gets the empty label unless mapped here. Other origins are labeled with their host.
      */
     origins?: {
       [k: string]: string;

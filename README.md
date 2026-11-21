@@ -193,6 +193,7 @@ that Playwright's HTML report and traces contain the full URLs.
 - [Adoption](docs/adoption.md): existing projects, choosing tests, sample counts
 - [Thresholds](docs/thresholds.md): deriving, reviewing, locking and muting
 - [Step timings](docs/steps.md): measuring `test.step` blocks, keys and title sanitization
+- [Dynamic environments](docs/dynamic-environments.md): npm scripts with setup steps, random CI hosts and host patterns
 - [CI](docs/ci.md): recipes for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines
 - [Troubleshooting](docs/troubleshooting.md): every warning and error code
 - [FAQ](docs/faq.md) · [Upgrading and uninstalling](docs/upgrading.md)

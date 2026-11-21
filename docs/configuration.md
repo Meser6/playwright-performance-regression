@@ -302,9 +302,9 @@ Options: [`origins`](#keysorigins), [`idPatterns`](#keysidpatterns), [`extraIdPa
 
 ### `keys.origins`
 
-Origin to label mapping, e.g. {"https://api.example.com": "api"}. The origin of Playwright use.baseURL gets the empty label unless mapped here. Other origins are labeled with their host.
+Origin to label mapping, e.g. {"https://api.example.com": "api"}. A key with `*` is a host pattern, e.g. `"https://*.ci.example.com"` (one `*` per host label, never across a dot); an exact entry wins over a pattern. The origin of Playwright use.baseURL gets the empty label unless mapped here. Other origins are labeled with their host.
 
-- Type: object with keys matching `^https?://[^/?#]+$` and values of type string (matching `^[a-z0-9.-]*$`, at most 64 characters)
+- Type: object with keys matching `^(?:https?://[^/?#]+|.*\*.*)$` and values of type string (matching `^[a-z0-9.-]*$`, at most 64 characters)
 - Default: `{}`
 
 ### `keys.idPatterns`

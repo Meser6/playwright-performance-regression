@@ -153,8 +153,10 @@ export const packageConfig = obj({
   keys: obj({
     origins: record(
       str({
-        pattern: /^https?:\/\/[^/?#]+$/u,
-        format: 'an origin without a path, like "https://api.example.com"',
+        // Keys with * are host patterns, checked by resolveConfig (03-REQ-20).
+        pattern: /^(?:https?:\/\/[^/?#]+|.*\*.*)$/u,
+        format:
+          'an origin without a path, like "https://api.example.com", or a host pattern like "https://*.ci.example.com"',
       }),
       str({
         pattern: /^[a-z0-9.-]*$/u,
