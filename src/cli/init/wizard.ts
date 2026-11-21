@@ -408,8 +408,8 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     },
   );
 
-  // Step 6 only when the project has test.step calls (04-REQ-47).
-  let steps = false;
+  // Step 6 only when the project has test.step calls (04-REQ-47); otherwise the default (on).
+  let steps = DEFAULT_CONFIG.measure.steps;
   if (info.stepFiles > 0) {
     dialog.step(6, t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
     steps = await dialog.confirm(t('stepsQuestion', { count: info.stepFiles }), true);
@@ -550,10 +550,15 @@ async function applyChanges(
   return written;
 }
 
-/** Names of the thresholds files the runs will write (04-REQ-59 step 3). */
-function thresholdsFiles(answers: InitAnswers): string[] {
+/**
+ * Names of the thresholds files the runs will write (04-REQ-59 step 3): the step file only when
+ * steps are measured and the project has test.step calls.
+ */
+function thresholdsFiles(info: ProjectInfo, answers: InitAnswers): string[] {
   const prefix = DEFAULT_CONFIG.thresholds.filePrefix;
-  return answers.steps ? [`${prefix}.json`, `${prefix}.steps.json`] : [`${prefix}.json`];
+  return answers.steps && info.stepFiles > 0
+    ? [`${prefix}.json`, `${prefix}.steps.json`]
+    : [`${prefix}.json`];
 }
 
 /** Next steps of the summary (04-REQ-59). */
@@ -582,7 +587,7 @@ function nextSteps(
           estimate,
         })
       : t('nextThresholds', { command: cmd(commands.thresholds), estimate }),
-    t('nextCommit', { files: thresholdsFiles(answers).join(', ') }),
+    t('nextCommit', { files: thresholdsFiles(info, answers).join(', ') }),
     t('nextTest', {
       command: cmd(commands.test),
       report: `${dir}/report.html`,

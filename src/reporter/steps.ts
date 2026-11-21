@@ -7,7 +7,7 @@ import {
   collectWith,
   createStepTitleSanitizer,
   detectStepKeyExplosion,
-  noStepsIssue,
+  NO_STEPS_LINE,
   secretRedactedIssue,
   stepNormalizationFingerprint,
   stepTestPrefix,
@@ -107,12 +107,15 @@ export class StepRecorder {
     });
   }
 
+  /** The informational line of a run without step samples (06-REQ-29), or null. */
+  noStepsLine(stepKeys: readonly string[]): string | null {
+    return this.enabled && stepKeys.length === 0 ? `${NO_STEPS_LINE}\n` : null;
+  }
+
   /** STEPS_* warnings of the run (06, chapter 8), after aggregation. */
   issues(stepKeys: readonly string[]): Issue[] {
     if (!this.enabled) return [];
-    const issues: Issue[] = [];
-    if (stepKeys.length === 0) issues.push(noStepsIssue());
-    issues.push(...detectStepKeyExplosion(stepKeys));
+    const issues: Issue[] = [...detectStepKeyExplosion(stepKeys)];
     const secret = secretRedactedIssue(this.redactions);
     if (secret !== null) issues.push(secret);
     return issues;

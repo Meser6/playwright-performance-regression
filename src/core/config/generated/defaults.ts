@@ -37,7 +37,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     exclude: ['/socket.io/'],
     excludeKnownThirdParty: true,
     successStatuses: ['2xx', '3xx'],
-    steps: false,
+    steps: true,
     pendingTimeoutMs: 2000,
   },
   keys: {

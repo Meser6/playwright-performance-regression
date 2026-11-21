@@ -7,7 +7,7 @@
       "projects": "auto",
       "scope": "tagged",
       "passesTest": 3,
-      "steps": false,
+      "steps": true,
       "preset": "loose",
       "addCi": true,
       "runCheck": false

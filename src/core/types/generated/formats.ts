@@ -232,7 +232,7 @@ export interface PackageConfig {
      */
     successStatuses?: [string, ...string[]];
     /**
-     * Durations of test.step steps as keys of kind 'step' (06). false (default) disables, true enables with defaults, an object enables with settings (03-REQ-18).
+     * Durations of test.step steps as keys of kind 'step' (06). true (default) enables with defaults, false disables, an object enables with settings (03-REQ-18).
      */
     steps?:
       | boolean

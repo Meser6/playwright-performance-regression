@@ -14,7 +14,7 @@ export type {
   StepNode,
   StepOutcome,
 } from './collect.ts';
-export { detectStepKeyExplosion, noStepsIssue, secretRedactedIssue } from './explosion.ts';
+export { detectStepKeyExplosion, NO_STEPS_LINE, secretRedactedIssue } from './explosion.ts';
 export type { StepsIssue, StepsIssueCode } from './explosion.ts';
 export { STEP_RULES_VERSION, stepNormalizationFingerprint } from './fingerprint.ts';
 export {

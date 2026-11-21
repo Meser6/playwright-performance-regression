@@ -113,7 +113,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     path: 'measure.steps',
     description: "Durations of test.step steps as keys of kind 'step'.",
     leaf: true,
-    default: false,
+    default: true,
   },
   {
     path: 'measure.pendingTimeoutMs',

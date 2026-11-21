@@ -5,7 +5,6 @@ import {
   collectSteps,
   createStepTitleSanitizer,
   detectStepKeyExplosion,
-  noStepsIssue,
   secretRedactedIssue,
   stepNormalizationFingerprint,
   stepTestPrefix,
@@ -151,7 +150,7 @@ describe('06-AC-15 include and exclude', () => {
   });
 });
 
-describe('06-AC-17 key explosion and no steps', () => {
+describe('06-AC-17 key explosion', () => {
   test('12 keys that differ in one unrecognized word give one STEPS_HIGH_CARDINALITY', () => {
     const words = [
       'alpha',
@@ -180,10 +179,6 @@ describe('06-AC-17 key explosion and no steps', () => {
     const words = Array.from({ length: 10 }, (_, i) => `"word${String.fromCharCode(97 + i)}"`);
     const [issue] = detectStepKeyExplosion(words.map((w) => `Fill ${w}`));
     expect(issue?.hint).toContain('redactQuotedValues');
-  });
-
-  test('STEPS_NONE_FOUND', () => {
-    expect(noStepsIssue().code).toBe('STEPS_NONE_FOUND');
   });
 });
 

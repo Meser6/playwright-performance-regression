@@ -171,7 +171,12 @@ describe('reporter with real Playwright', () => {
 
       const evaluated = await runPlaywright({ PW_PERF_MODE: 'test', THRESHOLDS_DIR: dir });
       expect(evaluated.status, evaluated.output).toBe(0);
-      expect(evaluated.report?.thresholdFiles.map((f) => f.status)).toEqual(['loaded']);
+      // Steps are measured by default; this project has none, so no step file (06-REQ-29).
+      expect(evaluated.report?.thresholdFiles.map((f) => [f.kind, f.status])).toEqual([
+        ['api', 'loaded'],
+        ['step', 'missing'],
+      ]);
+      expect(evaluated.output).toContain('No test.step blocks found');
       const keys = Object.keys(evaluated.report?.endpoints ?? {});
       expect(keys).toContain('GET /api/cart');
       expect(evaluated.report?.evaluation.counts.api.fromFile).toBe(keys.length);

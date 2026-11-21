@@ -30,6 +30,9 @@ import {
 } from './evaluate-helpers.ts';
 import type { AggregateSpec } from './evaluate-helpers.ts';
 
+/** Only endpoint keys: steps are measured by default (03-REQ-18). */
+const API_ONLY = config({ measure: { steps: false } });
+
 const KEY = 'GET /api/tickets';
 
 function golden(prefix: string): Evaluation {
@@ -490,7 +493,7 @@ describe('limits and results (09, chapter 5)', () => {
     const e = evaluate(
       aggregates({ [KEY]: { durations: [[20, 9000]] } }),
       files(invalid('api')),
-      config(),
+      API_ONLY,
       options(),
     );
     expect(e.perKey.api[KEY]).toEqual({
@@ -617,7 +620,7 @@ describe('thresholds files (09, chapter 4)', () => {
     const e = evaluate(
       aggregates({ [KEY]: { durations: [[20, 100]] } }),
       files(missing('api', true, 'qa')),
-      config(),
+      API_ONLY,
       options({ env: 'qa' }),
     );
     expect(e.perKey.api[KEY]?.thresholdSource).toBe('default');

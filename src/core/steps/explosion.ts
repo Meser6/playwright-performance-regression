@@ -7,7 +7,7 @@ const EXAMPLES = 3;
 const QUOTE_CHARS = new Set([...'"\'`“”„‘’«']);
 
 export type StepsIssueCode =
-  'STEPS_NONE_FOUND' | 'STEPS_HIGH_CARDINALITY' | 'STEPS_TOO_MANY_KEYS' | 'STEPS_SECRET_REDACTED';
+  'STEPS_HIGH_CARDINALITY' | 'STEPS_TOO_MANY_KEYS' | 'STEPS_SECRET_REDACTED';
 
 export type StepsIssue = Issue & { code: StepsIssueCode };
 
@@ -85,11 +85,8 @@ export function secretRedactedIssue(redactions: readonly Redaction[]): StepsIssu
   };
 }
 
-/** STEPS_NONE_FOUND when measure.steps is on and the run gave no step sample (06-REQ-29). */
-export function noStepsIssue(): StepsIssue {
-  return {
-    code: 'STEPS_NONE_FOUND',
-    message: 'measure.steps is enabled, but the measured tests gave no step samples.',
-    hint: 'Check that the tests use test.step, and the measure.steps include, exclude and categories settings.',
-  };
-}
+/**
+ * The informational line when measure.steps is on and the run gave no step sample (06-REQ-29):
+ * not a warning, so a project without test.step stays quiet.
+ */
+export const NO_STEPS_LINE = 'No test.step blocks found, so there are no step thresholds.';

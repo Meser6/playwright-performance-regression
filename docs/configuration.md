@@ -290,10 +290,10 @@ HTTP statuses counted as successful samples: a class like '2xx' or an exact code
 
 ### `measure.steps`
 
-Durations of test.step steps as keys of kind 'step'. false (default) disables, true enables with defaults, an object enables with settings.
+Durations of test.step steps as keys of kind 'step'. true (default) enables with defaults, false disables, an object enables with settings.
 
 - Type: boolean or object
-- Default: `false`
+- Default: `true`
 
 ### `measure.pendingTimeoutMs`
 

@@ -34,16 +34,16 @@ const codes = (list: ConfigIssue[]): string[] => list.map((i) => i.code);
 /** The snapshot of an empty config: the schema defaults with measure.steps expanded (03-REQ-18). */
 const DEFAULT_SNAPSHOT = {
   ...DEFAULT_CONFIG,
-  measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+  measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(true) },
 };
 
 describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
   test('03-AC-01 resolveConfig(undefined, {}) equals DEFAULT_CONFIG', () => {
     const { config, snapshot, warnings } = resolved(undefined);
-    // measure.steps: the schema default false becomes the full object (03-REQ-18).
+    // measure.steps: the schema default true becomes the full object (03-REQ-18).
     const expected = {
       ...DEFAULT_CONFIG,
-      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(true) },
     };
     expect(snapshot).toEqual(expected);
     expect(config).toEqual({
@@ -503,7 +503,7 @@ test('the package entry point exports definePerfConfig and perfDefaults', async 
 describe('step settings (03-REQ-18, 03-REQ-22)', () => {
   test('03-REQ-18 false, true and an object become the full settings', () => {
     expect(resolved({}).snapshot.measure.steps).toEqual({
-      enabled: false,
+      enabled: true,
       include: [],
       exclude: [],
       maxDepth: 3,
@@ -512,7 +512,7 @@ describe('step settings (03-REQ-18, 03-REQ-22)', () => {
       normalizeTitles: true,
       redactQuotedValues: false,
     });
-    expect(resolved({ measure: { steps: true } }).snapshot.measure.steps.enabled).toBe(true);
+    expect(resolved({ measure: { steps: false } }).snapshot.measure.steps.enabled).toBe(false);
     const object = resolved({ measure: { steps: { maxDepth: 2, include: [/^login/u] } } });
     expect(object.snapshot.measure.steps).toMatchObject({
       enabled: true,
