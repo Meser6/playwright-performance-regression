@@ -1,5 +1,6 @@
 // Help texts of the CLI (04, chapters 3 and 6; 04-REQ-21). Printed on stdout.
 import { LANGUAGES } from './init/messages.ts';
+import { DEFAULT_CONFIG } from '../core/config/index.ts';
 import { CLI_COMMAND } from '../core/types/index.ts';
 import type { HelpTopic } from './parse.ts';
 
@@ -23,6 +24,15 @@ const PASS_THROUGH = [
 ];
 
 const GENERAL = [
+  'Recommended: run your usual test command with PW_PERF_MODE set, e.g.',
+  '  PW_PERF_MODE=test npm run e2e         Measurement run: evaluate against the thresholds',
+  '  PW_PERF_MODE=thresholds npm run e2e   Thresholds run: write the thresholds files',
+  '  PW_PERF_MODE=check npm run e2e        Dry run: what would be measured and how long it takes',
+  'Windows: npx cross-env PW_PERF_MODE=test npm run e2e (PowerShell and cmd: see docs/cli.md).',
+  `The exit code is the one of Playwright; the result is in ${DEFAULT_CONFIG.report.dir}/outcome.json.`,
+  '',
+  'Advanced: the pw-perf runner, with exit codes 0/2/3 (see docs/cli.md).',
+  '',
   `Usage: ${CLI_COMMAND} <command> [options] [playwright test arguments]`,
   '',
   'Commands:',
@@ -31,12 +41,13 @@ const GENERAL = [
   '  check                      Dry run: what would be measured and how long a full run takes',
   '  thresholds --from <file>   Derive the thresholds from an existing report.json (no tests)',
   '  report                     Render the HTML report again from report.json',
-  '  init                       Guided setup in this project',
+  '  init                       Guided setup in this project (--yes: accept defaults, --dry-run: show changes only)',
   '',
-  'Options (test, thresholds):',
+  'Options (test, thresholds, check):',
   '  --env <label>      Environment label; selects pw-perf-thresholds[.steps].<label>.json',
   '  --repeat <n>       Repetitions per test for this run',
   '  --prune            (thresholds) Remove unlocked entries of keys not seen in this run',
+  '  --max-tests <n>    (check) Run at most n measured tests, the first of each file (default 10)',
   '',
   ...PASS_THROUGH,
   '',

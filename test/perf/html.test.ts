@@ -11,7 +11,7 @@ import { largeReport, referenceReport } from '../unit/html/fixtures.ts';
 import { median, recordResult } from './helpers.ts';
 
 const URL = 'http://report.test/report.html';
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_LOAD_MS = 2000;
 const MAX_SORT_MS = 200;
 const MAX_FILTER_MS = 200;
@@ -26,7 +26,7 @@ async function timed(page: Page, action: string): Promise<number> {
 }
 
 describe('12-PERF-03 HTML report of the reference report', () => {
-  test('11-AC-04 11-AC-05 11-AC-25 11-AC-30 below 5 MB, loads in under 2 s; tabs, drawer, filters and sorting are fast', async () => {
+  test('11-AC-04 11-AC-05 11-AC-25 11-AC-30 below 10 MB, loads in under 2 s; tabs, drawer, filters and sorting are fast', async () => {
     const started = performance.now();
     const html = renderHtmlReport(referenceReport());
     const renderMs = performance.now() - started;

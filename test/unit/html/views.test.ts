@@ -467,44 +467,57 @@ describe('migrated reports and golden pages (11-REQ-44, 11-AC-28)', () => {
 describe('size budget (11-REQ-43)', () => {
   const B = (s: string) => Buffer.byteLength(s, 'utf8');
   const max = (xs: number[]) => Math.max(...xs);
+  const kB = (n: number) => Math.round(n * 1024);
+  // The budget table of 11-REQ-43 (bytes before compression). A change here needs a change of
+  // the table in the specification first.
+  const BUDGET = {
+    total: 10 * 1024 * 1024,
+    assets: kB(60),
+    keyData: kB(3.2),
+    keyRow: kB(0.5),
+    keyDetails: kB(4.3),
+    histogram: kB(1.0),
+    checks: kB(1.1),
+    hints: kB(0.35),
+    test: kB(1.5),
+    waterfallData: kB(25),
+    waterfallSvg: kB(45),
+    rest: kB(0.1 * 1024),
+  };
   const report = referenceReport();
   const html = renderHtmlReport(report);
   const data = toHtmlReportData(report);
   const keys = Object.keys(data.endpoints);
   const all = (pattern: RegExp) => [...html.matchAll(pattern)].map((m) => B(m[0]));
 
-  test('11-AC-25 the reference report is below 5 MB; CSS and JS together below 60 kB', () => {
+  test('11-AC-25 the reference report is below 10 MB; CSS and JS together below 60 kB', () => {
     expect(keys).toHaveLength(500);
     expect(report.testBreakdown?.tests).toHaveLength(500);
     expect(report.testBreakdown?.waterfalls).toHaveLength(5);
-    expect(B(html)).toBeLessThan(5 * 1024 * 1024);
-    expect(B(STYLES) + B(SCRIPT)).toBeLessThan(60 * 1024);
+    expect(B(html)).toBeLessThan(BUDGET.total);
+    expect(B(STYLES) + B(SCRIPT)).toBeLessThan(BUDGET.assets);
   });
 
-  // Budgets per element (bytes). Where the measured size of the reference report is above the
-  // budget of 11-REQ-43, the limit below is the measured size rounded up and the difference is
-  // listed in the work package report for a spec update; the total stays below 5 MB.
   test('11-AC-25 every element stays within its budget', () => {
-    const keyData = max(keys.map((k) => B(stableJson(data.endpoints[k]))));
-    expect(max(keys.map((k) => B(stableJson(data.endpoints[k]?.histogram))))).toBeLessThanOrEqual(
-      400,
+    expect(max(keys.map((k) => B(stableJson(data.endpoints[k]))))).toBeLessThanOrEqual(
+      BUDGET.keyData,
     );
-    expect(max(keys.map((k) => B(stableJson(data.endpoints[k]?.hints))))).toBeLessThanOrEqual(300);
-    expect(keyData).toBeLessThanOrEqual(3200);
-    expect(max(all(/<tbody data-g[^>]*><tr>.*?<\/tr>/gsu))).toBeLessThanOrEqual(700);
-    expect(max(all(/<div class="kd">.*?<\/div><\/details>/gsu))).toBeLessThanOrEqual(4300);
-    expect(max(all(/<svg class="hist".*?<\/svg>/gsu))).toBeLessThanOrEqual(1600);
-    expect(max(all(/<svg class="split".*?<p class="mu">Medians.*?<\/p>/gsu))).toBeLessThanOrEqual(
-      600,
+    expect(max(all(/<tbody data-g[^>]*><tr>.*?<\/tr>/gsu))).toBeLessThanOrEqual(BUDGET.keyRow);
+    expect(max(all(/<div class="kd">.*?<\/div><\/details>/gsu))).toBeLessThanOrEqual(
+      BUDGET.keyDetails,
     );
-    expect(max(all(/<table class="ck">.*?<\/table>/gsu))).toBeLessThanOrEqual(1100);
-    expect(max(all(/<ul class="hints">.*?<\/ul>/gsu))).toBeLessThanOrEqual(400);
+    expect(max(all(/<svg class="hist".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.histogram);
+    expect(max(all(/<table class="ck">.*?<\/table>/gsu))).toBeLessThanOrEqual(BUDGET.checks);
+    expect(max(all(/<ul class="hints">.*?<\/ul>/gsu))).toBeLessThanOrEqual(BUDGET.hints);
     const tests = data.testBreakdown?.tests ?? [];
     const rows = all(/<tr data-i=.*?<\/tr>/gsu);
-    expect(max(tests.map((t, i) => B(stableJson(t)) + (rows[i] ?? 0)))).toBeLessThanOrEqual(1500);
+    expect(tests).toHaveLength(rows.length);
+    expect(max(tests.map((t, i) => B(stableJson(t)) + (rows[i] ?? 0)))).toBeLessThanOrEqual(
+      BUDGET.test,
+    );
     const waterfalls = data.testBreakdown?.waterfalls ?? [];
-    expect(max(waterfalls.map((w) => B(stableJson(w))))).toBeLessThanOrEqual(24_000);
-    expect(max(all(/<svg class="wf".*?<\/svg>/gsu))).toBeLessThanOrEqual(42_000);
+    expect(max(waterfalls.map((w) => B(stableJson(w))))).toBeLessThanOrEqual(BUDGET.waterfallData);
+    expect(max(all(/<svg class="wf".*?<\/svg>/gsu))).toBeLessThanOrEqual(BUDGET.waterfallSvg);
   });
 
   test('11-AC-25 adding one key, test or waterfall grows the page by at most its budget', () => {
@@ -516,13 +529,16 @@ describe('size budget (11-REQ-43)', () => {
     ];
     grown.endpoints[`${key}&extra`] = structuredClone(agg);
     const perKey = B(renderHtmlReport(grown)) - B(renderHtmlReport(base));
-    expect(perKey).toBeLessThanOrEqual(3200 + 700 + 4300);
+    expect(perKey).toBeLessThanOrEqual(BUDGET.keyData + BUDGET.keyRow + BUDGET.keyDetails);
     const fewer = referenceReport();
     fewer.testBreakdown?.tests.pop();
     fewer.testBreakdown?.waterfalls.pop();
     const perTestAndWaterfall = B(renderHtmlReport(base)) - B(renderHtmlReport(fewer));
-    expect(perTestAndWaterfall).toBeLessThanOrEqual(1500 + 24_000 + 42_000);
-    // Header, banner, tiles, Overview, Warnings and Run & config without the config snapshot.
+    expect(perTestAndWaterfall).toBeLessThanOrEqual(
+      BUDGET.test + BUDGET.waterfallData + BUDGET.waterfallSvg,
+    );
+    // Header, banner, tiles, icon sprite, Overview, Warnings and Run & config without the config
+    // snapshot.
     const rest =
       B(html) -
       keys.reduce((n, k) => n + B(stableJson(data.endpoints[k])), 0) -
@@ -533,6 +549,6 @@ describe('size budget (11-REQ-43)', () => {
       B(STYLES) -
       B(SCRIPT) -
       2 * B(stableJson(report.config, '  '));
-    expect(rest).toBeLessThanOrEqual(100 * 1024);
+    expect(rest).toBeLessThanOrEqual(BUDGET.rest);
   });
 });

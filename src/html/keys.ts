@@ -27,7 +27,7 @@ export const KEY_COLUMN_MAX = 80;
 
 /**
  * Checks of a key show a meter from this usage on (the `low` mark of the meter); checks far from
- * their limit show the text only. This keeps the reference report under 5 MB (NF-08, 11-REQ-43);
+ * their limit show the text only. This keeps the reference report within its size budget (NF-08, 11-REQ-43);
  * the key's own headroom always has a meter in the table.
  */
 const NEAR_LIMIT = 0.8;
