@@ -63,7 +63,7 @@ const en = {
 
   stepTests: 'Which tests',
   testsLesson:
-    'A measurement run takes about (tests × repetitions) test runs on 1 worker, so measure the tests that call the important backend endpoints.',
+    'A measurement run takes about (tests × passes) test runs on 1 worker, so measure the tests that call the important backend endpoints.',
   taggedFiles: 'Files with tests tagged @perf: {count}.',
   noTaggedMessage: 'No test is tagged @perf yet; all tests are measured.',
   noTaggedHint:
@@ -71,10 +71,10 @@ const en = {
   scopeQuestion: 'Measure all tests or only tests tagged @perf? [{all}/@perf]',
   scopeAll: 'all',
 
-  stepRepeat: 'Repetitions',
-  repeatLesson:
-    'Each rule needs a minimum number of samples per endpoint (minSamples), and samples are calls per test × tests × repetitions.',
-  repeatQuestion: 'Repetitions per test in measurement runs?',
+  stepPasses: 'Passes',
+  passesLesson:
+    'Each rule needs a minimum number of samples per endpoint (minSamples), and samples are calls per test × tests × passes. Your test command, with its setup steps, runs once per pass.',
+  passesQuestion: 'Passes of the test command in measurement runs?',
 
   stepTrial: 'Trial period',
   trialLesson:
@@ -226,7 +226,7 @@ const pl: Messages = {
 
   stepTests: 'Które testy',
   testsLesson:
-    'Pomiar trwa mniej więcej tyle, co (testy × powtórzenia) uruchomień testów na 1 workerze, więc mierz testy, które wywołują ważne endpointy backendu.',
+    'Pomiar trwa mniej więcej tyle, co (testy × przebiegi) uruchomień testów na 1 workerze, więc mierz testy, które wywołują ważne endpointy backendu.',
   taggedFiles: 'Pliki z testami oznaczonymi @perf: {count}.',
   noTaggedMessage: 'Żaden test nie ma jeszcze tagu @perf; mierzone są wszystkie testy.',
   noTaggedHint:
@@ -234,10 +234,10 @@ const pl: Messages = {
   scopeQuestion: 'Mierzyć wszystkie testy czy tylko oznaczone @perf? [{all}/@perf]',
   scopeAll: 'wszystkie',
 
-  stepRepeat: 'Powtórzenia',
-  repeatLesson:
-    'Każda reguła potrzebuje minimalnej liczby próbek na endpoint (minSamples), a próbek jest: wywołania w teście × testy × powtórzenia.',
-  repeatQuestion: 'Ile powtórzeń każdego testu w pomiarze?',
+  stepPasses: 'Przebiegi',
+  passesLesson:
+    'Każda reguła potrzebuje minimalnej liczby próbek na endpoint (minSamples), a próbek jest: wywołania w teście × testy × przebiegi. Polecenie testów, z krokami przygotowania, wykonuje się raz na przebieg.',
+  passesQuestion: 'Ile przebiegów polecenia testów w pomiarze?',
 
   stepTrial: 'Okres próbny',
   trialLesson:
@@ -385,7 +385,7 @@ const es: Messages = {
 
   stepTests: 'Qué tests',
   testsLesson:
-    'Una medición dura unas (tests × repeticiones) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
+    'Una medición dura unas (tests × pasadas) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
   taggedFiles: 'Archivos con tests etiquetados @perf: {count}.',
   noTaggedMessage: 'Ningún test tiene aún la etiqueta @perf; se miden todos los tests.',
   noTaggedHint:
@@ -393,10 +393,10 @@ const es: Messages = {
   scopeQuestion: '¿Medir todos los tests o solo los etiquetados @perf? [{all}/@perf]',
   scopeAll: 'todos',
 
-  stepRepeat: 'Repeticiones',
-  repeatLesson:
-    'Cada regla necesita un mínimo de muestras por endpoint (minSamples), y las muestras son llamadas por test × tests × repeticiones.',
-  repeatQuestion: '¿Repeticiones por test en las mediciones?',
+  stepPasses: 'Pasadas',
+  passesLesson:
+    'Cada regla necesita un mínimo de muestras por endpoint (minSamples), y las muestras son llamadas por test × tests × pasadas. Tu comando de tests, con sus pasos de preparación, se ejecuta una vez por pasada.',
+  passesQuestion: '¿Pasadas del comando de tests en las mediciones?',
 
   stepTrial: 'Periodo de prueba',
   trialLesson:
@@ -548,7 +548,7 @@ const fr: Messages = {
 
   stepTests: 'Quels tests',
   testsLesson:
-    'Une mesure prend environ (tests × répétitions) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
+    'Une mesure prend environ (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
   taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
   noTaggedMessage: 'Aucun test n’est encore marqué @perf ; tous les tests sont mesurés.',
   noTaggedHint:
@@ -556,10 +556,10 @@ const fr: Messages = {
   scopeQuestion: 'Mesurer tous les tests ou seulement ceux marqués @perf ? [{all}/@perf]',
   scopeAll: 'tous',
 
-  stepRepeat: 'Répétitions',
-  repeatLesson:
-    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et les échantillons valent appels par test × tests × répétitions.',
-  repeatQuestion: 'Répétitions par test dans les mesures ?',
+  stepPasses: 'Passes',
+  passesLesson:
+    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et les échantillons valent appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
+  passesQuestion: 'Passes de la commande de tests dans les mesures ?',
 
   stepTrial: 'Période d’essai',
   trialLesson:
@@ -711,7 +711,7 @@ const it: Messages = {
 
   stepTests: 'Quali test',
   testsLesson:
-    'Una misurazione richiede circa (test × ripetizioni) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
+    'Una misurazione richiede circa (test × passaggi) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
   taggedFiles: 'File con test contrassegnati @perf: {count}.',
   noTaggedMessage: 'Nessun test ha ancora il tag @perf; vengono misurati tutti i test.',
   noTaggedHint:
@@ -719,10 +719,10 @@ const it: Messages = {
   scopeQuestion: 'Misurare tutti i test o solo quelli contrassegnati @perf? [{all}/@perf]',
   scopeAll: 'tutti',
 
-  stepRepeat: 'Ripetizioni',
-  repeatLesson:
-    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × ripetizioni.',
-  repeatQuestion: 'Ripetizioni per test nelle misurazioni?',
+  stepPasses: 'Passaggi',
+  passesLesson:
+    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passaggi. Il comando dei test, con i suoi passi di preparazione, viene eseguito una volta per passaggio.',
+  passesQuestion: 'Passaggi del comando dei test nelle misurazioni?',
 
   stepTrial: 'Periodo di prova',
   trialLesson:
@@ -873,7 +873,7 @@ const uk: Messages = {
 
   stepTests: 'Які тести',
   testsLesson:
-    'Вимірювання триває приблизно (тести × повторення) запусків тестів на 1 worker, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
+    'Вимірювання триває приблизно (тести × проходи) запусків тестів на 1 worker, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
   taggedFiles: 'Файли з тестами з тегом @perf: {count}.',
   noTaggedMessage: 'Жоден тест ще не має тегу @perf; вимірюються всі тести.',
   noTaggedHint:
@@ -881,10 +881,10 @@ const uk: Messages = {
   scopeQuestion: 'Вимірювати всі тести чи лише з тегом @perf? [{all}/@perf]',
   scopeAll: 'усі',
 
-  stepRepeat: 'Повторення',
-  repeatLesson:
-    'Кожне правило потребує мінімальної кількості вимірів на ендпоінт (minSamples), а вимірів буде: виклики в тесті × тести × повторення.',
-  repeatQuestion: 'Скільки повторень кожного тесту під час вимірювання?',
+  stepPasses: 'Проходи',
+  passesLesson:
+    'Кожне правило потребує мінімальної кількості вимірів на ендпоінт (minSamples), а вимірів буде: виклики в тесті × тести × проходи. Команда тестів разом із кроками підготовки виконується один раз на прохід.',
+  passesQuestion: 'Скільки проходів команди тестів під час вимірювання?',
 
   stepTrial: 'Пробний період',
   trialLesson:
@@ -1033,7 +1033,7 @@ const ru: Messages = {
 
   stepTests: 'Какие тесты',
   testsLesson:
-    'Измерение занимает примерно (тесты × повторения) запусков тестов на 1 worker, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
+    'Измерение занимает примерно (тесты × проходы) запусков тестов на 1 worker, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
   taggedFiles: 'Файлы с тестами с тегом @perf: {count}.',
   noTaggedMessage: 'Ни у одного теста пока нет тега @perf; измеряются все тесты.',
   noTaggedHint:
@@ -1041,10 +1041,10 @@ const ru: Messages = {
   scopeQuestion: 'Измерять все тесты или только с тегом @perf? [{all}/@perf]',
   scopeAll: 'все',
 
-  stepRepeat: 'Повторения',
-  repeatLesson:
-    'Каждому правилу нужно минимальное число замеров на эндпоинт (minSamples), а замеров будет: вызовы в тесте × тесты × повторения.',
-  repeatQuestion: 'Сколько повторений каждого теста при измерении?',
+  stepPasses: 'Проходы',
+  passesLesson:
+    'Каждому правилу нужно минимальное число замеров на эндпоинт (minSamples), а замеров будет: вызовы в тесте × тесты × проходы. Команда тестов вместе с шагами подготовки выполняется один раз на проход.',
+  passesQuestion: 'Сколько проходов команды тестов при измерении?',
 
   stepTrial: 'Пробный период',
   trialLesson:

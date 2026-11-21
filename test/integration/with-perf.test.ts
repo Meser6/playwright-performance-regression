@@ -22,7 +22,7 @@ interface MainRecord {
     mode: unknown;
     measuredProjects: string[];
     runConditions: unknown;
-    repeat: number;
+    passes: number;
     origins: Record<string, string>;
   };
 }
@@ -35,7 +35,7 @@ interface Execution {
   registry?: {
     mode: unknown;
     measuredProjects: string[];
-    repeat: number;
+    passes: number;
     origins: Record<string, string>;
   };
 }
@@ -130,21 +130,23 @@ describe('withPerf with real Playwright', () => {
   test(
     '04-AC-09 04-AC-12 04-AC-13 perf mode applies the run conditions and the registry reaches the worker',
     () => {
-      const run = runPlaywright('esm-ts', { PW_PERF_MODE: 'test', PW_PERF_REPEAT: '3' });
+      // One pass, so main.json and the worker records belong to the same process.
+      const run = runPlaywright('esm-ts', { PW_PERF_MODE: 'test', PW_PERF_PASSES: '1' });
       expect(run.status, run.output).toBe(0);
       expect(run.main.sameObject).toBe(false);
       expect(run.main.workers).toBe(1);
-      // Only chromium is measured; its dependency and the dependency's teardown run once.
+      // Only chromium is measured; every project runs once per pass (D-39); retries: 1 of the
+      // Playwright config stays (D-38).
       expect(run.main.projects.map((p) => [p.name, p.repeatEach, p.retries, p.trace])).toEqual([
-        ['setup', 1, 0, 'off'],
-        ['cleanup', 1, 0, 'off'],
-        ['chromium', 3, 0, 'off'],
+        ['setup', 1, 1, 'off'],
+        ['cleanup', 1, 1, 'off'],
+        ['chromium', 1, 1, 'off'],
       ]);
       expect([count(run, 'setup'), count(run, 'chromium'), count(run, 'cleanup')]).toEqual([
-        1, 3, 1,
+        1, 1, 1,
       ]);
       expect(count(run, 'firefox') + count(run, 'webkit')).toBe(0);
-      expect(run.executions.map((e) => e.retry)).toEqual([0, 0, 0, 0, 0]);
+      expect(run.executions.map((e) => e.retry)).toEqual([0, 0, 0]);
       // Console reporter, the kept reporter and the package reporter; junit and html removed.
       expect(run.main.reporters.map(([name]) => name)).toEqual([
         'dot',
@@ -156,15 +158,15 @@ describe('withPerf with real Playwright', () => {
 
       const registry = {
         // The worker inherits the run id of the main process (04-REQ-60).
-        mode: { mode: 'test', repeat: 3, runId: expect.stringMatching(/^\d{4}-/u) },
+        mode: { mode: 'test', passes: 1, runId: expect.stringMatching(/^\d{4}-/u) },
         measuredProjects: ['chromium'],
-        repeat: 3,
+        passes: 1,
         origins: { 'https://api.example.com': 'ts' },
       };
       expect(run.main.registry).toEqual({
         ...registry,
         runConditions: {
-          overridden: ['workers', 'retries', 'trace'],
+          overridden: ['workers', 'trace'],
           removedProjects: ['firefox', 'webkit'],
           removedReporters: ['junit', 'html'],
           replacedReporters: ['list'],
@@ -191,7 +193,7 @@ describe('withPerf with real Playwright', () => {
     () => {
       const run = runPlaywright('esm-ts', {
         PW_PERF_MODE: 'thresholds',
-        PW_PERF_REPEAT: '2',
+        PW_PERF_PASSES: '2',
         INTEGRATION_PROJECTS: 'firefox',
       });
       // The tests of this project record no samples, so the derivation refuses (10-REQ-13).
@@ -200,10 +202,11 @@ describe('withPerf with real Playwright', () => {
       expect(run.main.projects.map((p) => [p.name, p.repeatEach])).toEqual([
         ['setup', 1],
         ['cleanup', 1],
-        ['firefox', 2],
+        ['firefox', 1],
       ]);
+      // Two passes: the setup project and the firefox test run once in each.
       expect([count(run, 'setup'), count(run, 'firefox'), count(run, 'chromium')]).toEqual([
-        1, 2, 0,
+        2, 2, 0,
       ]);
       expect(run.executions[0]?.registry?.measuredProjects).toEqual(['firefox']);
     },

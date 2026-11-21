@@ -37,9 +37,9 @@ each code is explained in [Troubleshooting](troubleshooting.md).
 
 Each check needs a minimum number of successful samples per key: 5 for the median and the error
 rate, 20 for p95, Apdex and the slow share, 100 for p99. Endpoints called once by one test get
-only as many samples as repetitions. Keys below a minimum are not failed; the summary counts them
+only as many samples as passes. Keys below a minimum are not failed; the summary counts them
 as "checked by median only (few samples)" or "skipped (too few samples)". To get more checks on important endpoints, measure more tests
-that call them or raise the repetitions with `--repeat`. The arithmetic is in
+that call them or raise the passes (`run.passes`, `PW_PERF_PASSES`). The arithmetic is in
 [Choosing the tests to measure](adoption.md#choosing-the-tests-to-measure).
 
 ## My mocked routes show up as endpoints

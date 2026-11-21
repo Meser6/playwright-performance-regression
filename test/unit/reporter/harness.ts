@@ -34,6 +34,15 @@ export interface Captured {
   host: ReporterHost;
   stdout: string[];
   stderr: string[];
+  /** Passes started through host.runPass, with their environment. */
+  passes: {
+    command: { file: string; args: readonly string[] };
+    env: Record<string, string | undefined>;
+  }[];
+  /** Questions asked through host.ask. */
+  questions: string[];
+  /** Codes given to host.exit. */
+  exits: number[];
 }
 
 export function tempDir(): string {
@@ -48,14 +57,25 @@ export function fakeHost(
     env?: Record<string, string>;
     tty?: number;
     argv?: string[];
+    /** Answers of host.ask in order; null: no terminal. */
+    answers?: (string | null)[];
+    /** What a started pass does; by default it exits with 0 and writes nothing. */
+    runPass?: ReporterHost['runPass'];
   } = {},
 ): Captured {
   const stdout: string[] = [];
   const stderr: string[] = [];
+  const passes: Captured['passes'] = [];
+  const questions: string[] = [];
+  const exits: number[] = [];
+  const answers = [...(options.answers ?? [])];
   let time = options.start ?? Date.UTC(2026, 10, 18, 10, 0, 0);
   return {
     stdout,
     stderr,
+    passes,
+    questions,
+    exits,
     host: {
       env: options.env ?? {},
       argv: options.argv ?? ['node', 'playwright', 'test'],
@@ -71,6 +91,20 @@ export function fakeHost(
       random: () => options.random ?? 0.5,
       ci: null,
       host: { ...HOST_INFO },
+      execPath: '/usr/bin/node',
+      runPass: async (command, env) => {
+        passes.push({ command, env: { ...env } });
+        return options.runPass === undefined
+          ? { code: 0, signal: null }
+          : options.runPass(command, env);
+      },
+      ask: (question) => {
+        questions.push(question);
+        return answers.length === 0 ? '' : (answers.shift() ?? null);
+      },
+      exit: (code) => {
+        exits.push(code);
+      },
     },
   };
 }
@@ -80,7 +114,12 @@ export function registered(
   mode: PerfModeState,
   measured: string[] = ['chromium'],
 ): RegisteredState {
-  const resolved = resolveConfig(input, {
+  // One pass unless a test asks for more (D-39): passes 2…N start processes.
+  const withPasses = {
+    ...input,
+    run: { ...input.run, passes: { test: 1, thresholds: 1, ...input.run?.passes } },
+  };
+  const resolved = resolveConfig(withPasses, {
     mode: mode.mode === 'check' ? 'test' : mode.mode,
     ...(mode.env === undefined ? {} : { env: mode.env }),
   });
@@ -120,7 +159,7 @@ export function fakeConfig(dir: string, extra: Partial<ConfigLike> = {}): Config
     maxFailures: 0,
     version: '1.57.0',
     shard: null,
-    projects: [project('chromium', { repeatEach: 5 })],
+    projects: [project('chromium')],
     ...extra,
   };
 }

@@ -4,14 +4,14 @@ import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { ProjectInfo } from './detect.ts';
 import type { InitAnswers } from './perf-config.ts';
 
-/** Default of the repetitions step: the default of run.repeat.test. */
-export const DEFAULT_ANSWERS_REPEAT: number = DEFAULT_CONFIG.run.repeat.test;
+/** Default of the passes step: the default of run.passes.test. */
+export const DEFAULT_ANSWERS_PASSES: number = DEFAULT_CONFIG.run.passes.test;
 
 export function defaultAnswers(info: ProjectInfo): InitAnswers {
   return {
     // All tests, also when some tests are tagged @perf.
     scope: 'all',
-    repeatTest: DEFAULT_ANSWERS_REPEAT,
+    passesTest: DEFAULT_ANSWERS_PASSES,
     warnOnly: true,
     // Yes when the project has test.step calls (04-REQ-47).
     steps: info.stepFiles > 0,

@@ -120,6 +120,9 @@ function sourceRun(): Promise<{ run: CliRun; thresholds: string }> {
   return source;
 }
 
+/** Output after the start banner of the reporter (04-REQ-65). */
+const afterBanner = (output: string): string => output.split('╯').slice(1).join('');
+
 describe('pw-perf test and thresholds', () => {
   test(
     '04-AC-03 04-AC-06 a passing test run from another directory with -c: exit code 0, no outcome file left',
@@ -127,17 +130,16 @@ describe('pw-perf test and thresholds', () => {
       const cwd = join(scratch, 'monorepo root');
       mkdirSync(cwd);
       const run = await runCli(
-        ['test', '-c', join(project, 'playwright.config.ts'), '--repeat', '2'],
+        ['test', '-c', join(project, 'playwright.config.ts'), '--passes', '2'],
         {
           cwd,
         },
       );
       expect(run.status, run.output).toBe(0);
-      expect(run.stderr).toContain(
-        `${PACKAGE_NAME}: perf mode "test", 2 repeats per test, 1 worker.`,
-      );
-      expect(run.stderr).toContain(`${PACKAGE_NAME}: tip: measure a subset`);
-      expect(run.stdout).toContain('8 test executions (4 tests × 2 repeats)');
+      // The start banner of the reporter replaces the mode line of the CLI (04-REQ-20, 04-REQ-65).
+      expect(run.stderr).not.toContain('perf mode "test"');
+      expect(run.stdout).toContain('4 tests × 2 passes = 8 test runs');
+      expect(run.stdout).toContain('Tip       measure a subset');
       expect(run.stderr).toContain(
         `${PACKAGE_NAME}: tests passed · performance passed · exit code 0`,
       );
@@ -247,7 +249,8 @@ describe('pw-perf test and thresholds', () => {
     async () => {
       const run = await runCli(['test', '--list']);
       expect(run.status, run.output).toBe(0);
-      expect(run.stdout).toContain('Total: 20 tests in 1 file');
+      // Every test once per pass (repeatEach 1, D-39).
+      expect(run.stdout).toContain('Total: 4 tests in 1 file');
       expect(existsSync(reportPath(run))).toBe(false);
       expect(run.stderr).not.toContain('exit code');
       expect(outcomeFilesLeft()).toEqual([]);
@@ -276,9 +279,9 @@ describe('pw-perf test and thresholds', () => {
     expect(prune.stdout).toBe('');
     expect(prune.stderr).not.toContain('perf mode');
 
-    const invalid = await runCli(['test', '--repeat', 'many']);
+    const invalid = await runCli(['test', '--passes', 'many']);
     expect(invalid.status).toBe(3);
-    expect(invalid.stderr).toContain('error CLI_INVALID_OPTION: --repeat: expected an integer');
+    expect(invalid.stderr).toContain('error CLI_INVALID_OPTION: --passes: expected an integer');
     const ui = await runCli(['test', '--ui']);
     expect(ui.status).toBe(3);
     expect(ui.stderr).toContain('error CLI_UNSUPPORTED_PLAYWRIGHT_OPTION');
@@ -303,11 +306,12 @@ describe('pw-perf test and thresholds', () => {
       cpSync(thresholds, kept, { recursive: true });
       const before = readdirSync(kept).map((f) => readFileSync(join(kept, f)));
       let sent = false;
-      const run = await runCli(['thresholds', '--repeat', '10'], {
+      const run = await runCli(['thresholds', '--passes', '10'], {
         env: { THRESHOLDS_DIR: kept },
         onOutput: (child, output) => {
-          // After the first finished test (dot reporter, 04-REQ-32).
-          if (!sent && output.includes('·')) {
+          // After the first finished test (dot reporter, 04-REQ-32); the start banner has a "·"
+          // too, and Playwright ignores a SIGINT while it starts its workers.
+          if (!sent && afterBanner(output).includes('·')) {
             sent = true;
             child.kill('SIGINT');
           }
@@ -326,9 +330,9 @@ describe('pw-perf test and thresholds', () => {
     { skip: !POSIX, timeout: RUN_TIMEOUT },
     async () => {
       let sent = false;
-      const run = await runCli(['test', '--repeat', '10'], {
+      const run = await runCli(['test', '--passes', '10'], {
         onOutput: (child, output) => {
-          if (!sent && output.includes('·')) {
+          if (!sent && afterBanner(output).includes('·')) {
             sent = true;
             child.kill('SIGTERM');
           }
@@ -438,7 +442,7 @@ describe('pw-perf without tests', () => {
       child.on('close', () => resolve(text));
     });
     expect(help).toContain('--repeat-each');
-    for (const option of ['--env', '--repeat', '--prune', '--from']) {
+    for (const option of ['--env', '--passes', '--prune', '--from']) {
       expect(help, option).not.toMatch(new RegExp(`${option}[ ,=\\n]`, 'u'));
     }
   });

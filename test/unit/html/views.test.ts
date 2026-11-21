@@ -111,7 +111,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
     );
   });
 
-  test('11-AC-13 KPI tiles equal the reference computation, with the repeatEach range', () => {
+  test('11-AC-13 KPI tiles equal the reference computation, with the passes of the run', () => {
     const report = fullRun();
     report.runConditions.projects = [
       { ...(report.runConditions.projects[0] as RunReport['runConditions']['projects'][number]) },
@@ -119,6 +119,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
       { name: 'setup', role: 'dependency', browserName: 'chromium', repeatEach: 1, retries: 0 },
     ];
     report.finishedAt = '2026-11-18T11:02:03.000Z';
+    report.passes = { planned: 5, completed: 4, failed: [3] };
     const html = page(report);
     const tiles = [
       ...html.matchAll(
@@ -133,7 +134,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
       ['Violations', '1', '1 blocking · 1 muted'],
       ['Error rate', formatPercent(errors / requests), `${errors} of ${requests} requests`],
       ['Run duration', '1 h 02 min', '2026-11-18 10:00:00 UTC'],
-      ['Repetitions', '3–5', '2 measured projects'],
+      ['Passes', '4 of 5', '2 measured projects'],
       ['Tests', '3', '0 failed · 0 flaky · 0 skipped'],
     ]);
     expect(formatPercent(errors / requests)).toBe('35.3%');

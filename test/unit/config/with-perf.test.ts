@@ -46,7 +46,7 @@ describe('withPerf outside perf mode (P-02)', () => {
   test('01-AC-03 returns the same config object, does not validate and leaves the registry empty', () => {
     const config = { workers: 4, reporter: 'html' as const };
     // An invalid package config is not even looked at (01-REQ-08).
-    expect(withPerf(config, { run: { repeat: { test: 0 } }, nope: 1 } as never)).toBe(config);
+    expect(withPerf(config, { run: { passes: { test: 0 } }, nope: 1 } as never)).toBe(config);
     expect(withPerf(config)).toBe(config);
     expect(config).toEqual({ workers: 4, reporter: 'html' });
     expect(getRegistered()).toBeUndefined();
@@ -69,13 +69,13 @@ describe('withPerf in perf mode', () => {
         { name: 'firefox', use: { browserName: 'firefox' } },
       ],
     });
-    const result = withPerf(config, definePerfConfig({ run: { repeat: { test: 3 } } }));
+    const result = withPerf(config, definePerfConfig({ run: { passes: { test: 3 } } }));
     expect(result).not.toBe(config);
     expect(config.workers).toBe(4);
     expect(result.workers).toBe(1);
     expect(result.projects?.map((p) => [p.name, p.repeatEach])).toEqual([
       ['setup', 1],
-      ['chromium', 3],
+      ['chromium', 1],
     ]);
     const reporter = result.reporter as [string][];
     expect(reporter[0]).toEqual(['dot']);
@@ -85,8 +85,8 @@ describe('withPerf in perf mode', () => {
     expect(state?.mode).toEqual({ mode: 'test' });
     expect(state?.measuredProjects).toEqual(['chromium']);
     expect(state?.packageVersion).toBe(packageJson.version);
-    expect(state?.config.run.repeat.test).toBe(3);
-    expect(state?.snapshot.run.repeat.test).toBe(3);
+    expect(state?.config.run.passes.test).toBe(3);
+    expect(state?.snapshot.run.passes.test).toBe(3);
     expect(state?.runConditions).toEqual({
       overridden: ['workers'],
       removedProjects: ['firefox'],
@@ -97,19 +97,27 @@ describe('withPerf in perf mode', () => {
 
   test('environment overrides win over the package config (01-REQ-29)', () => {
     vi.stubEnv('PW_PERF_MODE', 'thresholds');
-    vi.stubEnv('PW_PERF_REPEAT', '7');
+    vi.stubEnv('PW_PERF_PASSES', '7');
     vi.stubEnv('PW_PERF_ENV', 'qa');
-    const result = withPerf(EMPTY, { run: { repeat: { thresholds: 2 }, env: 'staging' } });
-    expect(result.repeatEach).toBe(7);
-    expect(getRegistered()?.config.run).toMatchObject({ env: 'qa', repeat: { thresholds: 7 } });
-    expect(getRegistered()?.mode).toEqual({ mode: 'thresholds', repeat: 7, env: 'qa' });
+    const result = withPerf(EMPTY, { run: { passes: { thresholds: 2 }, env: 'staging' } });
+    expect(result.repeatEach).toBe(1);
+    expect(getRegistered()?.config.run).toMatchObject({ env: 'qa', passes: { thresholds: 7 } });
+    expect(getRegistered()?.mode).toEqual({ mode: 'thresholds', passes: 7, env: 'qa' });
   });
 
-  test('uses run.repeat of the current mode and the dot reporter on CI', () => {
+  test('03-AC-16 PW_PERF_PASS=k/N of a later pass wins, so every pass has the same snapshot', () => {
+    vi.stubEnv('PW_PERF_PASSES', '7');
+    vi.stubEnv('PW_PERF_PASS', '2/4');
+    withPerf(EMPTY, { run: { passes: { test: 2 } } });
+    expect(getRegistered()?.config.run.passes.test).toBe(4);
+  });
+
+  test('every test runs once per pass and the dot reporter is used on CI', () => {
     vi.stubEnv('PW_PERF_MODE', 'thresholds');
     vi.stubEnv('CI', 'true');
     const result = withPerf(EMPTY);
-    expect(result.repeatEach).toBe(10);
+    expect(result.repeatEach).toBe(1);
+    expect(getRegistered()?.config.run.passes.thresholds).toBe(10);
     expect((result.reporter as [string][])[0]).toEqual(['dot']);
   });
 
@@ -177,8 +185,8 @@ describe('withPerf in perf mode', () => {
     ).toBe('CONFIG_UNKNOWN_PROJECT');
   });
 
-  test('a repeat override above the maximum is a config error', () => {
-    vi.stubEnv('PW_PERF_REPEAT', '1001');
+  test('a passes override above the maximum is a config error', () => {
+    vi.stubEnv('PW_PERF_PASSES', '1001');
     expect(thrown(() => withPerf(EMPTY)).issues[0]?.code).toBe('CONFIG_INVALID_VALUE');
   });
 });
@@ -186,8 +194,8 @@ describe('withPerf in perf mode', () => {
 describe('the config entry point', () => {
   test('exports withPerf and definePerfConfig with the config type kept', () => {
     expect(configEntry.withPerf).toBe(withPerf);
-    expect(configEntry.definePerfConfig({ run: { repeat: { test: 2 } } })).toEqual({
-      run: { repeat: { test: 2 } },
+    expect(configEntry.definePerfConfig({ run: { passes: { test: 2 } } })).toEqual({
+      run: { passes: { test: 2 } },
     });
     const typed = defineConfig<{ account: string }>({ use: { account: 'a' } });
     expectTypeOf(withPerf(typed)).toEqualTypeOf(typed);

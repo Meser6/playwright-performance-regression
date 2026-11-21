@@ -4,7 +4,7 @@ import type { DefaultConfigJson } from '../types.ts';
 
 /** The schema's `default` keywords applied to an empty config (03-REQ-05, 03-D-01). */
 export const DEFAULT_CONFIG: DefaultConfigJson = {
-  run: { env: null, repeat: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
+  run: { env: null, passes: { test: 5, thresholds: 10 }, projects: 'auto', keepReporters: [] },
   measure: {
     resourceTypes: ['document', 'xhr', 'fetch'],
     ignoreExtensions: [

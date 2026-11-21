@@ -10,7 +10,7 @@
     "config": {
       "run": {
         "env": null,
-        "repeat": {
+        "passes": {
           "test": 5,
           "thresholds": 10
         },
@@ -495,6 +495,11 @@
     ],
     "playwright": {
       "version": "1.57.0"
+    },
+    "passes": {
+      "planned": 1,
+      "completed": 1,
+      "failed": []
     },
     "runConditions": {
       "overriddenSettings": [],

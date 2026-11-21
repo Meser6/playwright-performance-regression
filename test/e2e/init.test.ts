@@ -87,7 +87,7 @@ describe('pw-perf init', () => {
           readFileSync(join(INIT_GOLDEN, `${name}-defaults.diff`), 'utf8'),
         );
 
-        const run = await runCli(['thresholds', '--repeat', '5'], dir);
+        const run = await runCli(['thresholds', '--passes', '5'], dir);
         expect(run.status, run.stdout + run.stderr).toBe(0);
         expect(run.stderr).toContain('thresholds derived');
         expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([

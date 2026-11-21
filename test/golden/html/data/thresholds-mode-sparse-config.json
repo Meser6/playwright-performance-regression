@@ -59,6 +59,11 @@
     "mode": "thresholds",
     "normalization": "0123456789abcd",
     "origins": [],
+    "passes": {
+      "completed": 1,
+      "failed": [],
+      "planned": 1
+    },
     "playwright": {
       "version": "1.57.0"
     },
@@ -160,6 +165,11 @@
     "mode": "thresholds",
     "normalization": "0123456789abcd",
     "origins": [],
+    "passes": {
+      "completed": 1,
+      "failed": [],
+      "planned": 1
+    },
     "playwright": {
       "version": "1.57.0"
     },

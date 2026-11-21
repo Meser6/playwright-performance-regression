@@ -16,22 +16,22 @@ export interface TemplateOption {
 export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   { path: 'run', description: 'How the measurement run is executed.', leaf: false },
   { path: 'run.env', description: 'Environment label.', leaf: true, default: null },
-  { path: 'run.repeat', description: 'Repetitions of each measured test.', leaf: false },
   {
-    path: 'run.repeat.test',
-    description: 'Repetitions in a measurement run.',
-    leaf: true,
-    default: 5,
+    path: 'run.passes',
+    description:
+      'Passes of the test command: the command runs once per pass and every test runs once in each pass.',
+    leaf: false,
   },
+  { path: 'run.passes.test', description: 'Passes in a measurement run.', leaf: true, default: 5 },
   {
-    path: 'run.repeat.thresholds',
-    description: 'Repetitions in a thresholds derivation run.',
+    path: 'run.passes.thresholds',
+    description: 'Passes in a thresholds derivation run.',
     leaf: true,
     default: 10,
   },
   {
     path: 'run.projects',
-    description: 'Which Playwright projects are measured and repeated in perf mode.',
+    description: 'Which Playwright projects are measured in perf mode.',
     leaf: true,
     default: 'auto',
   },

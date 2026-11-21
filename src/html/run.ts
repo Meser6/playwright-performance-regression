@@ -163,6 +163,19 @@ function thresholdsSection(report: RunReport): SafeHtml {
   );
 }
 
+/** Passes of the run (D-39, 02-REQ-37), e.g. "5 passes." or "4 of 5 passes (no data: pass 3)." */
+function passesText(passes: RunReport['passes']): string {
+  const done =
+    passes.completed === passes.planned
+      ? plural(passes.planned, 'pass', 'passes')
+      : `${String(passes.completed)} of ${plural(passes.planned, 'pass', 'passes')}`;
+  const failed =
+    passes.failed.length === 0
+      ? ''
+      : ` (no data: ${passes.failed.length === 1 ? 'pass' : 'passes'} ${passes.failed.join(', ')})`;
+  return `${done}${failed}.`;
+}
+
 function conditionsSection(report: RunReport): SafeHtml {
   const rc = report.runConditions;
   const overridden =
@@ -176,7 +189,7 @@ function conditionsSection(report: RunReport): SafeHtml {
     );
   return join(
     html`<section aria-labelledby="conditions-h"><h3 id="conditions-h">Run conditions</h3>`,
-    html`<p>${plural(rc.workers, 'worker')}. Settings overridden by withPerf(): ${overridden}.</p>`,
+    html`<p>${passesText(report.passes)} ${plural(rc.workers, 'worker')}. Settings overridden by withPerf(): ${overridden}.</p>`,
     rc.projects.length === 0
       ? null
       : join(

@@ -28,7 +28,9 @@ afterAll(async () => {
   await harness?.close();
 });
 
-const PERF = { PW_PERF_MODE: 'test', PW_PERF_REPEAT: '2' };
+// Two passes (D-39): results.json of the JSON reporter is written by every pass, so it holds the
+// results of the last pass only; the run report has both.
+const PERF = { PW_PERF_MODE: 'test', PW_PERF_PASSES: '2' };
 
 /** Without perf mode: every test passes once and no result carries samples. */
 function expectPlainRun(run: ProjectRun, tests: number): void {
@@ -130,10 +132,7 @@ describe('multi-browser', () => {
       const run = await harness.run(dir, { env: PERF });
       expectStatus(run, 0);
       expect(run.outcome?.exitCode).toBe(0);
-      expect(run.results.map((r) => [r.project, r.status])).toEqual([
-        ['chromium', 'passed'],
-        ['chromium', 'passed'],
-      ]);
+      expect(run.results.map((r) => [r.project, r.status])).toEqual([['chromium', 'passed']]);
       expect(sampleCount(run, 'GET /api/products')).toBe(2);
       expect(run.output).toContain('firefox');
     },
@@ -152,7 +151,7 @@ describe('multi-browser', () => {
       async () => {
         const run = await harness.run(dir, { env: { ...PERF, PERF_PROJECTS: name } });
         expectStatus(run, 0);
-        expect(run.results.map((r) => r.project)).toEqual([name, name]);
+        expect(run.results.map((r) => r.project)).toEqual([name]);
         expect(sampleCount(run, 'GET /api/products')).toBe(2);
       },
       RUN_TIMEOUT,
@@ -173,7 +172,7 @@ describe('long-requests', () => {
   beforeAll(() => {
     dir = harness.copy('long-requests');
   });
-  const ONCE = { PW_PERF_MODE: 'test', PW_PERF_REPEAT: '1' };
+  const ONCE = { PW_PERF_MODE: 'test', PW_PERF_PASSES: '1' };
   const durations = (run: ProjectRun): Record<string, number> =>
     Object.fromEntries(run.results.map((r) => [r.title, r.duration]));
 
@@ -241,23 +240,26 @@ describe('existing-project', () => {
     '03-AC-09 12-AC-03 wrapper, reporters, test objects, mergeTests, playwright-bdd and mocks in perf mode',
     async () => {
       const run = await harness.run(dir, { env: PERF });
-      // The flaky test fails once without retries: Playwright reports a failure, the
-      // performance result decides the exit code (one failed execution of 15 is tolerated).
-      expect(run.status, run.output).toBe(1);
+      // retries: 2 of the company wrapper stays (D-38): the flaky test passes on its retry in
+      // every pass and counts as passed; both attempts are measured.
+      expect(run.status, run.output).toBe(0);
       expect(run.outcome?.exitCode).toBe(0);
-      expect(warningCodes(run)).toEqual(
-        expect.arrayContaining(['TESTS_FAILED', 'TESTS_NOT_INSTRUMENTED']),
-      );
+      expect(warningCodes(run)).toContain('TESTS_NOT_INSTRUMENTED');
+      expect(warningCodes(run)).not.toContain('TESTS_FAILED');
       expect(warningCodes(run)).not.toContain('RUN_CONDITIONS_CHANGED');
+      expect(run.report?.tests.flaky).toBe(2);
       // Every browser test object is measured, also the playwright-bdd scenario and the
       // mocked route; the setup project and the request fixture are not.
       expect(epKeys(run)).toEqual(MEASURED);
-      for (const key of MEASURED) expect(sampleCount(run, key), key).toBe(2);
-      // Firefox is left out; the setup project runs once, the measured ones twice.
+      for (const key of MEASURED) {
+        expect(sampleCount(run, key), key).toBe(key === 'GET /api/ep/flaky' ? 4 : 2);
+      }
+      // Firefox is left out; in each pass the setup project and every test run once (the flaky
+      // one twice); results.json shows the last pass.
       const projects = run.results.map((r) => r.project);
       expect(projects.filter((p) => p === 'setup')).toHaveLength(1);
-      expect(projects.filter((p) => p === 'chromium')).toHaveLength(12);
-      expect(projects.filter((p) => p === 'bdd')).toHaveLength(2);
+      expect(projects.filter((p) => p === 'chromium')).toHaveLength(7);
+      expect(projects.filter((p) => p === 'bdd')).toHaveLength(1);
       expect(projects).not.toContain('firefox');
       // The kept junit reporter writes its file; the custom reporter is switched off.
       expect(existsSync(join(dir, 'junit.xml'))).toBe(true);

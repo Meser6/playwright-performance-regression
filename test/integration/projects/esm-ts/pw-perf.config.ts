@@ -4,7 +4,7 @@ const keep = ['./record-reporter.mjs', ...(process.env.INTEGRATION_KEEP_JUNIT ? 
 
 export default definePerfConfig({
   run: {
-    repeat: { test: 2 },
+    passes: { test: 2 },
     keepReporters: keep,
     projects: process.env.INTEGRATION_PROJECTS
       ? process.env.INTEGRATION_PROJECTS.split(',')

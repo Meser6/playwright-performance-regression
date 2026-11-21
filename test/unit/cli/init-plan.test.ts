@@ -46,7 +46,7 @@ function files(entries: Record<string, string>): Map<string, string> {
 
 const ANSWERS: InitAnswers = {
   scope: 'all',
-  repeatTest: 5,
+  passesTest: 5,
   warnOnly: true,
   steps: false,
   envLabels: [],
@@ -217,12 +217,12 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(config).toContain('    // Report violations but never fail the run. Default: false.\n');
     // No origin labels from the wizard: they follow the baseURL (07-REQ-03).
     expect(config).toContain('  //   origins: {},\n');
-    const other = renderPerfConfig({ ...ANSWERS, warnOnly: false, repeatTest: 7 });
+    const other = renderPerfConfig({ ...ANSWERS, warnOnly: false, passesTest: 7 });
     expect(other.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l))).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
       '  run: {',
-      '    repeat: {',
+      '    passes: {',
       '      test: 7,',
       '    },',
       '  },',
@@ -306,7 +306,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
   test('04-AC-23 04-REQ-46 pw-perf.config.ts is valid TypeScript and the same in every wizard language', async () => {
     const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
     const text = (lang: WizardLanguage): string =>
-      planInitChanges(info, { ...ANSWERS, repeatTest: 3 }, lang).changes.find(
+      planInitChanges(info, { ...ANSWERS, passesTest: 3 }, lang).changes.find(
         (c) => c.path === 'pw-perf.config.ts',
       )?.after ?? '';
     const en = text('en');
@@ -324,7 +324,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
         'playwright.config.ts': 'export default defineConfig({});\n',
       }),
     );
-    const plan = planInitChanges(info, { ...ANSWERS, repeatTest: 3 });
+    const plan = planInitChanges(info, { ...ANSWERS, passesTest: 3 });
     expect(plan.changes.map((c) => c.path)).not.toContain('pw-perf.config.ts');
     expect(plan.changes.map((c) => c.path)).not.toContain('playwright.config.ts');
     expect(plan.manualSteps.map((s) => s.message)).toEqual([

@@ -32,6 +32,34 @@ front of it. Playwright rejects unknown command line flags, so the "flag" is a v
 Everything the script does still happens: its variables, setup steps and Playwright flags. The
 variable reaches Playwright through npm and the shell of the script.
 
+### Passes
+
+A run has several passes (`run.passes`: 5 for `test`, 10 for `thresholds`; `PW_PERF_PASSES=3` or
+`--passes 3` for one run). You start the command once; when a pass ends, the package runs the same
+command again, one pass after the other, and evaluates all passes together after the last one:
+one report, one result. Every test runs once per pass, and so does everything the script does
+before Playwright (seeding data, resetting accounts), so data created by a test is fresh in every
+pass.
+
+- The command of the next pass is the npm, pnpm or yarn script that started Playwright (with the
+  arguments you added after `--`), or the Playwright command line itself without a script. A
+  script called from another script (`e2e:qa` runs `npm run e2e`) is repeated from the inner one:
+  its variables are kept, the steps of the outer script before it do not run again.
+- Each pass writes `pw-perf-results/pass-<k>.json`; the first pass merges them. A pass that writes
+  no file (for example its setup step failed) gives
+  [`RUN_PASS_FAILED`](troubleshooting.md#run_pass_failed) and the other passes are evaluated.
+- Ctrl+C stops the run: the following passes do not start and nothing is evaluated.
+- Playwright's `retries` apply in perf mode too: every attempt is measured, and a test that passes
+  on a retry counts as passed (flaky).
+
+### Start banner
+
+At the start the reporter shows a frame with the mode, the measured projects, tests × passes, an
+estimate of the run time (from the last `report.json`, else 30 s per test) and where the report
+goes. In a terminal outside CI it asks `Continue? (Y/n)`; `n` stops before any test runs.
+`PW_PERF_YES=1` skips the question. The question comes after `globalSetup` and the `webServer`
+start, because only then the number of tests is known.
+
 On Windows use `npx cross-env PW_PERF_MODE=test npm run e2e` (cmd and PowerShell). Without
 cross-env: PowerShell `$env:PW_PERF_MODE='test'; npm run e2e; Remove-Item Env:PW_PERF_MODE`, cmd
 `set "PW_PERF_MODE=test" && npm run e2e && set "PW_PERF_MODE="`. A variable set with `$env:` or
@@ -88,17 +116,17 @@ symbol or a word, and the text is the same without colors.
 ## `pw-perf test`
 
 ```text
-pw-perf test [--env <label>] [--repeat <n>] [playwright test arguments]
+pw-perf test [--env <label>] [--passes <n>] [playwright test arguments]
 ```
 
-Runs `playwright test` in perf mode: every measured test runs several times in one worker, the
-backend requests are recorded, compared with the thresholds files of the project, and the run
+Runs `playwright test` in perf mode: the test command runs in several [passes](#passes), every
+measured test once per pass in one worker, the backend requests are recorded, compared with the thresholds files of the project, and the run
 fails when an endpoint got slower or returns more errors.
 
 | Option          | Meaning                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------- |
 | `--env <label>` | Environment label: the run uses `pw-perf-thresholds[.steps].<label>.json`. Overrides `run.env` of the config. |
-| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.test`.                                   |
+| `--passes <n>`  | Passes of the test command for this run (1 to 1000). Overrides `run.passes.test`.                             |
 | `-h`, `--help`  | Show the help of the command.                                                                                 |
 
 Example: measure only the tests tagged `@perf`:
@@ -110,7 +138,7 @@ npx pw-perf test --grep @perf
 ## `pw-perf thresholds`
 
 ```text
-pw-perf thresholds [--env <label>] [--repeat <n>] [--prune] [playwright test arguments]
+pw-perf thresholds [--env <label>] [--passes <n>] [--prune] [playwright test arguments]
 ```
 
 Runs the tests in perf mode like `test`, but without failing on violations, and then writes the
@@ -121,7 +149,7 @@ whole workflow.
 | Option          | Meaning                                                                                                  |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
 | `--env <label>` | Environment label: the files `pw-perf-thresholds[.steps].<label>.json` are written. Overrides `run.env`. |
-| `--repeat <n>`  | Repetitions per test for this run (1 to 1000). Overrides `run.repeat.thresholds`.                        |
+| `--passes <n>`  | Passes of the test command for this run (1 to 1000). Overrides `run.passes.thresholds`.                  |
 | `--prune`       | Remove unlocked entries of keys that were not seen in this run. Not allowed together with a test filter. |
 | `-h`, `--help`  | Show the help of the command.                                                                            |
 
@@ -150,7 +178,7 @@ machine: the files are the same as the ones a thresholds run on that CI machine 
 | `--prune`         | Remove unlocked entries of keys not seen in the report.                                        |
 | `--config <file>` | Package config file. Default: see [Package config](#package-config-in-commands-without-tests). |
 
-The command takes no Playwright arguments and no `--repeat`
+The command takes no Playwright arguments and no `--passes`
 ([`CLI_FROM_WITH_PLAYWRIGHT_ARGS`](troubleshooting.md#cli_from_with_playwright_args)). It writes
 the changed thresholds files and `thresholds-diff.md` in `report.dir`, and prints the diff on
 stdout. A report whose tests did not pass gives the warning
@@ -169,14 +197,14 @@ projects once, up to `--max-tests` tests (default 10; setup and teardown project
 prints what would be measured: the projects with their `baseURL`, the reporters, the origins with
 their labels and where each label comes from, the top keys, the state of the thresholds files,
 warnings, and an estimate of the measurement and thresholds runs (an order of magnitude:
-setup time + tests × repeats × the mean test time). Nothing is evaluated and no file is written.
+passes × (setup time + tests × the mean test time)). Nothing is evaluated and no file is written.
 
 When hosts look generated per CI instance, the check warns with
 [`CHECK_RANDOM_HOST`](troubleshooting.md#check_random_host) and proposes host patterns for
 `keys.origins` (see [Dynamic environments](dynamic-environments.md)).
 
 The skipped tests are skipped by the pw-perf fixture before their body; `beforeAll` hooks of their
-files may still run. `--repeat` and `--prune` are not options of `check`. Exit code: 0 when the run
+files may still run. `--passes` and `--prune` are not options of `check`: a check has one pass. Exit code: 0 when the run
 finished, also with warnings, failed tests or no requests; 3 on a tool or config error. In the
 environment mode Playwright's code applies and no `outcome.json` is written.
 
@@ -255,7 +283,7 @@ that step leaves the project untouched.
 
 ## Own options and Playwright arguments
 
-`test` and `thresholds` read their own options (`--env`, `--repeat`, `--prune`) anywhere before
+`test` and `thresholds` read their own options (`--env`, `--passes`, `--prune`) anywhere before
 `--`, as `--env staging` or `--env=staging`. When an option is given twice, the last value
 counts. Every other argument goes to `playwright test` unchanged, in the same order, so the
 usual filters work:
@@ -270,8 +298,9 @@ Arguments after `--` are never read as `pw-perf` options and go to Playwright as
 `--config` / `-c` belongs to Playwright in these two commands: it selects the Playwright config.
 Only `thresholds --from` and `report` have their own `--config`, for the package config file.
 
-`--repeat` and `--env` are checked before Playwright starts: `--repeat` must be an integer from 1
-to 1000, `--env` a label of lowercase letters, digits and `-` (at most 32 characters).
+`--passes` and `--env` are checked before Playwright starts: `--passes` must be an integer from 1
+to 1000, `--env` a label of lowercase letters, digits and `-` (at most 32 characters). The old
+`--repeat` is refused with a hint: it was renamed to `--passes`.
 
 ### Refused Playwright options
 
@@ -352,12 +381,14 @@ fix them.
 ## Environment variables
 
 The CLI runs Playwright with these variables; in the environment mode you set `PW_PERF_MODE` (and
-optionally `PW_PERF_ENV`, `PW_PERF_REPEAT`, `PW_PERF_PRUNE`) yourself:
+optionally `PW_PERF_ENV`, `PW_PERF_PASSES`, `PW_PERF_PRUNE`, `PW_PERF_YES`) yourself:
 
 | Variable               | Meaning                                                                    |
 | ---------------------- | -------------------------------------------------------------------------- |
 | `PW_PERF_MODE`         | `test` or `thresholds`; perf mode is off when it is unset or empty         |
-| `PW_PERF_REPEAT`       | repetitions per test (`--repeat`)                                          |
+| `PW_PERF_PASSES`       | passes of the test command (`--passes`)                                    |
+| `PW_PERF_YES`          | `1` skips the `Continue? (Y/n)` question of the start banner               |
+| `PW_PERF_PASS`         | `k/N`, set by the package for passes 2 to N; do not set it yourself        |
 | `PW_PERF_ENV`          | environment label (`--env`)                                                |
 | `PW_PERF_PRUNE`        | `1` to prune in a thresholds run (`--prune`)                               |
 | `PW_PERF_RUN_ID`       | id of the run                                                              |

@@ -75,6 +75,19 @@ export interface ReporterIo {
   readPackageInfo(dir: string): PackageInfo;
   /** A path in the temporary directory (04-REQ-49). */
   tempPath(name: string): string;
+  /** Text of a file, null when missing (pass files, 02-REQ-36). */
+  readTextFile(path: string): Promise<string | null>;
+  /** Text of a file, null when missing or unreadable (previous report, 04-REQ-66). */
+  readTextFileSync(path: string): string | null;
+  /** Entry names of a directory, empty when missing (02-REQ-36). */
+  listDirSync(dir: string): string[];
+}
+
+/** How a pass process ended (04-REQ-64). */
+export interface PassExitLike {
+  code: number | null;
+  signal: string | null;
+  error?: string;
 }
 
 /** Output stream as the reporter sees it. */
@@ -100,4 +113,15 @@ export interface ReporterHost {
   /** CI and host metadata of the run (02-REQ-28). */
   ci: RunReport['ci'];
   host: RunReport['host'];
+  /** process.execPath, for the command of the next pass (04-REQ-63). */
+  execPath: string;
+  /** Runs one pass and waits for it (04-REQ-64). */
+  runPass(
+    command: { file: string; args: readonly string[] },
+    env: Readonly<Record<string, string | undefined>>,
+  ): Promise<PassExitLike>;
+  /** Asks on the terminal; null when there is none (04-REQ-65). */
+  ask(question: string): string | null;
+  /** Ends the process, e.g. after "n" to the Continue? question (04-REQ-65). */
+  exit(code: number): void;
 }

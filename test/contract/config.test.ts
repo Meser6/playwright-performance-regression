@@ -63,7 +63,7 @@ describe('config defaults and snapshot follow the schema', () => {
         measure: { include: [/^https:\/\/api\./iu], exclude: ['/health'] },
         keys: { extraIdPatterns: [{ regex: '^v\\d+$' }], keyBuilder: () => undefined },
       },
-      { env: 'ci', repeat: 3 },
+      { env: 'ci', passes: 3 },
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;

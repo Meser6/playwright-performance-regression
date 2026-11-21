@@ -188,11 +188,11 @@
       "run": {
         "env": null,
         "keepReporters": [],
-        "projects": "auto",
-        "repeat": {
+        "passes": {
           "test": 5,
           "thresholds": 10
-        }
+        },
+        "projects": "auto"
       },
       "thresholds": {
         "dir": ".",
@@ -253,6 +253,11 @@
     "mode": "test",
     "normalization": "0123456789abcd",
     "origins": [],
+    "passes": {
+      "completed": 1,
+      "failed": [],
+      "planned": 1
+    },
     "playwright": {
       "version": "1.57.0"
     },
@@ -483,11 +488,11 @@
       "run": {
         "env": null,
         "keepReporters": [],
-        "projects": "auto",
-        "repeat": {
+        "passes": {
           "test": 5,
           "thresholds": 10
-        }
+        },
+        "projects": "auto"
       },
       "thresholds": {
         "dir": ".",
@@ -548,6 +553,11 @@
     "mode": "test",
     "normalization": "0123456789abcd",
     "origins": [],
+    "passes": {
+      "completed": 1,
+      "failed": [],
+      "planned": 1
+    },
     "playwright": {
       "version": "1.57.0"
     },

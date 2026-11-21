@@ -19,7 +19,7 @@ export default class RecordReporter {
         mode: state.mode,
         measuredProjects: state.measuredProjects,
         runConditions: state.runConditions,
-        repeat: state.config.run.repeat.test,
+        passes: state.config.run.passes.test,
         origins: state.config.keys.origins,
       },
     };

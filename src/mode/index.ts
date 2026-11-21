@@ -7,7 +7,12 @@ export interface PerfModeState {
   mode: 'test' | 'thresholds' | 'check';
   /** PW_PERF_MAX_TESTS: measured tests a check runs, 1–1000 (04-REQ-49). */
   maxTests?: number;
-  repeat?: number;
+  /** PW_PERF_PASSES: passes of the test command (D-39); overrides run.passes.<mode>. */
+  passes?: number;
+  /** PW_PERF_PASS=k/N: set by the first pass for passes 2…N (04-REQ-64). */
+  pass?: { index: number; total: number };
+  /** PW_PERF_YES=1: skip the Continue? question of the start banner (04-REQ-65). */
+  yes?: boolean;
   env?: string;
   runId?: string;
   outcomeFile?: string;
@@ -17,6 +22,10 @@ export interface PerfModeState {
 export type ModeEnv = Readonly<Record<string, string | undefined>>;
 
 const MODE = 'PW_PERF_MODE';
+const PASSES = 'PW_PERF_PASSES';
+const PASS = 'PW_PERF_PASS';
+const YES = 'PW_PERF_YES';
+/** Replaced by PW_PERF_PASSES (D-39); a set value is an error with a hint. */
 const REPEAT = 'PW_PERF_REPEAT';
 const ENV = 'PW_PERF_ENV';
 const RUN_ID = 'PW_PERF_RUN_ID';
@@ -27,6 +36,9 @@ const MAX_TESTS = 'PW_PERF_MAX_TESTS';
 /** Every variable of the contract (01, chapter 6), e.g. for CLI_MODE_ALREADY_SET (04-REQ-09). */
 export const MODE_ENV_NAMES: readonly string[] = [
   MODE,
+  PASSES,
+  PASS,
+  YES,
   REPEAT,
   ENV,
   RUN_ID,
@@ -47,11 +59,20 @@ const POSITIVE_INTEGER = /^[1-9][0-9]*$/u;
 const ENV_LABEL = /^[a-z0-9-]{1,32}$/u;
 
 /**
- * Number of repetitions from the text of PW_PERF_REPEAT or --repeat: an integer >= 1, else null.
+ * Number of passes from the text of PW_PERF_PASSES or --passes: an integer >= 1, else null.
  * The upper bound comes from the config schema (resolveConfig, 04-REQ-06).
  */
-export function parseRepeat(text: string): number | null {
+export function parsePasses(text: string): number | null {
   return POSITIVE_INTEGER.test(text) ? Number(text) : null;
+}
+
+/** PW_PERF_PASS=k/N with 2 <= k <= N <= 1000 (01, chapter 6), else null. */
+export function parsePass(text: string): { index: number; total: number } | null {
+  const match = /^([1-9][0-9]*)\/([1-9][0-9]*)$/u.exec(text);
+  if (match === null) return null;
+  const index = Number(match[1]);
+  const total = Number(match[2]);
+  return index >= 2 && index <= total && total <= 1000 ? { index, total } : null;
 }
 
 /** Whether `text` is a valid environment label (PW_PERF_ENV, --env; D-18). */
@@ -60,7 +81,7 @@ export function isEnvLabel(text: string): boolean {
 }
 
 /** Expected format of a repetition count and of an environment label, for messages. */
-export const REPEAT_FORMAT = 'an integer >= 1, like "5"';
+export const PASSES_FORMAT = 'an integer >= 1, like "5"';
 export const ENV_LABEL_FORMAT =
   'a label of lowercase letters, digits and "-" (at most 32 characters), like "staging"';
 
@@ -115,16 +136,51 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
 
   const repeat = read(env, REPEAT);
   if (repeat !== undefined) {
-    const parsed = parseRepeat(repeat);
-    if (parsed !== null) state.repeat = parsed;
+    issues.push({
+      code: 'MODE_INVALID_VALUE',
+      message: `${REPEAT} is no longer supported, got ${JSON.stringify(repeat)}`,
+      hint: `Renamed to ${PASSES}: the test command now runs once per pass. Use ${PASSES}=${repeat}.`,
+    });
+  }
+
+  const passes = read(env, PASSES);
+  if (passes !== undefined) {
+    const parsed = parsePasses(passes);
+    if (parsed !== null) state.passes = parsed;
     else {
       issues.push(
         invalid(
-          REPEAT,
-          REPEAT_FORMAT,
-          repeat,
-          `Fix the number of repetitions per test, or unset ${REPEAT} to use run.repeat from the config.`,
+          PASSES,
+          PASSES_FORMAT,
+          passes,
+          `Fix the number of passes, or unset ${PASSES} to use run.passes from the config.`,
         ),
+      );
+    }
+  }
+
+  const pass = read(env, PASS);
+  if (pass !== undefined) {
+    const parsed = parsePass(pass);
+    if (parsed !== null) state.pass = parsed;
+    else {
+      issues.push(
+        invalid(
+          PASS,
+          '"k/N" with 2 <= k <= N, like "2/5"',
+          pass,
+          `${PASS} is set by the package for passes 2 and later; unset it.`,
+        ),
+      );
+    }
+  }
+
+  const yes = read(env, YES);
+  if (yes !== undefined) {
+    if (yes === '1') state.yes = true;
+    else {
+      issues.push(
+        invalid(YES, '"1"', yes, `Set ${YES}=1 to skip the Continue? question, or unset it.`),
       );
     }
   }
@@ -151,7 +207,7 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
 
   const maxTests = read(env, MAX_TESTS);
   if (maxTests !== undefined) {
-    const parsed = parseRepeat(maxTests);
+    const parsed = parsePasses(maxTests);
     if (parsed !== null && parsed <= 1000) state.maxTests = parsed;
     else {
       issues.push(
@@ -186,7 +242,10 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
 /** Variables for a child process that runs in the given mode (04-REQ-09); unset fields are left out. */
 export function writeModeState(state: PerfModeState): Record<string, string> {
   const env: Record<string, string> = { [MODE]: state.mode };
-  if (state.repeat !== undefined) env[REPEAT] = String(state.repeat);
+  if (state.passes !== undefined) env[PASSES] = String(state.passes);
+  if (state.pass !== undefined)
+    env[PASS] = `${String(state.pass.index)}/${String(state.pass.total)}`;
+  if (state.yes === true) env[YES] = '1';
   if (state.env !== undefined) env[ENV] = state.env;
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
   if (state.outcomeFile !== undefined) env[OUTCOME_FILE] = state.outcomeFile;
@@ -206,3 +265,7 @@ export { testArgsFromArgv, testFilters } from './playwright-args.ts';
 
 /** Name of the run id variable, for the main process of the environment mode (04-REQ-60). */
 export const RUN_ID_ENV = RUN_ID;
+/** Name of the pass variable, set for the processes of passes 2…N (04-REQ-64). */
+export const PASS_ENV = PASS;
+export { passCommand } from './pass-command.ts';
+export type { PassCommand } from './pass-command.ts';

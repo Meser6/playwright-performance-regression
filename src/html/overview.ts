@@ -161,9 +161,7 @@ export function kpis(ctx: Ctx): SafeHtml {
   const requests = endpoints.reduce((n, a) => n + a.count, 0);
   const failedRequests = endpoints.reduce((n, a) => n + a.errorCount, 0);
   const measured = r.runConditions.projects.filter((p) => p.role === 'measured');
-  const repeats = measured.map((p) => p.repeatEach);
-  const lo = Math.min(...repeats);
-  const hi = Math.max(...repeats);
+  const passes = r.passes;
   const t = r.tests;
   return join(
     html`<section class="kpis" aria-label="Key figures">`,
@@ -184,9 +182,12 @@ export function kpis(ctx: Ctx): SafeHtml {
       `${String(failedRequests)} of ${plural(requests, 'request')}`,
     ),
     tile('Run duration', formatRunDuration(r.startedAt, r.finishedAt), formatDate(r.startedAt)),
+    // Passes of the run (D-39); "4 of 5" when a pass gave no data (11, chapter 5).
     tile(
-      'Repetitions',
-      repeats.length === 0 ? DASH : lo === hi ? String(lo) : `${String(lo)}–${String(hi)}`,
+      'Passes',
+      passes.completed === passes.planned
+        ? String(passes.completed)
+        : `${String(passes.completed)} of ${String(passes.planned)}`,
       plural(measured.length, 'measured project'),
     ),
     tile(

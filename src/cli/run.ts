@@ -4,7 +4,6 @@ import { parseOutcome } from '../core/schema/index.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { CliIssue, Issue, Outcome, Result } from '../core/types/index.ts';
 import {
-  DEFAULT_MAX_TESTS,
   MODE_ENV_NAMES,
   checkStateFileName,
   generateRunId,
@@ -15,7 +14,7 @@ import type { ExitInput } from './exit.ts';
 import type { ChildProcessLike, CliHost, ForwardedSignal } from './host.ts';
 import { formatIssues, infoLine, outputStyle, resultLines } from './output.ts';
 import type { ParsedCommand } from './parse.ts';
-import { playwrightConfigArg, testFilters } from '../mode/playwright-args.ts';
+import { playwrightConfigArg } from '../mode/playwright-args.ts';
 import { withPerfReporterArg } from './reporter-arg.ts';
 
 export type RunCommand = Extract<ParsedCommand, { kind: 'run' }>;
@@ -64,7 +63,7 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
     warnings.push({
       code: 'CLI_MODE_ALREADY_SET',
       message: `${preset.join(', ')} ${preset.length === 1 ? 'is' : 'are'} already set in the environment; the CLI replaces ${preset.length === 1 ? 'it' : 'them'} for this run.`,
-      hint: 'Use the CLI options (--env, --repeat, --prune) instead of the variables, or run "npx playwright test" for the manual mode.',
+      hint: 'Use the CLI options (--env, --passes, --prune) instead of the variables, or run your test command with PW_PERF_MODE set.',
     });
   }
   const env: Record<string, string> = {};
@@ -75,7 +74,7 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
     env,
     writeModeState({
       mode: cmd.mode,
-      ...(cmd.repeat === undefined ? {} : { repeat: cmd.repeat }),
+      ...(cmd.passes === undefined ? {} : { passes: cmd.passes }),
       ...(cmd.maxTests === undefined ? {} : { maxTests: cmd.maxTests }),
       ...(cmd.env === undefined ? {} : { env: cmd.env }),
       runId: input.runId,
@@ -84,18 +83,9 @@ export function planRun(cmd: RunCommand, input: PlanInput): Result<RunPlan, CliI
     }),
   );
 
-  // The CLI does not load the Playwright config (01-REQ-24): without --repeat the number of
-  // repetitions is the config's, and the reporter prints the real test executions (04-REQ-20).
-  const repeats =
-    cmd.mode === 'check'
-      ? `the first test of each file, at most ${String(cmd.maxTests ?? DEFAULT_MAX_TESTS)} tests, once`
-      : cmd.repeat === undefined
-        ? `repeats per test from run.repeat.${cmd.mode}`
-        : `${cmd.repeat} ${cmd.repeat === 1 ? 'repeat' : 'repeats'} per test`;
-  const lines = [`perf mode "${cmd.mode}", ${repeats}, 1 worker.`];
-  if (cmd.mode !== 'check' && !cmd.listOnly && testFilters(cmd.playwrightArgs).length === 0) {
-    lines.push('tip: measure a subset, e.g. --grep @perf or --project chromium.');
-  }
+  // The CLI prints nothing before the run: the start banner of the reporter shows the mode, the
+  // tests × passes, the estimate and the subset tip (04-REQ-20, 04-REQ-65).
+  const lines: string[] = [];
   return { ok: true, value: { args: args.value, env, lines, warnings } };
 }
 

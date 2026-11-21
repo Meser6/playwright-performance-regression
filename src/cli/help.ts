@@ -4,10 +4,10 @@ import { DEFAULT_CONFIG } from '../core/config/index.ts';
 import { CLI_COMMAND } from '../core/types/index.ts';
 import type { HelpTopic } from './parse.ts';
 
-const REPEAT_NOTE = [
-  'Note: every test runs several times in one worker. Tests that create data with unique',
-  'constraints may conflict between repetitions: make the data unique per repetition, or',
-  'leave such tests out with --grep-invert.',
+const PASSES_NOTE = [
+  'Note: the test command runs once per pass (run.passes), with its data setup steps, in one',
+  'worker. Tests that create data with unique constraints must make it unique per pass, or be',
+  'left out with --grep-invert. PW_PERF_YES=1 skips the "Continue?" question.',
 ];
 
 const EXIT_CODES = [
@@ -45,7 +45,7 @@ const GENERAL = [
   '',
   'Options (test, thresholds, check):',
   '  --env <label>      Environment label; selects pw-perf-thresholds[.steps].<label>.json',
-  '  --repeat <n>       Repetitions per test for this run',
+  '  --passes <n>       Passes of the test command for this run (each test runs once per pass)',
   '  --prune            (thresholds) Remove unlocked entries of keys not seen in this run',
   '  --max-tests <n>    (check) Run at most n measured tests, the first of each file (default 10)',
   '',
@@ -54,33 +54,33 @@ const GENERAL = [
   `Run "${CLI_COMMAND} <command> --help" for the options of a command, "${CLI_COMMAND} --version"`,
   'for the version.',
   '',
-  ...REPEAT_NOTE,
+  ...PASSES_NOTE,
   '',
   ...EXIT_CODES,
 ];
 
 const TEST = [
-  `Usage: ${CLI_COMMAND} test [--env <label>] [--repeat <n>] [playwright test arguments]`,
+  `Usage: ${CLI_COMMAND} test [--env <label>] [--passes <n>] [playwright test arguments]`,
   '',
   'Runs the tests in perf mode, measures the backend requests, evaluates them against the',
   'thresholds files and fails on a regression.',
   '',
   'Options:',
   '  --env <label>   Environment label; selects pw-perf-thresholds[.steps].<label>.json (overrides run.env)',
-  '  --repeat <n>    Repetitions per test for this run (overrides run.repeat.test)',
+  '  --passes <n>    Passes of the test command for this run (overrides run.passes.test)',
   '  -h, --help      Show this help',
   '',
   ...PASS_THROUGH,
   '',
   `Example: ${CLI_COMMAND} test --grep @perf`,
   '',
-  ...REPEAT_NOTE,
+  ...PASSES_NOTE,
   '',
   ...EXIT_CODES,
 ];
 
 const THRESHOLDS = [
-  `Usage: ${CLI_COMMAND} thresholds [--env <label>] [--repeat <n>] [--prune] [playwright test arguments]`,
+  `Usage: ${CLI_COMMAND} thresholds [--env <label>] [--passes <n>] [--prune] [playwright test arguments]`,
   `       ${CLI_COMMAND} thresholds --from <report.json> [--env <label>] [--prune] [--config <file>]`,
   '',
   'Runs the tests in perf mode without the gate and writes the thresholds files, or derives them',
@@ -89,7 +89,7 @@ const THRESHOLDS = [
   'Options:',
   '  --env <label>      Environment label; the files pw-perf-thresholds[.steps].<label>.json are written',
   '                     (with --from: default is the label of the report)',
-  '  --repeat <n>       Repetitions per test for this run (overrides run.repeat.thresholds)',
+  '  --passes <n>       Passes of the test command for this run (overrides run.passes.thresholds)',
   '  --prune            Remove unlocked entries of keys not seen in the run; not with a test filter',
   '  --from <file>      Derive the thresholds from this report.json; no Playwright arguments',
   '  --config <file>    (with --from) Package config file; default: pw-perf.config.* in the current',
@@ -98,7 +98,7 @@ const THRESHOLDS = [
   '',
   ...PASS_THROUGH,
   '',
-  ...REPEAT_NOTE,
+  ...PASSES_NOTE,
   '',
   'Exit codes: 0 ok · 3 tool or config error, or an untrustworthy run (nothing is written)',
   '· 130/143 interrupted (SIGINT/SIGTERM)',

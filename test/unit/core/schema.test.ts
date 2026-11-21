@@ -513,6 +513,21 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(JSON.stringify(migrated)).not.toMatch(/"kind":"custom"/u);
   });
 
+  test('02-AC-19 v1 and v2 reports migrate to one pass and run.passes from run.repeat', () => {
+    for (const [version, text] of [
+      ['v1', raw('run-report', 'v1', 'full-run.json')],
+      ['v2', reportV2Text],
+    ] as const) {
+      const before = (JSON.parse(text) as { config: { run: { repeat: unknown } } }).config.run;
+      const result = parseRunReport(text, `${version}.json`);
+      if (!result.ok) throw new Error(JSON.stringify(result.issues));
+      const migrated = result.value;
+      expect(migrated.passes, version).toEqual({ planned: 1, completed: 1, failed: [] });
+      expect(migrated.config.run?.passes, version).toEqual(before.repeat);
+      expect(migrated.config.run, version).not.toHaveProperty('repeat');
+    }
+  });
+
   test('02-AC-18 a v1 api thresholds file migrates to v2 with the same entries', () => {
     const v1Text = raw('thresholds', 'v1', 'generated-api-file.json');
     const v1 = JSON.parse(v1Text) as Json;

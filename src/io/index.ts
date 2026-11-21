@@ -2,13 +2,17 @@
 export {
   directoryOf,
   fileExists,
+  listDirSync,
   readTextFile,
+  readTextFileSync,
   relativeSlashPath,
   removeFileSync,
   resolvePath,
   tempPath,
 } from './files.ts';
 export { writeJsonStable, writeTextAtomic } from './json.ts';
+export { askTerminal, runPass } from './process.ts';
+export type { PassExit } from './process.ts';
 export { readPackageInfo } from './package-info.ts';
 export type { PackageInfo } from './package-info.ts';
 export { readCiInfo, readHostInfo } from './run-metadata.ts';

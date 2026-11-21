@@ -156,7 +156,7 @@ describe('init wizard', () => {
       prompt: () => readlinePrompt(input, out, false),
     });
     expect(await main(['init'], fake.host)).toBe(0);
-    expect(output).toContain('Repetitions per test in measurement runs? (5)');
+    expect(output).toContain('Passes of the test command in measurement runs? (5)');
     expect(output).toContain('Run a first thresholds run now? (y/N)');
     const golden = readFileSync(join(INIT_GOLDEN, 'esm-ts-answers.diff'), 'utf8');
     expect(snapshotDiff(before, snapshot(dir))).toBe(golden);
@@ -289,7 +289,7 @@ describe('init wizard', () => {
     );
     expect(script.asked[1]).toBe('  Language / Język? [en/es/fr/pl/it/uk/ru] (en) ');
     expect(script.asked[2]).toBe('  Naciśnij Enter, aby kontynuować. ');
-    expect(script.asked).toContain('  Ile powtórzeń każdego testu w pomiarze? (5) ');
+    expect(script.asked).toContain('  Ile przebiegów polecenia testów w pomiarze? (5) ');
     expect(script.asked).toContain('  Zacząć w trybie warn-only przez pierwsze tygodnie? (T/n) ');
   });
 

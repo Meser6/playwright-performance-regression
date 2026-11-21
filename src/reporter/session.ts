@@ -18,12 +18,18 @@ import {
 } from '../core/normalize/index.ts';
 import type { KeySample, KeyResult } from '../core/normalize/index.ts';
 import { buildRunReport, collapseIssues, nextHint, suggestCommand } from '../core/report/index.ts';
-import { estimateText, randomHostIssue } from '../core/check/index.ts';
+import { estimateText, msPerTest, randomHostIssue, startEstimate } from '../core/check/index.ts';
 import type { CommandContext, PerfMode, WrittenFile } from '../core/report/index.ts';
 import { StepRecorder } from './steps.ts';
 import type { RunReportInput } from '../core/report/index.ts';
-import { SCHEMA_VERSIONS, parseSampleBatch, schemaIssueToIssue } from '../core/schema/index.ts';
-import { Aggregator, addKeyedRequest } from '../core/stats/index.ts';
+import {
+  SCHEMA_VERSIONS,
+  parseRunReport,
+  parseSampleBatch,
+  schemaIssueToIssue,
+} from '../core/schema/index.ts';
+import { addKeyedRequest, resultId } from '../core/stats/index.ts';
+import type { TestMeta } from '../core/stats/index.ts';
 import type { Aggregates } from '../core/stats/index.ts';
 import {
   deriveThresholds,
@@ -37,26 +43,41 @@ import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
 import { nextLine, outcomeLine } from '../console/outcome-line.ts';
 import { formatCheckSummary } from '../console/check-summary.ts';
+import { asciiTerminal } from '../console/box.ts';
+import { formatStartBanner } from '../console/start-banner.ts';
 import { formatSummary } from '../console/summary.ts';
 import { formatThresholdsDiff } from '../console/thresholds-diff.ts';
 import { renderHtmlReport } from '../html/index.ts';
 import {
+  DEFAULT_MAX_TESTS,
   checkStateFileName,
   generateRunId,
+  isCiEnv,
+  passCommand,
   readModeState,
   testArgsFromArgv,
   testFilters,
+  writeModeState,
 } from '../mode/index.ts';
 import type { PerfModeState } from '../mode/index.ts';
 import { notWrappedWarning } from '../registry/index.ts';
 import type { RegisteredState, RunConditions } from '../registry/index.ts';
 import {
   duplicateBaseUrlLabels,
-  executionsLine,
+  measuredTestCount,
   overriddenLine,
   readRunConditions,
   runConditionsWarning,
 } from './begin.ts';
+import {
+  JournalAggregator,
+  isPassFileName,
+  parsePassFile,
+  passFileName,
+  replayEntries,
+  worseStatus,
+} from './pass-file.ts';
+import type { PassFile, TestCounts } from './pass-file.ts';
 import type { RunConditionsReport } from './begin.ts';
 import { hasTraceOrVideo, projectName, sampleAttachments, testMeta } from './samples.ts';
 import type {
@@ -118,7 +139,13 @@ export function runSettings(
   const mode: PerfModeState = read.ok && read.value !== null ? read.value : { mode: 'test' };
   const resolved = resolveConfig(undefined, {
     mode: mode.mode === 'check' ? 'test' : mode.mode,
-    ...(mode.repeat === undefined ? {} : { repeat: mode.repeat }),
+    ...(mode.mode === 'check'
+      ? {}
+      : mode.pass !== undefined
+        ? { passes: mode.pass.total }
+        : mode.passes === undefined
+          ? {}
+          : { passes: mode.passes }),
     ...(mode.env === undefined ? {} : { env: mode.env }),
   });
   if (!resolved.ok) throw new Error('the default package config is not valid');
@@ -171,7 +198,7 @@ export class RunSession {
   private measured: ReadonlySet<string> = new Set();
   private conditions: RunConditionsReport;
   private normalization: string;
-  private aggregator: Aggregator;
+  private aggregator: JournalAggregator;
   private keyOf: (sample: KeySample) => KeyResult;
   private readonly steps: StepRecorder;
   /** onBegin failed: the evaluation is not possible. */
@@ -179,8 +206,17 @@ export class RunSession {
   private testsStarted = 0;
   private readonly testsSeen = new Set<TestLike>();
   private notInstrumented = 0;
-  private retried = 0;
   private withArtifacts = 0;
+  /** Test counts of the passes 2…N merged into this one (04-REQ-64). */
+  private readonly mergedTests: TestCounts = { expected: 0, unexpected: 0, flaky: 0, skipped: 0 };
+  /** Passes merged into the report and passes without data (02-REQ-37). */
+  private completedPasses = 1;
+  private readonly failedPasses: number[] = [];
+  /** Warnings and tool errors before onBegin ended: the same in every pass. */
+  private beginWarnings = 0;
+  private beginToolErrors = 0;
+  /** "n" to the Continue? question (04-REQ-65): the run ends without output. */
+  private cancelled = false;
   private readonly pending = new Map<string, number>();
   /** Check (04, chapter 4.11): counters for the output and the estimate. */
   private readonly checkRun = {
@@ -228,14 +264,20 @@ export class RunSession {
     return this.settings.mode.mode === 'check';
   }
 
-  private get repeat(): number {
+  /** Passes of the run (D-39): one in a check, N of PW_PERF_PASS=k/N in passes 2…N. */
+  private get passes(): number {
     if (this.check) return 1;
-    return this.settings.config.run.repeat[this.mode];
+    return this.settings.mode.pass?.total ?? this.settings.config.run.passes[this.mode];
   }
 
-  private createAggregator(): Aggregator {
+  /** Number of this pass, from 1 (04-REQ-64). */
+  private get passIndex(): number {
+    return this.check ? 1 : (this.settings.mode.pass?.index ?? 1);
+  }
+
+  private createAggregator(): JournalAggregator {
     const cfg = this.settings.config;
-    return new Aggregator({
+    return new JournalAggregator({
       advanced: cfg.advanced,
       successStatuses: cfg.measure.successStatuses,
       errors: cfg.checks.errors,
@@ -265,15 +307,17 @@ export class RunSession {
     const io = this.host.io;
     this.configDir =
       config.configFile === undefined ? config.rootDir : io.directoryOf(config.configFile);
-    // The outcome of an earlier run must never be read by a CI job (04-REQ-62).
+    // The outcome of an earlier run must never be read by a CI job (04-REQ-62); pass files of an
+    // earlier run must never be merged (02-REQ-36). Passes 2…N leave both alone.
     const outcomeFile = this.outcomePath();
-    if (this.environmentMode && outcomeFile !== null) {
+    if (this.passIndex === 1 && this.environmentMode && outcomeFile !== null) {
       try {
         io.removeFileSync(outcomeFile);
       } catch {
         // A file that cannot be removed is overwritten in onEnd.
       }
     }
+    if (this.passIndex === 1 && !this.check) this.removePassFiles();
     this.maxFailures = config.maxFailures;
     const names = this.settings.measuredProjects ?? config.projects.map((p) => p.name);
     this.measured = new Set(names);
@@ -299,7 +343,7 @@ export class RunSession {
     this.aggregator = this.createAggregator();
 
     if (this.settings.registered) {
-      const changed = runConditionsWarning(this.conditions, this.repeat);
+      const changed = runConditionsWarning(this.conditions);
       if (changed !== null) this.warnings.push(changed);
     }
     const duplicate = duplicateBaseUrlLabels(this.conditions, config, keys);
@@ -315,17 +359,97 @@ export class RunSession {
       });
     }
 
+    this.beginWarnings = this.warnings.length;
+    this.beginToolErrors = this.toolErrors.length;
+    if (this.passes > 1) this.aggregator.journal = [];
+    if (this.passIndex > 1) {
+      this.info(`pass ${String(this.passIndex)}/${String(this.passes)} (perf mode "${this.mode}")`);
+      return;
+    }
     const overridden = overriddenLine(this.settings.runConditions);
     if (overridden !== null) this.info(overridden);
-    this.info(
-      executionsLine(
-        this.settings.mode.mode,
-        suite.allTests(),
-        this.measured,
-        this.repeat,
-        config.workers,
-      ),
+    this.host.stdout.write(this.startBanner(suite));
+    this.confirm();
+  }
+
+  /** report.dir as an absolute path. */
+  private reportDir(): string {
+    const io = this.host.io;
+    return io.resolvePath(this.configDir, this.settings.config.report.dir);
+  }
+
+  /** Removes pass-<k>.json files of an earlier run (02-REQ-36). */
+  private removePassFiles(): void {
+    const io = this.host.io;
+    const dir = this.reportDir();
+    for (const name of io.listDirSync(dir)) {
+      if (!isPassFileName(name)) continue;
+      try {
+        io.removeFileSync(io.resolvePath(dir, name));
+      } catch {
+        // A left-over file has another run id and is never merged.
+      }
+    }
+  }
+
+  /** Time per test execution of the last run report in report.dir (04-REQ-66), or null. */
+  private lastMsPerTest(): number | null {
+    const path = this.host.io.resolvePath(this.reportDir(), 'report.json');
+    const text = this.host.io.readTextFileSync(path);
+    if (text === null) return null;
+    const parsed = parseRunReport(text, path);
+    return parsed.ok ? msPerTest(parsed.value) : null;
+  }
+
+  /** The start banner (04-REQ-65). */
+  private startBanner(suite: RootSuiteLike): string {
+    const cfg = this.settings.config;
+    const io = this.host.io;
+    const tests = measuredTestCount(suite.allTests(), this.measured);
+    const file = cfg.report.html ? 'report.html' : 'report.json';
+    const { width, color } = this.terminal();
+    return formatStartBanner(
+      {
+        packageName: 'pw-perf',
+        mode: this.settings.mode.mode,
+        measured: this.conditions.projects.filter((p) => p.role === 'measured').map((p) => p.name),
+        dependencies: this.conditions.projects
+          .filter((p) => p.role !== 'measured')
+          .map((p) => p.name),
+        tests,
+        passes: this.passes,
+        maxTests: this.settings.mode.maxTests ?? DEFAULT_MAX_TESTS,
+        estimate: this.check
+          ? null
+          : startEstimate({ tests, passes: this.passes, msPerTest: this.lastMsPerTest() }),
+        report: this.check
+          ? null
+          : io.relativeSlashPath(this.host.cwd, io.resolvePath(this.reportDir(), file)),
+        tip: testFilters(testArgsFromArgv(this.host.argv)).length === 0,
+      },
+      { width, color, ascii: asciiTerminal(this.host.env) },
     );
+  }
+
+  /**
+   * "Continue? (Y/n)" in a terminal outside CI, without PW_PERF_YES=1 (04-REQ-65). "n" ends the
+   * process with 130.
+   */
+  private confirm(): void {
+    if (this.check || this.settings.mode.yes === true) return;
+    if (this.host.stdout.isTTY !== true || this.host.ci !== null || isCiEnv(this.host.env)) return;
+    for (;;) {
+      const answer = this.host.ask('Continue? (Y/n) ');
+      if (answer === null) return;
+      const text = answer.trim().toLowerCase();
+      if (text === '' || text === 'y' || text === 'yes') return;
+      if (text === 'n' || text === 'no') {
+        this.cancelled = true;
+        this.info('cancelled');
+        this.host.exit(130);
+        return;
+      }
+    }
   }
 
   testBegin(): void {
@@ -334,14 +458,13 @@ export class RunSession {
 
   testEnd(test: TestLike, result: ResultLike): void {
     this.testsSeen.add(test);
-    if (result.retry > 0) this.retried += 1;
     if (hasTraceOrVideo(result)) this.withArtifacts += 1;
 
     const bodies = sampleAttachments(result);
     const measured = this.measured.has(projectName(test));
     if (this.check) this.countCheck(test, result, measured);
     const relative = (file: string): string => this.host.io.relativeSlashPath(this.configDir, file);
-    const meta = testMeta(test, result, relative(test.location.file));
+    const meta = this.passMeta(testMeta(test, result, relative(test.location.file)), test);
     // Steps come from the result, not from the batch, so they are read without it (06-REQ-16).
     this.steps.record(this.aggregator, test, result.steps, meta, relative);
     if (bodies.length === 0) {
@@ -392,6 +515,17 @@ export class RunSession {
     this.aggregator.endResult(meta);
   }
 
+  /**
+   * In pass k the repetition index moves by (k − 1) × repeatEach of the test's project, so the
+   * results of one test in different passes have different resultIds (08-REQ-08, D-39).
+   */
+  private passMeta(meta: TestMeta, test: TestLike): TestMeta {
+    if (this.passIndex === 1) return meta;
+    const project = this.conditions.projects.find((p) => p.name === meta.project);
+    const index = (this.passIndex - 1) * (project?.repeatEach ?? 1) + test.repeatEachIndex;
+    return { ...meta, repeatEachIndex: index, resultId: resultId(test.id, index, meta.retry) };
+  }
+
   /** Warnings known only at the end of the run (09, chapter 12.1). */
   private runWarnings(): Issue[] {
     const issues: Issue[] = [];
@@ -411,13 +545,6 @@ export class RunSession {
         code: 'TESTS_NOT_INSTRUMENTED',
         message: `${plural(this.notInstrumented, 'test result')} of measured projects ${this.notInstrumented === 1 ? 'has' : 'have'} no ${SAMPLES_ATTACHMENT_NAME} attachment, so ${this.notInstrumented === 1 ? 'it was' : 'they were'} not measured.`,
         hint: 'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test"); a crashed worker also loses the attachment.',
-      });
-    }
-    if (this.retried > 0) {
-      issues.push({
-        code: 'RUN_CONDITIONS_CHANGED',
-        message: `${plural(this.retried, 'test result is a retry', 'test results are retries')} (retry > 0), although perf mode sets retries to 0; samples of retries are counted.`,
-        hint: 'Remove retries set in test files (test.describe.configure({ retries })) for perf-mode runs.',
       });
     }
     if (this.withArtifacts > 0) {
@@ -445,10 +572,24 @@ export class RunSession {
     };
   }
 
-  private testsResult(status: FullResultLike['status']): RunReport['tests'] {
-    const tests = { status, expected: 0, unexpected: 0, flaky: 0, skipped: 0 };
+  /** Test counts of this pass only. */
+  private ownTests(): TestCounts {
+    const tests = { expected: 0, unexpected: 0, flaky: 0, skipped: 0 };
     for (const test of this.testsSeen) tests[test.outcome()] += 1;
     return tests;
+  }
+
+  /** Test counts of the run: the sum over the merged passes (02-REQ-37). */
+  private testsResult(status: FullResultLike['status']): RunReport['tests'] {
+    const own = this.ownTests();
+    const merged = this.mergedTests;
+    return {
+      status,
+      expected: own.expected + merged.expected,
+      unexpected: own.unexpected + merged.unexpected,
+      flaky: own.flaky + merged.flaky,
+      skipped: own.skipped + merged.skipped,
+    };
   }
 
   private source(): RunSource {
@@ -489,6 +630,11 @@ export class RunSession {
       config: this.settings.snapshot,
       normalization: this.normalization,
       stepNormalization: this.steps.fingerprint(),
+      passes: {
+        planned: this.passes,
+        completed: this.completedPasses,
+        failed: [...this.failedPasses],
+      },
       runConditions: this.conditions,
       tests: this.testsResult(status),
       aggregates,
@@ -514,15 +660,20 @@ export class RunSession {
    * outcome exit code is not 0, otherwise nothing, so Playwright keeps its own (01-REQ-17).
    */
   async end(result: FullResultLike): Promise<{ status?: FullResultLike['status'] } | undefined> {
+    if (this.cancelled) return undefined;
+    // Passes 2…N only write their data for the first pass (04-REQ-64).
+    if (this.passIndex > 1) return this.endLaterPass(result);
     // --list, or a filter that selected no test: no report, no outcome, no status (01-REQ-40).
     if (this.testsStarted === 0) return undefined;
     if (this.check) return this.endCheck(result);
+    let status = result.status;
     let outcome: Outcome;
     try {
-      outcome = await this.finish(result);
+      if (this.passes > 1) status = await this.runPasses(result);
+      outcome = await this.finish({ status });
     } catch (error) {
       this.recordInternalError('onEnd', error);
-      outcome = this.fallbackOutcome(result);
+      outcome = this.fallbackOutcome({ status });
       for (const issue of outcome.toolErrors) {
         this.host.stderr.write(`${PACKAGE_NAME}: ${issue.code}: ${issue.message}\n`);
       }
@@ -535,7 +686,160 @@ export class RunSession {
     if (this.next !== null) {
       this.host.stdout.write(nextLine(this.next, this.terminal().color));
     }
-    return outcome.exitCode === 0 ? undefined : { status: 'failed' };
+    // A failed test in a later pass fails the command like in one run (04-REQ-64).
+    const testsFailed = status === 'failed' && result.status === 'passed' && this.environmentMode;
+    return outcome.exitCode === 0 && !testsFailed ? undefined : { status: 'failed' };
+  }
+
+  /** Data of this pass for the first pass (02-REQ-36). */
+  private passFile(status: FullResultLike['status'], finishedAt: Date): PassFile {
+    return {
+      format: 'pw-perf-pass',
+      schemaVersion: 1,
+      toolVersion: this.settings.packageVersion,
+      runId: this.runId,
+      pass: { index: this.passIndex, total: this.passes },
+      startedAt: this.startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      status,
+      tests: this.ownTests(),
+      counters: {
+        testsStarted: this.testsStarted,
+        notInstrumented: this.notInstrumented,
+        withArtifacts: this.withArtifacts,
+        instrumentedProjects: [...this.instrumentedProjects].sort(),
+        projectsWithRequests: [...this.projectsWithRequests].sort(),
+        pending: Object.fromEntries([...this.pending].sort((a, b) => (a[0] < b[0] ? -1 : 1))),
+      },
+      warnings: this.warnings.slice(this.beginWarnings),
+      toolErrors: this.toolErrors.slice(this.beginToolErrors),
+      entries: this.aggregator.journal ?? [],
+    };
+  }
+
+  private passPath(index: number): string {
+    return this.host.io.resolvePath(this.reportDir(), passFileName(index));
+  }
+
+  /** onEnd of pass k > 1 (04-REQ-64): the pass file and one line, no evaluation. */
+  private async endLaterPass(
+    result: FullResultLike,
+  ): Promise<{ status?: FullResultLike['status'] } | undefined> {
+    const label = `pass ${String(this.passIndex)}/${String(this.passes)}`;
+    const file = this.passFile(result.status, this.host.now());
+    const path = this.passPath(this.passIndex);
+    try {
+      await this.host.io.writeJsonStable(path, file);
+    } catch (error) {
+      this.host.stderr.write(
+        `${PACKAGE_NAME}: ${label}: the pass file could not be written to ${path}: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return undefined;
+    }
+    const samples = file.entries.filter((e) => e[0] !== 'e').length;
+    this.info(`${label} done: ${plural(this.testsStarted, 'test')}, ${plural(samples, 'sample')}.`);
+    return undefined;
+  }
+
+  /**
+   * Passes 2…N of the first pass (04-REQ-63, 04-REQ-64): writes pass-1.json, runs every further
+   * pass with the same command and merges its pass file. Returns the status of the run.
+   */
+  private async runPasses(result: FullResultLike): Promise<FullResultLike['status']> {
+    let status = result.status;
+    if (status !== 'passed' && status !== 'failed') return status;
+    const io = this.host.io;
+    try {
+      await io.writeJsonStable(this.passPath(1), this.passFile(status, this.host.now()));
+    } catch {
+      // The data of pass 1 stay in memory; the file is only for diagnosis.
+    }
+    this.aggregator.journal = null;
+    const total = this.passes;
+    const command = passCommand({
+      execPath: this.host.execPath,
+      argv: this.host.argv,
+      env: this.host.env,
+      scripts: io.readPackageInfo(this.host.cwd).scripts ?? {},
+    });
+    const shown = [command.file, ...command.args].join(' ');
+    for (let index = 2; index <= total; index += 1) {
+      const label = `pass ${String(index)}/${String(total)}`;
+      this.info(`${label}: starting ${shown}`);
+      const env = {
+        ...this.host.env,
+        ...writeModeState({ ...this.settings.mode, runId: this.runId, pass: { index, total } }),
+      };
+      const exit = await this.host.runPass(command, env);
+      if (exit.error !== undefined) {
+        this.toolErrors.push({
+          code: 'RUN_PASS_SPAWN_FAILED',
+          message: `${label} could not be started (${shown}): ${exit.error}`,
+          hint: 'Check that the test command runs on its own; set run.passes to 1 to measure in one pass.',
+        });
+        break;
+      }
+      if (exit.signal !== null || exit.code === 130 || exit.code === 143) {
+        const rest =
+          index < total
+            ? `passes ${String(index + 1)}–${String(total)} did not run`
+            : 'it was the last pass';
+        this.toolErrors.push({
+          code: 'RUN_PASS_INTERRUPTED',
+          message: `${label} was interrupted (${exit.signal ?? `exit code ${String(exit.code)}`}); ${rest}.`,
+          hint: 'Run the measurement again; the evaluation of the completed passes is in the report.',
+        });
+        break;
+      }
+      const path = this.passPath(index);
+      let text: string | null;
+      try {
+        text = await io.readTextFile(path);
+      } catch {
+        text = null;
+      }
+      const parsed =
+        text === null
+          ? { ok: false as const, reason: 'no pass file was written' }
+          : parsePassFile(text, {
+              toolVersion: this.settings.packageVersion,
+              runId: this.runId,
+              index,
+              total,
+            });
+      if (!parsed.ok) {
+        this.failedPasses.push(index);
+        this.warnings.push({
+          code: 'RUN_PASS_FAILED',
+          message: `${label} produced no results (exit code ${String(exit.code)}: ${parsed.reason}), e.g. a setup step of the test script failed.`,
+          hint: 'The evaluation uses the other passes; check the output of that pass above.',
+        });
+        continue;
+      }
+      this.mergePass(parsed.value);
+      status = worseStatus(status, parsed.value.status);
+    }
+    return status;
+  }
+
+  /** Adds the data of a later pass to this run (04-REQ-64). */
+  private mergePass(file: PassFile): void {
+    replayEntries(this.aggregator, file.entries);
+    for (const name of ['expected', 'unexpected', 'flaky', 'skipped'] as const) {
+      this.mergedTests[name] += file.tests[name];
+    }
+    const c = file.counters;
+    this.testsStarted += c.testsStarted;
+    this.notInstrumented += c.notInstrumented;
+    this.withArtifacts += c.withArtifacts;
+    for (const p of c.instrumentedProjects) this.instrumentedProjects.add(p);
+    for (const p of c.projectsWithRequests) this.projectsWithRequests.add(p);
+    for (const [key, n] of Object.entries(c.pending)) {
+      this.pending.set(key, (this.pending.get(key) ?? 0) + n);
+    }
+    this.warnings.push(...file.warnings);
+    this.toolErrors.push(...file.toolErrors);
+    this.completedPasses += 1;
   }
 
   private async finish(result: FullResultLike): Promise<Outcome> {
@@ -881,8 +1185,8 @@ export class RunSession {
           toolErrors: collapseIssues(toolErrors),
           estimate: estimateText({
             tests: c.selected,
-            repeatTest: this.settings.mode.repeat ?? cfg.run.repeat.test,
-            repeatThresholds: cfg.run.repeat.thresholds,
+            passesTest: this.settings.mode.passes ?? cfg.run.passes.test,
+            passesThresholds: cfg.run.passes.thresholds,
             meanMs,
             setupMs: c.setupMs,
           }),

@@ -141,15 +141,15 @@ describe('reporter with real Playwright', () => {
       expect(report.endpoints['GET /api/orders']?.count).toBe(5);
       expect(report.runConditions).toMatchObject({
         workers: 1,
-        projects: [{ name: 'chromium', role: 'measured', repeatEach: 5, retries: 0 }],
+        projects: [{ name: 'chromium', role: 'measured', repeatEach: 1, retries: 0 }],
       });
+      expect(report.passes).toEqual({ planned: 5, completed: 5, failed: [] });
       expect(codes(report.warnings)).toEqual(expect.arrayContaining(['THRESHOLDS_FILE_MISSING']));
       expect(report.toolErrors).toEqual([]);
       expect(run.outcome).toMatchObject({ runId: 'run-1', exitCode: 0 });
       expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'pw-perf-results', 'report.json'));
-      expect(run.output).toContain(
-        'playwright-performance-regression: perf mode "test": 20 test executions (4 tests × 5 repeats), 1 worker.',
-      );
+      expect(run.output).toContain('Tests     4 tests × 5 passes = 20 test runs');
+      expect(run.output).toContain('playwright-performance-regression: pass 5/5 done: 4 tests');
       expect(run.output).toContain('PASSED');
     },
     RUN_TIMEOUT,
@@ -215,17 +215,17 @@ describe('reporter with real Playwright', () => {
   );
 
   test(
-    '04-AC-16 retries configured in a test file give RUN_CONDITIONS_CHANGED',
+    '04-AC-16 retries of the Playwright config stay; both attempts are measured and the test is flaky',
     async () => {
       const run = await runPlaywright({ PW_PERF_MODE: 'test', INTEGRATION_RETRIES: '1' });
-      expect(run.report?.tests.flaky, run.output).toBe(5);
-      const changed = (run.report?.warnings ?? []).filter(
-        (w) => w.code === 'RUN_CONDITIONS_CHANGED',
-      );
-      // FullProject.retries stays 0: only the results show the retries (04-REQ-19).
-      expect(changed.map((w) => w.message)).toEqual([
-        '5 test results are retries (retry > 0), although perf mode sets retries to 0; samples of retries are counted.',
-      ]);
+      expect(run.report?.tests, run.output).toMatchObject({ flaky: 5, unexpected: 0 });
+      expect(run.report?.runConditions.projects[0]?.retries).toBe(1);
+      // One call per attempt, two attempts in each of the 5 passes.
+      expect(run.report?.endpoints['GET /api/cart']?.count).toBe(10);
+      expect(run.report?.endpoints['GET /api/cart']?.fromFailedTests).toBe(5);
+      const warnings = codes(run.report?.warnings ?? []);
+      expect(warnings).not.toContain('RUN_CONDITIONS_CHANGED');
+      expect(warnings).not.toContain('TESTS_FAILED');
       expect(run.outcome?.exitCode).toBe(0);
     },
     RUN_TIMEOUT,

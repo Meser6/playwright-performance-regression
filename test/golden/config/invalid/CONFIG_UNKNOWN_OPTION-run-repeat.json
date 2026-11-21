@@ -1,0 +1,5 @@
+{
+  "name": "run.repeat was renamed to run.passes (D-39)",
+  "input": { "run": { "repeat": { "test": 5 } } },
+  "expected": { "code": "CONFIG_UNKNOWN_OPTION", "paths": ["run.repeat"] }
+}

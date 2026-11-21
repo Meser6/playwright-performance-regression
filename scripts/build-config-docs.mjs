@@ -250,8 +250,8 @@ export default withPerf(defineConfig({ /* your config */ }), perfConfig);
   default list, spread \`perfDefaults\` as in the example above.
 - URL patterns may be \`RegExp\` objects and \`keys.keyBuilder\` may be a function only in a
   TypeScript or JavaScript config; a JSON config uses \`{ "regex": "...", "flags": "..." }\`.
-- \`PW_PERF_ENV\` / \`--env\` override \`run.env\`, and \`PW_PERF_REPEAT\` / \`--repeat\` override
-  \`run.repeat.test\` or \`run.repeat.thresholds\` for the current mode (see [CLI](cli.md)).
+- \`PW_PERF_ENV\` / \`--env\` override \`run.env\`, and \`PW_PERF_PASSES\` / \`--passes\` override
+  \`run.passes.test\` or \`run.passes.thresholds\` for the current mode (see [CLI](cli.md)).
 - The commands that run no tests (\`pw-perf thresholds --from\`, \`pw-perf report\`) load
   \`pw-perf.config.*\` themselves: \`--config <file>\`, else the file in the current directory or in
   the config directory of the report, else the config snapshot stored in the report.

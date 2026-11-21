@@ -4,7 +4,7 @@ const pending = process.env.PENDING_TIMEOUT_MS;
 const out = process.env.INTEGRATION_OUT ?? 'out';
 
 export default definePerfConfig({
-  run: { repeat: { test: 1 }, keepReporters: ['./record-reporter.mjs'] },
+  run: { passes: { test: 1 }, keepReporters: ['./record-reporter.mjs'] },
   report: { dir: `${out}/pw-perf-results` },
   measure: pending === undefined ? {} : { pendingTimeoutMs: Number(pending) },
 });

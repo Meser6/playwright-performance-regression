@@ -44,28 +44,24 @@ export function readRunConditions(
 }
 
 /**
- * RUN_CONDITIONS_CHANGED when the effective workers, retries or repeatEach differ from what
- * withPerf() set, e.g. after a Playwright command line flag (04-REQ-19).
+ * RUN_CONDITIONS_CHANGED when the effective workers or repeatEach differ from what withPerf()
+ * set, e.g. after a Playwright command line flag (04-REQ-19). Retries come from the config and
+ * are no deviation (D-38).
  */
-export function runConditionsWarning(
-  conditions: RunConditionsReport,
-  repeat: number,
-): Issue | null {
+export function runConditionsWarning(conditions: RunConditionsReport): Issue | null {
   const diffs: string[] = [];
   if (conditions.workers !== 1) diffs.push(`workers ${conditions.workers} (expected 1)`);
   for (const project of conditions.projects) {
-    const name = `project ${JSON.stringify(project.name)}`;
-    const expected = project.role === 'measured' ? repeat : 1;
-    if (project.repeatEach !== expected) {
-      diffs.push(`${name} repeatEach ${project.repeatEach} (expected ${expected})`);
+    if (project.repeatEach !== 1) {
+      const name = `project ${JSON.stringify(project.name)}`;
+      diffs.push(`${name} repeatEach ${project.repeatEach} (expected 1)`);
     }
-    if (project.retries !== 0) diffs.push(`${name} retries ${project.retries} (expected 0)`);
   }
   if (diffs.length === 0) return null;
   return {
     code: 'RUN_CONDITIONS_CHANGED',
     message: `The run conditions differ from those set for perf mode: ${diffs.join('; ')}.`,
-    hint: 'Do not pass --workers, --retries or --repeat-each to a perf-mode run; set repetitions with run.repeat or --repeat.',
+    hint: 'Do not pass --workers or --repeat-each to a perf-mode run; set the number of passes with run.passes or PW_PERF_PASSES.',
   };
 }
 
@@ -123,21 +119,10 @@ export function overriddenLine(conditions: RunConditions): string | null {
   return parts.length === 0 ? null : `${parts.join('; ')}.`;
 }
 
-function plural(n: number, word: string): string {
-  return `${n} ${n === 1 ? word : `${word}s`}`;
-}
-
-/** The number of test executions of the run (04-REQ-20): tests × repetitions. */
-export function executionsLine(
-  mode: 'test' | 'thresholds' | 'check',
+/** Tests of measured projects selected for the run (04-REQ-65): suite.allTests() of one pass. */
+export function measuredTestCount(
   tests: readonly TestLike[],
   measured: ReadonlySet<string>,
-  repeat: number,
-  workers: number,
-): string {
-  const inMeasured = tests.filter((t) => measured.has(t.parent.project()?.name ?? ''));
-  const unique = inMeasured.filter((t) => t.repeatEachIndex === 0).length;
-  const others = tests.length - inMeasured.length;
-  const extra = others > 0 ? `, plus ${plural(others, 'setup or teardown execution')}` : '';
-  return `perf mode "${mode}": ${plural(inMeasured.length, 'test execution')} (${plural(unique, 'test')} × ${plural(repeat, 'repeat')}), ${plural(workers, 'worker')}${extra}.`;
+): number {
+  return tests.filter((t) => measured.has(t.parent.project()?.name ?? '')).length;
 }

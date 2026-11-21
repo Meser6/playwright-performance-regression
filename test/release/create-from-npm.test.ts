@@ -116,7 +116,7 @@ describe.runIf(VERSION !== '')('create package from npm', () => {
       expect(installed.version).toBe(VERSION);
 
       const cli = join(dir, 'node_modules', PACKAGE, 'dist/cli.js');
-      const thresholds = await run(process.execPath, [cli, 'thresholds', '--repeat', '5'], dir);
+      const thresholds = await run(process.execPath, [cli, 'thresholds', '--passes', '5'], dir);
       expect(thresholds.status, thresholds.output).toBe(0);
       expect(thresholds.output).toContain('thresholds derived');
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([

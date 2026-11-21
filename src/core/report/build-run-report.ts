@@ -63,6 +63,8 @@ export interface RunReportInput {
   normalization: string;
   /** Step normalization fingerprint (06-REQ-25); null when measure.steps is off. */
   stepNormalization: string | null;
+  /** Passes of the run (02-REQ-37); one pass when left out. */
+  passes?: RunReport['passes'];
   runConditions: RunReport['runConditions'];
   tests: RunReport['tests'];
   aggregates: RunReportAggregates;
@@ -267,6 +269,10 @@ export function buildRunReport(input: RunReportInput): RunReport {
     ci: meta.ci === null ? null : { ...meta.ci },
     host: { ...meta.host },
     playwright: { ...meta.playwright },
+    passes:
+      input.passes === undefined
+        ? { planned: 1, completed: 1, failed: [] }
+        : { ...input.passes, failed: [...input.passes.failed].sort((a, b) => a - b) },
     runConditions: structuredClone(input.runConditions),
     tests: { ...input.tests },
     evaluation: {

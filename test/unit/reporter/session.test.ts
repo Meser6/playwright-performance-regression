@@ -85,7 +85,7 @@ describe('reporter session in test mode', () => {
       repeatEachIndex: 1,
     });
     expect(report.runConditions.projects).toEqual([
-      { name: 'chromium', role: 'measured', browserName: 'chromium', repeatEach: 5, retries: 0 },
+      { name: 'chromium', role: 'measured', browserName: 'chromium', repeatEach: 1, retries: 0 },
     ]);
     expect(report.runConditions.overriddenSettings).toEqual(['trace']);
     // Only the endpoint thresholds file is looked for (09-D-17, D-32).
@@ -162,18 +162,24 @@ describe('reporter session in test mode', () => {
     ]);
   });
 
-  test('04-REQ-20 onBegin prints the number of test executions', () => {
-    const captured = fakeHost(dir);
-    const s = session(captured, registered({}, { mode: 'test' }));
-    const tests = [0, 1, 2, 3, 4].map((i) => fakeTest(dir, { repeatEachIndex: i }));
+  test('04-AC-44 onBegin prints the start banner with tests × passes, estimate and report path', () => {
+    const captured = fakeHost(dir, { env: { NO_COLOR: '1' } });
+    const s = session(captured, registered({ run: { passes: { test: 5 } } }, { mode: 'test' }));
+    const tests = [0, 1].map(() => fakeTest(dir));
     const setup = fakeTest(dir, { project: 'setup' });
-    s.begin(
-      fakeConfig(dir, { projects: [project('setup'), project('chromium', { repeatEach: 5 })] }),
-      { allTests: () => [setup, ...tests] },
-    );
-    expect(captured.stdout.join('')).toContain(
-      'perf mode "test": 5 test executions (1 test × 5 repeats), 1 worker, plus 1 setup or teardown execution.',
-    );
+    s.begin(fakeConfig(dir, { projects: [project('setup'), project('chromium')] }), {
+      allTests: () => [setup, ...tests],
+    });
+    const out = captured.stdout.join('');
+    expect(out).toContain('⏱️  pw-perf · measurement run');
+    expect(out).toContain('Projects  chromium (setup: setup)');
+    expect(out).toContain('Tests     2 tests × 5 passes = 10 test runs');
+    expect(out).toContain('Estimate  ≈ 5 min (30 s per test, no earlier run)');
+    expect(out).toContain('Report    pw-perf-results/report.html');
+    expect(out).toContain('Tip       measure a subset, e.g. --grep @perf');
+    expect(out).toMatch(/^╭─+╮$/mu);
+    // Not a terminal: no question.
+    expect(captured.questions).toEqual([]);
   });
 
   test('01-REQ-40 a run without started tests (--list) writes nothing and keeps the status', async () => {
@@ -298,7 +304,7 @@ describe('reporter session in test mode', () => {
     expect(codes(outcome.toolErrors)).toEqual(['RUN_SHARDED', 'RUN_INCOMPLETE']);
   });
 
-  test('RUN_CONDITIONS_CHANGED for flags in onBegin and for retries and traces in onTestEnd', async () => {
+  test('04-AC-16 RUN_CONDITIONS_CHANGED for flags in onBegin and traces in onTestEnd, not for retries', async () => {
     const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(
       fakeConfig(dir, {
@@ -316,8 +322,7 @@ describe('reporter session in test mode', () => {
     await s.end({ status: 'passed' });
     const changed = readReport().warnings.filter((w) => w.code === 'RUN_CONDITIONS_CHANGED');
     expect(changed.map((w) => w.message)).toEqual([
-      'The run conditions differ from those set for perf mode: workers 2 (expected 1); project "chromium" repeatEach 2 (expected 5); project "chromium" retries 1 (expected 0).',
-      '1 test result is a retry (retry > 0), although perf mode sets retries to 0; samples of retries are counted.',
+      'The run conditions differ from those set for perf mode: workers 2 (expected 1); project "chromium" repeatEach 2 (expected 1).',
       '1 test result has a trace or video attachment, although perf mode turns them off; recording slows the browser down.',
     ]);
   });

@@ -10,7 +10,7 @@ export function record(testInfo: TestInfo): void {
     | {
         mode: unknown;
         measuredProjects: string[];
-        config: { run: { repeat: { test: number } }; keys: { origins: unknown } };
+        config: { run: { passes: { test: number } }; keys: { origins: unknown } };
       }
     | undefined;
   const line = {
@@ -21,7 +21,7 @@ export function record(testInfo: TestInfo): void {
     registry: state && {
       mode: state.mode,
       measuredProjects: state.measuredProjects,
-      repeat: state.config.run.repeat.test,
+      passes: state.config.run.passes.test,
       origins: state.config.keys.origins,
     },
   };

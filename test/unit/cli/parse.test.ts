@@ -39,8 +39,8 @@ describe('parseArgs', () => {
       ['test', '--grep', '@perf', 'tests/cart.spec.ts'],
       run('test', ['--grep', '@perf', 'tests/cart.spec.ts']),
     ],
-    [['test', '--', '--repeat', '3'], run('test', ['--repeat', '3'])],
-    [['test', '--repeat=3', '--repeat-each=2'], run('test', ['--repeat-each=2'], { repeat: 3 })],
+    [['test', '--', '--passes', '3'], run('test', ['--passes', '3'])],
+    [['test', '--passes=3', '--repeat-each=2'], run('test', ['--repeat-each=2'], { passes: 3 })],
     [['test', '-c', 'e2e/playwright.config.ts'], run('test', ['-c', 'e2e/playwright.config.ts'])],
     [['test', '--reporter=html'], run('test', ['--reporter=html'])],
     [
@@ -53,8 +53,8 @@ describe('parseArgs', () => {
       run('test', ['-c', 'apps/web/playwright.config.ts']),
     ],
     [
-      ['thresholds', '--headed', '--env', 'staging', '--project', 'chromium', '--repeat', '7'],
-      run('thresholds', ['--headed', '--project', 'chromium'], { env: 'staging', repeat: 7 }),
+      ['thresholds', '--headed', '--env', 'staging', '--project', 'chromium', '--passes', '7'],
+      run('thresholds', ['--headed', '--project', 'chromium'], { env: 'staging', passes: 7 }),
     ],
     [['thresholds', '--prune'], run('thresholds', [], { prune: true })],
     [
@@ -124,31 +124,39 @@ describe('parseArgs', () => {
       run('test', ['--envx', 'a', '--repeat-each', '2']),
     );
     expect(codes(['test', '--env'])).toEqual(['CLI_MISSING_ARGUMENT']);
-    expect(codes(['test', '--repeat', '--headed'])).toEqual(['CLI_MISSING_ARGUMENT']);
+    expect(codes(['test', '--passes', '--headed'])).toEqual(['CLI_MISSING_ARGUMENT']);
     expect(codes(['test', '--env='])).toEqual(['CLI_MISSING_ARGUMENT']);
     expect(codes(['thresholds', '--from'])).toEqual(['CLI_MISSING_ARGUMENT']);
     expect(codes(['report', '--input'])).toEqual(['CLI_MISSING_ARGUMENT']);
     expect(codes(['thresholds', '--prune=yes'])).toEqual(['CLI_INVALID_OPTION']);
   });
 
-  test('04-REQ-06 --repeat and --env are validated like the environment variables', () => {
+  test('04-REQ-06 --passes and --env are validated like the environment variables', () => {
     const issues = (argv: string[]): { code: string; message: string }[] => {
       const result = parseArgs(argv);
       if (result.ok) throw new Error('expected issues');
       return result.issues;
     };
-    expect(issues(['test', '--repeat', '0'])).toEqual([
+    expect(issues(['test', '--passes', '0'])).toEqual([
       expect.objectContaining({
         code: 'CLI_INVALID_OPTION',
-        message: '--repeat: expected an integer >= 1, like "5", got "0".',
+        message: '--passes: expected an integer >= 1, like "5", got "0".',
       }),
     ]);
-    expect(issues(['test', '--repeat', '1001'])[0]?.message).toContain('from 1 to 1000');
+    expect(issues(['test', '--passes', '1001'])[0]?.message).toContain('from 1 to 1000');
+    // Renamed by D-39.
+    expect(issues(['test', '--repeat', '3'])).toEqual([
+      expect.objectContaining({
+        code: 'CLI_INVALID_OPTION',
+        message: '--repeat was renamed to --passes: the test command now runs once per pass.',
+        hint: 'Use --passes 3.',
+      }),
+    ]);
     expect(issues(['test', '--env', 'QA'])[0]?.message).toContain('--env: expected a label');
     expect(codes(['thresholds', '--from', 'r.json', '--env', 'Bad!'])).toEqual([
       'CLI_INVALID_OPTION',
     ]);
-    expect(parsed(['test', '--repeat', '1000'])).toMatchObject({ repeat: 1000 });
+    expect(parsed(['test', '--passes', '1000'])).toMatchObject({ passes: 1000 });
   });
 
   test('04-REQ-07 --ui, --debug and --shard are CLI_UNSUPPORTED_PLAYWRIGHT_OPTION, also with =value', () => {
@@ -169,11 +177,11 @@ describe('parseArgs', () => {
     expect(parsed(['test', '--grep', '--ui'])).toEqual(run('test', ['--grep', '--ui']));
   });
 
-  test('04-REQ-08 thresholds --from with Playwright arguments or --repeat is CLI_FROM_WITH_PLAYWRIGHT_ARGS', () => {
+  test('04-REQ-08 thresholds --from with Playwright arguments or --passes is CLI_FROM_WITH_PLAYWRIGHT_ARGS', () => {
     expect(codes(['thresholds', '--from', 'r.json', '--grep', 'x'])).toEqual([
       'CLI_FROM_WITH_PLAYWRIGHT_ARGS',
     ]);
-    expect(codes(['thresholds', '--repeat', '3', '--from', 'r.json'])).toEqual([
+    expect(codes(['thresholds', '--passes', '3', '--from', 'r.json'])).toEqual([
       'CLI_FROM_WITH_PLAYWRIGHT_ARGS',
     ]);
     expect(codes(['thresholds', '--from', 'r.json', '--', 'x'])).toEqual([

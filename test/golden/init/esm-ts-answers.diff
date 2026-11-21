@@ -112,7 +112,7 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,321 @@
+@@ -0,0 +1,322 @@
 +// Configuration of playwright-performance-regression, written by "npx pw-perf init".
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
@@ -125,14 +125,15 @@
 +  run: {
 +    // Environment label.
 +    // env: null,
-+    // Repetitions of each measured test.
-+    repeat: {
-+      // Repetitions in a measurement run. Default: 5.
++    // Passes of the test command: the command runs once per pass and every test runs once in each
++    // pass.
++    passes: {
++      // Passes in a measurement run. Default: 5.
 +      test: 3,
-+      // Repetitions in a thresholds derivation run.
++      // Passes in a thresholds derivation run.
 +      // thresholds: 10,
 +    },
-+    // Which Playwright projects are measured and repeated in perf mode.
++    // Which Playwright projects are measured in perf mode.
 +    // projects: 'auto',
 +    // Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit',
 +    // 'allure-playwright').

@@ -1,6 +1,6 @@
 // 12-PERF-01: run-time overhead of perf mode on the demo suite (NF-01, 05-AC-10). The same
 // project and Playwright config run alternately without perf mode (`playwright test --workers=1
-// --retries=0 --repeat-each=5`) and through the CLI (`pw-perf test --repeat 5`), 5 times each;
+// --retries=0 --repeat-each=5`) and through the CLI (`pw-perf test --passes 5`), 5 times each;
 // the medians of the wall times are compared (12-D-04).
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -51,7 +51,7 @@ describe('12-PERF-01 run-time overhead', () => {
     const plainArgs = [PLAYWRIGHT, 'test', '--workers=1', '--retries=0'];
     // Warm-up of both variants (browser start, file system caches), not counted.
     await runNode([...plainArgs, `--repeat-each=${REPEAT}`], DEMO_PROJECT, env('warm-plain'));
-    await runNode([CLI, 'test', '--repeat', String(REPEAT)], DEMO_PROJECT, env('warm-perf'));
+    await runNode([CLI, 'test', '--passes', String(REPEAT)], DEMO_PROJECT, env('warm-perf'));
 
     const plain: number[] = [];
     const perf: number[] = [];
@@ -64,7 +64,7 @@ describe('12-PERF-01 run-time overhead', () => {
       expect(p.status, p.output).toBe(0);
       plain.push(p.wallMs);
       const m = await runNode(
-        [CLI, 'test', '--repeat', String(REPEAT)],
+        [CLI, 'test', '--passes', String(REPEAT)],
         DEMO_PROJECT,
         env(`perf-${round}`),
       );

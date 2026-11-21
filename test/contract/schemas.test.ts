@@ -101,6 +101,7 @@ function runReport(): { [key: string]: Json } {
     ci: null,
     host: { ...host, nodeVersion: '22.18.0' },
     playwright: { version: '1.57.0' },
+    passes: { planned: 1, completed: 1, failed: [] },
     runConditions: {
       workers: 1,
       projects: [

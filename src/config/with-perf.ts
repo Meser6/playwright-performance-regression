@@ -6,6 +6,7 @@ import { ConfigError } from '../core/types/index.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { Issue } from '../core/types/index.ts';
 import { RUN_ID_ENV, argvWarnings, generateRunId, readModeState } from '../mode/index.ts';
+import type { PerfModeState } from '../mode/index.ts';
 import { setRegistered } from '../registry/index.ts';
 import { reporterEntryPath } from './reporter-path.ts';
 import { planPerfRun } from './run-conditions.ts';
@@ -33,11 +34,10 @@ export function withPerf<T extends PlaywrightTestConfig>(
   if (!mode.ok || mode.value === null) throw new Error('withPerf: the mode state changed');
   const state = mode.value;
 
-  // A check runs every test once; the config is resolved as for a measurement run (04-REQ-48).
-  const check = state.mode === 'check';
+  // A check has one pass; the config is resolved as for a measurement run (04-REQ-48).
   const resolved = resolveConfig(perfConfig, {
     mode: state.mode === 'check' ? 'test' : state.mode,
-    ...(state.repeat === undefined || check ? {} : { repeat: state.repeat }),
+    ...passesOverride(state),
     ...(state.env === undefined ? {} : { env: state.env }),
   });
   if (!resolved.ok) throw new ConfigError(resolved.issues);
@@ -46,7 +46,6 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const plan = planPerfRun(config, {
     projects: perf.run.projects,
     keepReporters: perf.run.keepReporters,
-    repeat: state.mode === 'check' ? 1 : perf.run.repeat[state.mode],
     reporterPath: reporterEntryPath(),
   });
   if (!plan.ok) throw new ConfigError(plan.issues);
@@ -61,6 +60,16 @@ export function withPerf<T extends PlaywrightTestConfig>(
     warnings: [...warnings, ...plan.value.warnings, ...argvIssues],
   });
   return plan.value.config;
+}
+
+/**
+ * The passes override of the mode state (03-REQ-07): PW_PERF_PASS=k/N in passes 2…N, so every pass
+ * has the same snapshot, else PW_PERF_PASSES; none in a check (04-REQ-48).
+ */
+export function passesOverride(state: PerfModeState): { passes?: number } {
+  if (state.mode === 'check') return {};
+  if (state.pass !== undefined) return { passes: state.pass.total };
+  return state.passes === undefined ? {} : { passes: state.passes };
 }
 
 /** Set once per process: the config may be loaded more than once in the main process. */

@@ -1,0 +1,5 @@
+{
+  "name": "passes given as a string",
+  "input": { "run": { "passes": { "test": "5" } } },
+  "expected": { "code": "CONFIG_INVALID_TYPE", "paths": ["run.passes.test"] }
+}

@@ -151,6 +151,14 @@ function problemToIssue(problem: Problem, document: unknown): ConfigIssue {
         'keepQuotedValues was renamed to redactQuotedValues with the opposite meaning: quoted values stay in step keys by default; set measure.steps.redactQuotedValues to true to replace them.',
       );
     }
+    if (problem.property === 'repeat' && segments.length === 1 && segments[0] === 'run') {
+      return issue(
+        'CONFIG_UNKNOWN_OPTION',
+        option,
+        'unknown option',
+        'Renamed to run.passes: the test command now runs once per pass (repeatEach is 1); e.g. run: { passes: { test: 5, thresholds: 10 } }.',
+      );
+    }
     const suggestion = suggestOption(segments, problem.property);
     return issue(
       'CONFIG_UNKNOWN_OPTION',

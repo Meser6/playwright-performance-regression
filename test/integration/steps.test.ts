@@ -14,7 +14,7 @@ afterAll(async () => {
   await harness?.close();
 });
 
-const PERF = { PW_PERF_MODE: 'test', PW_PERF_REPEAT: '3' };
+const PERF = { PW_PERF_MODE: 'test', PW_PERF_PASSES: '3' };
 
 describe('steps project', () => {
   let dir = '';
@@ -23,7 +23,7 @@ describe('steps project', () => {
   });
 
   test(
-    '06-AC-09 06-AC-16 nested steps, hooks, fixtures, box, skip and setup with repeatEach 3',
+    '06-AC-09 06-AC-16 nested steps, hooks, fixtures, box, skip and setup in 3 passes',
     async () => {
       const run = await harness.run(dir, { env: PERF });
       expect(run.status, run.output).toBe(0);

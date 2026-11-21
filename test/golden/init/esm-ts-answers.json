@@ -4,7 +4,7 @@
     "project": "init-esm-ts",
     "answers": {
       "scope": "tagged",
-      "repeatTest": 3,
+      "passesTest": 3,
       "warnOnly": false,
       "envLabels": [
         "qa",
