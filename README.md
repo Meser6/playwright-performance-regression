@@ -108,12 +108,8 @@ setting, `thresholds: { preset: 'strict' | 'normal' | 'loose' }`. See
 
 ## Step timings
 
-Your existing `test.step` blocks can be measured too, without changing the tests:
-
-```ts
-// pw-perf.config.ts
-export default definePerfConfig({ measure: { steps: true } });
-```
+Your existing `test.step` blocks are measured too, without changing the tests (on by default;
+`measure: { steps: false }` in `pw-perf.config.ts` turns it off).
 
 A step `submit` inside a step `login` becomes the key `login › submit`, with its own statistics,
 checks and thresholds file `pw-perf-thresholds.steps.json`. Step titles are sanitized: ids,

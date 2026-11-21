@@ -140,8 +140,8 @@
           "default": ["2xx", "3xx"]
         },
         "steps": {
-        "description": "Durations of test.step steps as keys of kind 'step' (06). false (default) disables, true enables with defaults, an object enables with settings (03-REQ-18).",
-        "default": false,
+        "description": "Durations of test.step steps as keys of kind 'step' (06). true (default) enables with defaults, false disables, an object enables with settings (03-REQ-18).",
+        "default": true,
         "oneOf": [
           {"type": "boolean"},
           {

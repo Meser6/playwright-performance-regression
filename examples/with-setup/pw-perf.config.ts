@@ -6,9 +6,8 @@ const apiUrl = process.env.API_URL ?? 'http://localhost:3001';
 export default definePerfConfig({
   keys: { origins: { [apiUrl]: 'api' } },
   measure: {
+    // The test.step blocks of the page objects are measured by default (docs/steps.md).
     exclude: [...perfDefaults.measure.exclude, '/api/analytics'],
-    // Also measure the test.step blocks of the page objects (docs/steps.md).
-    steps: true,
   },
   // Derived thresholds with the recommended headroom (strict / normal / loose).
   thresholds: { preset: 'normal' },

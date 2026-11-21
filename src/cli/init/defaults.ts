@@ -26,8 +26,8 @@ export function defaultAnswers(info: ProjectInfo): InitAnswers {
     // All tests, also when some tests are tagged @perf.
     scope: 'all',
     passesTest: DEFAULT_ANSWERS_PASSES,
-    // Yes when the project has test.step calls (04-REQ-47).
-    steps: info.stepFiles > 0,
+    // Steps are measured by default, also without test.step calls (04-REQ-47).
+    steps: DEFAULT_CONFIG.measure.steps,
     preset: DEFAULT_CONFIG.thresholds.preset,
     addCi: info.ciPlatform !== null,
     // Never with --yes (04-REQ-58).

@@ -949,6 +949,8 @@ export class RunSession {
         html: paths.reportHtml !== null,
       }),
     );
+    const noSteps = this.steps.noStepsLine(Object.keys(aggregates.steps));
+    if (noSteps !== null) this.host.stdout.write(noSteps);
     if (diffs.length > 0) {
       this.host.stdout.write(
         formatThresholdsDiff(diffs, {

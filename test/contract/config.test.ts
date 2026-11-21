@@ -52,7 +52,7 @@ describe('config defaults and snapshot follow the schema', () => {
     if (!result.ok) return;
     expect(result.value.snapshot).toEqual({
       ...DEFAULT_CONFIG,
-      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(false) },
+      measure: { ...DEFAULT_CONFIG.measure, steps: expandSteps(true) },
     });
     expect(validateConfig(result.value.snapshot), JSON.stringify(validateConfig.errors)).toBe(true);
   });

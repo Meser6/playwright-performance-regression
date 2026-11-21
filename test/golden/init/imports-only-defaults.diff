@@ -122,10 +122,10 @@
 +// Host patterns with * merge random CI hosts, e.g. pr-123.ci.example.com.
 +//   keys: { origins: { 'https://auth.example.com': 'auth', 'https://pr-*.ci.example.com': '' } },
 +//
-+// measure.steps: Also measure the duration of your test.step blocks, with their own thresholds file
-+// (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not
-+// reach the keys.
-+//   measure: { steps: true },
++// measure.steps: The duration of your test.step blocks is measured too (on by default), with their
++// own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails,
++// URLs and secrets do not reach the keys. Set false to measure only the backend requests.
++//   measure: { steps: false },
 +//
 +// gate.tolerance: How many endpoints may exceed their thresholds before the run fails (a number or
 +// a share like "5%"). Values far above a threshold (hardLimitFactor) fail the run anyway.
@@ -175,7 +175,7 @@
 +  //   // '404'.
 +  //   successStatuses: ['2xx', '3xx'],
 +  //   // Durations of test.step steps as keys of kind 'step'.
-+  //   steps: false,
++  //   steps: true,
 +  //   // How long the collector waits at test end for requests still in flight.
 +  //   pendingTimeoutMs: 2000,
 +  // },

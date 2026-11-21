@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `measure.steps` is on by default: `test.step` blocks give step keys, a
+  `pw-perf-thresholds.steps.json` file and fail the run like endpoints, without any config.
+  Set `measure: { steps: false }` to measure only backend requests. A run without any
+  `test.step` prints one informational line instead of the `STEPS_NONE_FOUND` warning, which is
+  removed.
+
 ### Fixed
 
 - With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2

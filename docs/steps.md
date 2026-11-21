@@ -4,13 +4,16 @@ The package can measure the duration of your existing `test.step` blocks, withou
 the tests or page objects. Each step becomes a key of kind `step` with its own statistics,
 thresholds file and checks, next to the endpoint keys.
 
-## Turning it on
+## On by default
+
+Steps are measured by default (`measure.steps: true`); nothing to set up. To measure only the
+backend requests, turn it off:
 
 ```ts
 // pw-perf.config.ts
 import { definePerfConfig } from 'playwright-performance-regression';
 
-export default definePerfConfig({ measure: { steps: true } });
+export default definePerfConfig({ measure: { steps: false } });
 ```
 
 ```ts
@@ -30,7 +33,8 @@ changes.
 
 The step file is `pw-perf-thresholds.steps.json` (with an environment label
 `pw-perf-thresholds.steps.<env>.json`), next to `pw-perf-thresholds.json` for the endpoints. It is
-read and written only while `measure.steps` is on.
+read and written only while `measure.steps` is on. A run that finds no `test.step` block prints
+one line, `No test.step blocks found, so there are no step thresholds.`, and creates no step file.
 
 ## Keys
 
@@ -121,11 +125,10 @@ A hand-set step threshold is an entry with `locked: true` in `pw-perf-thresholds
 
 ## Warnings
 
-| Code                     | When                                                       |
-| ------------------------ | ---------------------------------------------------------- |
-| `STEPS_NONE_FOUND`       | `measure.steps` is on, but the measured tests gave no step |
-| `STEPS_HIGH_CARDINALITY` | ten or more step keys differ only in one word              |
-| `STEPS_TOO_MANY_KEYS`    | more than 1000 step keys                                   |
-| `STEPS_SECRET_REDACTED`  | a step title contained a URL or a secret                   |
+| Code                     | When                                          |
+| ------------------------ | --------------------------------------------- |
+| `STEPS_HIGH_CARDINALITY` | ten or more step keys differ only in one word |
+| `STEPS_TOO_MANY_KEYS`    | more than 1000 step keys                      |
+| `STEPS_SECRET_REDACTED`  | a step title contained a URL or a secret      |
 
 See [Troubleshooting](troubleshooting.md) for each code.

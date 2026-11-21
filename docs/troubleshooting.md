@@ -433,10 +433,10 @@ and normalize it with `keys.extraIdPatterns`, `keys.dropQueryParams` or `keys.ke
 
 See [steps.md](steps.md) for the step timings.
 
-### STEPS_NONE_FOUND
+### No test.step blocks found
 
-**Warning.** `measure.steps` is on, but the measured tests gave no step sample. Check that the
-tests or page objects use `test.step`, and that `measure.steps.include`, `exclude` and
+Not a warning: the measured tests gave no step sample, so there is no step thresholds file. When
+your tests or page objects do use `test.step`, check that `measure.steps.include`, `exclude` and
 `categories` do not filter out every step.
 
 ### STEPS_HIGH_CARDINALITY

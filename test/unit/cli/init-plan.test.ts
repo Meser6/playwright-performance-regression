@@ -47,7 +47,7 @@ const ANSWERS: InitAnswers = {
   projects: 'auto',
   scope: 'all',
   passesTest: 5,
-  steps: false,
+  steps: true,
   preset: 'normal',
   addCi: false,
   runCheck: false,
@@ -538,7 +538,7 @@ describe('CI templates', () => {
 });
 
 describe('04-REQ-47 step 6', () => {
-  test('04-AC-28 counts the source files with test.step( and answers yes by default only then', () => {
+  test('04-AC-28 counts the source files with test.step( and answers yes by default', () => {
     const files = new Map([
       ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],
       [
@@ -551,18 +551,20 @@ describe('04-REQ-47 step 6', () => {
     const info = detectProject(files);
     expect(info.stepFiles).toBe(2);
     expect(defaultAnswers(info).steps).toBe(true);
-    expect(defaultAnswers(detectProject(new Map([['playwright.config.ts', '']]))).steps).toBe(
-      false,
-    );
+    expect(defaultAnswers(detectProject(new Map([['playwright.config.ts', '']]))).steps).toBe(true);
   });
 
-  test('04-AC-28 a yes writes measure.steps: true as active code', () => {
-    const config = renderPerfConfig({ ...ANSWERS, steps: true });
-    expect(activeLines(config)).toEqual([
+  test('04-AC-28 a yes keeps the default and a no writes measure.steps: false as active code', () => {
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, steps: true }))).toEqual([
+      "import { definePerfConfig } from 'playwright-performance-regression';",
+      'export default definePerfConfig({',
+      '});',
+    ]);
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, steps: false }))).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
       '  measure: {',
-      '    steps: true,',
+      '    steps: false,',
       '  },',
       '});',
     ]);

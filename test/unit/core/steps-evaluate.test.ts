@@ -15,7 +15,7 @@ import {
 import { deriveOptions, existing, loadedFile, runReport } from './thresholds-helpers.ts';
 
 const STEPS_ON = config({ measure: { steps: true } });
-const STEPS_OFF = config();
+const STEPS_OFF = config({ measure: { steps: false } });
 
 function steps(spec: Parameters<typeof aggregates>[0]): Record<string, StepAggregateStats> {
   return Object.fromEntries(

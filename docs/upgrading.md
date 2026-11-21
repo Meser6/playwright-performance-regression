@@ -33,7 +33,7 @@ Custom measurements are gone. To upgrade:
    `perf.sampleEnd()` from your tests and fixtures. Only `perf.track(context)` is left on the
    `perf` fixture; the old calls no longer type-check, and in JavaScript they throw a `TypeError`.
    Keep the measured code and drop only the wrapper call. To time a user-visible step, wrap it in
-   `test.step()` and turn on `measure.steps`.
+   `test.step()`; steps are measured by default (`measure.steps`).
 2. Delete `pw-perf-thresholds.custom.json` (and `pw-perf-thresholds.custom.<env>.json`). The
    package no longer reads or writes these files.
 3. Remove `custom` from `checks.*.*.limit`, `checks.errors.limit` and `checks.slowShare.t` in

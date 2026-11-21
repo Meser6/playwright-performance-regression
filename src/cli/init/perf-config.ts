@@ -46,7 +46,7 @@ export function activeValues(answers: InitAnswers): Map<string, unknown> {
     values.set('run.passes.test', answers.passesTest);
   if (answers.projects !== 'auto') values.set('run.projects', answers.projects);
   if (answers.scope === 'tagged') values.set('run.grep', PERF_TAG);
-  if (answers.steps) values.set('measure.steps', true);
+  if (answers.steps !== DEFAULT_CONFIG.measure.steps) values.set('measure.steps', answers.steps);
   if (answers.preset !== DEFAULT_CONFIG.thresholds.preset)
     values.set('thresholds.preset', answers.preset);
   return values;
@@ -198,8 +198,8 @@ export const IMPORTANT_SETTINGS: readonly { option: string; text: string; exampl
   },
   {
     option: 'measure.steps',
-    text: 'Also measure the duration of your test.step blocks, with their own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not reach the keys.',
-    example: 'measure: { steps: true },',
+    text: 'The duration of your test.step blocks is measured too (on by default), with their own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not reach the keys. Set false to measure only the backend requests.',
+    example: 'measure: { steps: false },',
   },
   {
     option: 'gate.tolerance',
