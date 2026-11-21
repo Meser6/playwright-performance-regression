@@ -760,7 +760,7 @@ export class RunSession {
       execPath: this.host.execPath,
       argv: this.host.argv,
       env: this.host.env,
-      scripts: io.readPackageInfo(this.host.cwd).scripts ?? {},
+      scripts: io.readPackageInfo(this.host.cwd).scripts,
     });
     const shown = [command.file, ...command.args].join(' ');
     for (let index = 2; index <= total; index += 1) {

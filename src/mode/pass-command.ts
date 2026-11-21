@@ -78,25 +78,32 @@ function addedArgs(argv: readonly string[], script: string | undefined): string[
 
 /**
  * The command of the next pass (04-REQ-63): `<pm> run <script> [--] <added args>` when Playwright
- * runs from a package manager script that names Playwright, otherwise the Playwright command line
- * itself.
+ * runs from a package manager script that exists in the nearest package.json and names Playwright,
+ * otherwise the Playwright command line itself.
  */
 export function passCommand(input: {
   execPath: string;
   argv: readonly string[];
   env: Readonly<Record<string, string | undefined>>;
   /**
-   * Scripts of the nearest package.json: the text of the script as written, because pnpm puts the
-   * added arguments into npm_lifecycle_script; npm_lifecycle_script is the fallback.
+   * Scripts of the nearest package.json, or null/undefined when it cannot be read. The text of the
+   * script as written, because pnpm puts the added arguments into npm_lifecycle_script. Only a
+   * script of this name runs again: `npx playwright test` sets npm_lifecycle_event to `npx`, which
+   * is no script. npm_lifecycle_script is the fallback only without a readable package.json.
    */
-  scripts?: Readonly<Record<string, string>>;
+  scripts?: Readonly<Record<string, string>> | null;
 }): PassCommand {
   const event = input.env['npm_lifecycle_event'];
   const manager = input.env['npm_execpath'];
+  const scripts = input.scripts ?? null;
   const script =
-    (event === undefined ? undefined : input.scripts?.[event]) ??
-    input.env['npm_lifecycle_script'] ??
-    '';
+    event === undefined
+      ? ''
+      : scripts === null
+        ? (input.env['npm_lifecycle_script'] ?? '')
+        : Object.hasOwn(scripts, event)
+          ? (scripts[event] ?? '')
+          : '';
   // Only a script that names Playwright: the npm_* variables of an outer script (e.g. a test
   // runner that starts Playwright itself) must not run that outer script again.
   if (

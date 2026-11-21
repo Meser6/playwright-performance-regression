@@ -37,6 +37,17 @@ describe('09-AC-27 suggestCommand', () => {
     ).toBe('PW_PERF_MODE=test pnpm exec playwright test');
   });
 
+  test('npx, pnpm exec and yarn set npm_lifecycle_event to no script of the project (04-REQ-63)', () => {
+    const scripts = { test: 'playwright test' };
+    const plain = { lifecycleScript: 'playwright test', scripts };
+    expect(cmd('check', { ...plain, lifecycleEvent: 'npx' })).toBe(
+      'PW_PERF_MODE=check npx playwright test',
+    );
+    expect(cmd('check', { ...plain, lifecycleEvent: 'test' })).toBe(
+      'PW_PERF_MODE=check npm run test',
+    );
+  });
+
   test('a script that sets the mode: the matching script of package.json', () => {
     const scripts = { 'perf:test': 'pw-perf test', 'perf:thresholds': 'pw-perf thresholds' };
     expect(

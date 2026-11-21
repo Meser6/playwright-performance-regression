@@ -7,6 +7,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2
+  as `npm run npx` ("Missing script"): a package script runs again only when `package.json` has
+  it. The `Next:` hint no longer suggests `npm run npx` either.
+
 ## [0.1.0-next.3] - 2026-11-21
 
 `0.1.0-next.2` was tagged but not published (the release stopped on the performance tests).
