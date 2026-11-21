@@ -65,7 +65,10 @@ function runPass(s: ReturnType<typeof session>, pass: number, repeatEachIndex = 
  * A fake runPass that runs pass k as its own reporter session in the same directory, the way the
  * real process would; `broken` passes exit without a pass file.
  */
-function laterPasses(broken: number[] = []): ReporterHost['runPass'] {
+function laterPasses(
+  broken: number[] = [],
+  extra: (s: ReturnType<typeof session>) => void = () => undefined,
+): ReporterHost['runPass'] {
   return async (_command, env) => {
     const [index, total] = (env['PW_PERF_PASS'] ?? '').split('/').map(Number);
     if (index === undefined || total === undefined) throw new Error('no PW_PERF_PASS');
@@ -80,6 +83,7 @@ function laterPasses(broken: number[] = []): ReporterHost['runPass'] {
     );
     s.begin(fakeConfig(dir), { allTests: () => [] });
     runPass(s, index);
+    extra(s);
     await s.end({ status: 'passed' });
     later.stdout.forEach((line) => {
       if (!line.includes(`pass ${String(index)}/`)) throw new Error(`unexpected output ${line}`);
@@ -89,6 +93,24 @@ function laterPasses(broken: number[] = []): ReporterHost['runPass'] {
 }
 
 describe('passes of the first pass (04-REQ-64)', () => {
+  test('09-AC-31 TESTS_NOT_INSTRUMENTED counts a test once over all passes', async () => {
+    const unwrapped = (s: ReturnType<typeof session>): void => {
+      s.testBegin();
+      s.testEnd({ ...fakeTest(dir, { file: 'api.spec.ts' }), id: 'api-1' }, result([]));
+    };
+    const first = fakeHost(dir, { runPass: laterPasses([], unwrapped) });
+    const s = session(
+      first,
+      registered({ run: { passes: { test: 3 } } }, { mode: 'test', runId: RUN_ID }),
+    );
+    s.begin(fakeConfig(dir), { allTests: () => [] });
+    runPass(s, 1);
+    unwrapped(s);
+    await s.end({ status: 'passed' });
+    const warning = readReport().warnings.find((w) => w.code === 'TESTS_NOT_INSTRUMENTED');
+    expect(warning?.message).toMatch(/^1 test in tests\/api\.spec\.ts imports test/u);
+  });
+
   test('02-AC-20 three passes give the same aggregates as the same results in one process', async () => {
     const first = fakeHost(dir, { runPass: laterPasses() });
     const s = session(

@@ -30,7 +30,9 @@ export type TestCounts = Omit<RunReport['tests'], 'status'>;
 /** Data of the end-of-run warnings (09, chapter 12.1). */
 export interface PassCounters {
   testsStarted: number;
-  notInstrumented: number;
+  /** Tests without a batch, test id → file (09-REQ-34). */
+  notInstrumented: Record<string, string>;
+  crashedTests: Record<string, string>;
   withArtifacts: number;
   instrumentedProjects: string[];
   projectsWithRequests: string[];

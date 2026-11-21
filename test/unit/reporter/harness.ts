@@ -172,12 +172,16 @@ export interface FakeTestOptions {
   repeatEachIndex?: number;
   outcome?: ReturnType<TestLike['outcome']>;
   expectedStatus?: TestLike['expectedStatus'];
+  /** Test file name under tests/; cart.spec.ts by default. */
+  file?: string;
+  /** test.id; a new one by default. */
+  id?: string;
 }
 
 export function fakeTest(dir: string, options: FakeTestOptions = {}): TestLike {
   const projectName = options.project ?? 'chromium';
   const file: SuiteLike = {
-    title: 'cart.spec.ts',
+    title: options.file ?? 'cart.spec.ts',
     type: 'file',
     project: () => ({ name: projectName }),
   };
@@ -188,11 +192,11 @@ export function fakeTest(dir: string, options: FakeTestOptions = {}): TestLike {
     project: () => ({ name: projectName }),
   };
   return {
-    id: `t${++ids}`,
+    id: options.id ?? `t${++ids}`,
     title: options.title ?? 'adds an item',
     repeatEachIndex: options.repeatEachIndex ?? 0,
     expectedStatus: options.expectedStatus ?? 'passed',
-    location: { file: join(dir, 'tests', 'cart.spec.ts'), line: 7, column: 3 },
+    location: { file: join(dir, 'tests', options.file ?? 'cart.spec.ts'), line: 7, column: 3 },
     parent: describe,
     outcome: () => options.outcome ?? 'expected',
   };

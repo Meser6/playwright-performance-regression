@@ -50,6 +50,8 @@ export type TestLike = Pick<
 
 export type ResultLike = Pick<TestResult, 'status' | 'retry' | 'startTime'> & {
   attachments: { name: string; contentType: string; body?: Buffer | undefined; path?: string }[];
+  /** TestResult.errors, to tell a crashed worker (09-REQ-34). */
+  errors?: readonly { message?: string | undefined }[];
   /** TestResult.duration, for the estimate of a check (04-REQ-51). */
   duration?: number;
   /** Top-level steps (06-REQ-16); optional so that tests can omit it. */

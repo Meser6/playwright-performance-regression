@@ -20,6 +20,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2
   as `npm run npx` ("Missing script"): a package script runs again only when `package.json` has
   it. The `Next:` hint no longer suggests `npm run npx` either.
+- `TESTS_NOT_INSTRUMENTED` counts tests instead of test results and names up to three files,
+  e.g. `2 tests in tests/api.spec.ts import test without withPerfFixtures() …`; a crashed worker
+  is mentioned only when a worker actually crashed.
 
 ## [0.1.0-next.3] - 2026-11-21
 
