@@ -23,7 +23,7 @@ All recipes install dependencies with `npm ci`; in a pnpm or yarn project replac
 - **Uploads `pw-perf-results/` always**, also when the run fails, because that is when you need the
   report: GitHub `if: always()`, GitLab `artifacts: when: always`, Jenkins `post { always { ... } }`,
   Azure `condition: always()`.
-- **Has a time limit** (60 minutes), because a measurement run repeats every test.
+- **Has a time limit** (60 minutes), because a measurement run runs the tests in several passes.
 
 ## Exit codes
 

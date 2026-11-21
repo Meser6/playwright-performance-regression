@@ -39,8 +39,8 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   default list, spread `perfDefaults` as in the example above.
 - URL patterns may be `RegExp` objects and `keys.keyBuilder` may be a function only in a
   TypeScript or JavaScript config; a JSON config uses `{ "regex": "...", "flags": "..." }`.
-- `PW_PERF_ENV` / `--env` override `run.env`, and `PW_PERF_REPEAT` / `--repeat` override
-  `run.repeat.test` or `run.repeat.thresholds` for the current mode (see [CLI](cli.md)).
+- `PW_PERF_ENV` / `--env` override `run.env`, and `PW_PERF_PASSES` / `--passes` override
+  `run.passes.test` or `run.passes.thresholds` for the current mode (see [CLI](cli.md)).
 - The commands that run no tests (`pw-perf thresholds --from`, `pw-perf report`) load
   `pw-perf.config.*` themselves: `--config <file>`, else the file in the current directory or in
   the config directory of the report, else the config snapshot stored in the report.
@@ -52,9 +52,9 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
 - [`$schema`](#schema)
 - [`run`](#run)
   - [`run.env`](#runenv)
-  - [`run.repeat`](#runrepeat)
-    - [`run.repeat.test`](#runrepeattest)
-    - [`run.repeat.thresholds`](#runrepeatthresholds)
+  - [`run.passes`](#runpasses)
+    - [`run.passes.test`](#runpassestest)
+    - [`run.passes.thresholds`](#runpassesthresholds)
   - [`run.projects`](#runprojects)
   - [`run.keepReporters`](#runkeepreporters)
 - [`measure`](#measure)
@@ -189,7 +189,7 @@ Optional, for editor support in a JSON config file: `"./node_modules/playwright-
 
 How the measurement run is executed.
 
-Options: [`env`](#runenv), [`repeat`](#runrepeat), [`projects`](#runprojects), [`keepReporters`](#runkeepreporters).
+Options: [`env`](#runenv), [`passes`](#runpasses), [`projects`](#runprojects), [`keepReporters`](#runkeepreporters).
 
 ### `run.env`
 
@@ -198,29 +198,29 @@ Environment label. Overridden by PW_PERF_ENV / --env. Null: no label, one set of
 - Type: string (matching `^[a-z0-9-]+$`, at most 32 characters) or `null`
 - Default: `null`
 
-### `run.repeat`
+### `run.passes`
 
-Repetitions of each measured test. Overridden by PW_PERF_REPEAT / --repeat for the current mode.
+Passes of the test command: the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.
 
-Options: [`test`](#runrepeattest), [`thresholds`](#runrepeatthresholds).
+Options: [`test`](#runpassestest), [`thresholds`](#runpassesthresholds).
 
-### `run.repeat.test`
+### `run.passes.test`
 
-Repetitions in a measurement run.
+Passes in a measurement run.
 
 - Type: integer (1 to 1000)
 - Default: `5`
 
-### `run.repeat.thresholds`
+### `run.passes.thresholds`
 
-Repetitions in a thresholds derivation run.
+Passes in a thresholds derivation run.
 
 - Type: integer (1 to 1000)
 - Default: `10`
 
 ### `run.projects`
 
-Which Playwright projects are measured and repeated in perf mode. 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured and repeated too.
+Which Playwright projects are measured in perf mode. 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured too.
 
 - Type: `"auto"` or array of string; at least 1 item, no duplicates
 - Default: `"auto"`

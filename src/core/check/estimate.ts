@@ -1,4 +1,6 @@
-// Time estimate of a check (04-REQ-51): T = S + N × R × m.
+// Time estimates: of a check (04-REQ-51, T = R × (S + N × m)) and of the start banner
+// (04-REQ-66, N × P × m).
+import type { RunReport } from '../types/index.ts';
 
 /** `< 1 min`, `N min`, `H h M min` with minutes rounded up (04-REQ-51). */
 export function formatDuration(ms: number): string {
@@ -11,19 +13,46 @@ export function formatDuration(ms: number): string {
 export interface EstimateInput {
   /** Measured tests selected by the arguments. */
   tests: number;
-  repeatTest: number;
-  repeatThresholds: number;
+  passesTest: number;
+  passesThresholds: number;
   /** Mean duration of the measured tests that ran, in ms; null when none ran. */
   meanMs: number | null;
-  /** Total duration of the dependency projects in this run, in ms. */
+  /** Total duration of the dependency projects in this run, in ms; repeated in every pass. */
   setupMs: number;
 }
 
-/** The text after `Estimate: ` (04-REQ-50 point 8, 04-REQ-51). */
+/** The text after `Estimate: ` of a check (04-REQ-50 point 8, 04-REQ-51). */
 export function estimateText(input: EstimateInput): string {
   const mean = input.meanMs;
   if (mean === null) return 'not available (no measured test ran)';
-  const run = (repeat: number): number => input.setupMs + input.tests * repeat * mean;
+  const run = (passes: number): number => passes * (input.setupMs + input.tests * mean);
   const seconds = (Math.round(mean / 100) / 10).toFixed(1);
-  return `measurement run ≈ ${formatDuration(run(input.repeatTest))} (${String(input.tests)} tests × ${String(input.repeatTest)} repeats × ${seconds} s), thresholds run ≈ ${formatDuration(run(input.repeatThresholds))} (× ${String(input.repeatThresholds)} repeats), 1 worker`;
+  return `measurement run ≈ ${formatDuration(run(input.passesTest))} (${String(input.tests)} tests × ${String(input.passesTest)} passes × ${seconds} s), thresholds run ≈ ${formatDuration(run(input.passesThresholds))} (× ${String(input.passesThresholds)} passes), 1 worker`;
+}
+
+/** Time per test execution without an earlier run (04-REQ-66). */
+export const DEFAULT_TEST_MS = 30_000;
+
+/**
+ * Time per test execution from an earlier run report (04-REQ-66): its wall time over the executed
+ * tests (expected, unexpected and flaky); null when the report has none.
+ */
+export function msPerTest(
+  report: Pick<RunReport, 'startedAt' | 'finishedAt' | 'tests'>,
+): number | null {
+  const executions = report.tests.expected + report.tests.unexpected + report.tests.flaky;
+  const wall = Date.parse(report.finishedAt) - Date.parse(report.startedAt);
+  if (executions <= 0 || !Number.isFinite(wall) || wall < 0) return null;
+  return wall / executions;
+}
+
+/** The Estimate value of the start banner (04-REQ-66). */
+export function startEstimate(input: {
+  tests: number;
+  passes: number;
+  msPerTest: number | null;
+}): string {
+  const ms = input.msPerTest ?? DEFAULT_TEST_MS;
+  const note = input.msPerTest === null ? '30 s per test, no earlier run' : 'from the last run';
+  return `≈ ${formatDuration(input.tests * input.passes * ms)} (${note})`;
 }

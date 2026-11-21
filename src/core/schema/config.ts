@@ -90,7 +90,7 @@ export const packageConfig = obj({
   $schema: str(),
   run: obj({
     env: envLabelOrNull,
-    repeat: obj({
+    passes: obj({
       test: int({ minimum: 1, maximum: 1000 }),
       thresholds: int({ minimum: 1, maximum: 1000 }),
     }),

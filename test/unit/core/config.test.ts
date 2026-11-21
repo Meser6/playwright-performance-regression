@@ -102,12 +102,12 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
   });
 
   test('03-AC-06 environment overrides win over the config (03-REQ-07)', () => {
-    const input = { run: { env: 'staging', repeat: { test: 3, thresholds: 7 } } };
-    expect(resolved(input, { env: 'prod', repeat: 9 }).snapshot.run).toMatchObject({
+    const input = { run: { env: 'staging', passes: { test: 3, thresholds: 7 } } };
+    expect(resolved(input, { env: 'prod', passes: 9 }).snapshot.run).toMatchObject({
       env: 'prod',
-      repeat: { test: 9, thresholds: 7 },
+      passes: { test: 9, thresholds: 7 },
     });
-    expect(resolved(input, { repeat: 9, mode: 'thresholds' }).snapshot.run.repeat).toEqual({
+    expect(resolved(input, { passes: 9, mode: 'thresholds' }).snapshot.run.passes).toEqual({
       test: 3,
       thresholds: 9,
     });
@@ -116,10 +116,10 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
   });
 
   test('invalid overrides are reported with the option they replace', () => {
-    const list = issues({}, { env: 'Prod', repeat: 0, mode: 'thresholds' });
+    const list = issues({}, { env: 'Prod', passes: 0, mode: 'thresholds' });
     expect(list.map((i) => [i.code, i.path])).toEqual([
       ['CONFIG_INVALID_VALUE', 'run.env'],
-      ['CONFIG_INVALID_VALUE', 'run.repeat.thresholds'],
+      ['CONFIG_INVALID_VALUE', 'run.passes.thresholds'],
     ]);
   });
 
@@ -215,7 +215,7 @@ describe('URL patterns and the key builder (03, chapter 5; 02-REQ-17)', () => {
   });
 
   test('definePerfConfig returns its argument unchanged', () => {
-    const config = { run: { repeat: { test: 3 } } };
+    const config = { run: { passes: { test: 3 } } };
     expect(definePerfConfig(config)).toBe(config);
   });
 
@@ -261,19 +261,30 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
   });
 
   test('03-AC-03 CONFIG_UNKNOWN_OPTION names the option', () => {
-    expect(issues({ run: { repeats: 3 } })[0]).toMatchObject({
+    expect(issues({ run: { passs: 3 } })[0]).toMatchObject({
       code: 'CONFIG_UNKNOWN_OPTION',
-      path: 'run.repeats',
-      message: 'run.repeats: unknown option. Did you mean "run.repeat"?',
+      path: 'run.passs',
+      message: 'run.passs: unknown option. Did you mean "run.passes"?',
     });
   });
 
+  test('03-AC-16 run.passes defaults to 5 and 10; run.repeat is unknown with a hint (03-REQ-23)', () => {
+    expect(resolved({}).snapshot.run.passes).toEqual({ test: 5, thresholds: 10 });
+    expect(issues({ run: { passes: { test: 0 } } })[0]).toMatchObject({
+      code: 'CONFIG_INVALID_VALUE',
+      path: 'run.passes.test',
+    });
+    const [old] = issues({ run: { repeat: { test: 3 } } });
+    expect(old).toMatchObject({ code: 'CONFIG_UNKNOWN_OPTION', path: 'run.repeat' });
+    expect(old?.hint).toContain('Renamed to run.passes');
+  });
+
   test('03-AC-03 CONFIG_INVALID_TYPE gives the path, the value received and an example', () => {
-    const [problem] = issues({ run: { repeat: { test: 'five' } } });
+    const [problem] = issues({ run: { passes: { test: 'five' } } });
     expect(problem).toEqual({
       code: 'CONFIG_INVALID_TYPE',
-      path: 'run.repeat.test',
-      message: 'run.repeat.test: must be integer, got "five"',
+      path: 'run.passes.test',
+      message: 'run.passes.test: must be integer, got "five"',
       hint: 'Default: 5. schemas/config.schema.json in the package lists every option and its format.',
     });
     expect(issues(5)[0]).toMatchObject({ code: 'CONFIG_INVALID_TYPE', path: '' });
@@ -423,7 +434,7 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
       gate: { tolerance: -1 },
       checks: { time: { percentile: { level: 'p10' } } },
       measure: { exclud: [], include: [{ regex: '[' }] },
-      run: { repeat: { test: 0 } },
+      run: { passes: { test: 0 } },
     });
     expect(list.map((i) => i.path)).toEqual([
       'report.html',
@@ -431,7 +442,7 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
       'checks.time.percentile.level',
       'measure.exclud',
       'measure.include[0]',
-      'run.repeat.test',
+      'run.passes.test',
     ]);
   });
 

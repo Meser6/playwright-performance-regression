@@ -10,13 +10,18 @@ import type {
   TestResult,
 } from '@playwright/test/reporter';
 import {
+  askTerminal,
   directoryOf,
+  listDirSync,
   readCiInfo,
   readHostInfo,
   readPackageInfo,
+  readTextFile,
+  readTextFileSync,
   relativeSlashPath,
   removeFileSync,
   resolvePath,
+  runPass,
   tempPath,
   writeJsonStable,
   writeTextAtomic,
@@ -42,6 +47,9 @@ function processHost(): ReporterHost {
       removeFileSync,
       readPackageInfo,
       tempPath,
+      readTextFile,
+      readTextFileSync,
+      listDirSync,
     },
     stdout: process.stdout,
     stderr: process.stderr,
@@ -51,6 +59,10 @@ function processHost(): ReporterHost {
     random: Math.random,
     ci: readCiInfo(env),
     host: readHostInfo(env),
+    execPath: process.execPath,
+    runPass: (command, passEnv) => runPass(command, passEnv, process.cwd()),
+    ask: (question) => askTerminal(question),
+    exit: (code) => process.exit(code),
   };
 }
 

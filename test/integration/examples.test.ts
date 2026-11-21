@@ -49,7 +49,7 @@ describe.each([
 
       const thresholds = await harness.run(dir, {
         cli: true,
-        args: [...args('perf:thresholds'), '--repeat', '5'],
+        args: [...args('perf:thresholds'), '--passes', '5'],
       });
       expectStatus(thresholds, 0);
       expect(existsSync(join(dir, 'pw-perf-thresholds.json'))).toBe(true);
@@ -62,7 +62,7 @@ describe.each([
 
       const run = await harness.run(dir, {
         cli: true,
-        args: [...args('perf:test'), '--repeat', '5'],
+        args: [...args('perf:test'), '--passes', '5'],
       });
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');

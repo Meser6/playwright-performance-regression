@@ -112,6 +112,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     ci: null,
     host: { ...HOST, ...spec.host },
     playwright: { version: spec.playwrightVersion ?? '1.57.0' },
+    passes: { planned: 10, completed: 10, failed: [] },
     runConditions: {
       workers: 1,
       projects: spec.projects ?? [
@@ -119,7 +120,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
           name: 'chromium',
           role: 'measured',
           browserName: 'chromium',
-          repeatEach: 10,
+          repeatEach: 1,
           retries: 0,
         },
       ],

@@ -10,7 +10,6 @@ function input(overrides: Partial<PerfRunInput> = {}): PerfRunInput {
   return {
     projects: 'auto',
     keepReporters: [],
-    repeat: 5,
     reporterPath: REPORTER,
     ...overrides,
   };
@@ -47,7 +46,7 @@ const browsers: PlaywrightTestConfig = {
 };
 
 describe('planPerfRun: run limits and artifacts', () => {
-  test('sets workers 1, retries 0, maxFailures 0, globalTimeout 0 and turns artifacts off (04-REQ-33)', () => {
+  test('04-AC-16 sets workers 1, repeatEach 1, maxFailures 0, globalTimeout 0, keeps retries and turns artifacts off (04-REQ-33, D-38)', () => {
     const { config } = plan({
       workers: 4,
       retries: 2,
@@ -59,7 +58,8 @@ describe('planPerfRun: run limits and artifacts', () => {
     });
     expect(config).toMatchObject({
       workers: 1,
-      retries: 0,
+      retries: 2,
+      repeatEach: 1,
       maxFailures: 0,
       globalTimeout: 0,
       timeout: 30_000,
@@ -70,8 +70,8 @@ describe('planPerfRun: run limits and artifacts', () => {
       {
         name: 'chromium',
         workers: 2,
-        retries: 0,
-        repeatEach: 5,
+        retries: 1,
+        repeatEach: 1,
         use: { trace: 'off', video: 'off', screenshot: 'off' },
       },
     ]);
@@ -96,7 +96,6 @@ describe('planPerfRun: run limits and artifacts', () => {
       }).runConditions.overridden,
     ).toEqual([
       'workers',
-      'retries',
       'repeatEach',
       'maxFailures',
       'globalTimeout',
@@ -104,14 +103,14 @@ describe('planPerfRun: run limits and artifacts', () => {
       'video',
       'screenshot',
     ]);
-    // Values equal to what perf mode needs are not changes.
+    // Values equal to what perf mode needs are not changes; retries stay from the config (D-38).
     expect(
       plan({
         workers: 1,
-        retries: 0,
+        retries: 3,
         maxFailures: 0,
         use: { trace: 'off', video: { mode: 'off' } },
-        projects: [{ name: 'a', repeatEach: 5 }],
+        projects: [{ name: 'a', repeatEach: 1 }],
       }).runConditions.overridden,
     ).toEqual([]);
   });
@@ -133,13 +132,13 @@ describe('planPerfRun: run limits and artifacts', () => {
 });
 
 describe('planPerfRun: measured projects (04-REQ-18)', () => {
-  test('04-AC-12 auto measures chromium only, keeps its dependencies and teardowns once, removes the rest', () => {
+  test('04-AC-12 auto measures chromium only, keeps its dependencies and teardowns, removes the rest', () => {
     const result = plan(browsers);
     expect(result.measuredProjects).toEqual(['chromium']);
-    expect(result.config.projects?.map((p) => [p.name, p.repeatEach, p.retries])).toEqual([
-      ['setup', 1, 0],
-      ['cleanup', 1, 0],
-      ['chromium', 5, 0],
+    expect(result.config.projects?.map((p) => [p.name, p.repeatEach])).toEqual([
+      ['setup', 1],
+      ['cleanup', 1],
+      ['chromium', 1],
     ]);
     expect(result.runConditions.removedProjects).toEqual(['firefox', 'webkit']);
   });
@@ -151,7 +150,7 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  test('04-AC-09 indirect dependencies and teardowns run once, the measured project N times', () => {
+  test('04-AC-09 indirect dependencies and teardowns are kept; every project runs once per pass (D-39)', () => {
     const result = plan({
       projects: [
         { name: 'auth' },
@@ -169,7 +168,7 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
       auth: 1,
       data: 1,
       'data-cleanup': 1,
-      measured: 5,
+      measured: 1,
       cleanup: 1,
     });
     expect(result.runConditions.removedProjects).toEqual(['other']);
@@ -198,7 +197,8 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
   test('a config without projects is one default project, measured when it uses Chromium (01-REQ-10)', () => {
     const result = plan({ workers: 2, testDir: 'e2e' });
     expect(result.measuredProjects).toEqual(['']);
-    expect(result.config).toMatchObject({ testDir: 'e2e', workers: 1, repeatEach: 5, retries: 0 });
+    expect(result.config).toMatchObject({ testDir: 'e2e', workers: 1, repeatEach: 1 });
+    expect(result.config.retries).toBeUndefined();
     expect(result.config.projects).toBeUndefined();
     expect(result.runConditions.removedProjects).toEqual([]);
   });
@@ -235,7 +235,7 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
     );
   });
 
-  test('03-AC-11 two engines give CONFIG_MULTIPLE_ENGINES; a listed dependency of a listed project is repeated', () => {
+  test('03-AC-11 two engines give CONFIG_MULTIPLE_ENGINES; a listed dependency of a listed project is measured', () => {
     const result = plan(browsers, { projects: ['chromium', 'firefox', 'setup'] });
     expect(result.warnings).toEqual([
       expect.objectContaining({
@@ -246,7 +246,7 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
       }),
     ]);
     expect(result.measuredProjects).toEqual(['setup', 'chromium', 'firefox']);
-    expect(result.config.projects?.find((p) => p.name === 'setup')?.repeatEach).toBe(5);
+    expect(result.config.projects?.find((p) => p.name === 'setup')?.repeatEach).toBe(1);
     expect(result.config.projects?.find((p) => p.name === 'cleanup')?.repeatEach).toBe(1);
   });
 });

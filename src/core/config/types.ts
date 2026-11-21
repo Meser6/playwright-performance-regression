@@ -94,9 +94,9 @@ export type ResolvedStepsSettings = Omit<StepsSettingsJson, 'include' | 'exclude
 export interface ConfigOverrides {
   /** From PW_PERF_ENV; replaces run.env. */
   env?: string | null;
-  /** From PW_PERF_REPEAT; replaces run.repeat.<mode>. */
-  repeat?: number;
-  /** Mode the repeat override applies to. Default 'test'. */
+  /** From PW_PERF_PASSES or PW_PERF_PASS; replaces run.passes.<mode> (03-REQ-07). */
+  passes?: number;
+  /** Mode the passes override applies to. Default 'test'. */
   mode?: 'test' | 'thresholds';
   /** Where the input came from; 'json' rejects keys.keyBuilder (03-REQ-10). Default 'code'. */
   source?: 'code' | 'json' | 'snapshot';

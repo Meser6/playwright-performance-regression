@@ -57,17 +57,17 @@ describe('process registry', () => {
   });
 
   test('writing the same config again changes nothing and gives no warning (01-REQ-06)', () => {
-    const first = state({ run: { repeat: { test: 3 } } });
+    const first = state({ run: { passes: { test: 3 } } });
     expect(setRegistered(first)).toBeUndefined();
-    const again = state({ run: { repeat: { test: 3 } } });
+    const again = state({ run: { passes: { test: 3 } } });
     expect(setRegistered(again)).toBeUndefined();
     expect(getRegistered()).toBe(first);
     expect(first.warnings).toEqual([]);
   });
 
   test('03-AC-03 CONFIG_CHANGED_IN_PROCESS when another config replaces the registered one', () => {
-    setRegistered(state({ run: { repeat: { test: 3 } } }));
-    const second = state({ run: { repeat: { test: 4 } } });
+    setRegistered(state({ run: { passes: { test: 3 } } }));
+    const second = state({ run: { passes: { test: 4 } } });
     const warning = setRegistered(second);
     expect(warning).toEqual(
       expect.objectContaining({
@@ -79,7 +79,7 @@ describe('process registry', () => {
     expect(getRegistered()).toBe(second);
     expect(second.warnings).toEqual([warning]);
     // Different measured projects also count as a different registration.
-    expect(setRegistered(state({ run: { repeat: { test: 4 } } }, ['other']))?.code).toBe(
+    expect(setRegistered(state({ run: { passes: { test: 4 } } }, ['other']))?.code).toBe(
       'CONFIG_CHANGED_IN_PROCESS',
     );
   });

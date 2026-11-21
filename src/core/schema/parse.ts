@@ -364,12 +364,20 @@ function withStepOptions(config: unknown): unknown {
   return out;
 }
 
+/** config.run.repeat of a snapshot before D-39 becomes config.run.passes with the same values. */
+function withPassesOption(config: unknown): unknown {
+  if (!isRecord(config) || !isRecord(config.run)) return config;
+  const { repeat, ...run } = config.run;
+  return repeat === undefined ? config : { ...config, run: { ...run, passes: repeat } };
+}
+
 /**
  * Run report v2 → v3 (02-REQ-33, 02-D-18): custom measurements were removed (D-32). Drops
  * `custom`, `evaluation.counts.custom`, thresholdFiles entries of kind custom and the custom
  * options of the config snapshot, without a warning. Warnings with CUSTOM_* codes stay as text.
  * Adds the step fields of version 3: `steps: {}`, `stepNormalization: null`, zero
- * `evaluation.counts.step` and the step options of the config snapshot.
+ * `evaluation.counts.step` and the step options of the config snapshot; `passes` of one pass and
+ * `config.run.passes` from `config.run.repeat` (D-39, 02-REQ-37).
  */
 export function migrateRunReportV2(document: JsonObject): JsonObject {
   const { custom: _custom, ...rest } = document;
@@ -380,7 +388,9 @@ export function migrateRunReportV2(document: JsonObject): JsonObject {
     ...rest,
     stepNormalization: null,
     steps: {},
-    config: withStepOptions(withoutCustomOptions(document.config)),
+    // A run before D-39 ran its repetitions in one pass (02-REQ-37).
+    passes: { planned: 1, completed: 1, failed: [] },
+    config: withPassesOption(withStepOptions(withoutCustomOptions(document.config))),
     evaluation:
       isRecord(evaluation) && isRecord(counts)
         ? {

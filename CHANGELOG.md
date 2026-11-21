@@ -7,7 +7,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `run.repeat`, `PW_PERF_REPEAT` and `--repeat` are renamed to `run.passes`,
+  `PW_PERF_PASSES` and `--passes`; the old names are errors with a hint. Every project runs with
+  `repeatEach: 1`.
+- Perf mode no longer forces `retries: 0`: the retries of your Playwright config apply, every
+  attempt is measured and a test that passes on a retry counts as passed. Retries no longer give
+  `RUN_CONDITIONS_CHANGED`.
+- `pw-perf test` and `thresholds` print no mode line before the run; the start banner replaces it.
+
 ### Added
+
+- Passes: a run now runs your test command several times in a row (`run.passes`: 5 for `test`,
+  10 for `thresholds`; `PW_PERF_PASSES` or `--passes` for one run) instead of repeating each test
+  inside one Playwright run. Setup steps of the script (seeding data) run before every pass. Each
+  pass writes `pw-perf-results/pass-<k>.json` and the first pass evaluates all of them together:
+  one report (with `passes` in `report.json` and a "Passes" tile) and one result. A pass without
+  data gives `RUN_PASS_FAILED`; an interrupted pass `RUN_PASS_INTERRUPTED`. See `docs/cli.md`.
+- A start banner with the mode, projects, tests × passes, a time estimate and the report path; in
+  a terminal outside CI it asks `Continue? (Y/n)` (`PW_PERF_YES=1` skips it).
 
 - `check`: a dry run before the first measurement (`PW_PERF_MODE=check npm run e2e`, or
   `npx pw-perf check`). It runs the first test of each file once (at most `--max-tests`,

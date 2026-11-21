@@ -1,5 +1,0 @@
-{
-  "name": "repeat given as a string",
-  "input": { "run": { "repeat": { "test": "5" } } },
-  "expected": { "code": "CONFIG_INVALID_TYPE", "paths": ["run.repeat.test"] }
-}

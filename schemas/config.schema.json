@@ -18,21 +18,21 @@
           "$ref": "common.schema.json#/$defs/envLabelOrNull",
           "default": null
         },
-        "repeat": {
-          "description": "Repetitions of each measured test (D-03). Overridden by PW_PERF_REPEAT / --repeat for the current mode.",
+        "passes": {
+          "description": "Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.",
           "type": "object",
           "additionalProperties": false,
           "default": {},
           "properties": {
             "test": {
-              "description": "Repetitions in a measurement run.",
+              "description": "Passes in a measurement run.",
               "type": "integer",
               "minimum": 1,
               "maximum": 1000,
               "default": 5
             },
             "thresholds": {
-              "description": "Repetitions in a thresholds derivation run.",
+              "description": "Passes in a thresholds derivation run.",
               "type": "integer",
               "minimum": 1,
               "maximum": 1000,
@@ -41,7 +41,7 @@
           }
         },
         "projects": {
-          "description": "Which Playwright projects are measured and repeated in perf mode (D-04, D-13, D-22; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured and repeated too.",
+          "description": "Which Playwright projects are measured in perf mode (D-13, D-22, D-39; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured too.",
           "oneOf": [{"const": "auto"}, {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true}],
           "default": "auto"
         },

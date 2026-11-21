@@ -9,7 +9,7 @@ import type { ColorStyle, Painter } from '../../console/color.ts';
 import { DEFAULT_CONFIG, resolveConfig } from '../../core/config/index.ts';
 import { CLI_COMMAND, PACKAGE_NAME, REPOSITORY_URL } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
-import { isEnvLabel, parseRepeat } from '../../mode/index.ts';
+import { isEnvLabel, parsePasses } from '../../mode/index.ts';
 import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
@@ -19,7 +19,7 @@ import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
 import { readProjectFiles } from './files.ts';
-import { DEFAULT_ANSWERS_REPEAT } from './defaults.ts';
+import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers } from './perf-config.ts';
@@ -274,14 +274,14 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
   });
 
-  dialog.stepOf(4, 'stepRepeat', 'repeatLesson');
-  const repeatTest = await dialog.ask(
-    t('repeatQuestion'),
-    String(DEFAULT_ANSWERS_REPEAT),
-    DEFAULT_ANSWERS_REPEAT,
+  dialog.stepOf(4, 'stepPasses', 'passesLesson');
+  const passesTest = await dialog.ask(
+    t('passesQuestion'),
+    String(DEFAULT_ANSWERS_PASSES),
+    DEFAULT_ANSWERS_PASSES,
     (a) => {
-      const n = parseRepeat(a);
-      return n !== null && resolveConfig({ run: { repeat: { test: n } } }, {}).ok ? n : null;
+      const n = parsePasses(a);
+      return n !== null && resolveConfig({ run: { passes: { test: n } } }, {}).ok ? n : null;
     },
   );
 
@@ -321,7 +321,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
       true,
     );
   }
-  return { scope, repeatTest, warnOnly, steps, envLabels, addCi };
+  return { scope, passesTest, warnOnly, steps, envLabels, addCi };
 }
 
 function changeKind(change: FileChange, t: Translate): string {

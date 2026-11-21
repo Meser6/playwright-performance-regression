@@ -63,19 +63,19 @@ const outcomeFiles = (): string[] => readdirSync(join(dir, 'tmp'));
 
 describe('planRun', () => {
   const input = {
-    env: { PATH: '/bin', PW_PERF_REPEAT: '9', PW_PERF_MODE: '' },
+    env: { PATH: '/bin', PW_PERF_PASSES: '9', PW_PERF_MODE: '' },
     runId: RUN_ID,
     outcomeFile: '/tmp/x.outcome.json',
     reporterPath: '/pkg/dist/reporter.js',
   };
 
   test('04-REQ-09 sets the PW_PERF_* variables and replaces the ones already set', () => {
-    const plan = planRun(command({ mode: 'thresholds', repeat: 3, env: 'qa', prune: true }), input);
+    const plan = planRun(command({ mode: 'thresholds', passes: 3, env: 'qa', prune: true }), input);
     if (!plan.ok) throw new Error(JSON.stringify(plan.issues));
     expect(plan.value.env).toEqual({
       PATH: '/bin',
       PW_PERF_MODE: 'thresholds',
-      PW_PERF_REPEAT: '3',
+      PW_PERF_PASSES: '3',
       PW_PERF_ENV: 'qa',
       PW_PERF_RUN_ID: RUN_ID,
       PW_PERF_OUTCOME_FILE: '/tmp/x.outcome.json',
@@ -84,13 +84,13 @@ describe('planRun', () => {
     expect(plan.value.warnings).toEqual([
       expect.objectContaining({
         code: 'CLI_MODE_ALREADY_SET',
-        message: expect.stringContaining('PW_PERF_REPEAT is already set'),
+        message: expect.stringContaining('PW_PERF_PASSES is already set'),
       }),
     ]);
 
-    const plain = planRun(command(), { ...input, env: { PW_PERF_REPEAT: '9' } });
+    const plain = planRun(command(), { ...input, env: { PW_PERF_PASSES: '9' } });
     if (!plain.ok) throw new Error('plan failed');
-    // Without --repeat the variable is not passed on: the config decides (04-REQ-17).
+    // Without --passes the variable is not passed on: the config decides (04-REQ-17).
     expect(plain.value.env).toEqual({
       PW_PERF_MODE: 'test',
       PW_PERF_RUN_ID: RUN_ID,
@@ -103,20 +103,16 @@ describe('planRun', () => {
     expect(plan.ok && plan.value.args).toEqual(['--grep', '@perf']);
   });
 
-  test('04-REQ-20 the mode line, and the subset tip only without a test filter', () => {
+  test('04-REQ-20 the CLI prints no mode line: the start banner of the reporter shows it', () => {
     const lines = (cmd: RunCommand): string[] => {
       const plan = planRun(cmd, input);
       if (!plan.ok) throw new Error('plan failed');
       return plan.value.lines;
     };
-    expect(lines(command({ repeat: 5 }))).toEqual([
-      'perf mode "test", 5 repeats per test, 1 worker.',
-      'tip: measure a subset, e.g. --grep @perf or --project chromium.',
-    ]);
-    expect(lines(command({ mode: 'thresholds', playwrightArgs: ['tests/cart.spec.ts'] }))).toEqual([
-      'perf mode "thresholds", repeats per test from run.repeat.thresholds, 1 worker.',
-    ]);
-    expect(lines(command({ playwrightArgs: ['--list'], listOnly: true }))).toHaveLength(1);
+    expect(lines(command({ passes: 5 }))).toEqual([]);
+    expect(lines(command({ mode: 'thresholds', playwrightArgs: ['tests/cart.spec.ts'] }))).toEqual(
+      [],
+    );
   });
 
   test('04-AC-22 the reporter goes to the last --reporter only; a path with a comma is refused', () => {
@@ -222,7 +218,7 @@ describe('runTests with a fake Playwright', () => {
     expect(await runTests(command(), two.host)).toBe(2);
     // The reporter prints the report path at the end of its summary; the CLI does not repeat it.
     expect(two.stderr.join('')).toMatch(
-      /\nplaywright-performance-regression: tests passed · performance failed · exit code 2\n$/u,
+      /^playwright-performance-regression: tests passed · performance failed · exit code 2\n$/mu,
     );
     expect(two.stderr.join('')).not.toContain('report');
 
@@ -252,7 +248,7 @@ describe('runTests with a fake Playwright', () => {
     const fake = fakeCliHost({ cwd: dir, onSpawn: writesOutcome(tooMany, 1) });
     expect(await runTests(command(), fake.host)).toBe(3);
     expect(fake.stderr.join('')).toMatch(
-      /\nplaywright-performance-regression: tests failed · performance result not trustworthy · exit code 3\n$/u,
+      /^playwright-performance-regression: tests failed · performance result not trustworthy · exit code 3\n$/mu,
     );
     expect(fake.stderr.join('')).not.toContain('report');
     const invalid = outcome({

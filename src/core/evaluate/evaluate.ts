@@ -10,7 +10,7 @@ import type {
   Kind,
   ThresholdFileInfo,
 } from '../types/index.ts';
-import { CLI_COMMAND, KINDS } from '../types/index.ts';
+import { KINDS } from '../types/index.ts';
 import {
   compareText,
   fileInfo,
@@ -245,7 +245,7 @@ export function evaluate(
     warnings.push({
       code: 'THRESHOLDS_ENTRIES_NOT_EVALUATED',
       message: `${plural(notEvaluated, 'key')} with an entry in the thresholds file had too few samples and ${notEvaluated === 1 ? 'was' : 'were'} not evaluated.`,
-      hint: `Run more repetitions (run.repeat or \`${CLI_COMMAND} test --repeat\`), or accept that the endpoint is called rarely.`,
+      hint: `Run more passes (run.passes or PW_PERF_PASSES), or accept that the endpoint is called rarely.`,
     });
   }
 

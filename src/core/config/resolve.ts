@@ -19,7 +19,7 @@ import { expandSteps } from './steps.ts';
 import { issue, PATTERN_LISTS, regexIssues, relationalIssues, schemaIssues } from './validate.ts';
 
 const KEY_BUILDER_SNAPSHOT = '[function]';
-const repeatSchema = int({ minimum: 1, maximum: 1000 });
+const passesSchema = int({ minimum: 1, maximum: 1000 });
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (!isRecord(value)) return false;
@@ -176,13 +176,13 @@ function overrideIssues(overrides: ConfigOverrides): ConfigIssue[] {
       ),
     );
   }
-  if (overrides.repeat !== undefined && !matches(repeatSchema, overrides.repeat)) {
+  if (overrides.passes !== undefined && !matches(passesSchema, overrides.passes)) {
     issues.push(
       issue(
         'CONFIG_INVALID_VALUE',
-        ['run', 'repeat', overrides.mode ?? 'test'],
-        `the repeat override must be an integer from 1 to 1000, got ${describeValue(overrides.repeat)}`,
-        'Fix the number of repetitions, e.g. 5.',
+        ['run', 'passes', overrides.mode ?? 'test'],
+        `the passes override must be an integer from 1 to 1000, got ${describeValue(overrides.passes)}`,
+        'Fix the number of passes, e.g. 5.',
       ),
     );
   }
@@ -191,8 +191,8 @@ function overrideIssues(overrides: ConfigOverrides): ConfigIssue[] {
 
 function applyOverrides(config: ResolvedConfigJson, overrides: ConfigOverrides): void {
   if (overrides.env !== undefined) config.run.env = overrides.env;
-  if (overrides.repeat !== undefined) {
-    config.run.repeat[overrides.mode === 'thresholds' ? 'thresholds' : 'test'] = overrides.repeat;
+  if (overrides.passes !== undefined) {
+    config.run.passes[overrides.mode === 'thresholds' ? 'thresholds' : 'test'] = overrides.passes;
   }
 }
 

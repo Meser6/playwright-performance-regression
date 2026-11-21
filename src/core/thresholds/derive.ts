@@ -87,7 +87,7 @@ function refusal(
       {
         code: 'THRESHOLDS_NOTHING_TO_DERIVE',
         message: `No key has at least ${minDeriveSamples(cfg.checks)} successful samples (checks.time.median.minSamples); no thresholds file was written.`,
-        hint: `Run more repetitions (run.repeat.thresholds or \`${CLI_COMMAND} thresholds --repeat\`).`,
+        hint: `Run more passes (run.passes.thresholds or PW_PERF_PASSES).`,
       },
     ];
   }
@@ -179,7 +179,7 @@ function deriveKind(
       warnings.push({
         code: 'THRESHOLDS_KIND_SKIPPED',
         message: `No ${KIND_NOUN[kind]} key has at least ${minDeriveSamples(cfg.checks)} successful samples; ${file.path} was not written.`,
-        hint: `Run more repetitions (run.repeat.thresholds or \`${CLI_COMMAND} thresholds --repeat\`).`,
+        hint: `Run more passes (run.passes.thresholds or PW_PERF_PASSES).`,
       });
     }
     return { file: { kind, content: null, changed: false }, warnings, loosenedMuch: 0 };

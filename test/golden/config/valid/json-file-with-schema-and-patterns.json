@@ -2,7 +2,7 @@
   "name": "JSON config file with $schema, regex patterns and per-rule settings",
   "input": {
     "$schema": "./node_modules/playwright-performance-regression/schemas/config.schema.json",
-    "run": { "env": "staging", "repeat": { "test": 3 }, "projects": ["chromium"] },
+    "run": { "env": "staging", "passes": { "test": 3 }, "projects": ["chromium"] },
     "measure": {
       "exclude": ["/socket.io/", "intercom.io", { "regex": "^https://cdn\\.", "flags": "i" }]
     },

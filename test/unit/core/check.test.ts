@@ -2,7 +2,13 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { estimateText, proposePattern, randomHostIssue } from '../../../src/core/check/index.ts';
+import {
+  estimateText,
+  msPerTest,
+  proposePattern,
+  randomHostIssue,
+  startEstimate,
+} from '../../../src/core/check/index.ts';
 import { formatCheckSummary } from '../../../src/console/check-summary.ts';
 import type { CheckSummary } from '../../../src/console/check-summary.ts';
 import { parseArgs } from '../../../src/cli/parse.ts';
@@ -45,15 +51,49 @@ describe('04-AC-36 CHECK_RANDOM_HOST', () => {
   });
 });
 
+describe('04-AC-45 estimate of the start banner (04-REQ-66)', () => {
+  test('10 test runs in 100 s give 10 s per test; without a report 30 s per test', () => {
+    const report = {
+      startedAt: '2026-11-21T10:00:00.000Z',
+      finishedAt: '2026-11-21T10:01:40.000Z',
+      tests: { status: 'passed' as const, expected: 8, unexpected: 1, flaky: 1, skipped: 4 },
+    };
+    expect(msPerTest(report)).toBe(10_000);
+    expect(
+      msPerTest({ ...report, tests: { ...report.tests, expected: 0, unexpected: 0, flaky: 0 } }),
+    ).toBeNull();
+    expect(startEstimate({ tests: 4, passes: 5, msPerTest: 10_000 })).toBe(
+      '≈ 4 min (from the last run)',
+    );
+    expect(startEstimate({ tests: 4, passes: 5, msPerTest: null })).toBe(
+      '≈ 10 min (30 s per test, no earlier run)',
+    );
+  });
+
+  test('the check estimate repeats the setup projects in every pass (04-REQ-51)', () => {
+    expect(
+      estimateText({
+        tests: 10,
+        passesTest: 5,
+        passesThresholds: 10,
+        meanMs: 6000,
+        setupMs: 60_000,
+      }),
+    ).toBe(
+      'measurement run ≈ 10 min (10 tests × 5 passes × 6.0 s), thresholds run ≈ 20 min (× 10 passes), 1 worker',
+    );
+  });
+});
+
 describe('04-AC-35 estimate and output', () => {
   test('N 214, R 5, m 6.2 s, S 0 is 1 h 51 min; no measured test is not available', () => {
     expect(
-      estimateText({ tests: 214, repeatTest: 5, repeatThresholds: 10, meanMs: 6200, setupMs: 0 }),
+      estimateText({ tests: 214, passesTest: 5, passesThresholds: 10, meanMs: 6200, setupMs: 0 }),
     ).toBe(
-      'measurement run ≈ 1 h 51 min (214 tests × 5 repeats × 6.2 s), thresholds run ≈ 3 h 42 min (× 10 repeats), 1 worker',
+      'measurement run ≈ 1 h 51 min (214 tests × 5 passes × 6.2 s), thresholds run ≈ 3 h 42 min (× 10 passes), 1 worker',
     );
     expect(
-      estimateText({ tests: 10, repeatTest: 5, repeatThresholds: 10, meanMs: null, setupMs: 0 }),
+      estimateText({ tests: 10, passesTest: 5, passesThresholds: 10, meanMs: null, setupMs: 0 }),
     ).toBe('not available (no measured test ran)');
   });
 
@@ -111,8 +151,8 @@ describe('04-AC-35 estimate and output', () => {
       toolErrors: [],
       estimate: estimateText({
         tests: 214,
-        repeatTest: 5,
-        repeatThresholds: 10,
+        passesTest: 5,
+        passesThresholds: 10,
         meanMs: 6200,
         setupMs: 0,
       }),
@@ -125,7 +165,7 @@ describe('04-AC-35 estimate and output', () => {
 });
 
 describe('check in the CLI and the mode contract (04-REQ-48, 04-REQ-49)', () => {
-  test('pw-perf check --max-tests; --repeat and --prune are refused', () => {
+  test('pw-perf check --max-tests; --passes, --repeat and --prune are refused', () => {
     const ok = parseArgs(['check', '--max-tests', '2', '--grep', '@perf']);
     expect(ok.ok && ok.value).toMatchObject({
       kind: 'run',
@@ -134,6 +174,7 @@ describe('check in the CLI and the mode contract (04-REQ-48, 04-REQ-49)', () => 
       playwrightArgs: ['--grep', '@perf'],
     });
     for (const bad of [
+      ['check', '--passes', '3'],
       ['check', '--repeat', '3'],
       ['check', '--prune'],
       ['test', '--max-tests', '2'],

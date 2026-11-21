@@ -23,8 +23,9 @@ for you.
 The package needs two things in your project:
 
 1. `playwright.config` is wrapped in `withPerf()`. Outside a measurement run this returns your
-   config object unchanged; inside one it switches to one worker, no retries and repetitions, and
-   adds the package reporter.
+   config object unchanged; inside one it switches to one worker, runs every test once per pass
+   (`repeatEach: 1`; the reporter runs your test command once per pass) and adds the package
+   reporter.
 2. The `test` object your browser tests use is wrapped in `withPerfFixtures()` (or the tests
    import the ready `test` from `playwright-performance-regression/test`). Outside a measurement
    run this only adds the `perf` fixture; Playwright's `page` and `context` are left alone.
@@ -121,14 +122,15 @@ samples = calls per test × tests that call it × repetitions
 | apdex, slow share | 20 (and an entry with `t` in the thresholds file) |
 | p99               | 100                                               |
 
-Example: an endpoint called once by 2 tests with the default 5 repetitions has 10 samples, so the
-median and error-rate checks run and the p95 check is skipped. With 2 tests and `--repeat 10` it
-reaches 20 samples and p95 is checked too. A key below a check's minimum is reported as "median
+Example: an endpoint called once by 2 tests with the default 5 passes has 10 samples, so the
+median and error-rate checks run and the p95 check is skipped. With 2 tests and
+`PW_PERF_PASSES=10` it reaches 20 samples and p95 is checked too. A key below a check's minimum is reported as "median
 only" or "not evaluated" instead of failing; see [FAQ](faq.md#why-do-most-keys-have-too-few-samples-or-are-evaluated-by-median-only).
 
-Rough run time: `measured tests × repetitions × average test time`, plus setup projects once. With
-20 tests of 6 s and 5 repetitions that is about 10 minutes on one worker. A thresholds run uses
-10 repetitions by default (`run.repeat.thresholds`), so it takes about twice as long.
+Rough run time: `passes × (measured tests × average test time + setup)`: the setup projects and
+the steps of your test script run once per pass. With 20 tests of 6 s and 5 passes that is about
+10 minutes on one worker. A thresholds run uses 10 passes by default (`run.passes.thresholds`),
+so it takes about twice as long. The start banner of every run shows an estimate.
 
 ## Start in warn-only mode
 
@@ -144,12 +146,15 @@ default.
 
 ## Settings in test files win
 
-`withPerf()` sets workers, retries, repetitions, trace, video and screenshots in the config. Values
-set in test files with `test.use()` or `test.describe.configure()` (for example `retries`,
-`trace: 'on'` or `video`) are applied by Playwright after the config and win. The run still
-measures, and the reporter warns with `RUN_CONDITIONS_CHANGED` when it sees retried results or
-trace and video attachments. Remove those settings for the measured tests, or guard them with
-`process.env.PW_PERF_MODE === undefined`.
+`withPerf()` sets workers, `repeatEach`, trace, video and screenshots in the config. Values set in
+test files with `test.use()` (for example `trace: 'on'` or `video`) are applied by Playwright
+after the config and win. The run still measures, and the reporter warns with
+`RUN_CONDITIONS_CHANGED` when it sees trace and video attachments. Remove those settings for the
+measured tests, or guard them with `process.env.PW_PERF_MODE === undefined`.
+
+`retries` are not changed: the value of your Playwright config (or of
+`test.describe.configure({ retries })`) applies in perf mode too. Every attempt is measured, and a
+test that passes on a retry counts as passed (flaky).
 
 ## Long polling, streaming and server-sent events
 
@@ -171,10 +176,12 @@ export default definePerfConfig({
 
 ## Tests that create data
 
-Every measured test runs several times in a row. A test that creates a user with a fixed e-mail,
-or an order with a fixed number, can fail on the second repetition. Make created data unique
-(for example with `testInfo.repeatEachIndex` or a random suffix) or clean it up in the test. A few
-failed executions only give a `TESTS_FAILED` warning; above `gate.maxFailedTestShare` (10% by
+The test command runs once per pass, with everything your script does before Playwright: a script
+like `"e2e": "node seed.mjs && playwright test"` seeds the data again before every pass. A test
+that creates a user with a fixed e-mail, or an order with a fixed number, without such a step can
+fail in the second pass. Reset the data in the script, make created data unique (a random suffix)
+or clean it up in the test. A pass whose setup step fails gives `RUN_PASS_FAILED` and the other
+passes are evaluated. A few failed executions only give a `TESTS_FAILED` warning; above `gate.maxFailedTestShare` (10% by
 default) the run ends with `TESTS_FAILED_TOO_MANY` because the numbers cannot be trusted.
 
 ## Mocked routes

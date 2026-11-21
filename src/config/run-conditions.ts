@@ -11,8 +11,6 @@ export interface PerfRunInput {
   projects: 'auto' | string[];
   /** run.keepReporters of the resolved package config. */
   keepReporters: string[];
-  /** Repetitions of each measured test in the current mode (environment override applied). */
-  repeat: number;
   /** Absolute path of the package reporter entry point. */
   reporterPath: string;
 }
@@ -180,23 +178,14 @@ function planReporters(
   return { reporters, removed, replaced };
 }
 
-function overriddenSettings(
-  config: Config,
-  kept: readonly Project[],
-  repeat: number,
-  measured: Set<string>,
-): string[] {
-  const scopes: { use?: Use; retries?: number }[] = [config, ...kept];
-  const repeatChanged =
-    kept.length === 0
-      ? config.repeatEach !== undefined && config.repeatEach !== repeat
-      : kept.some((p) => {
-          const own = p.repeatEach ?? config.repeatEach;
-          return own !== undefined && own !== (measured.has(projectName(p)) ? repeat : 1);
-        });
+/** Settings withPerf() changes; retries stay from the config (D-38). */
+function overriddenSettings(config: Config, kept: readonly Project[]): string[] {
+  const scopes: { use?: Use }[] = [config, ...kept];
+  const repeatChanged = [config, ...kept].some(
+    (scope) => scope.repeatEach !== undefined && scope.repeatEach !== 1,
+  );
   const changed: [string, boolean][] = [
     ['workers', config.workers !== 1],
-    ['retries', scopes.some((scope) => positive(scope.retries))],
     ['repeatEach', repeatChanged],
     ['maxFailures', positive(config.maxFailures)],
     ['globalTimeout', positive(config.globalTimeout)],
@@ -246,8 +235,9 @@ function enginesWarnings(
 
 /**
  * The Playwright config of a perf mode run (01, chapter 4.4): measured projects, their
- * dependencies and teardowns, one worker, no retries, repetitions only for measured projects,
- * artifacts off, no run limits, filtered reporters plus the package reporter.
+ * dependencies and teardowns, one worker, every test once per pass (repeatEach 1, D-39), retries
+ * from the config (D-38), artifacts off, no run limits, filtered reporters plus the package
+ * reporter.
  */
 export function planPerfRun<T extends PlaywrightTestConfig>(
   config: T,
@@ -257,7 +247,6 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
   const projects: readonly Project[] = source.projects ?? [{}];
   const measured = measuredNames(source, projects, input.projects);
   if (!measured.ok) return measured;
-  const measuredSet = new Set(measured.value);
 
   const keep = projectsToKeep(projects, measured.value);
   const kept =
@@ -271,21 +260,14 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
   const result: Config = {
     ...source,
     workers: 1,
-    retries: 0,
     maxFailures: 0,
     globalTimeout: 0,
     use: artifactsOff(source.use),
     reporter: reporters as unknown as ReporterDescription[],
   };
-  if (source.projects === undefined) {
-    result.repeatEach = input.repeat;
-  } else {
-    result.projects = kept.map((p) => ({
-      ...p,
-      retries: 0,
-      repeatEach: measuredSet.has(projectName(p)) ? input.repeat : 1,
-      use: artifactsOff(p.use),
-    }));
+  result.repeatEach = 1;
+  if (source.projects !== undefined) {
+    result.projects = kept.map((p) => ({ ...p, repeatEach: 1, use: artifactsOff(p.use) }));
   }
 
   return {
@@ -294,7 +276,7 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
       config: result as T,
       measuredProjects: measured.value,
       runConditions: {
-        overridden: overriddenSettings(source, kept, input.repeat, measuredSet),
+        overridden: overriddenSettings(source, kept),
         removedProjects,
         removedReporters: removed,
         replacedReporters: replaced,

@@ -73,7 +73,7 @@ config snapshot in a report was edited. Fix the value as shown in the hint.
 allowed values, or inconsistent with another option. Examples: time limits that decrease from
 median to percentile to p99, a lower bound above its upper bound, a percentile level below
 `p50`, a rule with a smaller `minSamples` than the median rule, every rule disabled without
-`gate.warnOnly`, an `--env` / `--repeat` value (or `PW_PERF_ENV` / `PW_PERF_REPEAT`) out of
+`gate.warnOnly`, an `--env` / `--passes` value (or `PW_PERF_ENV` / `PW_PERF_PASSES`) out of
 range, or the environment label `steps` or `requests`, which are parts of the thresholds file
 names (`pw-perf-thresholds.steps.json`). The message names the option and the value received.
 
@@ -149,9 +149,11 @@ usually ends in [`CLI_OUTCOME_MISSING`](#cli_outcome_missing).
 ### MODE_INVALID_VALUE
 
 **Error.** A `PW_PERF_*` environment variable has an invalid value: `PW_PERF_MODE` other than
-`test`, `thresholds` or `check`, `PW_PERF_REPEAT` that is not a positive integer, `PW_PERF_ENV`
-that is not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, or `PW_PERF_PRUNE`
-other than `1`. An invalid value never silently turns perf mode off. Fix or unset the variable,
+`test`, `thresholds` or `check`, `PW_PERF_PASSES` that is not a positive integer, `PW_PERF_PASS`
+that is not `k/N` with 2 ≤ k ≤ N (the package sets it for passes 2 to N), `PW_PERF_ENV` that is
+not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, or `PW_PERF_PRUNE` or
+`PW_PERF_YES` other than `1`. `PW_PERF_REPEAT` was renamed to `PW_PERF_PASSES`: a set
+`PW_PERF_REPEAT` is an error with that hint. An invalid value never silently turns perf mode off. Fix or unset the variable,
 e.g. `PW_PERF_MODE=test npm run e2e` (see [cli.md](cli.md)).
 
 ### CONFIG_FILE_NOT_FOUND
@@ -185,7 +187,8 @@ Errors of the `pw-perf` command end it with exit code 3 before Playwright starts
 
 ### CLI_INVALID_OPTION
 
-**Error.** An option has an invalid value (for example `--repeat 0`), takes no value but got one,
+**Error.** An option has an invalid value (for example `--passes 0`), was renamed (`--repeat` is
+now `--passes`), takes no value but got one,
 belongs to another command (`--prune` or `--from` with `test`, `--input` with
 `thresholds --from`), or the command does not take the argument. Run
 `npx pw-perf <command> --help` for the options.
@@ -211,13 +214,13 @@ full measurement set, or leave it out.
 ### CLI_FROM_WITH_PLAYWRIGHT_ARGS
 
 **Error.** `pw-perf thresholds --from <report.json>` runs no tests, so it takes no Playwright
-arguments and no `--repeat`. Use only `--from`, `--env`, `--prune` and `--config`, or drop
+arguments and no `--passes`. Use only `--from`, `--env`, `--prune` and `--config`, or drop
 `--from` to run the tests.
 
 ### CLI_MODE_ALREADY_SET
 
 **Warning.** Some `PW_PERF_*` variables were already set in the environment. The CLI removes them
-and sets its own for this run. Use the CLI options (`--env`, `--repeat`, `--prune`) instead; set
+and sets its own for this run. Use the CLI options (`--env`, `--passes`, `--prune`) instead; set
 the variables yourself only for manual mode with `npx playwright test`.
 
 ### CLI_PLAYWRIGHT_NOT_FOUND
@@ -506,12 +509,32 @@ without sharding. (The CLI refuses `--shard` already; this code appears in manua
 
 ### RUN_CONDITIONS_CHANGED
 
-**Warning.** The run did not use the conditions perf mode sets: more than one worker, retries, a
-different number of repetitions, retried results, or trace/video recorded. Common causes are
-`--workers`, `--retries` or `--repeat-each` on the command line, another config wrapper applied
-after `withPerf()`, and `test.describe.configure({ retries })` or `test.use({ trace, video })` in
-test files, which override the config. Remove them for perf runs; set repetitions with
-`run.repeat` or `--repeat`. See [adoption.md](adoption.md).
+**Warning.** The run did not use the conditions perf mode sets: more than one worker, a
+`repeatEach` other than 1, or trace/video recorded. Common causes are `--workers` or
+`--repeat-each` on the command line, another config wrapper applied after `withPerf()`, and
+`test.use({ trace, video })` in test files, which override the config. Remove them for perf runs;
+set the number of passes with `run.passes` or `PW_PERF_PASSES`. Retries are no deviation: the
+`retries` of your config apply and every attempt is measured. See [adoption.md](adoption.md).
+
+### RUN_PASS_FAILED
+
+**Warning.** A pass after the first one ended without writing its `pw-perf-results/pass-<k>.json`,
+or wrote one of another run. The usual cause is a step of the test script before Playwright that
+failed in that pass (seeding data, starting a service); the output of that pass is above the
+warning. The other passes are evaluated; the report shows the pass under "Passes". See
+[cli.md](cli.md#passes).
+
+### RUN_PASS_INTERRUPTED
+
+**Tool error (exit code 3).** The process of a pass ended by a signal (or with exit code 130 or
+143), so the following passes did not start. The evaluation of the completed passes is in the
+report, but the result is incomplete. Run the measurement again.
+
+### RUN_PASS_SPAWN_FAILED
+
+**Tool error (exit code 3).** The next pass could not be started, for example because the package
+manager of the script is no longer on the path. The message shows the command. Check that the test
+command runs on its own, or set `run.passes` to 1.
 
 ### TESTS_FAILED
 
@@ -596,8 +619,8 @@ measurement set, or remove stale entries with `PW_PERF_PRUNE=1 PW_PERF_MODE=thre
 ### THRESHOLDS_ENTRIES_NOT_EVALUATED
 
 **Warning.** Keys with an entry in the thresholds file had fewer samples than the rules need
-(`minSamples`), so they were not evaluated. Run more repetitions (`run.repeat.test` or
-`--repeat`), or accept that the endpoint is called rarely. See the sample arithmetic in
+(`minSamples`), so they were not evaluated. Run more passes (`run.passes.test` or
+`PW_PERF_PASSES`), or accept that the endpoint is called rarely. See the sample arithmetic in
 [adoption.md](adoption.md).
 
 ### THRESHOLDS_ENV_MISMATCH
@@ -651,8 +674,8 @@ tests are probably not measured: check the integration as for
 ### THRESHOLDS_NOTHING_TO_DERIVE
 
 **Tool error (exit code 3).** No key has enough successful samples for an entry (at least
-`checks.time.median.minSamples`); no file was written. Run more repetitions
-(`run.repeat.thresholds` or `--repeat`).
+`checks.time.median.minSamples`); no file was written. Run more passes
+(`run.passes.thresholds` or `PW_PERF_PASSES`).
 
 ### THRESHOLDS_KIND_SKIPPED
 

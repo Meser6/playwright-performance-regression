@@ -567,6 +567,14 @@ export const runReport = obj(
       { required: ['platform', 'arch', 'nodeVersion', 'ci', 'cpuCount', 'cpuModel'] },
     ),
     playwright: obj({ version: str() }, { required: ['version'] }),
+    passes: obj(
+      {
+        planned: int({ minimum: 1 }),
+        completed: int({ minimum: 1 }),
+        failed: arr(int({ minimum: 2 })),
+      },
+      { required: ['planned', 'completed', 'failed'] },
+    ),
     runConditions: obj(
       {
         workers: int({ minimum: 1 }),
@@ -636,6 +644,7 @@ export const runReport = obj(
       'ci',
       'host',
       'playwright',
+      'passes',
       'runConditions',
       'tests',
       'evaluation',

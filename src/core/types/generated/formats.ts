@@ -129,20 +129,20 @@ export interface PackageConfig {
      */
     env?: string | null;
     /**
-     * Repetitions of each measured test (D-03). Overridden by PW_PERF_REPEAT / --repeat for the current mode.
+     * Passes of the test command (D-03, D-39): the command runs once per pass and every test runs once in each pass. Overridden by PW_PERF_PASSES / --passes for the current mode.
      */
-    repeat?: {
+    passes?: {
       /**
-       * Repetitions in a measurement run.
+       * Passes in a measurement run.
        */
       test?: number;
       /**
-       * Repetitions in a thresholds derivation run.
+       * Passes in a thresholds derivation run.
        */
       thresholds?: number;
     };
     /**
-     * Which Playwright projects are measured and repeated in perf mode (D-04, D-13, D-22; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured and repeated too.
+     * Which Playwright projects are measured in perf mode (D-13, D-22, D-39; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured too.
      */
     projects?: 'auto' | [string, ...string[]];
     /**
@@ -895,6 +895,23 @@ export interface RunReport {
      * FullConfig.version
      */
     version: string;
+  };
+  /**
+   * Passes of the run (D-39, 02-REQ-37): the test command runs once per pass and the first pass merges them.
+   */
+  passes: {
+    /**
+     * Passes of the run (run.passes.<mode>, PW_PERF_PASSES).
+     */
+    planned: number;
+    /**
+     * Passes whose data are in the report, including the first one.
+     */
+    completed: number;
+    /**
+     * Numbers of passes without data (RUN_PASS_FAILED), ascending.
+     */
+    failed: number[];
   };
   /**
    * Effective run conditions read from FullConfig in onBegin (ADR-0006).

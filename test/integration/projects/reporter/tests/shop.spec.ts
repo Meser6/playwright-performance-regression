@@ -1,5 +1,5 @@
-// Four tests with a few backend calls each; with FAIL_REPEATS=n the last test fails in its first
-// n repetitions (failed test share, 09-REQ-24).
+// Four tests with a few backend calls each; with FAIL_REPEATS=n the last test fails in the first
+// n passes (failed test share, 09-REQ-24; PW_PERF_PASS=k/N in passes 2…N, D-39).
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { call, expect, test } from './fixtures.ts';
@@ -23,5 +23,6 @@ test('checkout', async ({ page }) => {
   await page.goto('/page');
   await call(page, '/api/orders');
   const failing = Number(process.env.FAIL_REPEATS ?? 0);
-  expect(test.info().repeatEachIndex >= failing, 'failure requested by FAIL_REPEATS').toBe(true);
+  const pass = Number((process.env.PW_PERF_PASS ?? '1/1').split('/')[0]);
+  expect(pass > failing, 'failure requested by FAIL_REPEATS').toBe(true);
 });

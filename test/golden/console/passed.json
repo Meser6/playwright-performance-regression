@@ -190,7 +190,7 @@
         "env": null,
         "keepReporters": [],
         "projects": "auto",
-        "repeat": {
+        "passes": {
           "test": 5,
           "thresholds": 10
         }
@@ -459,6 +459,11 @@
     "origins": [],
     "playwright": {
       "version": "1.57.0"
+    },
+    "passes": {
+      "planned": 1,
+      "completed": 1,
+      "failed": []
     },
     "runConditions": {
       "overriddenSettings": [

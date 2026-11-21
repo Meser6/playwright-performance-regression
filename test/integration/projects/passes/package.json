@@ -1,0 +1,8 @@
+{
+  "name": "integration-passes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "node prep.mjs && playwright test"
+  }
+}

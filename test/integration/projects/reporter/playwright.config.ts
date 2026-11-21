@@ -17,6 +17,10 @@ export default withPerf(
       {
         name: 'chromium',
         testMatch: process.env.INTEGRATION_RETRIES ? /retries\.flaky\.ts/ : /.*\.spec\.ts/,
+        // Retries of the Playwright config stay in perf mode (D-38, 04-AC-16).
+        ...(process.env.INTEGRATION_RETRIES
+          ? { retries: Number(process.env.INTEGRATION_RETRIES) }
+          : {}),
       },
     ],
   }),

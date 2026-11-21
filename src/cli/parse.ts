@@ -3,7 +3,7 @@
 import { resolveConfig } from '../core/config/index.ts';
 import { CLI_COMMAND } from '../core/types/index.ts';
 import type { CliIssue, Result } from '../core/types/index.ts';
-import { ENV_LABEL_FORMAT, REPEAT_FORMAT, isEnvLabel, parseRepeat } from '../mode/index.ts';
+import { ENV_LABEL_FORMAT, PASSES_FORMAT, isEnvLabel, parsePasses } from '../mode/index.ts';
 import { LANGUAGES, isWizardLanguage } from './init/messages.ts';
 import type { WizardLanguage } from './init/messages.ts';
 import { isListOnly, testFilters, unsupportedOptions } from '../mode/playwright-args.ts';
@@ -15,7 +15,7 @@ export type ParsedCommand =
       kind: 'run';
       mode: 'test' | 'thresholds' | 'check';
       env?: string;
-      repeat?: number;
+      passes?: number;
       /** check only: --max-tests (04-REQ-49). */
       maxTests?: number;
       prune: boolean;
@@ -43,13 +43,14 @@ const VERSION = new Set(['--version', '-v']);
 const USAGE_HINT = `Commands: ${COMMANDS.join(', ')}. Run "${CLI_COMMAND} --help" for the usage.`;
 
 /** Own options of each command form (04, chapter 3). */
-const RUN_OPTIONS = ['--env', '--repeat', '--prune', '--from', '--max-tests'] as const;
+const RUN_OPTIONS = ['--env', '--passes', '--repeat', '--prune', '--from', '--max-tests'] as const;
 const FROM_OPTIONS = ['--env', '--prune', '--from', '--config'] as const;
 const REPORT_OPTIONS = ['--input', '--output', '--config'] as const;
 const INIT_OPTIONS = ['--yes', '-y', '--dry-run', '--lang', '--no-tutorial'] as const;
 /** Options that take a value. */
 const VALUED: ReadonlySet<string> = new Set([
   '--env',
+  '--passes',
   '--repeat',
   '--max-tests',
   '--from',
@@ -66,7 +67,7 @@ interface OwnOption {
 
 /**
  * Own option at `args[i]` when its name is one of `names`: exact match only, so `--repeat-each`
- * is not `--repeat` (04-REQ-03). Returns the option and the number of arguments it takes.
+ * is not the removed `--repeat` (04-REQ-03). Returns the option and the number of arguments it takes.
  */
 function ownOption(
   args: readonly string[],
@@ -109,35 +110,35 @@ function invalidValue(name: string, expected: string, value: string): CliIssue {
   };
 }
 
-/** --env and --repeat are checked like PW_PERF_ENV and PW_PERF_REPEAT (04-REQ-06). */
+/** --env and --passes are checked like PW_PERF_ENV and PW_PERF_PASSES (04-REQ-06). */
 function checkEnv(value: string, issues: CliIssue[]): string | undefined {
   if (isEnvLabel(value)) return value;
   issues.push(invalidValue('--env', ENV_LABEL_FORMAT, value));
   return undefined;
 }
 
-function checkRepeat(
+function checkPasses(
   value: string,
   mode: 'test' | 'thresholds',
   issues: CliIssue[],
 ): number | undefined {
-  const repeat = parseRepeat(value);
-  if (repeat === null) {
-    issues.push(invalidValue('--repeat', REPEAT_FORMAT, value));
+  const passes = parsePasses(value);
+  if (passes === null) {
+    issues.push(invalidValue('--passes', PASSES_FORMAT, value));
     return undefined;
   }
-  // The upper bound of run.repeat.* in the config schema.
-  const resolved = resolveConfig(undefined, { mode, repeat });
+  // The upper bound of run.passes.* in the config schema.
+  const resolved = resolveConfig(undefined, { mode, passes });
   if (!resolved.ok) {
     const reason = resolved.issues[0]?.message ?? 'out of range';
     issues.push({
       code: 'CLI_INVALID_OPTION',
-      message: `--repeat: ${reason}.`,
-      hint: 'Fix the value of --repeat.',
+      message: `--passes: ${reason}.`,
+      hint: 'Fix the value of --passes.',
     });
     return undefined;
   }
-  return repeat;
+  return passes;
 }
 
 function fail(issues: CliIssue[]): Result<ParsedCommand, CliIssue> {
@@ -159,7 +160,7 @@ function parseRun(
   const issues: CliIssue[] = [];
   const playwrightArgs: string[] = [];
   let env: string | undefined;
-  let repeat: number | undefined;
+  let passes: number | undefined;
   let prune = false;
   let maxTests: number | undefined;
   for (let i = 0; i < before.length;) {
@@ -171,6 +172,18 @@ function parseRun(
     }
     i += own.used;
     const { name, value } = own.option;
+    // Renamed by D-39: the test command runs once per pass.
+    if (name === '--repeat') {
+      issues.push({
+        code: 'CLI_INVALID_OPTION',
+        message: '--repeat was renamed to --passes: the test command now runs once per pass.',
+        hint:
+          mode === 'check'
+            ? 'Remove --repeat; a check runs once.'
+            : `Use --passes ${value ?? '<n>'}.`,
+      });
+      continue;
+    }
     if (mode === 'test' && (name === '--prune' || name === '--from')) {
       issues.push({
         code: 'CLI_INVALID_OPTION',
@@ -183,7 +196,7 @@ function parseRun(
       continue;
     }
     // A check runs every test once, writes nothing and has no --prune (04-REQ-48).
-    if (mode === 'check' && (name === '--repeat' || name === '--prune' || name === '--from')) {
+    if (mode === 'check' && (name === '--passes' || name === '--prune' || name === '--from')) {
       issues.push({
         code: 'CLI_INVALID_OPTION',
         message: `${name} is not an option of check: a check runs the first test of each file once and writes no files.`,
@@ -202,12 +215,12 @@ function parseRun(
     if (name === '--prune') prune = true;
     else if (value === undefined) continue;
     else if (name === '--max-tests') {
-      const n = parseRepeat(value);
+      const n = parsePasses(value);
       if (n === null || n > 1000)
         issues.push(invalidValue('--max-tests', 'an integer from 1 to 1000, like "10"', value));
       else maxTests = n;
     } else if (name === '--env') env = checkEnv(value, issues);
-    else if (name === '--repeat' && mode !== 'check') repeat = checkRepeat(value, mode, issues);
+    else if (name === '--passes' && mode !== 'check') passes = checkPasses(value, mode, issues);
   }
   playwrightArgs.push(...after);
 
@@ -236,7 +249,7 @@ function parseRun(
       kind: 'run',
       mode,
       ...(env === undefined ? {} : { env }),
-      ...(repeat === undefined ? {} : { repeat }),
+      ...(passes === undefined ? {} : { passes }),
       ...(maxTests === undefined ? {} : { maxTests }),
       prune,
       playwrightArgs,
@@ -245,7 +258,7 @@ function parseRun(
   };
 }
 
-/** `thresholds --from <report.json>`: no Playwright arguments and no --repeat (04-REQ-08). */
+/** `thresholds --from <report.json>`: no Playwright arguments and no --passes (04-REQ-08). */
 function parseFrom(
   before: readonly string[],
   after: readonly string[],
@@ -287,7 +300,7 @@ function parseFrom(
   if (rejected.length > 0) {
     issues.push({
       code: 'CLI_FROM_WITH_PLAYWRIGHT_ARGS',
-      message: `thresholds --from runs no tests, so it takes no Playwright arguments and no --repeat; got: ${rejected.join(' ')}.`,
+      message: `thresholds --from runs no tests, so it takes no Playwright arguments and no --passes; got: ${rejected.join(' ')}.`,
       hint: `Use only --from, --env, --prune and --config, or run "${CLI_COMMAND} thresholds" without --from to run the tests.`,
     });
   }

@@ -10,7 +10,7 @@ import type { TemplateOption } from './generated/config-options.ts';
 
 export interface InitAnswers {
   scope: 'all' | 'tagged';
-  repeatTest: number;
+  passesTest: number;
   warnOnly: boolean;
   /** measure.steps (04-REQ-47). */
   steps: boolean;
@@ -29,8 +29,8 @@ const NO_DEFAULT: Record<string, string> = {
 /** Package config values of the answers that differ from the defaults: option path → value. */
 export function activeValues(answers: InitAnswers): Map<string, unknown> {
   const values = new Map<string, unknown>();
-  if (answers.repeatTest !== DEFAULT_CONFIG.run.repeat.test)
-    values.set('run.repeat.test', answers.repeatTest);
+  if (answers.passesTest !== DEFAULT_CONFIG.run.passes.test)
+    values.set('run.passes.test', answers.passesTest);
   if (answers.warnOnly !== DEFAULT_CONFIG.gate.warnOnly)
     values.set('gate.warnOnly', answers.warnOnly);
   if (answers.steps) values.set('measure.steps', true);

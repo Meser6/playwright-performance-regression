@@ -12,7 +12,8 @@ Catch backend performance regressions from the Playwright tests you already have
 ## How it works
 
 1. **Measures** the backend requests your browser makes while your existing e2e tests run, in a
-   separate measurement run (`pw-perf test`), with every test repeated a few times.
+   separate measurement run (`PW_PERF_MODE=test npm run e2e`): your test command runs a few times
+   in a row (passes), and all passes are evaluated together.
 2. **Groups** the requests into endpoint keys such as `GET /api/orders/:id`, and computes
    statistics per key: median, p95, p99, error rate and more.
 3. **Derives thresholds** from a run and writes them to JSON files that you review and commit like
@@ -157,9 +158,10 @@ with code 2 as a soft failure where the platform supports it: [CI](docs/ci.md).
 - Only requests made by the browser are measured. Tests that use only the `request` fixture, and
   calls through `page.request` or `context.request`, record nothing.
 - Only Chromium projects are measured by default. Firefox and WebKit are best effort.
-- The measurement run is separate from your normal run, uses one worker and repeats every test,
-  so it is slow: measure a subset (`--grep @perf`, `--project`).
-- Repeated tests that create data can collide with each other; make the data unique.
+- The measurement run is separate from your normal run, uses one worker and runs your test command
+  several times (passes), so it is slow: measure a subset (`--grep @perf`, `--project`).
+- The test command, with its setup steps, runs once per pass; tests that create data without such
+  a step can collide in the next pass; make the data unique.
 - In manual mode (`PW_PERF_MODE=test npx playwright test`), a `--reporter` flag replaces the
   package reporter and nothing is reported. Use `pw-perf test`.
 

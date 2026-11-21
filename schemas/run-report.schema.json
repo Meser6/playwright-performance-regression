@@ -20,6 +20,7 @@
     "ci",
     "host",
     "playwright",
+    "passes",
     "runConditions",
     "tests",
     "evaluation",
@@ -79,6 +80,29 @@
       "additionalProperties": false,
       "required": ["version"],
       "properties": {"version": {"description": "FullConfig.version", "type": "string"}}
+    },
+    "passes": {
+      "description": "Passes of the run (D-39, 02-REQ-37): the test command runs once per pass and the first pass merges them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planned", "completed", "failed"],
+      "properties": {
+        "planned": {
+          "description": "Passes of the run (run.passes.<mode>, PW_PERF_PASSES).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "completed": {
+          "description": "Passes whose data are in the report, including the first one.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "failed": {
+          "description": "Numbers of passes without data (RUN_PASS_FAILED), ascending.",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 2 }
+        }
+      }
     },
     "runConditions": {
       "description": "Effective run conditions read from FullConfig in onBegin (ADR-0006).",
