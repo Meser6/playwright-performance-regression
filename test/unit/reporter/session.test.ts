@@ -363,13 +363,52 @@ describe('reporter session in test mode', () => {
       ]),
     );
     expect(report.warnings.find((w) => w.code === 'TESTS_NOT_INSTRUMENTED')?.message).toMatch(
-      /^1 test result of measured projects has no/,
+      /^1 test in tests\/cart\.spec\.ts imports test without withPerfFixtures\(\)/,
     );
     expect(report.endpoints['GET /api/a']?.count).toBe(2);
     // 02-AC-13: the batch of another version is skipped with a tool error.
     expect(report.endpoints['GET /api/b']).toBeUndefined();
     expect(codes(report.toolErrors)).toEqual(['SCHEMA_VERSION_MISMATCH']);
     expect(readOutcome(outcomeFile).exitCode).toBe(3);
+  });
+
+  test('09-AC-31 TESTS_NOT_INSTRUMENTED counts tests, names the file, also in thresholds mode', async () => {
+    for (const mode of ['test', 'thresholds'] as const) {
+      const s = session(fakeHost(dir), registered({}, { mode }));
+      s.begin(fakeConfig(dir), ROOT);
+      runTests(s, dir, 20, PATHS, steady);
+      // 2 unwrapped tests in api.spec.ts with 10 results each.
+      for (const id of ['api-1', 'api-2']) {
+        for (let r = 0; r < 10; r++) {
+          s.testBegin();
+          s.testEnd(fakeTest(dir, { id, file: 'api.spec.ts', repeatEachIndex: r }), result([]));
+        }
+      }
+      await s.end({ status: 'passed' });
+      const warning = readReport().warnings.find((w) => w.code === 'TESTS_NOT_INSTRUMENTED');
+      expect(warning?.message, mode).toBe(
+        '2 tests in tests/api.spec.ts import test without withPerfFixtures() (e.g. straight from @playwright/test), so they were not measured.',
+      );
+      expect(warning?.hint).not.toMatch(/worker/u);
+    }
+  });
+
+  test('09-AC-31 TESTS_NOT_INSTRUMENTED mentions a crashed worker only when one crashed', async () => {
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 20, PATHS, steady);
+    const crash = {
+      status: 'failed' as const,
+      errors: [{ message: 'Error: worker process exited unexpectedly (code=1, signal=null)' }],
+    };
+    s.testBegin();
+    s.testEnd(fakeTest(dir, { id: 'c1', file: 'checkout.spec.ts' }), result([], crash));
+    await s.end({ status: 'failed' });
+    const warning = readReport().warnings.find((w) => w.code === 'TESTS_NOT_INSTRUMENTED');
+    expect(warning?.message).toBe(
+      '1 test in tests/checkout.spec.ts lost its measurement because the worker process exited unexpectedly.',
+    );
+    expect(warning?.hint).toBe('Check the worker crash in the Playwright output above.');
   });
 
   test('COLLECTOR_REQUESTS_PENDING names the keys with the most pending samples', async () => {

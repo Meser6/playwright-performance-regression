@@ -579,10 +579,12 @@ failures are expected.
 ### TESTS_NOT_INSTRUMENTED
 
 **Warning.** Tests of measured projects finished without the samples attachment, so they were
-not measured. The test files import `test` from `@playwright/test` (or another test object) that
-was not wrapped with `withPerfFixtures()`. Import `test` from a wrapped test object or from
-`playwright-performance-regression/test`; see [adoption.md](adoption.md). A crashed worker also
-loses the attachment.
+not measured. The message counts tests (not repetitions) and names up to three files, e.g.
+`2 tests in tests/api.spec.ts import test without withPerfFixtures() (e.g. straight from
+@playwright/test), so they were not measured.` Import `test` from a wrapped test object or from
+`playwright-performance-regression/test`; see [adoption.md](adoption.md). When a worker process
+crashed, the message also says which tests lost their measurement that way. The warning is shown in
+every mode, also when deriving thresholds: these tests get no thresholds.
 
 ### ATTACHMENT_DUPLICATE
 

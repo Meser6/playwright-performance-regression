@@ -77,6 +77,8 @@ import {
   replayEntries,
   worseStatus,
 } from './pass-file.ts';
+import { notInstrumentedWarning, workerCrashed } from './not-instrumented.ts';
+import type { TestFiles } from './not-instrumented.ts';
 import type { PassFile, TestCounts } from './pass-file.ts';
 import type { RunConditionsReport } from './begin.ts';
 import { hasTraceOrVideo, projectName, sampleAttachments, testMeta } from './samples.ts';
@@ -205,7 +207,9 @@ export class RunSession {
   private fatal = false;
   private testsStarted = 0;
   private readonly testsSeen = new Set<TestLike>();
-  private notInstrumented = 0;
+  /** Tests without a batch: not wrapped, and lost to a crashed worker (09-REQ-34). */
+  private readonly notInstrumented: TestFiles = {};
+  private readonly crashedTests: TestFiles = {};
   private withArtifacts = 0;
   /** Test counts of the passes 2…N merged into this one (04-REQ-64). */
   private readonly mergedTests: TestCounts = { expected: 0, unexpected: 0, flaky: 0, skipped: 0 };
@@ -469,7 +473,10 @@ export class RunSession {
     this.steps.record(this.aggregator, test, result.steps, meta, relative);
     if (bodies.length === 0) {
       // Every test of a measured project has a batch, also an empty one (01-REQ-18).
-      if (measured && result.status !== 'skipped') this.notInstrumented += 1;
+      if (measured && result.status !== 'skipped') {
+        const lost = workerCrashed(result) ? this.crashedTests : this.notInstrumented;
+        lost[test.id] = meta.file;
+      }
       return;
     }
     const project = projectName(test);
@@ -540,13 +547,8 @@ export class RunSession {
         hint: 'Tests that only use the request fixture (API tests) are not measured: requests made outside the browser are out of scope; remove such projects from run.projects. Otherwise check use.baseURL, withPerfFixtures and measure.include/exclude.',
       });
     }
-    if (this.notInstrumented > 0) {
-      issues.push({
-        code: 'TESTS_NOT_INSTRUMENTED',
-        message: `${plural(this.notInstrumented, 'test result')} of measured projects ${this.notInstrumented === 1 ? 'has' : 'have'} no ${SAMPLES_ATTACHMENT_NAME} attachment, so ${this.notInstrumented === 1 ? 'it was' : 'they were'} not measured.`,
-        hint: 'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test"); a crashed worker also loses the attachment.',
-      });
-    }
+    const notInstrumented = notInstrumentedWarning(this.notInstrumented, this.crashedTests);
+    if (notInstrumented !== null) issues.push(notInstrumented);
     if (this.withArtifacts > 0) {
       issues.push({
         code: 'RUN_CONDITIONS_CHANGED',
@@ -705,7 +707,8 @@ export class RunSession {
       tests: this.ownTests(),
       counters: {
         testsStarted: this.testsStarted,
-        notInstrumented: this.notInstrumented,
+        notInstrumented: { ...this.notInstrumented },
+        crashedTests: { ...this.crashedTests },
         withArtifacts: this.withArtifacts,
         instrumentedProjects: [...this.instrumentedProjects].sort(),
         projectsWithRequests: [...this.projectsWithRequests].sort(),
@@ -830,7 +833,8 @@ export class RunSession {
     }
     const c = file.counters;
     this.testsStarted += c.testsStarted;
-    this.notInstrumented += c.notInstrumented;
+    Object.assign(this.notInstrumented, c.notInstrumented);
+    Object.assign(this.crashedTests, c.crashedTests);
     this.withArtifacts += c.withArtifacts;
     for (const p of c.instrumentedProjects) this.instrumentedProjects.add(p);
     for (const p of c.projectsWithRequests) this.projectsWithRequests.add(p);
