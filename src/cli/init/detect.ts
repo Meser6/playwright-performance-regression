@@ -69,6 +69,13 @@ const IMPORTS_PLAYWRIGHT_TEST =
   /(?:\bfrom\s*|\brequire\s*\(\s*|\bimport\s*\(\s*|^\s*import\s*)(['"])@playwright\/test\1/mu;
 /** A `.extend(` call other than `expect.extend(` (custom matchers). */
 export const EXTEND_CALL = /(?<!\bexpect)\.extend\s*[<(]/gu;
+/**
+ * A fixture definition: `({ page }, use`, an option or a worker fixture. With an import of
+ * @playwright/test it marks a `.extend(` file as a fixtures module, so that `.extend(` in
+ * application code (e.g. zod schemas) found by the project-wide scan is not one (04-REQ-72).
+ */
+const FIXTURE_SIGNATURE =
+  /\(\s*\{[^{}]*\}\s*,\s*use\b|\boption\s*:\s*true\b|\bscope\s*:\s*['"]worker['"]/u;
 const PERF_TAG = /@perf\b/u;
 const WRAPPED_TEST = new RegExp(
   String.raw`\bwithPerfFixtures\s*\(|(['"])${PACKAGE_NAME}/test\1`,
@@ -175,7 +182,11 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     moduleType,
     testDir: testDirsOf(configText)[0] as string,
     filesImportingPlaywrightTest: sources.filter((p) => IMPORTS_PLAYWRIGHT_TEST.test(text(p))),
-    filesWithExtend: sources.filter((p) => text(p).search(EXTEND_CALL) !== -1),
+    filesWithExtend: sources.filter(
+      (p) =>
+        text(p).search(EXTEND_CALL) !== -1 &&
+        (IMPORTS_PLAYWRIGHT_TEST.test(text(p)) || FIXTURE_SIGNATURE.test(text(p))),
+    ),
     taggedPerfTestFiles: sources.filter((p) => PERF_TAG.test(text(p))).length,
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
