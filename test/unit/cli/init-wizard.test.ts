@@ -525,6 +525,51 @@ describe('init wizard', () => {
     }
   });
 
+  test('04-AC-53 with the red box there is no check step; the answer steps gives no red box and a check step', async () => {
+    const wizard = async (measure: string): Promise<{ out: string; asked: string[] }> => {
+      const asked: string[] = [];
+      const fake: FakeHost = fakeCliHost({
+        cwd: copyProject('init-import-swap'),
+        playwright: null,
+        env: { NO_COLOR: '1' },
+        prompt: () => ({
+          ask: async (question) => {
+            asked.push(question);
+            if (/What to measure\?/u.test(question)) return measure;
+            return /Run a check now\?/u.test(question) ? 'n' : '';
+          },
+          close: () => undefined,
+        }),
+      });
+      expect(await main([], fake.host)).toBe(0);
+      return { out: fake.stdout.join(''), asked };
+    };
+    const box = 'INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet';
+    const red = await wizard('');
+    expect(red.out).toContain(box);
+    const steps = [...red.out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
+    expect(steps).toEqual([
+      '0/10',
+      '1/10',
+      '2/10',
+      '3/10',
+      '4/10',
+      '5/10',
+      '6/10',
+      '7/10',
+      '8/10',
+      '10/10',
+    ]);
+    expect(red.out).not.toContain('[9/10]');
+    expect(red.out).not.toContain('Skipped.');
+    expect(red.asked.some((q) => /Run a check now\?/u.test(q))).toBe(false);
+    expect(red.out).toContain('PW_PERF_MODE=check npx playwright test');
+    const onlySteps = await wizard('steps');
+    expect(onlySteps.out).not.toContain(box);
+    expect(onlySteps.out).toContain('[9/10] ');
+    expect(onlySteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
+  });
+
   test('04-REQ-18 several projects give no projects question and no run.projects (D-44)', async () => {
     const dir = copyProject('init-esm-ts');
     writeFileSync(

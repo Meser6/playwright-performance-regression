@@ -41,6 +41,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The wizard no longer shows the check step when it shows the red "Action needed: nothing is
+  measured yet" box; the summary still suggests the check. With the answer `steps` to "What to
+  measure?" there is no red box, because steps are measured without the `perf` fixture.
 - The wizard no longer asks which test script runs your tests and has nine steps (`[n/9]`). The
   commands it shows and writes to the CI jobs use the plain Playwright command of your package
   manager (`npx playwright test`, `pnpm exec playwright test`, `yarn playwright test`); put your
