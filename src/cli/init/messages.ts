@@ -96,7 +96,7 @@ const en = {
   nextAzure: 'Create a pipeline in Azure DevOps from {path}.',
   nextApply: 'Apply the changes above (run the setup again in a terminal).',
   originsNote:
-    'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
+    'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of {configFile}.',
   docs: 'Docs: {links}',
   finished: 'Setup finished.',
   noConfigMessage: 'No playwright.config.* in {dir}.',
@@ -147,7 +147,7 @@ const en = {
   fileThresholds: 'thresholds (test steps in .steps.json); commit them',
   fileReport: 'HTML report and data of the last run; do not commit (listed in .gitignore)',
   oldScripts: 'The perf:* scripts of an earlier wizard ({names}) no longer work; remove them.',
-  taggedSaved: '@perf is saved as run.grep in pw-perf.config.ts; your commands stay the same.',
+  taggedSaved: '@perf is saved as run.grep in {configFile}; your commands stay the same.',
   stepPreset: 'Threshold headroom',
   presetLesson:
     'Thresholds are the times of a thresholds run plus headroom. The preset sets the headroom of every rule:',
@@ -272,7 +272,7 @@ const pl: Messages = {
   nextAzure: 'Utwórz w Azure DevOps pipeline z pliku {path}.',
   nextApply: 'Zastosuj powyższe zmiany (uruchom konfigurację ponownie w terminalu).',
   originsNote:
-    'Klucze endpointów originu z baseURL nie mają etykiety, a inne hosty są oznaczone nazwą hosta; krótsze etykiety dla nich ustawisz w keys.origins w pw-perf.config.ts.',
+    'Klucze endpointów originu z baseURL nie mają etykiety, a inne hosty są oznaczone nazwą hosta; krótsze etykiety dla nich ustawisz w keys.origins w {configFile}.',
   docs: 'Dokumentacja: {links}',
   finished: 'Konfiguracja zakończona.',
   noConfigMessage: 'Brak playwright.config.* w {dir}.',
@@ -323,7 +323,7 @@ const pl: Messages = {
   fileThresholds: 'progi (kroki testów w .steps.json); commituj',
   fileReport: 'raport HTML i dane ostatniego runu; nie commituj (wpis w .gitignore)',
   oldScripts: 'Skrypty perf:* z wcześniejszej wersji kreatora ({names}) już nie działają; usuń je.',
-  taggedSaved: '@perf trafia do pw-perf.config.ts jako run.grep; polecenia zostają bez zmian.',
+  taggedSaved: '@perf trafia do {configFile} jako run.grep; polecenia zostają bez zmian.',
   stepPreset: 'Zapas progów',
   presetLesson: 'Progi to czasy z runu progów plus zapas. Preset ustala zapas wszystkich reguł:',
   presetStrict:
@@ -447,7 +447,7 @@ const es: Messages = {
   nextAzure: 'Crea un pipeline en Azure DevOps a partir de {path}.',
   nextApply: 'Aplica los cambios de arriba (ejecuta la configuración de nuevo en un terminal).',
   originsNote:
-    'Las claves de endpoint del origen de baseURL no llevan etiqueta y los demás hosts se etiquetan con su host; define etiquetas más cortas para ellos en keys.origins de pw-perf.config.ts.',
+    'Las claves de endpoint del origen de baseURL no llevan etiqueta y los demás hosts se etiquetan con su host; define etiquetas más cortas para ellos en keys.origins de {configFile}.',
   docs: 'Documentación: {links}',
   finished: 'Configuración terminada.',
   noConfigMessage: 'No hay playwright.config.* en {dir}.',
@@ -500,7 +500,7 @@ const es: Messages = {
   fileThresholds: 'umbrales (los pasos de test en .steps.json); haz commit',
   fileReport: 'informe HTML y datos de la última ejecución; sin commit (está en .gitignore)',
   oldScripts: 'Los scripts perf:* de un asistente anterior ({names}) ya no funcionan; elimínalos.',
-  taggedSaved: '@perf se guarda como run.grep en pw-perf.config.ts; tus comandos no cambian.',
+  taggedSaved: '@perf se guarda como run.grep en {configFile}; tus comandos no cambian.',
   stepPreset: 'Margen de los umbrales',
   presetLesson:
     'Los umbrales son los tiempos de una ejecución de umbrales más un margen. El preset fija el margen de todas las reglas:',
@@ -627,7 +627,7 @@ const fr: Messages = {
   nextAzure: 'Créez un pipeline dans Azure DevOps à partir de {path}.',
   nextApply: 'Appliquez les modifications ci-dessus (relancez la configuration dans un terminal).',
   originsNote:
-    'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de pw-perf.config.ts.',
+    'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de {configFile}.',
   docs: 'Documentation : {links}',
   finished: 'Configuration terminée.',
   noConfigMessage: 'Aucun playwright.config.* dans {dir}.',
@@ -683,7 +683,7 @@ const fr: Messages = {
   oldScripts:
     'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
   taggedSaved:
-    '@perf est enregistré comme run.grep dans pw-perf.config.ts ; vos commandes restent les mêmes.',
+    '@perf est enregistré comme run.grep dans {configFile} ; vos commandes restent les mêmes.',
   stepPreset: 'Marge des seuils',
   presetLesson:
     'Les seuils sont les temps d’une exécution de seuils plus une marge. Le preset fixe la marge de toutes les règles :',
@@ -811,7 +811,7 @@ const it: Messages = {
   nextAzure: 'Crea una pipeline in Azure DevOps da {path}.',
   nextApply: 'Applica le modifiche sopra (esegui di nuovo la configurazione in un terminale).',
   originsNote:
-    'Le chiavi di endpoint dell’origine di baseURL non hanno etichetta e gli altri host sono etichettati con il loro host; imposta etichette più brevi in keys.origins di pw-perf.config.ts.',
+    'Le chiavi di endpoint dell’origine di baseURL non hanno etichetta e gli altri host sono etichettati con il loro host; imposta etichette più brevi in keys.origins di {configFile}.',
   docs: 'Documentazione: {links}',
   finished: 'Configurazione completata.',
   noConfigMessage: 'Nessun playwright.config.* in {dir}.',
@@ -864,8 +864,7 @@ const it: Messages = {
   fileReport: 'report HTML e dati dell’ultima esecuzione; da non committare (in .gitignore)',
   oldScripts:
     'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
-  taggedSaved:
-    '@perf viene salvato come run.grep in pw-perf.config.ts; i tuoi comandi restano uguali.',
+  taggedSaved: '@perf viene salvato come run.grep in {configFile}; i tuoi comandi restano uguali.',
   stepPreset: 'Margine delle soglie',
   presetLesson:
     'Le soglie sono i tempi di un’esecuzione delle soglie più un margine. Il preset imposta il margine di tutte le regole:',
@@ -991,7 +990,7 @@ const uk: Messages = {
   nextAzure: 'Створіть pipeline в Azure DevOps з {path}.',
   nextApply: 'Застосуйте зміни вище (запустіть налаштування ще раз у терміналі).',
   originsNote:
-    'Ключі ендпоінтів origin з baseURL не мають мітки, а інші хости позначаються своїм хостом; коротші мітки для них задайте в keys.origins у pw-perf.config.ts.',
+    'Ключі ендпоінтів origin з baseURL не мають мітки, а інші хости позначаються своїм хостом; коротші мітки для них задайте в keys.origins у {configFile}.',
   docs: 'Документація: {links}',
   finished: 'Налаштування завершено.',
   noConfigMessage: 'У {dir} немає playwright.config.*.',
@@ -1043,7 +1042,7 @@ const uk: Messages = {
   fileReport: 'HTML-звіт і дані останнього запуску; не комітьте (є в .gitignore)',
   oldScripts:
     'Скрипти perf:* з попередньої версії майстра ({names}) більше не працюють; видаліть їх.',
-  taggedSaved: '@perf зберігається як run.grep у pw-perf.config.ts; ваші команди не змінюються.',
+  taggedSaved: '@perf зберігається як run.grep у {configFile}; ваші команди не змінюються.',
   stepPreset: 'Запас порогів',
   presetLesson:
     'Пороги — це час із запуску порогів плюс запас. Пресет задає запас для всіх правил:',
@@ -1166,7 +1165,7 @@ const ru: Messages = {
   nextAzure: 'Создайте pipeline в Azure DevOps из {path}.',
   nextApply: 'Примените изменения выше (запустите настройку ещё раз в терминале).',
   originsNote:
-    'Ключи эндпоинтов origin из baseURL не имеют метки, а другие хосты помечаются своим хостом; более короткие метки для них задайте в keys.origins в pw-perf.config.ts.',
+    'Ключи эндпоинтов origin из baseURL не имеют метки, а другие хосты помечаются своим хостом; более короткие метки для них задайте в keys.origins в {configFile}.',
   docs: 'Документация: {links}',
   finished: 'Настройка завершена.',
   noConfigMessage: 'В {dir} нет playwright.config.*.',
@@ -1217,7 +1216,7 @@ const ru: Messages = {
   fileThresholds: 'пороги (шаги тестов в .steps.json); коммитьте',
   fileReport: 'HTML-отчёт и данные последнего запуска; не коммитьте (есть в .gitignore)',
   oldScripts: 'Скрипты perf:* из прежней версии мастера ({names}) больше не работают; удалите их.',
-  taggedSaved: '@perf сохраняется как run.grep в pw-perf.config.ts; ваши команды не меняются.',
+  taggedSaved: '@perf сохраняется как run.grep в {configFile}; ваши команды не меняются.',
   stepPreset: 'Запас порогов',
   presetLesson:
     'Пороги — это время из запуска порогов плюс запас. Пресет задаёт запас для всех правил:',

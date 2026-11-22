@@ -4,13 +4,34 @@
 import { PACKAGE_NAME } from '../../core/types/index.ts';
 import { addImports, callParen, matchBracket, onlyTrailing, statementEnds } from './scan.ts';
 
+/** How playwright.config refers to the package config file (04-REQ-46, 04-D-48). */
+export interface PerfConfigRef {
+  /** Specifier of `import perfConfig from '…'`, e.g. "./pw-perf.config". */
+  import: string;
+  /** Expression in a CommonJS config, e.g. "require('./pw-perf.config').default". */
+  require: string;
+}
+
+/** The reference to a package config file by its name and, for `.js`, its text (04-REQ-46). */
+export function perfConfigRef(file: string, text: string | null): PerfConfigRef {
+  if (/\.[cm]?ts$/u.test(file)) {
+    const base = `./${file.replace(/\.[cm]?ts$/u, '')}`;
+    return { import: base, require: `require('${base}').default` };
+  }
+  const cjs =
+    file.endsWith('.cjs') || (file.endsWith('.js') && /\bmodule\.exports\b/u.test(text ?? ''));
+  const path = `./${file}`;
+  if (!cjs) return { import: path, require: `require('${path}').default` };
+  return { import: path, require: `require('${file.endsWith('.js') ? path.slice(0, -3) : path}')` };
+}
+
 /**
  * playwright.config wrapped in withPerf() (03, chapter 3.1): `export default defineConfig({...})`,
  * `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as
- * the last statement of the file. `perfImport` is the specifier of the package config file
- * without extension (e.g. "./pw-perf.config").
+ * the last statement of the file. `perf` refers to the package config file: the specifier of an
+ * ES module import and the expression of a CommonJS config (04-REQ-46).
  */
-export function wrapPlaywrightConfig(text: string, perfImport: string): string | null {
+export function wrapPlaywrightConfig(text: string, perf: PerfConfigRef): string | null {
   const esm = [...text.matchAll(/^export\s+default\s+/gmu)];
   const cjs = [...text.matchAll(/^module\.exports\s*=\s*/gmu)];
   if (esm.length + cjs.length !== 1) return null;
@@ -29,14 +50,14 @@ export function wrapPlaywrightConfig(text: string, perfImport: string): string |
   const end = matchBracket(text, open);
   if (end === -1 || !onlyTrailing(text, end)) return null;
   const value = text.slice(start, end);
-  const perfConfig = isEsm ? 'perfConfig' : `require('${perfImport}').default`;
+  const perfConfig = isEsm ? 'perfConfig' : perf.require;
   const wrapped = `${text.slice(0, start)}withPerf(${value}, ${perfConfig})${text.slice(end)}`;
   return addImports(
     wrapped,
     isEsm
       ? [
           `import { withPerf } from '${PACKAGE_NAME}/config';`,
-          `import perfConfig from '${perfImport}';`,
+          `import perfConfig from '${perf.import}';`,
         ]
       : [`const { withPerf } = require('${PACKAGE_NAME}/config');`],
   );

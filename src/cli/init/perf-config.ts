@@ -1,4 +1,4 @@
-// The pw-perf.config.ts written by the init wizard (04-REQ-38 step 7, 04-REQ-46, v4 D6): the
+// The package config file written by the init wizard (04-REQ-38 step 8, 04-REQ-46, v4 D6): the
 // most important options only (CONFIG_FILE_OPTIONS), in schema order with a short comment each;
 // the answers that differ from the defaults as active values, the other options commented out
 // with their default value, and a link to the full option list in the docs. Defaults and order
@@ -232,8 +232,14 @@ function inFile(path: string): boolean {
   return false;
 }
 
-/** Text of pw-perf.config.ts for the answers. */
-export function renderPerfConfig(answers: InitAnswers): string {
+/**
+ * Form of the package config file (04-REQ-46, 04-D-48): TypeScript, or JavaScript as an ES module
+ * or CommonJS like playwright.config.
+ */
+export type PerfConfigFormat = 'ts' | 'esm' | 'cjs';
+
+/** Text of the package config file for the answers (pw-perf.config.ts by default). */
+export function renderPerfConfig(answers: InitAnswers, format: PerfConfigFormat = 'ts'): string {
   const renderer = new Renderer(activeValues(answers));
   const top: Place = { indent: '  ', commented: false, inner: '' };
   renderer.children('').forEach((section, i) => {
@@ -241,15 +247,18 @@ export function renderPerfConfig(answers: InitAnswers): string {
     renderer.option(section, top);
   });
   return [
+    ...(format === 'ts' ? [] : ['// @ts-check']),
     `// Configuration of ${PACKAGE_NAME}, written by its guided setup.`,
     '// It lists the most important options only; every option, with its default, is described at',
     `// ${DOCS_CONFIG_URL}`,
     '// Only the values that differ from the defaults are set. The other options are commented out',
     '// with their default value: uncomment a line (and its enclosing objects) to change it. Objects',
     '// are merged with the defaults; an array you set replaces the default array.',
-    `import { definePerfConfig } from '${PACKAGE_NAME}';`,
+    format === 'cjs'
+      ? `const { definePerfConfig } = require('${PACKAGE_NAME}');`
+      : `import { definePerfConfig } from '${PACKAGE_NAME}';`,
     '',
-    'export default definePerfConfig({',
+    format === 'cjs' ? 'module.exports = definePerfConfig({' : 'export default definePerfConfig({',
     ...renderer.lines,
     '});',
     '',

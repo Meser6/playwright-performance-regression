@@ -35,7 +35,7 @@ import { readProjectFiles } from './files.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers, MeasureAnswer } from './perf-config.ts';
-import { isProtected, planInitChanges } from './plan.ts';
+import { isProtected, perfConfigFile, planInitChanges } from './plan.ts';
 import type { FileChange, TestObjectBox } from './plan.ts';
 import { PromptAborted } from './prompt.ts';
 
@@ -191,8 +191,13 @@ class Dialog {
   }
 }
 
+/** The package config file of the project: the existing one, else the one the wizard writes. */
+function configFileName(info: ProjectInfo): string {
+  return info.existing.perfConfig ?? perfConfigFile(info).path;
+}
+
 /** Step 1 after the two sentences: how to run, the other variables and the files (04-REQ-38). */
-function printUsage(dialog: Dialog, platform: string): void {
+function printUsage(dialog: Dialog, platform: string, configFile: string): void {
   const { t, paint } = dialog;
   const prefix = platform === 'win32' ? 'npx cross-env ' : '';
   const command = t('usageCommandPlaceholder');
@@ -222,7 +227,7 @@ function printUsage(dialog: Dialog, platform: string): void {
     ]),
     `  ${paint(t('filesTitle'), 'bold')}`,
     ...table([
-      ['pw-perf.config.ts', t('fileConfig')],
+      [configFile, t('fileConfig')],
       [`${prefixFile}*.json`, t('fileThresholds')],
       [`${DEFAULT_CONFIG.report.dir}/`, t('fileReport')],
     ]),
@@ -285,7 +290,8 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     if (answer === 'all' || answer === all) return 'all';
     return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
   });
-  if (scope === 'tagged') dialog.line(t('taggedSaved'), 'dim');
+  if (scope === 'tagged')
+    dialog.line(t('taggedSaved', { configFile: configFileName(info) }), 'dim');
 
   dialog.stepOf(3, 'stepPasses', 'passesLesson');
   const passesTest = await dialog.ask(
@@ -619,7 +625,7 @@ export async function runInit(
     // Step 1: what the package does and how to run it; the detection stays silent and only a
     // missing playwright.config or a too old Playwright stops here (04-REQ-38).
     dialog.step(1, t('stepProject'), t('about1', { pkg: PACKAGE_NAME }), t('about2'));
-    printUsage(dialog, host.platform);
+    printUsage(dialog, host.platform, configFileName(info));
     if (info.playwrightConfig === null) {
       // Before any question and without writing anything (04-REQ-41).
       return dialog.error('INIT_NO_PLAYWRIGHT_CONFIG', 'noConfigMessage', 'noConfigHint', {
@@ -717,7 +723,7 @@ export async function runInit(
     );
     const oldScripts = info.existing.scripts.filter((name) => name.startsWith('perf:'));
     if (oldScripts.length > 0) dialog.say(`  ${t('oldScripts', { names: oldScripts.join(', ') })}`);
-    dialog.say(`  ${t('originsNote')}`);
+    dialog.say(`  ${t('originsNote', { configFile: configFileName(info) })}`);
     const links = [`${DOCS}/adoption.md`, `${DOCS}/cli.md`, `${DOCS}/ci.md`];
     dialog.line(t('docs', { links: links.join(' · ') }), 'dim');
     if (write) dialog.line(`✔ ${t('finished')}`, 'green');
