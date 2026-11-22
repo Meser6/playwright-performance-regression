@@ -1,6 +1,14 @@
 // Init wizard, pure parts (04, chapter 4.10): detection, change plan with golden diffs (12,
 // chapter 8: test/golden/init/), recognized layouts and the CI templates (13-AC-11).
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import typescript from 'typescript';
@@ -15,11 +23,12 @@ import {
 import { detectProject } from '../../../src/cli/init/detect.ts';
 import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
 import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
-import type { InitAnswers } from '../../../src/cli/init/index.ts';
+import type { InitAnswers, InitPlan } from '../../../src/cli/init/index.ts';
 import {
   addIgnore,
   ignores,
   perfConfigRef,
+  swapTestImport,
   wrapPlaywrightConfig,
   wrapTestObject,
 } from '../../../src/cli/init/patterns.ts';
@@ -46,6 +55,7 @@ interface InitGolden {
   expected: {
     manualSteps: { code: string; message: string }[];
     testObject: { extendFiles: string[]; importingFiles: number } | null;
+    importSwap?: string[];
   };
 }
 
@@ -156,18 +166,20 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       const diff = planDiff(plan);
       const manualSteps = plan.manualSteps.map(({ code, message }) => ({ code, message }));
       const testObject = plan.testObject;
+      const importSwap = plan.importSwap?.paths;
       const diffFile = join(INIT_GOLDEN, file.replace(/\.json$/u, '.diff'));
       if (update) {
         writeFileSync(diffFile, diff);
         writeFileSync(
           join(INIT_GOLDEN, file),
-          `${JSON.stringify({ ...golden, expected: { manualSteps, testObject } }, null, 2)}\n`,
+          `${JSON.stringify({ ...golden, expected: { manualSteps, testObject, importSwap } }, null, 2)}\n`,
         );
         return;
       }
       expect(diff).toBe(readFileSync(diffFile, 'utf8'));
       expect(manualSteps).toEqual(golden.expected.manualSteps);
       expect(testObject).toEqual(golden.expected.testObject);
+      expect(importSwap).toEqual(golden.expected.importSwap);
     });
   }
 
@@ -182,7 +194,10 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(messages.some((m) => m.startsWith('INIT_MANUAL_STEP playwright.config.ts'))).toBe(true);
     // Several test objects: the red box instead of a change (04-REQ-67).
     expect(plan.testObject).toEqual({
-      extendFiles: ['tests/a11y.ts', 'tests/fixtures.ts'],
+      // 04-D-49: the module the tests import first.
+      extendFiles: ['tests/fixtures.ts', 'tests/a11y.ts'],
+      importedBy: { 'tests/a11y.ts': 0, 'tests/fixtures.ts': 1 },
+      workspace: {},
       importingFiles: 0,
       stepsMeasured: false,
     });
@@ -441,7 +456,13 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       'pw-perf.config.json exists and was not changed.',
       'playwright.config.ts was not changed: the package config is pw-perf.config.json.',
     ]);
-    expect(plan.testObject).toEqual({ extendFiles: [], importingFiles: 0, stepsMeasured: false });
+    expect(plan.testObject).toEqual({
+      extendFiles: [],
+      importedBy: {},
+      workspace: {},
+      importingFiles: 0,
+      stepsMeasured: false,
+    });
   });
 });
 
@@ -511,6 +532,8 @@ describe('recognized layouts (04-REQ-39)', () => {
     expect(inSpec.changes.map((c) => c.path)).not.toContain('tests/a.spec.ts');
     expect(inSpec.testObject).toEqual({
       extendFiles: ['tests/a.spec.ts'],
+      importedBy: { 'tests/a.spec.ts': 0 },
+      workspace: {},
       importingFiles: 1,
       stepsMeasured: false,
     });
@@ -524,15 +547,23 @@ describe('recognized layouts (04-REQ-39)', () => {
       ),
       ANSWERS,
     );
-    expect(imports.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([]);
-    expect(imports.testObject).toEqual({
+    // 04-D-49: without a fixtures module the import changes (04-AC-57); the box applies when
+    // a change is declined.
+    expect(imports.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([
+      'tests/a.spec.ts',
+      'tests/b.spec.ts',
+    ]);
+    expect(imports.testObject).toBeNull();
+    expect(imports.importSwap?.box).toEqual({
       extendFiles: [],
+      importedBy: {},
+      workspace: {},
       importingFiles: 2,
       stepsMeasured: false,
     });
   });
 
-  test('04-AC-54 detection reads fixtures and page objects outside testDir', async () => {
+  test('04-AC-54 04-AC-58 detection reads fixtures and page objects outside testDir; the box puts the imported module first', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'pw-perf-ac54-'));
     const write = (path: string, text: string): void => {
       mkdirSync(dirname(join(dir, path)), { recursive: true });
@@ -540,6 +571,10 @@ describe('recognized layouts (04-REQ-39)', () => {
     };
     try {
       write('package.json', '{}');
+      write(
+        'tsconfig.json',
+        '{\n  // aliases\n  "compilerOptions": { "paths": { "@fixtures": ["./tests/fixtures/index.ts"], }, },\n}\n',
+      );
       write(
         'playwright.config.ts',
         "import { defineConfig } from '@playwright/test';\nexport default defineConfig({ testDir: './tests/specs' });\n",
@@ -573,11 +608,165 @@ describe('recognized layouts (04-REQ-39)', () => {
       ]);
       expect(info.stepFiles).toBe(1);
       expect(planInitChanges(info, ANSWERS).testObject).toEqual({
-        extendFiles: info.filesWithExtend,
+        // 04-AC-58: the module the spec imports through the tsconfig alias first.
+        extendFiles: [
+          'tests/fixtures/index.ts',
+          'tests/fixtures/api.fixture.ts',
+          'tests/fixtures/pages.fixture.ts',
+        ],
+        importedBy: {
+          'tests/fixtures/api.fixture.ts': 0,
+          'tests/fixtures/index.ts': 1,
+          'tests/fixtures/pages.fixture.ts': 0,
+        },
+        workspace: {},
         importingFiles: 0,
         // 04-D-47: answer all with a test.step found: steps are measured without the fixture.
         stepsMeasured: true,
       });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('04-AC-57 the import changes to <pkg>/test without a fixtures module; another layout keeps the box', () => {
+    expect(
+      swapTestImport("import { expect, test, type Page } from '@playwright/test';\nx();\n"),
+    ).toBe(
+      "import { type Page } from '@playwright/test';\nimport { expect, test } from 'playwright-performance-regression/test';\nx();\n",
+    );
+    expect(swapTestImport('import { test as it } from "@playwright/test"\n')).toBe(
+      'import { test as it } from "playwright-performance-regression/test"\n',
+    );
+    expect(swapTestImport("const { test, expect, devices } = require('@playwright/test');\n")).toBe(
+      "const { devices } = require('@playwright/test');\nconst { test, expect } = require('playwright-performance-regression/test');\n",
+    );
+    expect(swapTestImport("import * as pw from '@playwright/test';\n")).toBeNull();
+    expect(swapTestImport("import { type Page } from '@playwright/test';\n")).toBeNull();
+    const config = 'export default defineConfig({});\n';
+    const plan = (spec: string): InitPlan =>
+      planInitChanges(
+        detectProject(
+          files({
+            'playwright.config.ts': config,
+            'tests/a.spec.ts':
+              "const { test } = require('@playwright/test');\ntest('a', () => {});\n",
+            'tests/b.spec.ts': spec,
+            'tests/auth.setup.ts':
+              "import { test as setup } from '@playwright/test';\nsetup('x', () => {});\n",
+          }),
+        ),
+        ANSWERS,
+      );
+    const swapped = plan("import { test } from '@playwright/test';\ntest('b', () => {});\n");
+    expect(swapped.importSwap?.paths).toEqual(['tests/a.spec.ts', 'tests/b.spec.ts']);
+    expect(swapped.changes.find((c) => c.path === 'tests/a.spec.ts')?.after).toBe(
+      "const { test } = require('playwright-performance-regression/test');\ntest('a', () => {});\n",
+    );
+    expect(swapped.changes.map((c) => c.path)).not.toContain('tests/auth.setup.ts');
+    expect(swapped.testObject).toBeNull();
+    const other = plan(
+      "import * as pw from '@playwright/test';\nconst { test } = pw;\ntest('b', () => {});\n",
+    );
+    expect(other.importSwap).toBeNull();
+    expect(other.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([]);
+    expect(other.testObject).not.toBeNull();
+  });
+
+  test('04-AC-58 the box names a fixtures module of a workspace package and never changes it', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'pw-perf-ac58-'));
+    const write = (path: string, text: string): void => {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), text);
+    };
+    try {
+      write('packages/kit/package.json', '{ "name": "@acme/kit", "main": "src/index.ts" }');
+      write(
+        'packages/kit/src/index.ts',
+        "import { test as base } from '@playwright/test';\nexport const test = base.extend({ a: async ({}, use) => use(1) });\n",
+      );
+      write('apps/web/package.json', '{}');
+      write('apps/web/playwright.config.ts', 'export default defineConfig({});\n');
+      write(
+        'apps/web/tests/a.spec.ts',
+        "import { test } from '@acme/kit';\ntest('a', async () => {});\n",
+      );
+      write(
+        'apps/web/tests/b.spec.ts',
+        "import { test } from '@acme/kit';\ntest('b', async () => {});\n",
+      );
+      mkdirSync(join(root, 'apps/web/node_modules/@acme'), { recursive: true });
+      symlinkSync(
+        join(root, 'packages/kit'),
+        join(root, 'apps/web/node_modules/@acme/kit'),
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+      const info = await detectDir(join(root, 'apps/web'));
+      const plan = planInitChanges(info, ANSWERS);
+      const entry = '../../packages/kit/src/index.ts';
+      expect(plan.changes.map((c) => c.path)).not.toContain(entry);
+      expect(plan.testObject).toEqual({
+        extendFiles: [entry],
+        importedBy: { [entry]: 2 },
+        workspace: { [entry]: '@acme/kit' },
+        importingFiles: 0,
+        stepsMeasured: false,
+      });
+      expect(info.filesWithExtend).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('04-AC-59 after the fixtures module is wrapped, tests importing @playwright/test give a warning', () => {
+    const plan = planInitChanges(
+      detectProject(
+        files({
+          'playwright.config.ts': 'export default defineConfig({});\n',
+          'tests/fixtures.ts':
+            "import { test as base } from '@playwright/test';\nexport const test = base.extend({});\n",
+          'tests/a.spec.ts': "import { test } from './fixtures';\ntest('a', () => {});\n",
+          'tests/b.spec.ts': "import { test } from '@playwright/test';\ntest('b', () => {});\n",
+          'tests/auth.setup.ts':
+            "import { test as setup } from '@playwright/test';\nsetup('x', () => {});\n",
+        }),
+      ),
+      ANSWERS,
+    );
+    expect(plan.changes.map((c) => c.path)).toContain('tests/fixtures.ts');
+    expect(plan.changes.map((c) => c.path)).not.toContain('tests/b.spec.ts');
+    expect(plan.testObject).toBeNull();
+    expect(plan.manualSteps).toEqual([
+      {
+        code: 'INIT_MANUAL_STEP',
+        message:
+          'Test files that import test straight from @playwright/test are not measured (1): tests/b.spec.ts.',
+        hint: "Import test from tests/fixtures.ts in them, or change the import in each of them:\n  import { test, expect } from 'playwright-performance-regression/test';",
+      },
+    ]);
+  });
+
+  test('04-AC-60 a nested repository is skipped unless a source imports from it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pw-perf-ac60-'));
+    const write = (path: string, text: string): void => {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    };
+    try {
+      write('package.json', '{}');
+      write('playwright.config.ts', 'export default defineConfig({});\n');
+      write('vendor/lib/.git', 'gitdir: ../../.git/modules/lib\n');
+      write(
+        'vendor/lib/src/fixture.ts',
+        "import { test as base } from '@playwright/test';\nexport const test = base.extend({});\n",
+      );
+      write('tests/a.spec.ts', "import { test } from 'x';\ntest('a', () => {});\n");
+      expect((await detectDir(dir)).filesWithExtend).toEqual([]);
+      write(
+        'tests/a.spec.ts',
+        "import { test } from '../vendor/lib/src/fixture';\ntest('a', () => {});\n",
+      );
+      expect((await detectDir(dir)).filesWithExtend).toEqual(['vendor/lib/src/fixture.ts']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -589,13 +778,13 @@ describe('recognized layouts (04-REQ-39)', () => {
       'playwright.config.ts': config,
       'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
     });
-    expect(planInitChanges(detectProject(imports), ANSWERS).testObject).not.toBeNull();
-    expect(
-      planInitChanges(detectProject(imports), { ...ANSWERS, measure: 'api' }).testObject,
-    ).not.toBeNull();
-    expect(
-      planInitChanges(detectProject(imports), { ...ANSWERS, measure: 'steps' }).testObject,
-    ).toBeNull();
+    const box = (answers: InitAnswers): unknown => {
+      const plan = planInitChanges(detectProject(imports), answers);
+      return plan.testObject ?? plan.importSwap?.box ?? null;
+    };
+    expect(box(ANSWERS)).not.toBeNull();
+    expect(box({ ...ANSWERS, measure: 'api' })).not.toBeNull();
+    expect(box({ ...ANSWERS, measure: 'steps' })).toBeNull();
     const module =
       "import { test as base } from '@playwright/test';\nexport const test = base.extend({});\n";
     const wrapped = planInitChanges(

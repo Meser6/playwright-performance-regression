@@ -55,6 +55,19 @@ function defaultsHost(dir: string, options: Partial<FakeHostOptions> = {}): Fake
   return fake;
 }
 
+/**
+ * init-import-swap with one more spec that imports @playwright/test as a namespace: the imports
+ * cannot be changed by name, so the wizard shows the red box (04-REQ-67, 04-D-49).
+ */
+function boxProject(): string {
+  const dir = copyProject('init-import-swap');
+  writeFileSync(
+    join(dir, 'tests/legacy.spec.ts'),
+    "import * as pw from '@playwright/test';\n\npw.test('legacy', async () => {});\n",
+  );
+  return dir;
+}
+
 describe('init wizard', () => {
   test('versionAtLeast compares major, minor and patch; pre-release parts are ignored', () => {
     expect(versionAtLeast('1.57.0', '1.57.0')).toBe(true);
@@ -244,9 +257,10 @@ describe('init wizard', () => {
     expect(noTty.stderr.join('')).toContain(
       'no terminal: the default answers are used and nothing is written',
     );
-    // The plan is shown in full; test files are never changed (04-REQ-67).
+    // The plan is shown in full, with the import changes of 04-D-49, and nothing is written.
     expect(noTty.stdout.join('')).toContain('+++ b/pw-perf.config.ts');
-    expect(noTty.stdout.join('')).not.toContain('+++ b/tests/shop.spec.ts');
+    expect(noTty.stdout.join('')).toContain('+++ b/tests/shop.spec.ts');
+    expect(noTty.stdout.join('')).not.toContain('INIT_TEST_OBJECT_MANUAL');
     const script = scriptedPrompt([]);
     const dry = fakeCliHost({
       cwd: dir,
@@ -540,7 +554,7 @@ describe('init wizard', () => {
 
   test('04-AC-46 tests importing @playwright/test: no test file changes and the red box', async () => {
     for (const env of [{ NO_COLOR: '1' }, { TERM: 'dumb' }] as Record<string, string>[]) {
-      const dir = copyProject('init-import-swap');
+      const dir = boxProject();
       const before = snapshot(dir);
       const fake = fakeCliHost({ cwd: dir, playwright: null, env });
       expect(await main([], fake.host)).toBe(0);
@@ -566,10 +580,95 @@ describe('init wizard', () => {
     }
   });
 
+  test('04-AC-57 without a fixtures module the wizard changes the imports; declining one shows the red box', async () => {
+    const run = async (
+      declined: string | null,
+    ): Promise<{ dir: string; out: string; asked: string[] }> => {
+      const dir = copyProject('init-import-swap');
+      const asked: string[] = [];
+      let last = '';
+      const fake: FakeHost = fakeCliHost({
+        cwd: dir,
+        playwright: null,
+        env: { NO_COLOR: '1' },
+        prompt: () => ({
+          ask: async (question) => {
+            asked.push(question);
+            if (/Run a check now\?/u.test(question)) return 'n';
+            if (
+              /Apply this change\?/u.test(question) &&
+              declined !== null &&
+              last.includes(declined)
+            )
+              return 'n';
+            return '';
+          },
+          close: () => undefined,
+        }),
+      });
+      const write = fake.host.stdout.write.bind(fake.host.stdout);
+      fake.host.stdout.write = (text: string) => {
+        last = text;
+        return write(text);
+      };
+      expect(await main([], fake.host)).toBe(0);
+      return { dir, out: fake.stdout.join(''), asked };
+    };
+    const applied = await run(null);
+    expect(readFileSync(join(applied.dir, 'tests/shop.spec.ts'), 'utf8')).toContain(
+      "import { test, expect } from 'playwright-performance-regression/test';",
+    );
+    expect(readFileSync(join(applied.dir, 'tests/auth.setup.ts'), 'utf8')).toContain(
+      "from '@playwright/test'",
+    );
+    expect(applied.out).not.toContain('INIT_TEST_OBJECT_MANUAL');
+    expect(applied.out).toContain('[9/10] ');
+    expect(applied.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
+    const declined = await run('tests/home.spec.ts');
+    expect(readFileSync(join(declined.dir, 'tests/home.spec.ts'), 'utf8')).toContain(
+      "from '@playwright/test'",
+    );
+    expect(declined.out).toContain(
+      'INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet',
+    );
+    expect(declined.out).not.toContain('[9/10]');
+  });
+
+  test('04-AC-58 the red box lists the fixtures modules by imports and names the one to wrap', async () => {
+    const dir = copyProject('init-esm-ts');
+    const base =
+      "import { test as base } from '@playwright/test';\nexport const test = base.extend({ a: async ({}, use) => use(1) });\n";
+    writeFileSync(join(dir, 'tests/fixtures.ts'), base);
+    writeFileSync(join(dir, 'tests/other.ts'), base);
+    writeFileSync(
+      join(dir, 'tests/b.spec.ts'),
+      "import { test } from './fixtures';\ntest('b', async () => {});\n",
+    );
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    expect(out).toContain('Files with .extend() and the number of test files that import each:');
+    expect(out.indexOf('tests/fixtures.ts · 2')).toBeGreaterThan(-1);
+    expect(out.indexOf('tests/fixtures.ts · 2')).toBeLessThan(out.indexOf('tests/other.ts · 0'));
+    expect(out).toContain('Wrap the one your tests import: tests/fixtures.ts');
+    // Equal counts: no file is named.
+    writeFileSync(
+      join(dir, 'tests/c.spec.ts'),
+      "import { test } from './other';\ntest('c', async () => {});\n",
+    );
+    writeFileSync(
+      join(dir, 'tests/d.spec.ts'),
+      "import { test } from './other';\ntest('d', async () => {});\n",
+    );
+    const tie = defaultsHost(dir);
+    expect(await main([], tie.host)).toBe(0);
+    expect(tie.stdout.join('')).not.toContain('Wrap the one your tests import');
+  });
+
   test('09-REQ-22 the red box takes the terminal width, and 100 when the terminal reports 0 columns', async () => {
     const boxWidth = async (columns?: number): Promise<number> => {
       const fake = fakeCliHost({
-        cwd: copyProject('init-import-swap'),
+        cwd: boxProject(),
         playwright: null,
         env: { NO_COLOR: '1' },
         ...(columns === undefined ? {} : { columns }),
@@ -595,7 +694,7 @@ describe('init wizard', () => {
       withStep = false,
     ): Promise<{ out: string; asked: string[] }> => {
       const asked: string[] = [];
-      const cwd = copyProject('init-import-swap');
+      const cwd = boxProject();
       if (withStep)
         writeFileSync(
           join(cwd, 'tests/steps.spec.ts'),

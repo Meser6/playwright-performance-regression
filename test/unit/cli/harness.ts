@@ -1,6 +1,6 @@
 // Fake wizard host: captured streams, a scripted check child process and signal handlers.
 import { EventEmitter } from 'node:events';
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import type {
@@ -111,6 +111,13 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
       };
     },
     readText: io.readTextFile,
+    realPath: async (path) => {
+      try {
+        return await realpath(path);
+      } catch {
+        return null;
+      }
+    },
     listDir: async (path) => {
       try {
         return (await readdir(path, { withFileTypes: true }))

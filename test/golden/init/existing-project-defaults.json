@@ -13,9 +13,14 @@
     ],
     "testObject": {
       "extendFiles": [
-        "tests/a11y.ts",
-        "tests/fixtures.ts"
+        "tests/fixtures.ts",
+        "tests/a11y.ts"
       ],
+      "importedBy": {
+        "tests/a11y.ts": 0,
+        "tests/fixtures.ts": 1
+      },
+      "workspace": {},
       "importingFiles": 0,
       "stepsMeasured": false
     }
