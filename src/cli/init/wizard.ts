@@ -391,11 +391,11 @@ function testObjectBox(dialog: Dialog, host: CliHost, box: TestObjectBox): strin
     wrapText(s, inner).map((l) => (style === undefined ? { text: l } : { text: l, style }));
   const lines: BoxLine[] = [
     {
-      text: `${dialog.ascii ? '!' : '✖'} ${TEST_OBJECT_CODE} · ${t('boxTitle')}`,
+      text: `${dialog.ascii ? '!' : '✖'} ${TEST_OBJECT_CODE} · ${t(box.stepsMeasured ? 'boxTitleSteps' : 'boxTitle')}`,
       style: 'bold',
     },
     { text: '' },
-    ...text(t('boxWhy')),
+    ...text(t(box.stepsMeasured ? 'boxWhySteps' : 'boxWhy')),
     { text: '' },
     ...text(`(a) ${t('boxFixtures')}`, 'bold'),
     ...(box.extendFiles.length > 0
@@ -663,11 +663,12 @@ export async function runInit(
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
     // Step 9: a check only when something was written, playwright.config is wrapped and step 6
-    // was not skipped; with the red box nothing would be measured, so no step 9 at all (04-REQ-58).
+    // was not skipped; with the red box and no measured test.step nothing would be measured, so no
+    // step 9 at all (04-REQ-58); with measured steps the check is useful (04-D-47).
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkResults: CheckResult[] | null = null;
-    if (redBox === null) {
+    if (plan.testObject === null || plan.testObject.stepsMeasured) {
       dialog.stepOf(9, 'stepCheck', 'checkLesson');
       if (answers.runCheck && written.length > 0 && wrapped) {
         if (await dialog.confirm(t('checkQuestion'), true)) {

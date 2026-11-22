@@ -589,12 +589,22 @@ describe('init wizard', () => {
   });
 
   test('04-AC-53 with the red box there is no check step; the answer steps gives no red box and a check step', async () => {
-    const wizard = async (measure: string): Promise<{ out: string; asked: string[] }> => {
+    const wizard = async (
+      measure: string,
+      env: Record<string, string> = {},
+      withStep = false,
+    ): Promise<{ out: string; asked: string[] }> => {
       const asked: string[] = [];
+      const cwd = copyProject('init-import-swap');
+      if (withStep)
+        writeFileSync(
+          join(cwd, 'tests/steps.spec.ts'),
+          `import { test } from '@playwright/test';\ntest('steps', async () => {\n  await test.step('open', async () => {});\n});\n`,
+        );
       const fake: FakeHost = fakeCliHost({
-        cwd: copyProject('init-import-swap'),
+        cwd,
         playwright: null,
-        env: { NO_COLOR: '1' },
+        env: { NO_COLOR: '1', ...env },
         prompt: () => ({
           ask: async (question) => {
             asked.push(question);
@@ -631,6 +641,28 @@ describe('init wizard', () => {
     expect(onlySteps.out).not.toContain(box);
     expect(onlySteps.out).toContain('[9/10] ');
     expect(onlySteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
+
+    // 04-D-47: all with test.step found: steps are measured, endpoints are not; the check is shown.
+    const withSteps = await wizard('', {}, true);
+    expect(withSteps.out).toContain(
+      'INIT_TEST_OBJECT_MANUAL · Action needed: endpoints are not measured yet',
+    );
+    expect(withSteps.out).not.toContain(box);
+    expect(withSteps.out).toContain('(test.step durations are measured)');
+    expect(withSteps.out).toContain('[9/10] ');
+    expect(withSteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
+    const titles: Record<string, string> = {
+      pl: 'Wymagane działanie: endpointy nie są jeszcze mierzone',
+      es: 'Acción necesaria: los endpoints todavía no se miden',
+      fr: 'Action requise : les endpoints ne sont pas encore mesurés',
+      it: 'Azione richiesta: gli endpoint non sono ancora misurati',
+      uk: 'Потрібна дія: ендпоінти поки що не вимірюються',
+      ru: 'Требуется действие: эндпоинты пока не измеряются',
+    };
+    for (const [lang, title] of Object.entries(titles)) {
+      const translated = await wizard('', { PW_PERF_LANG: lang }, true);
+      expect(translated.out).toContain(`INIT_TEST_OBJECT_MANUAL · ${title}`);
+    }
   });
 
   test('04-REQ-18 several projects give no projects question and no run.projects (D-44)', async () => {

@@ -182,6 +182,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(plan.testObject).toEqual({
       extendFiles: ['tests/a11y.ts', 'tests/fixtures.ts'],
       importingFiles: 0,
+      stepsMeasured: false,
     });
     // The instruction of 03, chapter 3.4 (other config wrapper).
     const hints = plan.manualSteps.map((s) => s.hint).join('\n');
@@ -379,7 +380,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       'pw-perf.config.json exists and was not changed.',
       'playwright.config.ts was not changed: the package config is pw-perf.config.json.',
     ]);
-    expect(plan.testObject).toEqual({ extendFiles: [], importingFiles: 0 });
+    expect(plan.testObject).toEqual({ extendFiles: [], importingFiles: 0, stepsMeasured: false });
   });
 });
 
@@ -455,7 +456,11 @@ describe('recognized layouts (04-REQ-39)', () => {
       ANSWERS,
     );
     expect(inSpec.changes.map((c) => c.path)).not.toContain('tests/a.spec.ts');
-    expect(inSpec.testObject).toEqual({ extendFiles: ['tests/a.spec.ts'], importingFiles: 1 });
+    expect(inSpec.testObject).toEqual({
+      extendFiles: ['tests/a.spec.ts'],
+      importingFiles: 1,
+      stepsMeasured: false,
+    });
     const imports = planInitChanges(
       detectProject(
         files({
@@ -467,7 +472,11 @@ describe('recognized layouts (04-REQ-39)', () => {
       ANSWERS,
     );
     expect(imports.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([]);
-    expect(imports.testObject).toEqual({ extendFiles: [], importingFiles: 2 });
+    expect(imports.testObject).toEqual({
+      extendFiles: [],
+      importingFiles: 2,
+      stepsMeasured: false,
+    });
   });
 
   test('04-AC-54 detection reads fixtures and page objects outside testDir', async () => {
@@ -513,6 +522,8 @@ describe('recognized layouts (04-REQ-39)', () => {
       expect(planInitChanges(info, ANSWERS).testObject).toEqual({
         extendFiles: info.filesWithExtend,
         importingFiles: 0,
+        // 04-D-47: answer all with a test.step found: steps are measured without the fixture.
+        stepsMeasured: true,
       });
     } finally {
       rmSync(dir, { recursive: true, force: true });
