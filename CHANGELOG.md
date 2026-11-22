@@ -107,6 +107,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- A thresholds run that selects a subset of the tests (`--grep`, `--project`, file filters) no
+  longer ends with "Run with PW_PERF_PRUNE=1 to remove them": pruning is ignored in such a run
+  (`RUN_PRUNE_SKIPPED`). The line now says that the run selects a subset of the tests.
 - `docs/adoption.md` no longer says that `request` calls in API-only tests are not measured;
   it has a row for API clients made with `request.newContext()` (`trackRequestContext()`). The
   note of the Endpoints tab in the HTML report mentions request calls, not only browser

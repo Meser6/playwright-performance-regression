@@ -27,6 +27,11 @@ export interface ThresholdsDiffOptions {
    * 04-REQ-58): nothing to commit (10, chapter 9.1).
    */
   temporary?: boolean;
+  /**
+   * The run selects a subset of the tests in the Playwright arguments (04-REQ-35): PW_PERF_PRUNE
+   * would be ignored, so the unseen line does not advise it (10, chapter 9.1).
+   */
+  subset?: boolean;
 }
 
 /** At most this many change rows per file; the rest is in thresholds-diff.md (10, chapter 9.1). */
@@ -97,7 +102,9 @@ function fileLines(
       '',
       opts.prune
         ? `  ${entries} not seen in this run ${verb} kept because ${unseen === 1 ? 'it is' : 'they are'} locked.`
-        : `  ${entries} ${verb} not seen in this run and ${verb} kept. Run with PW_PERF_PRUNE=1 to remove them.`,
+        : opts.subset === true
+          ? `  ${entries} ${verb} not seen in this run (it selects a subset of the tests) and ${verb} kept.`
+          : `  ${entries} ${verb} not seen in this run and ${verb} kept. Run with PW_PERF_PRUNE=1 to remove them.`,
     );
   }
   return lines;
