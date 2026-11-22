@@ -22,7 +22,7 @@ import {
   wrapTestObject,
 } from '../../../src/cli/init/patterns.ts';
 import { CONFIG_OPTIONS } from '../../../src/cli/init/generated/config-options.ts';
-import { LANGUAGES } from '../../../src/cli/init/messages.ts';
+import { LANGUAGES, MESSAGES } from '../../../src/cli/init/messages.ts';
 import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
 import {
   activeValues,
@@ -609,6 +609,15 @@ describe('04-REQ-55 test command of step 6 in the CI files', () => {
 });
 
 describe('04-REQ-47 step 4', () => {
+  test('04-REQ-47 the api lesson mentions request calls of API tests in every language', () => {
+    for (const lang of LANGUAGES) {
+      const text = MESSAGES[lang].measureApi;
+      expect(text, lang).toMatch(/\brequest\b/u);
+      expect(text, lang).toMatch(/\bAPI\b/u);
+      expect(text, lang).toContain('"GET /api/users/:id"');
+    }
+  });
+
   test('04-AC-28 counts the source files with test.step( and measures all by default', () => {
     const files = new Map([
       ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],
