@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { parseOutcome, parseRunReport } from '../../../src/core/schema/index.ts';
 import type { Issue, Outcome, RunReport } from '../../../src/core/types/index.ts';
@@ -873,6 +873,36 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     const lines = captured.stdout.join('').trimEnd().split('\n');
     expect(lines.at(-2)).toMatch(/^Outcome: /u);
     expect(lines.at(-1)).toBe('Next: derive thresholds: PW_PERF_MODE=thresholds npm run e2e');
+  });
+
+  test('09-AC-34 Next: starts with cd below INIT_CWD and derives thresholds without the arguments', async () => {
+    const run = async (initCwd: string): Promise<string | undefined> => {
+      const captured = fakeHost(dir, {
+        env: {
+          npm_lifecycle_event: 'e2e',
+          npm_execpath: '/usr/lib/node_modules/npm/bin/npm-cli.js',
+          npm_config_user_agent: 'npm/10',
+          INIT_CWD: initCwd,
+        },
+        argv: ['node', 'playwright', 'test', '--project=desktop'],
+      });
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify({ scripts: { e2e: 'playwright test' } }),
+      );
+      const s = session(captured, registered({}, { mode: 'test' }));
+      s.begin(fakeConfig(dir), ROOT);
+      runTests(s, dir, 10, PATHS, steady);
+      await s.end({ status: 'passed' });
+      return captured.stdout.join('').trimEnd().split('\n').at(-1);
+    };
+    expect(await run(join(dir, '..'))).toBe(
+      `Next: derive thresholds: cd ${basename(dir)} && PW_PERF_MODE=thresholds npm run e2e`,
+    );
+    // An INIT_CWD below the test directory comes from an unrelated script: no cd.
+    expect(await run(join(dir, 'nested'))).toBe(
+      'Next: derive thresholds: PW_PERF_MODE=thresholds npm run e2e',
+    );
   });
 
   test('09-AC-28 a measured project with batches but no requests gives RUN_PROJECT_NO_REQUESTS', async () => {

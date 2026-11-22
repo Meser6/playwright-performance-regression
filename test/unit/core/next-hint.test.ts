@@ -68,6 +68,40 @@ describe('09-AC-27 suggestCommand', () => {
   });
 });
 
+describe('09-AC-34 arguments of the run and the directory (09-REQ-32, 09-D-20)', () => {
+  const script = { run: { script: true, tail: ['--', '--project=desktop'] } };
+  test('test and check repeat the added arguments, thresholds never', () => {
+    expect(cmd('check', { lifecycleEvent: 'e2e', ...script })).toBe(
+      'PW_PERF_MODE=check npm run e2e -- --project=desktop',
+    );
+    expect(cmd('test', { lifecycleEvent: 'e2e', ...script })).toBe(
+      'PW_PERF_MODE=test npm run e2e -- --project=desktop',
+    );
+    expect(cmd('thresholds', { lifecycleEvent: 'e2e', ...script })).toBe(
+      'PW_PERF_MODE=thresholds npm run e2e',
+    );
+    const plain = { lifecycleEvent: null, run: { script: false, tail: ['--grep', '@cart smoke'] } };
+    expect(cmd('test', plain)).toBe("PW_PERF_MODE=test npx playwright test --grep '@cart smoke'");
+    // The run shape and the command must agree: plain arguments never follow a script.
+    expect(cmd('test', { lifecycleEvent: 'e2e', run: plain.run })).toBe(
+      'PW_PERF_MODE=test npm run e2e',
+    );
+  });
+
+  test('a run started from another directory begins with cd', () => {
+    expect(
+      cmd('thresholds', {
+        lifecycleEvent: 'e2e',
+        userAgent: 'pnpm/9.0.0',
+        directory: 'apps/admin-e2e',
+      }),
+    ).toBe('cd apps/admin-e2e && PW_PERF_MODE=thresholds pnpm run e2e');
+    expect(cmd('thresholds', { lifecycleEvent: 'e2e', directory: null })).toBe(
+      'PW_PERF_MODE=thresholds npm run e2e',
+    );
+  });
+});
+
 describe('09-AC-26 nextHint', () => {
   const commands = { test: cmd('test'), thresholds: cmd('thresholds'), check: cmd('check') };
   const report = (r: Partial<NextHintInput['report']> = {}): NextHintInput['report'] => ({
