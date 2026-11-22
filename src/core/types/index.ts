@@ -69,6 +69,7 @@ export type {
   ThresholdsDiff,
 } from './thresholds.ts';
 export {
+  ABORT_FAILURE_TEXTS,
   CONFIG_FILE_BASENAME,
   CONFIG_FILE_EXTENSIONS,
   CONTEXT_CLOSED_FAILURE_TEXT,
