@@ -91,7 +91,7 @@ function tabs(ctx: Ctx): Tab[] {
       label: 'Endpoints',
       count: endpoints,
       tone: failing(ctx, 'api') ? 'bad' : '',
-      note: 'Browser requests to measured origins, worst first.',
+      note: 'Browser requests and request calls to measured origins, worst first.',
       content:
         endpoints > 0
           ? keyTable(ctx, 'api', 'Endpoints')
