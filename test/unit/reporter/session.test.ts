@@ -613,8 +613,16 @@ describe('reporter session: HTML report', () => {
   });
 
   test('11 chapter 13: HTML_WRITE_FAILED keeps report.json, records the error and exit code 3', async () => {
-    mkdirSync(htmlPath(), { recursive: true });
-    const { outcome, out } = await run({});
+    // A directory in place of report.html, made after the run emptied report.dir (04-REQ-71).
+    const { outcome, out } = await run(
+      {},
+      {
+        renderHtml: (report) => {
+          mkdirSync(htmlPath(), { recursive: true });
+          return renderHtmlReport(report);
+        },
+      },
+    );
     expect(outcome.exitCode).toBe(3);
     expect(codes(outcome.toolErrors)).toEqual(['HTML_WRITE_FAILED']);
     expect(codes(readReport().toolErrors)).toEqual(['HTML_WRITE_FAILED']);

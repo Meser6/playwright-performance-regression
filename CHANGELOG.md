@@ -41,6 +41,13 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- Every `test` and `thresholds` run empties `report.dir` (default `pw-perf-results/`) when its
+  first test starts, so reports of earlier runs never stay next to the new ones. A guard keeps
+  the folder when it is the project directory, the `playwright.config` directory, the home
+  directory, the filesystem root, `thresholds.dir`, a folder containing one of them, or a folder
+  with thresholds files, `package.json`, `playwright.config.*` or `.git`; the run then warns with
+  `RUN_REPORT_DIR_NOT_CLEANED`. A check and a run without started tests remove nothing.
+
 - `measure.steps` is on by default: `test.step` blocks give step keys, a
   `pw-perf-thresholds.steps.json` file and fail the run like endpoints, without any config.
   Set `measure: { steps: false }` to measure only backend requests. A run without any

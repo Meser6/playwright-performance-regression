@@ -249,3 +249,9 @@ Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and
 [`thresholds.filePrefix`](configuration.md#thresholdsfileprefix). Commit the thresholds files;
 keep `pw-perf-results/` out of version control.
+
+Every `test` and `thresholds` run empties `report.dir` when its first test starts, so it holds
+only the files of the last run; keep nothing else in it. The folder is left alone when it is the
+project directory, holds thresholds files or otherwise does not look like a results folder
+([`RUN_REPORT_DIR_NOT_CLEANED`](troubleshooting.md#run_report_dir_not_cleaned)). A check
+removes nothing.

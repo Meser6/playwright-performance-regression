@@ -1,8 +1,8 @@
 // Reading files and file paths for the reporter and the wizard (01, chapter 4.7). The reporter may
 // not import node:* itself (01, chapter 5), so the path helpers it needs live here too.
-import { readFileSync, readdirSync, rmSync } from 'node:fs';
+import { lstatSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 /** A path in the temporary directory of the OS (04-REQ-49). */
@@ -53,6 +53,74 @@ export function listDirSync(dir: string): string[] {
   } catch {
     return [];
   }
+}
+
+/** Whether `path` is a directory (a link to one counts); false when missing (04-REQ-71). */
+export function isDirectorySync(path: string): boolean {
+  try {
+    return lstatSync(realpathSync.native(path)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/** `path` with symbolic links resolved; the normalized path when it cannot be resolved. */
+export function realPathSync(path: string): string {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return resolve(path);
+  }
+}
+
+/** Home directory of the user (04-REQ-71). */
+export function homeDir(): string {
+  return homedir();
+}
+
+/**
+ * Paths of every entry under `dir`, relative with forward slashes, without following symbolic
+ * links; null when there are more than `limit` entries (04-REQ-71).
+ */
+export function scanDirSync(dir: string, limit: number): string[] | null {
+  const found: string[] = [];
+  const pending: string[] = [''];
+  while (pending.length > 0) {
+    const rel = pending.pop() as string;
+    let names: string[];
+    try {
+      names = readdirSync(rel === '' ? dir : join(dir, rel));
+    } catch {
+      continue;
+    }
+    for (const name of names) {
+      const child = rel === '' ? name : `${rel}/${name}`;
+      found.push(child);
+      if (found.length > limit) return null;
+      try {
+        if (lstatSync(join(dir, child)).isDirectory()) pending.push(child);
+      } catch {
+        // Gone or unreadable: listed, not entered.
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * Removes every entry of `dir` and keeps `dir` itself; symbolic links are removed as links
+ * (04-REQ-71). Throws the first error after trying every entry.
+ */
+export function emptyDirSync(dir: string): void {
+  let failure: unknown = null;
+  for (const name of listDirSync(dir)) {
+    try {
+      rmSync(join(dir, name), { recursive: true, force: true });
+    } catch (error) {
+      failure ??= error;
+    }
+  }
+  if (failure !== null) throw failure;
 }
 
 /** Whether something exists at `path`. */

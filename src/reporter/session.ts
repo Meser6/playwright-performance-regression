@@ -79,6 +79,7 @@ import {
   worseStatus,
 } from './pass-file.ts';
 import { notInstrumentedWarning, workerCrashed } from './not-instrumented.ts';
+import { cleanReportDir } from './report-dir.ts';
 import type { TestFiles } from './not-instrumented.ts';
 import type { PassFile, TestCounts } from './pass-file.ts';
 import type { RunConditionsReport } from './begin.ts';
@@ -233,6 +234,8 @@ export class RunSession {
     tests: new Map<string, number>(),
   };
   private configLike: ConfigLike | null = null;
+  /** FullConfig.rootDir, protected from emptying report.dir (04-REQ-71). */
+  private rootDir = '';
   /** Measured projects with a non-skipped test that has a batch, and those with requests. */
   private readonly instrumentedProjects = new Set<string>();
   private readonly projectsWithRequests = new Set<string>();
@@ -315,6 +318,7 @@ export class RunSession {
     const io = this.host.io;
     this.configDir =
       config.configFile === undefined ? config.rootDir : io.directoryOf(config.configFile);
+    this.rootDir = config.rootDir;
     // The outcome of an earlier run must never be read by a CI job (04-REQ-62); pass files of an
     // earlier run must never be merged (02-REQ-36). Passes 2…N leave both alone.
     const outcomeFile = this.outcomePath();
@@ -442,7 +446,35 @@ export class RunSession {
   }
 
   testBegin(): void {
+    // At the first test, not in onBegin: --list and an empty filter change no file (04-REQ-71).
+    if (this.testsStarted === 0 && this.passIndex === 1 && !this.check && !this.fatal) {
+      this.emptyReportDir();
+    }
     this.testsStarted += 1;
+  }
+
+  /** Empties report.dir behind the guard (04-REQ-71). */
+  private emptyReportDir(): void {
+    const io = this.host.io;
+    const cfg = this.settings.config;
+    const reportDir = this.reportDir();
+    try {
+      const warning = cleanReportDir(io, {
+        reportDir,
+        shownPath: io.relativeSlashPath(this.host.cwd, reportDir),
+        protectedDirs: [
+          { path: this.host.cwd, name: 'project directory' },
+          { path: this.configDir, name: 'Playwright config directory' },
+          { path: this.rootDir, name: 'Playwright rootDir' },
+          { path: io.resolvePath(this.configDir, cfg.thresholds.dir), name: 'thresholds.dir' },
+          { path: io.homeDir(), name: 'home directory' },
+        ],
+        thresholdsPrefix: cfg.thresholds.filePrefix,
+      });
+      if (warning !== null) this.warnings.push(warning);
+    } catch (error) {
+      this.recordInternalError('onTestBegin', error);
+    }
   }
 
   testEnd(test: TestLike, result: ResultLike): void {

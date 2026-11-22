@@ -90,6 +90,16 @@ export interface ReporterIo {
   readTextFileSync(path: string): string | null;
   /** Entry names of a directory, empty when missing (02-REQ-36). */
   listDirSync(dir: string): string[];
+  /** Whether a directory exists at the path (04-REQ-71). */
+  isDirectorySync(path: string): boolean;
+  /** The path with symbolic links resolved (04-REQ-71). */
+  realPathSync(path: string): string;
+  /** Home directory of the user (04-REQ-71). */
+  homeDir(): string;
+  /** Every entry under a directory, relative; null above `limit` entries (04-REQ-71). */
+  scanDirSync(dir: string, limit: number): string[] | null;
+  /** Removes the contents of a directory and keeps it (04-REQ-71). */
+  emptyDirSync(dir: string): void;
 }
 
 /** How a pass process ended (04-REQ-64). */
