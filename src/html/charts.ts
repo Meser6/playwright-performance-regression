@@ -248,9 +248,9 @@ export function waterfallSvg(waterfall: Waterfall, id: string): SafeHtml {
   const labels = new Map<string, { ref: string; svg: SafeHtml }>();
   for (const req of rows) {
     if (labels.has(req.key)) continue;
-    const { method, origin, path } = splitEndpoint(req.key);
+    const { method, origin, path, request } = splitEndpoint(req.key);
     const rest = truncateMiddle(
-      `${origin}${path}`,
+      `${request ? 'request ' : ''}${origin}${path}`,
       Math.max(8, WATERFALL_KEY_MAX - method.length - 1),
     );
     const parts = rest.split(/(?<=\/)(:[A-Za-z][\w-]*)/u);

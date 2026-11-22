@@ -110,7 +110,7 @@ describe('withPerfFixtures', () => {
     expect(context.listenerCount()).toBe(0);
   });
 
-  test('in perf mode adds _perfBuffer (auto), context, page and perf', () => {
+  test('in perf mode adds _perfBuffer (auto), context, page, perf and request', () => {
     vi.stubEnv('PW_PERF_MODE', 'test');
     const wrapped = wrap(fakeTest());
     expect(Object.keys(wrapped.fixtures[0] ?? {}).sort()).toEqual([
@@ -118,6 +118,7 @@ describe('withPerfFixtures', () => {
       'context',
       'page',
       'perf',
+      'request',
     ]);
     expect(wrapped.fixtures[0]?._perfBuffer).toEqual([
       expect.any(Function),
@@ -186,10 +187,10 @@ describe('the perf fixture (05-REQ-32, D-32)', () => {
     return api;
   }
 
-  test('05-AC-23 PerfApi has only track; calling a removed method does not type-check', async () => {
-    expectTypeOf<keyof PerfApi>().toEqualTypeOf<'track'>();
+  test('05-AC-23 PerfApi has only track and trackRequestContext; a removed method does not type-check', async () => {
+    expectTypeOf<keyof PerfApi>().toEqualTypeOf<'track' | 'trackRequestContext'>();
     const api = await perfApi('');
-    expect(Object.keys(api)).toEqual(['track']);
+    expect(Object.keys(api)).toEqual(['track', 'trackRequestContext']);
     // @ts-expect-error -- perf.measure was removed (D-32)
     expect(api.measure).toBeUndefined();
   });

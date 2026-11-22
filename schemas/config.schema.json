@@ -66,7 +66,7 @@
       "default": {},
       "properties": {
         "api": {
-          "description": "Requests the browser makes to the backend, as keys of kind 'api' (05, 03-REQ-28). false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.",
+          "description": "Requests the browser makes to the backend and calls of the request fixture, page.request and context.request (keys with the prefix 'request '), as keys of kind 'api' (05, 15, 03-REQ-28). false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.",
           "type": "boolean",
           "default": true
         },

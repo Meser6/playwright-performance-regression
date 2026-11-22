@@ -50,13 +50,33 @@ export function shouldTrack(req: FilterInput, measure: ResolvedConfig['measure']
   if (req.resourceType !== 'document' && hasIgnoredExtension(url, measure.ignoreExtensions)) {
     return false;
   }
+  return passesUrlFilters(req.url, url, measure);
+}
+
+/** include, exclude and excludeKnownThirdParty (05, chapter 5.2, steps 4–6). */
+function passesUrlFilters(text: string, url: URL, measure: ResolvedConfig['measure']): boolean {
   if (
     measure.include.length > 0 &&
-    !measure.include.some((pattern) => matchesUrlPattern(req.url, pattern))
+    !measure.include.some((pattern) => matchesUrlPattern(text, pattern))
   ) {
     return false;
   }
-  if (measure.exclude.some((pattern) => matchesUrlPattern(req.url, pattern))) return false;
+  if (measure.exclude.some((pattern) => matchesUrlPattern(text, pattern))) return false;
   if (measure.excludeKnownThirdParty && isKnownThirdPartyHost(url.hostname)) return false;
   return true;
+}
+
+/**
+ * Whether an APIRequestContext call is measured (15-REQ-06): an http(s) URL that passes include,
+ * exclude and excludeKnownThirdParty; resourceTypes and ignoreExtensions do not apply.
+ */
+export function shouldTrackApiCall(text: string, measure: ResolvedConfig['measure']): boolean {
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+  return passesUrlFilters(text, url, measure);
 }

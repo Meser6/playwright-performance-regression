@@ -1,0 +1,54 @@
+{
+  "name": "schemaVersion 2 without apiRequests (02-AC-22)",
+  "input": {
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": 182.4,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": 3.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 150.1,
+        "url": "https://app.example/api/tickets/42?search=abc"
+      },
+      {
+        "duration": null,
+        "failureText": "net::ERR_ABORTED",
+        "fromServiceWorker": false,
+        "method": "POST",
+        "requestStart": null,
+        "resourceType": "xhr",
+        "startTime": 1763460000200,
+        "status": "FAILED",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/orders"
+      },
+      {
+        "duration": null,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": null,
+        "resourceType": "fetch",
+        "startTime": 1763460000900,
+        "status": "PENDING",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/notifications/poll"
+      }
+    ],
+    "schemaVersion": 2
+  },
+  "expected": {
+    "code": "SCHEMA_VERSION_MISMATCH"
+  }
+}

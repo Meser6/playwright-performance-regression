@@ -246,7 +246,7 @@ Options: [`api`](#measureapi), [`resourceTypes`](#measureresourcetypes), [`ignor
 
 ### `measure.api`
 
-Requests the browser makes to the backend, as keys of kind 'api'. false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
+Requests the browser makes to the backend and calls of the request fixture, page.request and context.request (keys with the prefix 'request '), as keys of kind 'api'. false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
 
 - Type: boolean
 - Default: `true`
@@ -398,7 +398,7 @@ Query parameter names always removed from the key (e.g. cache busters with fixed
 
 ### `keys.keyBuilder`
 
-Builds the endpoint key of a request yourself. Return a string to use it as the key, or `undefined` to fall back to the built-in rules. Not allowed in a JSON config file; the run report records it as `"[function]"`.
+Builds the endpoint key of a request yourself. Return a string to use it as the key, or `undefined` to fall back to the built-in rules. For calls of the `request` fixture, `page.request` and `context.request` it gets `resourceType: "request"`, and the key gets the prefix `request ` after it. Not allowed in a JSON config file; the run report records it as `"[function]"`.
 
 - Type: function `({ method, url, resourceType }) => string | undefined` (TypeScript or JavaScript config only)
 - Default: none

@@ -258,6 +258,12 @@ the most of them. Typical sources are long polling, streaming responses and serv
 Exclude such URLs with `measure.exclude` (this also removes the wait at test end), or raise
 `measure.pendingTimeoutMs` for slow but finite requests.
 
+### COLLECTOR_REQUEST_CONTEXT_NOT_TRACKED
+
+**Warning.** `trackRequestContext()` got an object that is not an `APIRequestContext`, so nothing
+was measured for it. Pass the object returned by `playwright.request.newContext()`. The test result
+is not affected.
+
 ## Endpoint keys
 
 ### NORMALIZE_KEY_BUILDER_THREW
@@ -356,11 +362,10 @@ A wrong guess only costs this line.
 
 ### RUN_PROJECT_NO_REQUESTS
 
-**Warning.** A measured project ran tests with the pw-perf fixtures, but no request of the
-browser was recorded in it. Tests that only use the `request` fixture (API tests) are not
-measured: requests made outside the browser are out of scope, so leave such projects out of the
-measurement command (`--project`). Otherwise check `use.baseURL`, that the tests import the test object wrapped with
-`withPerfFixtures()`, and `measure.include` / `measure.exclude`.
+**Warning.** A measured project ran tests with the pw-perf fixtures, but no request was recorded
+in it, neither from the browser nor from `request` calls. Check `use.baseURL`, that the tests
+(also API tests) import the test object wrapped with `withPerfFixtures()`, and `measure.include` /
+`measure.exclude`.
 
 ### RUN_REPORTER_FLAG
 
@@ -459,7 +464,8 @@ failures are expected.
 not measured. The message counts tests (not repetitions) and names up to three files, e.g.
 `2 tests in tests/api.spec.ts import test without withPerfFixtures() (e.g. straight from
 @playwright/test), so they were not measured.` Import `test` from a wrapped test object or from
-`playwright-performance-regression/test`; see [adoption.md](adoption.md). To measure only `test.step`
+`playwright-performance-regression/test`, also in API tests that use the `request` fixture (its
+calls are measured only through the wrapped test object); see [adoption.md](adoption.md). To measure only `test.step`
 durations, set `measure.api: false`: the warning is then not reported. When a worker process
 crashed, the message also says which tests lost their measurement that way. The warning is shown in
 every mode, also when deriving thresholds: these tests get no thresholds.

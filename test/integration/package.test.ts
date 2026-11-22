@@ -31,7 +31,11 @@ const TIMEOUT = 60_000;
 const ENTRIES: Record<string, Record<string, string>> = {
   [NAME]: { definePerfConfig: 'function', perfDefaults: 'object' },
   [`${NAME}/config`]: { definePerfConfig: 'function', withPerf: 'function' },
-  [`${NAME}/fixture`]: { trackContext: 'function', withPerfFixtures: 'function' },
+  [`${NAME}/fixture`]: {
+    trackContext: 'function',
+    trackRequestContext: 'function',
+    withPerfFixtures: 'function',
+  },
   [`${NAME}/test`]: { test: 'function', expect: 'function' },
   [`${NAME}/reporter`]: { default: 'function', PerfReporter: 'function' },
 };

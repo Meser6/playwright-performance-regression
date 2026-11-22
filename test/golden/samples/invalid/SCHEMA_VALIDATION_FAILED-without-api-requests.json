@@ -1,5 +1,5 @@
 {
-  "name": "schemaVersion 3 (02-AC-13)",
+  "name": "batch without apiRequests (02-AC-22)",
   "input": {
     "collector": {
       "browserName": "chromium",
@@ -49,6 +49,6 @@
     "schemaVersion": 3
   },
   "expected": {
-    "code": "SCHEMA_VERSION_MISMATCH"
+    "code": "SCHEMA_VALIDATION_FAILED"
   }
 }

@@ -23,8 +23,13 @@ export interface TestMeta {
 
 export interface EnrichedRequestSample extends RawRequestSample {
   test: TestMeta;
-  /** Position in the batch's requests array, from 0 (08-REQ-08). */
+  /** Position in the batch's requests array, from 0 (08-REQ-08); API calls follow them. */
   ordinal: number;
+  /**
+   * An APIRequestContext call (15-REQ-13): timed with the worker's clock (timeSource "node") and
+   * still usable for time statistics.
+   */
+  apiCall?: true;
 }
 
 export interface EnrichedStepSample extends RawStepSample {

@@ -14,8 +14,8 @@ import {
 } from './fixtures.ts';
 
 test('no browser', async ({ perf }) => {
-  // perf has only track() (05-REQ-32); the test uses no page or context.
-  expect(Object.keys(perf)).toEqual(['track']);
+  // perf has track() and trackRequestContext() (05-REQ-32); the test uses no page or context.
+  expect(Object.keys(perf)).toEqual(['track', 'trackRequestContext']);
 });
 
 test('popup and second tab', async ({ page, context }) => {

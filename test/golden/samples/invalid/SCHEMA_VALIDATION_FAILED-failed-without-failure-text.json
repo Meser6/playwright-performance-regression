@@ -1,6 +1,7 @@
 {
   "name": "FAILED request without failureText",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -21,7 +22,7 @@
         "url": "https://app.example/api/orders"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

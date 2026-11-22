@@ -86,7 +86,7 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,88 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// It lists the most important options only; every option, with its default, is described at
 +// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
@@ -123,8 +123,9 @@
 +
 +  // What the collector measures.
 +  // measure: {
-+  //   // The backend requests the browser makes are measured as endpoint keys. Set false to measure
-+  //   // only test.step durations (api and steps cannot both be off).
++  //   // The backend requests the browser makes and the calls of the request fixture (keys like
++  //   // "request GET /api/x") are measured as endpoint keys. Set false to measure only test.step
++  //   // durations (api and steps cannot both be off).
 +  //   api: true,
 +  //   // When not empty, only requests whose URL matches at least one pattern are measured. A
 +  //   // string matches as a substring of the URL; { regex: '...' } is a regular expression.

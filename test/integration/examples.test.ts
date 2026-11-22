@@ -28,7 +28,16 @@ afterAll(async () => {
 });
 
 describe.each([
-  ['basic', ['GET /api/cart', 'GET /api/products', 'GET /api/search?page&q', 'GET /api/users/:id']],
+  [
+    'basic',
+    [
+      'GET /api/cart',
+      'GET /api/products',
+      'GET /api/search?page&q',
+      'GET /api/users/:id',
+      'request GET /api/products',
+    ],
+  ],
   [
     'with-setup',
     [
@@ -114,6 +123,42 @@ describe.each([
         expect(after.map((f) => readFileSync(join(dir, f), 'utf8'))).toEqual(contents);
       } finally {
         rmSync(tmp, { recursive: true, force: true });
+      }
+    },
+    RUN_TIMEOUT,
+  );
+
+  test(
+    '15-AC-05 request keys share the endpoints file and fail the run like browser keys',
+    async (context) => {
+      // Only examples/basic has an API test.
+      if (name !== 'basic') context.skip();
+      // Derived by the first test: one file with both sources of GET /api/products.
+      const file = join(dir, 'pw-perf-thresholds.json');
+      const derived = JSON.parse(readFileSync(file, 'utf8')) as {
+        entries: Record<string, object>;
+      };
+      expect(Object.keys(derived.entries)).toEqual(
+        expect.arrayContaining(['GET /api/products', 'request GET /api/products']),
+      );
+      expect(existsSync(join(dir, 'pw-perf-thresholds.requests.json'))).toBe(false);
+      const original = readFileSync(file, 'utf8');
+      try {
+        derived.entries = {
+          ...derived.entries,
+          'request GET /api/products': { locked: true, median: 1 },
+        };
+        writeFileSync(file, JSON.stringify(derived, null, 2));
+        const run = await harness.run(dir, { env: { PW_PERF_MODE: 'test', PW_PERF_PASSES: '5' } });
+        expectStatus(run, 1);
+        expect(run.outcome?.exitCode).toBe(2);
+        expect(run.report?.evaluation.status).toBe('failed');
+        expect(run.output).toMatch(/│ ❌ │ api +│ request GET \/api\/products +│ median/u);
+        const endpoints = run.report?.endpoints ?? {};
+        expect(endpoints['request GET /api/products']?.evaluation.result).toBe('fail');
+        expect(endpoints['GET /api/products']?.evaluation.result).toBe('pass');
+      } finally {
+        writeFileSync(file, original);
       }
     },
     RUN_TIMEOUT,

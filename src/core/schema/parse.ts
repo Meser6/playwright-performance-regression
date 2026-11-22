@@ -39,10 +39,11 @@ export const MAX_PROBLEMS = 5;
 /**
  * Current schemaVersion of every format. 02-REQ-11 applies from the first release: the run
  * report went to version 2 (02-REQ-30); removing custom measurements (D-32) moved the sample
- * batch to 2, the thresholds file to 2 and the run report to 3 (02-REQ-33).
+ * batch to 2, the thresholds file to 2 and the run report to 3 (02-REQ-33); APIRequestContext
+ * calls moved the sample batch to 3 (02-REQ-40).
  */
 export const SCHEMA_VERSIONS = {
-  samples: 2,
+  samples: 3,
   runReport: 4,
   thresholds: 2,
   outcome: 1,

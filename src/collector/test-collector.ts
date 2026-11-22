@@ -3,14 +3,18 @@
 import type { BrowserContext, Page, TestInfo } from '@playwright/test';
 import type { ResolvedConfig } from '../core/config/index.ts';
 import { SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
-import type { RawRequestSample, SampleBatch } from '../core/types/index.ts';
+import type { RawApiRequestSample, RawRequestSample, SampleBatch } from '../core/types/index.ts';
+import { activeCollector } from '../registry/index.ts';
+import { isApiRequestContext, wrapRequestContext } from './api-requests.ts';
+import type { ApiCall, ApiRecorder, ApiSource } from './api-requests.ts';
 import { COLLECTOR_NAME, SAMPLE_LIMIT_PER_TEST } from './constants.ts';
 import { createDiagnostics, errorText } from './diagnostics.ts';
+import { shouldTrackApiCall } from './filters.ts';
 import { createPerfApi } from './perf-api.ts';
 import type { PerfApi } from './perf-api.ts';
 import { RequestTracker } from './request-tracker.ts';
 import type { SampleSink } from './request-tracker.ts';
-import { pendingBudgetMs } from './timing.ts';
+import { pendingBudgetMs, roundMs } from './timing.ts';
 
 export interface TestCollectorOptions {
   measure: ResolvedConfig['measure'];
@@ -20,17 +24,42 @@ export interface TestCollectorOptions {
   browserName: string | null;
   /** Current testInfo.timeout (it may change during the test). */
   testTimeout: () => number;
+  /** The baseURL option of the test: relative API call URLs resolve against it (15-REQ-05). */
+  baseURL?: string | undefined;
   now: () => number;
   wallNow: () => number;
 }
 
-export class TestCollector {
+/** An APIRequestContext call that has not settled yet (15-REQ-08). */
+interface ApiInFlight {
+  call: ApiCall;
+  source: ApiSource;
+  startTime: number;
+  settled: Promise<unknown>;
+  done: boolean;
+}
+
+/** The recorder of the running test, read when a wrapped method is called (15-REQ-03). */
+function currentRecorder(): ApiRecorder | undefined {
+  return activeCollector();
+}
+
+/** First line of an error message; never empty (15-REQ-05). */
+function firstLine(error: unknown): string {
+  const line = errorText(error).split('\n', 1)[0]?.trim() ?? '';
+  return line === '' ? 'unknown' : line;
+}
+
+export class TestCollector implements ApiRecorder {
   readonly api: PerfApi;
   readonly #opts: TestCollectorOptions;
   readonly #diag = createDiagnostics();
   readonly #trackers = new Map<BrowserContext, RequestTracker>();
   readonly #requests: RawRequestSample[] = [];
   readonly #pending: RawRequestSample[] = [];
+  readonly #apiRequests: RawApiRequestSample[] = [];
+  readonly #apiPending: RawApiRequestSample[] = [];
+  readonly #apiInFlight = new Set<ApiInFlight>();
   readonly #sink: SampleSink;
   #dropped = 0;
   #browserName: string | null | undefined;
@@ -40,16 +69,149 @@ export class TestCollector {
 
   constructor(opts: TestCollectorOptions) {
     this.#opts = opts;
-    this.api = createPerfApi((context) => {
-      this.track(context);
-    });
-    const keep = (list: RawRequestSample[], sample: RawRequestSample): void => {
-      if (this.#requests.length + this.#pending.length < SAMPLE_LIMIT_PER_TEST) list.push(sample);
-      else this.#dropped += 1;
-    };
+    this.api = createPerfApi(
+      (context) => {
+        this.track(context);
+      },
+      (requestContext) => {
+        this.trackRequestContext(requestContext);
+      },
+    );
     this.#sink = {
-      finished: (sample) => keep(this.#requests, sample),
-      pending: (sample) => keep(this.#pending, sample),
+      finished: (sample) => this.#keep(this.#requests, sample),
+      pending: (sample) => this.#keep(this.#pending, sample),
+    };
+  }
+
+  /** The sample limit counts browser samples and API calls together (05-REQ-16, 15-REQ-09). */
+  #keep<T>(list: T[], sample: T): void {
+    const count =
+      this.#requests.length +
+      this.#pending.length +
+      this.#apiRequests.length +
+      this.#apiPending.length;
+    if (count < SAMPLE_LIMIT_PER_TEST) list.push(sample);
+    else this.#dropped += 1;
+  }
+
+  /** Wraps an APIRequestContext of this test (15-REQ-03): the request fixture or context.request. */
+  wrapRequest(requestContext: object, source: ApiSource): void {
+    try {
+      wrapRequestContext(
+        requestContext,
+        source,
+        source === 'tracked' ? undefined : this.#opts.baseURL,
+        currentRecorder,
+      );
+    } catch (error) {
+      this.#diag.add({
+        code: 'COLLECTOR_LISTENER_ERROR',
+        message: `collector: wrapping an APIRequestContext failed, so its calls are not measured: ${errorText(error)}`,
+        hint: 'Report this as a bug of the package; the test result is not affected.',
+      });
+    }
+  }
+
+  /** perf.trackRequestContext() (15-REQ-03, 15-AC-07). */
+  trackRequestContext(requestContext: unknown): void {
+    if (!isApiRequestContext(requestContext)) {
+      this.requestContextNotTracked();
+      return;
+    }
+    this.wrapRequest(requestContext as object, 'tracked');
+  }
+
+  requestContextNotTracked(): void {
+    this.#diag.add({
+      code: 'COLLECTOR_REQUEST_CONTEXT_NOT_TRACKED',
+      message:
+        'collector: trackRequestContext() got an object that is not an APIRequestContext, so it is not measured',
+      hint: 'Pass the object returned by playwright.request.newContext().',
+    });
+  }
+
+  /**
+   * Records one APIRequestContext call (15-REQ-05): the returned promise settles like `result`
+   * (same value, same error); the sample is made when it settles or at the end-of-test wait.
+   */
+  observeApiCall(call: ApiCall, source: ApiSource, result: Promise<unknown>): Promise<unknown> {
+    if (this.#draining !== undefined) return result;
+    const startedAt = this.#opts.now();
+    const entry: ApiInFlight = {
+      call,
+      source,
+      startTime: Math.round(this.#opts.wallNow()),
+      settled: Promise.resolve(),
+      done: false,
+    };
+    const finish = (
+      status: RawApiRequestSample['status'],
+      extra: Partial<RawApiRequestSample>,
+      responseUrl?: string,
+    ): void => {
+      try {
+        if (entry.done) return;
+        entry.done = true;
+        this.#apiInFlight.delete(entry);
+        const sample = this.#apiSample(entry, status, responseUrl, extra);
+        if (sample !== null) this.#keep(this.#apiRequests, sample);
+      } catch (error) {
+        this.#diag.add({
+          code: 'COLLECTOR_LISTENER_ERROR',
+          message: `collector: recording an APIRequestContext call failed: ${errorText(error)}`,
+          hint: 'Report this as a bug of the package; the test result is not affected.',
+        });
+      }
+    };
+    const out = result.then(
+      (response) => {
+        const duration = roundMs(this.#opts.now() - startedAt);
+        let status: number | undefined;
+        let url: string | undefined;
+        try {
+          const r = response as { status?: () => unknown; url?: () => unknown };
+          const s = typeof r.status === 'function' ? r.status() : undefined;
+          status =
+            typeof s === 'number' && Number.isInteger(s) && s >= 100 && s <= 599 ? s : undefined;
+          const u = typeof r.url === 'function' ? r.url() : undefined;
+          url = typeof u === 'string' && u !== '' ? u : undefined;
+        } catch {
+          status = undefined;
+        }
+        if (status === undefined) finish('FAILED', { failureText: 'unknown', duration: null }, url);
+        else finish(status, { duration }, url);
+        return response;
+      },
+      (error: unknown) => {
+        finish('FAILED', { failureText: firstLine(error), duration: null });
+        throw error;
+      },
+    );
+    entry.settled = out.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.#apiInFlight.add(entry);
+    return out;
+  }
+
+  /** The sample of a call, or null when the filters skip its URL (15-REQ-06). */
+  #apiSample(
+    entry: ApiInFlight,
+    status: RawApiRequestSample['status'],
+    responseUrl: string | undefined,
+    extra: Partial<RawApiRequestSample>,
+  ): RawApiRequestSample | null {
+    const url = entry.call.url ?? responseUrl ?? entry.call.rawUrl;
+    if (url === '' || !shouldTrackApiCall(url, this.#opts.measure)) return null;
+    return {
+      method: entry.call.method,
+      url,
+      status,
+      ...(status === 'FAILED' ? { failureText: extra.failureText ?? 'unknown' } : {}),
+      startTime: entry.startTime,
+      duration: extra.duration ?? null,
+      source: entry.source,
     };
   }
 
@@ -59,6 +221,17 @@ export class TestCollector {
    */
   track(context: BrowserContext): boolean {
     if (this.#draining !== undefined || this.#trackers.has(context)) return false;
+    // page.request is context.request: one wrapper for both (15-REQ-03, 15-REQ-04).
+    let requestContext: unknown;
+    try {
+      requestContext = (context as { request?: unknown }).request;
+    } catch {
+      requestContext = undefined;
+    }
+    // A context without request (e.g. a test double) is measured without API calls.
+    if (typeof requestContext === 'object' && requestContext !== null) {
+      this.wrapRequest(requestContext, 'context');
+    }
     try {
       this.#trackers.set(
         context,
@@ -117,8 +290,9 @@ export class TestCollector {
       testTimeoutMs: this.#opts.testTimeout(),
       sinceTeardownStartMs: this.#opts.now() - (this.#teardownStart ?? this.#opts.now()),
     });
-    await Promise.all(
-      [...this.#trackers.values()].map(async (tracker) => {
+    await Promise.all([
+      this.#drainApiCalls(budget),
+      ...[...this.#trackers.values()].map(async (tracker) => {
         try {
           await tracker.drain(budget);
         } catch (error) {
@@ -129,7 +303,36 @@ export class TestCollector {
           });
         }
       }),
-    );
+    ]);
+  }
+
+  /** Waits for running API calls within the budget; the rest become PENDING (15-REQ-08). */
+  async #drainApiCalls(budget: number): Promise<void> {
+    if (this.#apiInFlight.size > 0) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, Math.max(0, budget));
+      });
+      await Promise.race([
+        Promise.all([...this.#apiInFlight].map((entry) => entry.settled)),
+        timeout,
+      ]);
+      clearTimeout(timer);
+    }
+    for (const entry of [...this.#apiInFlight]) {
+      entry.done = true;
+      this.#apiInFlight.delete(entry);
+      try {
+        const sample = this.#apiSample(entry, 'PENDING', undefined, { duration: null });
+        if (sample !== null) this.#keep(this.#apiPending, sample);
+      } catch (error) {
+        this.#diag.add({
+          code: 'COLLECTOR_LISTENER_ERROR',
+          message: `collector: recording an APIRequestContext call failed: ${errorText(error)}`,
+          hint: 'Report this as a bug of the package; the test result is not affected.',
+        });
+      }
+    }
   }
 
   /** The sample batch of the test (05-REQ-15); call after drain(). */
@@ -144,13 +347,14 @@ export class TestCollector {
       this.#dropped = 0;
     }
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       collector: {
         name: COLLECTOR_NAME,
         version: this.#opts.version,
         browserName: this.#browserName ?? null,
       },
       requests: [...this.#requests, ...this.#pending],
+      apiRequests: [...this.#apiRequests, ...this.#apiPending],
       diagnostics: this.#diag.list(),
     };
   }

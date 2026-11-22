@@ -119,6 +119,18 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Added
 
+- Calls of Playwright's `request` fixture, `page.request` and `context.request` are measured
+  (API tests and data setup in UI tests), with `measure.api` on (the default). They get their own
+  keys with the prefix `request`, e.g. `request GET /api/orders/:id`, next to the browser's
+  `GET /api/orders/:id`: the two are timed differently (worker clock vs browser timing), so each
+  gets its own entry in `pw-perf-thresholds.json` and its own limits. The Endpoints table of the
+  HTML report has a Source column (`browser` / `request`). Contexts from
+  `playwright.request.newContext()` are measured after `perf.trackRequestContext(context)` or
+  `trackRequestContext(context)` from `playwright-performance-regression/fixture`. API tests must
+  import `test` from the wrapped test object, otherwise `TESTS_NOT_INSTRUMENTED` names them.
+  The sample batch attachment moves to schema version 3 (`apiRequests`); the run report and the
+  thresholds files keep their versions. If you excluded API-only projects from the measurement
+  command because of `RUN_PROJECT_NO_REQUESTS`, you can add them back.
 - The HTML report has a stopwatch logo in its header and as the page icon (an inline
   `data:` URI, no extra files).
 - `run.overrideSlowMo` (default `false`): when `true`, perf mode sets

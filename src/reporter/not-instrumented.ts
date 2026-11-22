@@ -44,7 +44,7 @@ export function notInstrumentedWarning(unwrapped: TestFiles, crashed: TestFiles)
       `${nUnwrapped} ${one ? 'test' : 'tests'} in ${fileList(unwrapped)} ${one ? 'imports' : 'import'} test without withPerfFixtures() (e.g. straight from @playwright/test), so ${one ? 'it was' : 'they were'} not measured.`,
     );
     hint.push(
-      'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test").',
+      'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test"), also in API tests that use the request fixture.',
     );
   }
   if (nLost > 0) {

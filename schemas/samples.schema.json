@@ -5,9 +5,9 @@
   "description": "Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "collector", "requests", "diagnostics"],
+  "required": ["schemaVersion", "collector", "requests", "apiRequests", "diagnostics"],
   "properties": {
-    "schemaVersion": {"const": 2},
+    "schemaVersion": {"const": 3},
     "collector": {
       "description": "Collector that produced the batch.",
       "type": "object",
@@ -31,6 +31,11 @@
       "type": "array",
       "items": {"$ref": "#/$defs/requestSample"}
     },
+    "apiRequests": {
+      "description": "Calls of APIRequestContext methods (request fixture, page.request, context.request, trackRequestContext; 15) in the order they finished; calls still running when the end-of-test wait ran out come last, with status PENDING. The reporter keys them with the prefix 'request ' (15-REQ-01).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/apiRequestSample"}
+    },
     "diagnostics": {
       "description": "Collector diagnostics caught during the test (01-REQ-13, 05 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.",
       "type": "array",
@@ -38,6 +43,47 @@
     }
   },
   "$defs": {
+    "apiRequestSample": {
+      "description": "One call of an APIRequestContext method, timed with the worker's clock (15-REQ-05).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "url", "status", "startTime", "duration", "source"],
+      "properties": {
+        "method": {"description": "HTTP method, uppercase (fetch without a method: GET).", "type": "string", "pattern": "^[A-Z]+$"},
+        "url": {
+          "description": "Called URL: absolute as given, a relative one resolved against the test's baseURL, otherwise response.url() or the text of the call (15-REQ-05). Never written to thresholds files (P-07).",
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "description": "HTTP status code; FAILED when the call threw; PENDING when it was still running after the end-of-test wait (15-REQ-08).",
+          "oneOf": [{"type": "integer", "minimum": 100, "maximum": 599}, {"const": "FAILED"}, {"const": "PENDING"}]
+        },
+        "failureText": {
+          "description": "First line of the error message of the call. Present only when status is FAILED.",
+          "type": "string",
+          "minLength": 1
+        },
+        "startTime": {"description": "Date.now() when the method was called, whole ms.", "$ref": "common.schema.json#/$defs/epochMs"},
+        "duration": {
+          "description": "From the call to the settled promise (performance.now() in the worker), including reading the whole body. Null for FAILED and PENDING.",
+          "$ref": "common.schema.json#/$defs/msOrNull"
+        },
+        "source": {
+          "description": "request: the request fixture; context: page.request or context.request; tracked: a context passed to trackRequestContext(). Informational: all give keys with the same prefix (15-REQ-05).",
+          "enum": ["request", "context", "tracked"]
+        }
+      },
+      "if": {"properties": {"status": {"const": "FAILED"}}},
+      "then": {"required": ["failureText"]},
+      "else": {"not": {"required": ["failureText"]}},
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"enum": ["FAILED", "PENDING"]}}},
+          "then": {"properties": {"duration": {"type": "null"}}}
+        }
+      ]
+    },
     "requestSample": {
       "description": "One backend request observed in a tracked browser context, after collector filters (05).",
       "type": "object",

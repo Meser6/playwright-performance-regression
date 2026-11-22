@@ -163,8 +163,9 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
 ## Limitations
 
 - REST only: every GraphQL query goes to the same endpoint key.
-- Only requests made by the browser are measured. Tests that use only the `request` fixture, and
-  calls through `page.request` or `context.request`, record nothing.
+- Requests made by the browser and calls of Playwright's `request` fixture, `page.request` and
+  `context.request` are measured; other HTTP clients (Node `fetch`, axios) are not. API tests are
+  measured only when they import `test` from the wrapped test object.
 - The projects your test command selects are measured (all without `--project`), except setup and
   teardown projects. Chromium is supported; Firefox and WebKit are best effort, so select one engine
   with `--project`.

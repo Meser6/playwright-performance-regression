@@ -1,5 +1,5 @@
 // withPerfFixtures() and trackContext() (01, chapter 4.5; 05, chapters 3 and 4).
-import type { BrowserContext, Page, TestInfo, TestType } from '@playwright/test';
+import type { APIRequestContext, BrowserContext, Page, TestInfo, TestType } from '@playwright/test';
 import { perfDefaults } from '../core/config/index.ts';
 import { ConfigError } from '../core/types/index.ts';
 import { DEFAULT_MAX_TESTS, readModeState } from '../mode/index.ts';
@@ -11,6 +11,7 @@ import {
   trackedContexts,
   wrappedTests,
 } from '../registry/index.ts';
+import { isApiRequestContext, wrapRequestContext } from './api-requests.ts';
 import { createPerfApi } from './perf-api.ts';
 import type { PerfApi, PerfFixtures } from './perf-api.ts';
 import { TestCollector } from './test-collector.ts';
@@ -49,7 +50,11 @@ const PASSIVE_API: PerfApi = createPerfApi(() => {
  * Without withPerf() in this process the default config is used and every project is measured
  * (01-REQ-07; the reporter reports the missing withPerf()).
  */
-function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer {
+function openBuffer(
+  browserName: string | null,
+  baseURL: string | undefined,
+  testInfo: TestInfo,
+): PerfBuffer {
   const state = getRegistered();
   if (
     state !== undefined &&
@@ -62,6 +67,7 @@ function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer 
     version,
     browserName,
     testTimeout: () => testInfo.timeout,
+    baseURL,
     now,
     wallNow,
   });
@@ -95,12 +101,12 @@ const passiveFixtures = {
 const perfFixtures = {
   _perfBuffer: [
     async (
-      { browserName }: { browserName: string },
+      { browserName, baseURL }: { browserName: string; baseURL: string | undefined },
       use: (buffer: PerfBuffer) => Promise<void>,
       testInfo: TestInfo,
     ): Promise<void> => {
       skipInCheck(testInfo);
-      const buffer = openBuffer(browserName ?? null, testInfo);
+      const buffer = openBuffer(browserName ?? null, baseURL, testInfo);
       const { collector } = buffer;
       if (collector !== null) setActiveCollector(collector);
       await use(buffer);
@@ -129,6 +135,14 @@ const perfFixtures = {
     _perfBuffer.collector?.coverPage(page);
     await use(page);
     await _perfBuffer.collector?.drain();
+  },
+  // The same object with its request methods measured (15-REQ-03); untouched without a collector.
+  request: async (
+    { request, _perfBuffer }: { request: APIRequestContext; _perfBuffer: PerfBuffer },
+    use: (request: APIRequestContext) => Promise<void>,
+  ): Promise<void> => {
+    _perfBuffer.collector?.wrapRequest(request, 'request');
+    await use(request);
   },
   perf: async (
     { _perfBuffer }: { _perfBuffer: PerfBuffer },
@@ -169,4 +183,20 @@ export function trackContext(context: BrowserContext): void {
   }
   // Registered during a test (e.g. a worker fixture set up by this test): track it now.
   activeCollector()?.track(context);
+}
+
+/**
+ * Measures the calls of an APIRequestContext created with playwright.request.newContext(), also
+ * in a worker-scoped fixture (15-REQ-03): each call made during a test of a measured project is
+ * recorded by that test. Does nothing outside perf mode or with measure.api off.
+ */
+export function trackRequestContext(requestContext: APIRequestContext): void {
+  if (!perfModeOn()) return;
+  const state = getRegistered();
+  if (state !== undefined && !state.config.measure.api) return;
+  if (!isApiRequestContext(requestContext)) {
+    activeCollector()?.requestContextNotTracked();
+    return;
+  }
+  wrapRequestContext(requestContext, 'tracked', undefined, activeCollector);
 }

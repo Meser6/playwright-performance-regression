@@ -3,6 +3,8 @@
 The smallest setup: an ESM TypeScript project without Playwright projects. The tests import
 `test` and `expect` from `playwright-performance-regression/test`, and `playwright.config.ts` is
 wrapped in `withPerf()`. There is no package config file, so all defaults apply.
+`tests/api.spec.ts` is an API test: its `request` calls are measured as their own keys
+(`request GET /api/products`), next to the same endpoint called by the page.
 
 The tests run against the demo app of this repository, which Playwright starts on port 3000.
 
