@@ -47,6 +47,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   own test command in its place, e.g. `PW_PERF_MODE=test npm run e2e:qa`. The check at the end
   runs the Playwright CLI. The warnings `INIT_SCRIPT_FLAG` and `INIT_SCRIPT_LATER_STEPS` are
   removed.
+- Step 4 of the wizard asks "What to measure? [all/api/steps]" instead of whether to measure
+  `test.step` blocks, and is asked in every project, also without `test.step` calls. `all` (the
+  default) keeps both kinds on, `api` writes `measure: { steps: false }` and `steps` writes
+  `measure: { api: false }`.
 - Step 1 of the wizard no longer lists what it detected (files, `baseURL`, projects, CI). It
   says what the package does, how to run it (`PW_PERF_MODE=thresholds <your test command>`,
   commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally and in CI,

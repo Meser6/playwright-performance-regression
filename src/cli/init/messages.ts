@@ -52,12 +52,18 @@ const en = {
   passesLesson:
     'Each rule needs a minimum number of samples per endpoint (minSamples), and samples are calls per test × tests × passes. Your test command, with its setup steps, runs once per pass.',
   passesQuestion: 'Passes of the test command in measurement runs?',
-  stepSteps: 'Test steps',
-  stepsLesson:
-    'Durations of your test.step blocks can be measured too, without changing the tests: each step becomes a key such as "checkout › pay".',
+  stepMeasure: 'What to measure',
+  measureApi:
+    'api: response times of the backend requests your pages send, grouped into endpoint keys such as "GET /api/users/:id".',
+  measureSteps:
+    'steps: durations of your test.step blocks, without changing the tests; each step becomes a key such as "checkout › pay", with its own thresholds file.',
   stepsPrivacy:
     'Step titles are sanitized: ids, e-mails, URLs and secrets never reach the keys, also inside quotes.',
-  stepsQuestion: 'Also measure the duration of your test.step blocks (found in {count} files)?',
+  stepFilesFound: 'Files with test.step: {count}.',
+  noStepsFound: 'No test.step found yet: steps are measured once you add test.step blocks.',
+  measureQuestion: 'What to measure? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Only steps, but no test.step was found: nothing is measured until you add test.step blocks.',
   stepCi: 'CI',
   noCi: 'No CI configuration found. Recipes for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines: {url}',
   stepChanges: 'Changes',
@@ -209,12 +215,19 @@ const pl: Messages = {
   passesLesson:
     'Każda reguła potrzebuje minimalnej liczby próbek na endpoint (minSamples), a próbek jest: wywołania w teście × testy × przebiegi. Polecenie testów, z krokami przygotowania, wykonuje się raz na przebieg.',
   passesQuestion: 'Ile przebiegów polecenia testów w pomiarze?',
-  stepSteps: 'Kroki testu',
-  stepsLesson:
-    'Czasy bloków test.step też mogą być mierzone, bez zmian w testach: każdy krok staje się kluczem, np. "checkout › pay".',
+  stepMeasure: 'Co mierzyć',
+  measureApi:
+    'api: czasy odpowiedzi requestów backendu wysyłanych przez strony, pogrupowane w klucze endpointów, np. "GET /api/users/:id".',
+  measureSteps:
+    'steps: czasy Twoich bloków test.step, bez zmian w testach; każdy krok staje się kluczem, np. "checkout › pay", z własnym plikiem progów.',
   stepsPrivacy:
     'Tytuły kroków są sanityzowane: identyfikatory, e-maile, adresy URL i sekrety nie trafiają do kluczy, także w cudzysłowach.',
-  stepsQuestion: 'Mierzyć też czasy bloków test.step (znalezione w {count} plikach)?',
+  stepFilesFound: 'Pliki z test.step: {count}.',
+  noStepsFound:
+    'Nie znaleziono jeszcze test.step: kroki będą mierzone, gdy dodasz bloki test.step.',
+  measureQuestion: 'Co mierzyć? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Tylko kroki, ale nie znaleziono test.step: nic nie będzie mierzone, dopóki nie dodasz bloków test.step.',
   stepCi: 'CI',
   noCi: 'Nie znaleziono konfiguracji CI. Przepisy dla GitHub Actions, GitLab CI, Jenkinsa i Azure Pipelines: {url}',
   stepChanges: 'Zmiany',
@@ -364,13 +377,19 @@ const es: Messages = {
   passesLesson:
     'Cada regla necesita un mínimo de muestras por endpoint (minSamples), y las muestras son llamadas por test × tests × pasadas. Tu comando de tests, con sus pasos de preparación, se ejecuta una vez por pasada.',
   passesQuestion: '¿Pasadas del comando de tests en las mediciones?',
-  stepSteps: 'Pasos del test',
-  stepsLesson:
-    'También se puede medir la duración de tus bloques test.step sin cambiar los tests: cada paso se convierte en una clave como "checkout › pay".',
+  stepMeasure: 'Qué medir',
+  measureApi:
+    'api: tiempos de respuesta de las peticiones al backend que envían tus páginas, agrupadas en claves de endpoint como "GET /api/users/:id".',
+  measureSteps:
+    'steps: duración de tus bloques test.step, sin cambiar los tests; cada paso se convierte en una clave como "checkout › pay", con su propio archivo de umbrales.',
   stepsPrivacy:
     'Los títulos de los pasos se sanean: ids, correos, URL y secretos nunca llegan a las claves, tampoco entre comillas.',
-  stepsQuestion:
-    '¿Medir también la duración de tus bloques test.step (encontrados en {count} archivos)?',
+  stepFilesFound: 'Archivos con test.step: {count}.',
+  noStepsFound:
+    'Aún no se encontró ningún test.step: los pasos se medirán cuando añadas bloques test.step.',
+  measureQuestion: '¿Qué medir? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Solo pasos, pero no se encontró ningún test.step: no se mide nada hasta que añadas bloques test.step.',
   stepCi: 'CI',
   noCi: 'No se encontró configuración de CI. Recetas para GitHub Actions, GitLab CI, Jenkins y Azure Pipelines: {url}',
   stepChanges: 'Cambios',
@@ -524,12 +543,19 @@ const fr: Messages = {
   passesLesson:
     'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et les échantillons valent appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
   passesQuestion: 'Passes de la commande de tests dans les mesures ?',
-  stepSteps: 'Étapes de test',
-  stepsLesson:
-    'La durée de vos blocs test.step peut aussi être mesurée, sans modifier les tests : chaque étape devient une clé comme "checkout › pay".',
+  stepMeasure: 'Que mesurer',
+  measureApi:
+    'api : temps de réponse des requêtes backend envoyées par vos pages, regroupées en clés d’endpoint comme "GET /api/users/:id".',
+  measureSteps:
+    'steps : durée de vos blocs test.step, sans modifier les tests ; chaque étape devient une clé comme "checkout › pay", avec son propre fichier de seuils.',
   stepsPrivacy:
     'Les titres des étapes sont nettoyés : identifiants, e-mails, URL et secrets n’arrivent jamais dans les clés, même entre guillemets.',
-  stepsQuestion: 'Mesurer aussi la durée de vos blocs test.step (trouvés dans {count} fichiers) ?',
+  stepFilesFound: 'Fichiers avec test.step : {count}.',
+  noStepsFound:
+    'Aucun test.step trouvé pour l’instant : les étapes seront mesurées dès que vous ajouterez des blocs test.step.',
+  measureQuestion: 'Que mesurer ? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Étapes seulement, mais aucun test.step trouvé : rien n’est mesuré tant que vous n’ajoutez pas de blocs test.step.',
   stepCi: 'CI',
   noCi: 'Aucune configuration CI trouvée. Recettes pour GitHub Actions, GitLab CI, Jenkins et Azure Pipelines : {url}',
   stepChanges: 'Modifications',
@@ -687,12 +713,19 @@ const it: Messages = {
   passesLesson:
     'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passaggi. Il comando dei test, con i suoi passi di preparazione, viene eseguito una volta per passaggio.',
   passesQuestion: 'Passaggi del comando dei test nelle misurazioni?',
-  stepSteps: 'Step dei test',
-  stepsLesson:
-    'Si può misurare anche la durata dei blocchi test.step, senza modificare i test: ogni step diventa una chiave come "checkout › pay".',
+  stepMeasure: 'Cosa misurare',
+  measureApi:
+    'api: tempi di risposta delle richieste al backend inviate dalle pagine, raggruppate in chiavi di endpoint come "GET /api/users/:id".',
+  measureSteps:
+    'steps: durata dei blocchi test.step, senza modificare i test; ogni step diventa una chiave come "checkout › pay", con il proprio file di soglie.',
   stepsPrivacy:
     'I titoli degli step vengono ripuliti: id, e-mail, URL e segreti non finiscono mai nelle chiavi, nemmeno tra virgolette.',
-  stepsQuestion: 'Misurare anche la durata dei blocchi test.step (trovati in {count} file)?',
+  stepFilesFound: 'File con test.step: {count}.',
+  noStepsFound:
+    'Nessun test.step trovato per ora: gli step verranno misurati quando aggiungerai blocchi test.step.',
+  measureQuestion: 'Cosa misurare? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Solo step, ma nessun test.step trovato: non viene misurato nulla finché non aggiungi blocchi test.step.',
   stepCi: 'CI',
   noCi: 'Nessuna configurazione CI trovata. Ricette per GitHub Actions, GitLab CI, Jenkins e Azure Pipelines: {url}',
   stepChanges: 'Modifiche',
@@ -847,12 +880,19 @@ const uk: Messages = {
   passesLesson:
     'Кожне правило потребує мінімальної кількості вимірів на ендпоінт (minSamples), а вимірів буде: виклики в тесті × тести × проходи. Команда тестів разом із кроками підготовки виконується один раз на прохід.',
   passesQuestion: 'Скільки проходів команди тестів під час вимірювання?',
-  stepSteps: 'Кроки тестів',
-  stepsLesson:
-    'Тривалість блоків test.step теж можна вимірювати без змін у тестах: кожен крок стає ключем, наприклад "checkout › pay".',
+  stepMeasure: 'Що вимірювати',
+  measureApi:
+    'api: час відповіді запитів до бекенду, які надсилають сторінки, згрупованих у ключі endpoint, наприклад "GET /api/users/:id".',
+  measureSteps:
+    'steps: тривалість ваших блоків test.step без змін у тестах; кожен крок стає ключем, наприклад "checkout › pay", з власним файлом порогів.',
   stepsPrivacy:
     'Заголовки кроків очищуються: ідентифікатори, e-mail, URL і секрети ніколи не потрапляють у ключі, навіть у лапках.',
-  stepsQuestion: 'Також вимірювати тривалість блоків test.step (знайдено у файлах: {count})?',
+  stepFilesFound: 'Файли з test.step: {count}.',
+  noStepsFound:
+    'test.step поки не знайдено: кроки вимірюватимуться, щойно ви додасте блоки test.step.',
+  measureQuestion: 'Що вимірювати? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Лише кроки, але test.step не знайдено: нічого не вимірюється, доки ви не додасте блоки test.step.',
   stepCi: 'CI',
   noCi: 'Конфігурацію CI не знайдено. Рецепти для GitHub Actions, GitLab CI, Jenkins та Azure Pipelines: {url}',
   stepChanges: 'Зміни',
@@ -1003,12 +1043,19 @@ const ru: Messages = {
   passesLesson:
     'Каждому правилу нужно минимальное число замеров на эндпоинт (minSamples), а замеров будет: вызовы в тесте × тесты × проходы. Команда тестов вместе с шагами подготовки выполняется один раз на проход.',
   passesQuestion: 'Сколько проходов команды тестов при измерении?',
-  stepSteps: 'Шаги тестов',
-  stepsLesson:
-    'Длительность блоков test.step тоже можно измерять без изменений в тестах: каждый шаг становится ключом, например "checkout › pay".',
+  stepMeasure: 'Что измерять',
+  measureApi:
+    'api: время ответа запросов к бэкенду, которые отправляют страницы, сгруппированных в ключи endpoint, например "GET /api/users/:id".',
+  measureSteps:
+    'steps: длительность ваших блоков test.step без изменений в тестах; каждый шаг становится ключом, например "checkout › pay", с собственным файлом порогов.',
   stepsPrivacy:
     'Заголовки шагов очищаются: идентификаторы, e-mail, URL и секреты никогда не попадают в ключи, даже в кавычках.',
-  stepsQuestion: 'Также измерять длительность блоков test.step (найдено в файлах: {count})?',
+  stepFilesFound: 'Файлы с test.step: {count}.',
+  noStepsFound:
+    'test.step пока не найдено: шаги будут измеряться, как только вы добавите блоки test.step.',
+  measureQuestion: 'Что измерять? [{all}/api/steps]',
+  onlyStepsNoSteps:
+    'Только шаги, но test.step не найдено: ничего не измеряется, пока вы не добавите блоки test.step.',
   stepCi: 'CI',
   noCi: 'Конфигурация CI не найдена. Рецепты для GitHub Actions, GitLab CI, Jenkins и Azure Pipelines: {url}',
   stepChanges: 'Изменения',

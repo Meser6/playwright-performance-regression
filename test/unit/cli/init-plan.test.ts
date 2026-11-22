@@ -13,8 +13,13 @@ import { wrapPlaywrightConfig, wrapTestObject } from '../../../src/cli/init/patt
 import { CONFIG_OPTIONS } from '../../../src/cli/init/generated/config-options.ts';
 import { LANGUAGES } from '../../../src/cli/init/messages.ts';
 import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
-import { IMPORTANT_SETTINGS, renderPerfConfig, ts } from '../../../src/cli/init/perf-config.ts';
-import { DEFAULT_CONFIG } from '../../../src/core/config/index.ts';
+import {
+  activeValues,
+  IMPORTANT_SETTINGS,
+  renderPerfConfig,
+  ts,
+} from '../../../src/cli/init/perf-config.ts';
+import { DEFAULT_CONFIG, resolveConfig } from '../../../src/core/config/index.ts';
 import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
 import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
 
@@ -45,7 +50,7 @@ function files(entries: Record<string, string>): Map<string, string> {
 const ANSWERS: InitAnswers = {
   scope: 'all',
   passesTest: 5,
-  steps: true,
+  measure: 'all',
   preset: 'normal',
   addCi: false,
   runCheck: false,
@@ -530,7 +535,7 @@ describe('CI templates', () => {
 });
 
 describe('04-REQ-47 step 4', () => {
-  test('04-AC-28 counts the source files with test.step( and answers yes by default', () => {
+  test('04-AC-28 counts the source files with test.step( and measures all by default', () => {
     const files = new Map([
       ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],
       [
@@ -542,23 +547,40 @@ describe('04-REQ-47 step 4', () => {
     ]);
     const info = detectProject(files);
     expect(info.stepFiles).toBe(2);
-    expect(defaultAnswers(info).steps).toBe(true);
-    expect(defaultAnswers(detectProject(new Map([['playwright.config.ts', '']]))).steps).toBe(true);
+    expect(defaultAnswers(info).measure).toBe('all');
+    expect(defaultAnswers(detectProject(new Map([['playwright.config.ts', '']]))).measure).toBe(
+      'all',
+    );
   });
 
-  test('04-AC-28 a yes keeps the default and a no writes measure.steps: false as active code', () => {
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, steps: true }))).toEqual([
+  test('04-AC-28 all keeps the defaults, api writes measure.steps: false and steps measure.api: false', () => {
+    const header = [
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
+    ];
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'all' }))).toEqual([
+      ...header,
       '});',
     ]);
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, steps: false }))).toEqual([
-      "import { definePerfConfig } from 'playwright-performance-regression';",
-      'export default definePerfConfig({',
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'api' }))).toEqual([
+      ...header,
       '  measure: {',
       '    steps: false,',
       '  },',
       '});',
     ]);
+    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'steps' }))).toEqual([
+      ...header,
+      '  measure: {',
+      '    api: false,',
+      '  },',
+      '});',
+    ]);
+    // Every answer gives a valid config (never both kinds off, 03-REQ-28).
+    for (const measure of ['all', 'api', 'steps'] as const) {
+      const values = activeValues({ ...ANSWERS, measure });
+      const config = { measure: Object.fromEntries([...values].map(([k, v]) => [k.slice(8), v])) };
+      expect(resolveConfig(config, {}).ok).toBe(true);
+    }
   });
 });

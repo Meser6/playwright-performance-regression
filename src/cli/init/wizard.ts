@@ -27,7 +27,7 @@ import { unifiedDiff } from './diff.ts';
 import { readProjectFiles } from './files.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
-import type { InitAnswers } from './perf-config.ts';
+import type { InitAnswers, MeasureAnswer } from './perf-config.ts';
 import { isProtected, planInitChanges } from './plan.ts';
 import type { FileChange, TestObjectBox } from './plan.ts';
 import { PromptAborted } from './prompt.ts';
@@ -284,12 +284,28 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     },
   );
 
-  // Step 4 only when the project has test.step calls (04-REQ-47); otherwise the default (on).
-  let steps = DEFAULT_CONFIG.measure.steps;
-  if (info.stepFiles > 0) {
-    dialog.step(4, t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
-    steps = await dialog.confirm(t('stepsQuestion', { count: info.stepFiles }), true);
-  }
+  // Step 4 always, also without test.step calls (04-REQ-47, 04-D-41).
+  dialog.step(
+    4,
+    t('stepMeasure'),
+    t('measureApi'),
+    t('measureSteps'),
+    t('stepsPrivacy'),
+    t('stepFilesFound', { count: info.stepFiles }),
+  );
+  if (info.stepFiles === 0) dialog.line(t('noStepsFound'), 'dim');
+  const measure = await dialog.ask<MeasureAnswer>(
+    t('measureQuestion', { all }),
+    all,
+    'all',
+    (a) => {
+      const answer = a.toLowerCase();
+      if (answer === 'all' || answer === all) return 'all';
+      return answer === 'api' || answer === 'steps' ? answer : null;
+    },
+  );
+  if (measure === 'steps' && info.stepFiles === 0)
+    dialog.line(`⚠ ${t('onlyStepsNoSteps')}`, 'yellow');
 
   dialog.stepOf(5, 'stepPreset', 'presetLesson', 'presetStrict', 'presetNormal', 'presetLoose');
   const normal = DEFAULT_CONFIG.thresholds.preset;
@@ -311,7 +327,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   return {
     scope,
     passesTest,
-    steps,
+    measure,
     preset,
     addCi,
     runCheck: false,
@@ -424,14 +440,16 @@ async function applyChanges(
 }
 
 /**
- * Names of the thresholds files the runs will write (04-REQ-59 step 3): the step file only when
- * steps are measured and the project has test.step calls.
+ * Names of the thresholds files the runs will write (04-REQ-59 step 3, 04-REQ-47): the api file
+ * unless only steps are measured, the step file for only steps, or for all with test.step calls.
  */
 function thresholdsFiles(info: ProjectInfo, answers: InitAnswers): string[] {
   const prefix = DEFAULT_CONFIG.thresholds.filePrefix;
-  return answers.steps && info.stepFiles > 0
-    ? [`${prefix}.json`, `${prefix}.steps.json`]
-    : [`${prefix}.json`];
+  const files: string[] = [];
+  if (answers.measure !== 'steps') files.push(`${prefix}.json`);
+  if (answers.measure === 'steps' || (answers.measure === 'all' && info.stepFiles > 0))
+    files.push(`${prefix}.steps.json`);
+  return files;
 }
 
 /** Next steps of the summary (04-REQ-59). */
