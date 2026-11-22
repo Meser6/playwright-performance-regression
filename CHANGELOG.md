@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- `docs/adoption.md` no longer says that `request` calls in API-only tests are not measured;
+  it has a row for API clients made with `request.newContext()` (`trackRequestContext()`). The
+  note of the Endpoints tab in the HTML report mentions request calls, not only browser
+  requests.
 - The wizard's check no longer asks you to commit its temporary thresholds files: its
   thresholds run showed `Thresholds: ../../…/T/pw-perf-check-…/pw-perf-thresholds.json`,
   "Review the changes and commit the thresholds files" and `Next: commit …`. It now shows the

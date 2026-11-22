@@ -19,6 +19,11 @@ const ROWS: [string, string, string][] = [
   ['Several test objects', 'projects.test.ts', 'test objects, mergeTests'],
   ['playwright-bdd', 'projects.test.ts', 'playwright-bdd and mocks'],
   ['API-only tests', 'projects.test.ts', 'wrapper, reporters, test objects'],
+  [
+    'Own API clients from `request.newContext()`',
+    'collector.test.ts',
+    '15-AC-07 a tracked context',
+  ],
   ['Login (`setup`) project', 'projects.test.ts', 'wrapper, reporters, test objects'],
   [
     'Another wrapper around the Playwright config',
