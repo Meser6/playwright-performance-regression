@@ -164,6 +164,41 @@ describe('04-AC-35 estimate and output', () => {
     if (process.env.GOLDEN_UPDATE === '1') writeFileSync(file, text);
     expect(text).toBe(readFileSync(file, 'utf8'));
   });
+
+  test('a measured project with 1 test and 1 request uses the singular', () => {
+    const one: CheckSummary = {
+      packageName: 'pw-perf',
+      ran: 1,
+      selected: 1,
+      passed: 1,
+      failed: 0,
+      skippedByCheck: 0,
+      projects: [
+        {
+          name: 'desktop',
+          role: 'measured',
+          browserName: null,
+          baseURL: null,
+          requests: 1,
+          tests: 1,
+        },
+      ],
+      reporters: { kept: [], replaced: [], removed: [] },
+      requests: 1,
+      apiKeys: 1,
+      stepKeys: 0,
+      origins: [],
+      topKeys: [],
+      thresholdsFiles: [],
+      warnings: [],
+      toolErrors: [],
+      estimate: 'not available (no measured test ran)',
+    };
+    const text = formatCheckSummary(one, { width: 120, color: false });
+    expect(text).toContain('  measured    desktop · baseURL (not set) · 1 request in 1 test\n');
+    expect(text).toContain('1 request · 1 api key · 0 step keys · 0 origins');
+    expect(text).toContain('1 of 1 test run (1 passed)');
+  });
 });
 
 describe('check in the mode contract (04-REQ-48, 04-REQ-49)', () => {
