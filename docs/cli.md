@@ -134,12 +134,14 @@ In CI, treat 2 as "performance regression" and 3 as "the measurement itself did 
 
 ## Playwright flags in your command
 
-Flags in your test command (also inside the npm script) are not refused; the package warns
-instead, before the tests start:
+Flags in your test command (also inside the npm script) are not refused, with one exception; the
+package warns instead, before the tests start:
 
 - [`RUN_REPORTER_FLAG`](troubleshooting.md#run_reporter_flag): a `--reporter` flag replaces all
-  reporters of the config, including the one `withPerf()` adds, so nothing is evaluated. Remove it
-  from the measurement command, or add `,playwright-performance-regression/reporter` to its value.
+  reporters of the config, including the one `withPerf()` adds, so nothing is evaluated. A test
+  or thresholds run stops with this error before the tests (exit code 1); a check only warns.
+  Remove it from the measurement command, or add `,playwright-performance-regression/reporter` to
+  its value.
 - [`RUN_UNSUPPORTED_FLAG`](troubleshooting.md#run_unsupported_flag): `--ui`, `--ui-host`,
   `--ui-port` and `--debug` are not measured reliably; use a separate command for them.
 - [`RUN_PRUNE_SKIPPED`](troubleshooting.md#run_prune_skipped): `PW_PERF_PRUNE=1` with a test

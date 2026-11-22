@@ -28,7 +28,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const first = readModeState(process.env);
   if (!first.ok) throw new ConfigError(first.issues);
   if (first.value === null) return config;
-  const argvIssues = mainProcessSetup();
+  const argvIssues = mainProcessSetup(first.value.mode);
   const mode = readModeState(process.env);
   if (!mode.ok || mode.value === null) throw new Error('withPerf: the mode state changed');
   const state = mode.value;
@@ -80,10 +80,11 @@ const SETUP_DONE = Symbol.for('playwright-performance-regression.mainProcessSetu
 
 /**
  * Main process (04-REQ-60, 04-REQ-61): a run id for the workers and the argument warnings on
- * stderr. Returns the warnings that also go to the report. Workers (TEST_WORKER_INDEX set) do
- * nothing.
+ * stderr. Returns the warnings that also go to the report. RUN_REPORTER_FLAG throws a ConfigError
+ * in test and thresholds: such a run would measure nothing and still end green. Workers
+ * (TEST_WORKER_INDEX set) do nothing.
  */
-function mainProcessSetup(): Issue[] {
+function mainProcessSetup(mode: PerfModeState['mode']): Issue[] {
   if (process.env.TEST_WORKER_INDEX !== undefined) return [];
   const store = globalThis as Record<symbol, Issue[] | undefined>;
   const done = store[SETUP_DONE];
@@ -91,7 +92,8 @@ function mainProcessSetup(): Issue[] {
   if ((process.env[RUN_ID_ENV] ?? '') === '') {
     process.env[RUN_ID_ENV] = generateRunId(new Date(), Math.random);
   }
-  const found = argvWarnings(process.argv, PACKAGE_NAME);
+  const found = argvWarnings(process.argv, PACKAGE_NAME, mode);
+  if (found.reporter !== null && mode !== 'check') throw new ConfigError([found.reporter]);
   const report: Issue[] = [];
   for (const issue of [found.reporter, found.unsupported]) {
     if (issue === null) continue;

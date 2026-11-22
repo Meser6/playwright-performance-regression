@@ -174,7 +174,8 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
 - The test command, with its setup steps, runs once per pass; tests that create data without such
   a step can collide in the next pass; make the data unique.
 - A `--reporter` flag in the test command replaces the package reporter, so nothing is reported
-  (the run warns with `RUN_REPORTER_FLAG`); keep reporters in `playwright.config` instead.
+  (a test or thresholds run stops with `RUN_REPORTER_FLAG`); keep reporters in
+  `playwright.config` instead.
 
 ## Privacy
 

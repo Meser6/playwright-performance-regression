@@ -381,9 +381,12 @@ fixture or `beforeAll`) are measured only after `trackRequestContext(context)` f
 
 ### RUN_REPORTER_FLAG
 
-**Warning, on stderr only.** The test command has a `--reporter` option (also one written in an npm
-script) that does not include the pw-perf reporter. `--reporter` replaces every reporter of the
-config, so the run is measured but nothing is evaluated and no report is written. Remove
+**Error in `PW_PERF_MODE=test` and `thresholds`, a warning on stderr in `check`.** The test
+command has a `--reporter` option (also one written in an npm script) that does not include the
+pw-perf reporter. `--reporter` replaces every reporter of the config, so nothing would be
+evaluated and no report or thresholds would be written while the run still ended green. A test or
+thresholds run therefore stops before the tests with exit code 1 ("--reporter replaces the
+pw-perf reporter: nothing would be measured, evaluated or written"). Remove
 `--reporter` from the measurement command, or add the reporter to it:
 `--reporter=line,playwright-performance-regression/reporter`.
 

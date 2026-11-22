@@ -242,10 +242,18 @@ describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
     expect(process.env.PW_PERF_RUN_ID).toBeUndefined();
   });
 
-  test('04-AC-40 RUN_REPORTER_FLAG on stderr only, RUN_UNSUPPORTED_FLAG also in the report', () => {
+  test('04-AC-40 RUN_REPORTER_FLAG throws in test and thresholds, warns on stderr in a check', () => {
     const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     try {
       process.argv = ['node', 'playwright', 'test', '--reporter=junit', '--ui'];
+      for (const mode of ['test', 'thresholds']) {
+        vi.stubEnv('PW_PERF_MODE', mode);
+        expect(() => withPerf(EMPTY), mode).toThrow(ConfigError);
+        expect(() => withPerf(EMPTY), mode).toThrow(/RUN_REPORTER_FLAG|--reporter replaces/u);
+        expect(getRegistered(), mode).toBeUndefined();
+      }
+
+      vi.stubEnv('PW_PERF_MODE', 'check');
       withPerf(EMPTY);
       const text = write.mock.calls.map((c) => String(c[0])).join('');
       expect(text).toContain('RUN_REPORTER_FLAG');
@@ -254,6 +262,7 @@ describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
 
       clearRegistry();
       write.mockClear();
+      vi.stubEnv('PW_PERF_MODE', 'test');
       process.argv = [
         'node',
         'playwright',
