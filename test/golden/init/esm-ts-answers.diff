@@ -105,7 +105,7 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,360 @@
+@@ -0,0 +1,362 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
@@ -172,6 +172,8 @@
 +
 +  // What the collector measures.
 +  // measure: {
++  //   // Requests the browser makes to the backend, as keys of kind 'api'.
++  //   api: true,
 +  //   // Playwright resource types that are measured.
 +  //   resourceTypes: ['document', 'xhr', 'fetch'],
 +  //   // Requests whose URL path ends with one of these extensions are skipped, except resource

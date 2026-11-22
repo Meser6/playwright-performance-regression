@@ -77,6 +77,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   `use.launchOptions.slowMo` to 0 in every measured project and lists `slowMo` in the
   "perf mode overrides …" line. With `false`, the `CONFIG_SLOW_MO` warning stays and now points
   to the option.
+- `measure.api` (default `true`): set it to `false` to measure only `test.step` durations. No
+  request is recorded, the endpoint thresholds file is neither read nor written, and tests do
+  not need to import `test` from a wrapped test object (no `TESTS_NOT_INSTRUMENTED`). Turning
+  off both `measure.api` and `measure.steps` is `CONFIG_INVALID_VALUE`.
 
 ## [0.1.0-next.3] - 2026-11-21
 

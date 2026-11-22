@@ -51,6 +51,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   },
   { path: 'measure', description: 'What the collector measures.', leaf: false },
   {
+    path: 'measure.api',
+    description: "Requests the browser makes to the backend, as keys of kind 'api'.",
+    leaf: true,
+    default: true,
+  },
+  {
     path: 'measure.resourceTypes',
     description: 'Playwright resource types that are measured.',
     leaf: true,

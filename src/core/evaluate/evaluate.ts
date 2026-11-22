@@ -187,8 +187,10 @@ export function evaluate(
   const toolErrors: Issue[] = [];
   const thresholdFiles: ThresholdFileInfo[] = [];
   const unseenCount: Record<Kind, number> = { api: 0, step: 0 };
-  // The step file is not read while measure.steps is off, even when it exists (09-REQ-31).
-  const activeKinds = KINDS.filter((kind) => kind !== 'step' || cfg.measure.steps.enabled);
+  // A kind's file is not read while the kind is off, even when it exists (09-REQ-31, 09-REQ-35).
+  const activeKinds = KINDS.filter((kind) =>
+    kind === 'step' ? cfg.measure.steps.enabled : cfg.measure.api,
+  );
   for (const kind of activeKinds) {
     const file = thresholds[kind];
     if (file.kind !== kind) {

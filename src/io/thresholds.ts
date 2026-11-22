@@ -17,6 +17,8 @@ export interface ThresholdsLocation {
   env: string | null;
   /** measure.steps.enabled: the step file is read only when steps are measured (09-REQ-31). */
   steps: boolean;
+  /** measure.api (default true): the api file is read only when requests are measured (09-REQ-35). */
+  api?: boolean;
 }
 
 /** File name part of each kind; endpoints have none (02-REQ-35, D-37). */
@@ -39,8 +41,8 @@ export function thresholdsFilePaths(location: ThresholdsLocation): Record<Kind, 
 async function loadFile(location: ThresholdsLocation, kind: Kind): Promise<LoadedThresholdsFile> {
   const absolute = thresholdsFilePaths(location)[kind];
   const path = relativeSlashPath(location.configDir, absolute);
-  // Not read at all while steps are off, even when it exists (09-REQ-31).
-  if (kind === 'step' && !location.steps) {
+  // Not read at all while its kind is off, even when it exists (09-REQ-31, 09-REQ-35).
+  if (kind === 'step' ? !location.steps : location.api === false) {
     return { status: 'missing', kind, path, envlessFileExists: false };
   }
   let text: string | null;

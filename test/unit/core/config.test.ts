@@ -640,3 +640,19 @@ describe('run.overrideSlowMo (03-REQ-27, D-45)', () => {
     expect(codes(issues({ run: { overrideSlowMo: 'yes' } }))).toEqual(['CONFIG_INVALID_TYPE']);
   });
 });
+
+describe('measure.api (03-REQ-28, D-46)', () => {
+  test('03-AC-20 measure.api is true by default; api and steps cannot both be off', () => {
+    expect(DEFAULT_CONFIG.measure.api).toBe(true);
+    expect(resolved({ measure: { api: false } }).snapshot.measure.api).toBe(false);
+    expect(codes(issues({ measure: { api: 'no' } }))).toEqual(['CONFIG_INVALID_TYPE']);
+    expect(resolved({ measure: { api: false } }).config.measure.steps.enabled).toBe(true);
+    expect(resolved({ measure: { steps: false } }).config.measure.api).toBe(true);
+    for (const steps of [false, { enabled: false }]) {
+      const found = issues({ measure: { api: false, steps } });
+      expect(codes(found)).toEqual(['CONFIG_INVALID_VALUE']);
+      expect(found[0]?.path).toBe('measure');
+      expect(found[0]?.message).toContain('measure.api and measure.steps are both off');
+    }
+  });
+});

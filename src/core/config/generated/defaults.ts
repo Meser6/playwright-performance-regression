@@ -12,6 +12,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     overrideSlowMo: false,
   },
   measure: {
+    api: true,
     resourceTypes: ['document', 'xhr', 'fetch'],
     ignoreExtensions: [
       '.js',

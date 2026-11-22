@@ -159,6 +159,10 @@ export interface PackageConfig {
    */
   measure?: {
     /**
+     * Requests the browser makes to the backend, as keys of kind 'api' (05, 03-REQ-28). false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
+     */
+    api?: boolean;
+    /**
      * Playwright resource types that are measured. WebSocket traffic is not available as Request events in Playwright and cannot be measured (05).
      *
      * @minItems 1

@@ -109,6 +109,15 @@ describe('thresholds files (09-REQ-01 – 09-REQ-03)', () => {
     expect(on.step).toMatchObject({ status: 'loaded', kind: 'step' });
   });
 
+  test('09-REQ-35 the api file is read only with measure.api on', async () => {
+    writeFileSync(join(dir, 'pw-perf-thresholds.json'), file('api'));
+    const location = { configDir: dir, dir: '.', filePrefix: 'pw-perf-thresholds', env: null };
+    const off = await loadThresholds({ ...location, steps: true, api: false });
+    expect(off.api.status).toBe('missing');
+    const on = await loadThresholds({ ...location, steps: true, api: true });
+    expect(on.api).toMatchObject({ status: 'loaded', kind: 'api' });
+  });
+
   test('D-37 files with the old names are not read', async () => {
     writeFileSync(join(dir, 'pw-perf-thresholds.api.json'), file('api', { 'GET /a': {} }));
     writeFileSync(

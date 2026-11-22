@@ -333,9 +333,9 @@ export function deriveThresholds(
   for (const kind of KINDS) {
     const file = existing[kind];
     if (file.status === 'invalid') throw new Error('deriveThresholds: unreachable invalid file');
-    // A kind other than api without keys and without a file is left out of the result and the
-    // diff, e.g. steps while measure.steps is off (10-REQ-22).
-    if (kind !== 'api' && file.status === 'missing') {
+    // A kind without keys and without a file is left out of the result and the diff, e.g. steps
+    // while measure.steps is off; api only while measure.api is off (10-REQ-22).
+    if ((kind !== 'api' || !cfg.measure.api) && file.status === 'missing') {
       if (Object.keys(aggregatesOf(report, kind)).length === 0) continue;
     }
     const result = deriveKind(report, cfg, file, opts);

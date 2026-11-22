@@ -482,15 +482,19 @@ export function checkRunReport(document: JsonObject, sink: Sink): void {
 }
 
 /**
- * Run report v3 → v4 (02-REQ-39, D-44, D-45): run.projects was removed, so the config snapshot
- * loses it, and run.overrideSlowMo was added with its default false, both without a warning;
- * everything else stays.
+ * Run report v3 → v4 (02-REQ-39, D-44, D-45, D-46): run.projects was removed, so the config
+ * snapshot loses it, and run.overrideSlowMo and measure.api were added with their defaults false
+ * and true, all without a warning; everything else stays.
  */
 export function migrateRunReportV3(document: JsonObject): JsonObject {
   const config = document.config;
   if (!isRecord(config) || !isRecord(config.run)) return document;
   const { projects: _projects, ...run } = config.run;
-  return { ...document, config: { ...config, run: { ...run, overrideSlowMo: false } } };
+  const measure = isRecord(config.measure) ? { api: true, ...config.measure } : config.measure;
+  return {
+    ...document,
+    config: { ...config, run: { ...run, overrideSlowMo: false }, measure },
+  };
 }
 
 export const RUN_REPORT_FORMAT: VersionedFormat = {
