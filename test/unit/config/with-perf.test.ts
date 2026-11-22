@@ -219,6 +219,15 @@ describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
     process.argv = argv;
   });
 
+  test('03-AC-21 the registry tells whether the package config was passed', () => {
+    process.argv = ['node', 'playwright', 'test'];
+    withPerf(EMPTY);
+    expect(getRegistered()?.perfConfigPassed).toBe(false);
+    clearRegistry();
+    withPerf(EMPTY, {});
+    expect(getRegistered()?.perfConfigPassed).toBe(true);
+  });
+
   test('04-AC-40 sets PW_PERF_RUN_ID for the workers once, and not in a worker', () => {
     process.argv = ['node', 'playwright', 'test'];
     withPerf(EMPTY);

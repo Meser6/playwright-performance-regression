@@ -2,11 +2,11 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { parseOutcome, parseRunReport } from '../../../src/core/schema/index.ts';
-import type { Outcome, RunReport } from '../../../src/core/types/index.ts';
+import type { Issue, Outcome, RunReport } from '../../../src/core/types/index.ts';
 import { generateRunId } from '../../../src/mode/index.ts';
 import { stripAnsi } from '../../../src/console/color.ts';
 import { renderHtmlReport } from '../../../src/html/index.ts';
-import { runSettings } from '../../../src/reporter/session.ts';
+import { configFileNotPassedWarning, runSettings } from '../../../src/reporter/session.ts';
 import { createAjv, validator } from '../../contract/schemas.ts';
 import {
   batch,
@@ -779,6 +779,49 @@ describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
       entries: Record<string, unknown>;
     };
     expect(Object.keys(file.entries)).toHaveLength(2);
+  });
+});
+
+describe('CONFIG_FILE_NOT_PASSED (03-REQ-29)', () => {
+  const warningsOf = async (perfConfigPassed: boolean | undefined): Promise<Issue[]> => {
+    const state = registered({}, { mode: 'test' });
+    const s = session(
+      fakeHost(dir),
+      perfConfigPassed === undefined ? state : { ...state, perfConfigPassed },
+    );
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 5, PATHS, steady);
+    await s.end({ status: 'passed' });
+    return readReport().warnings;
+  };
+
+  test('03-AC-21 a config file next to the Playwright config and withPerf(config) warn', async () => {
+    writeFileSync(join(dir, 'pw-perf.config.ts'), 'export default {};\n');
+    const found = (await warningsOf(false)).find((w) => w.code === 'CONFIG_FILE_NOT_PASSED');
+    expect(found?.message).toBe(
+      'pw-perf.config.ts is not passed to withPerf(), so the run uses the default settings.',
+    );
+    expect(found?.hint).toContain('withPerf(config, perfConfig)');
+  });
+
+  test('03-AC-21 no warning with the config passed, without a file or with a file elsewhere', async () => {
+    writeFileSync(join(dir, 'pw-perf.config.ts'), 'export default {};\n');
+    expect(codes(await warningsOf(true))).not.toContain('CONFIG_FILE_NOT_PASSED');
+    expect(codes(await warningsOf(undefined))).not.toContain('CONFIG_FILE_NOT_PASSED');
+    rmSync(join(dir, 'pw-perf.config.ts'));
+    mkdirSync(join(dir, 'e2e'));
+    writeFileSync(join(dir, 'e2e', 'pw-perf.config.ts'), 'export default {};\n');
+    writeFileSync(join(dir, 'pw-perf.config.yaml'), '');
+    expect(codes(await warningsOf(false))).not.toContain('CONFIG_FILE_NOT_PASSED');
+  });
+
+  test('03-AC-21 configFileNotPassedWarning knows every config file extension', () => {
+    for (const ext of ['.ts', '.mts', '.js', '.mjs', '.cjs', '.json']) {
+      expect(configFileNotPassedWarning([`pw-perf.config${ext}`])?.code).toBe(
+        'CONFIG_FILE_NOT_PASSED',
+      );
+    }
+    expect(configFileNotPassedWarning(['playwright.config.ts'])).toBeNull();
   });
 });
 

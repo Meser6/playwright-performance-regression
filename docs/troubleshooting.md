@@ -85,6 +85,15 @@ variable). The tests probably run against the wrong address. If `baseURL` comes 
 variables, run the tests through the script that sets them, e.g. `PW_PERF_MODE=test npm run
 e2e:qa`.
 
+### CONFIG_FILE_NOT_PASSED
+
+**Warning.** A `pw-perf.config.*` file lies next to the Playwright config, but `withPerf()` was
+called without a second argument, so the run uses the default settings. The package never loads
+the file by itself: import it in `playwright.config.ts` and pass it,
+`withPerf(defineConfig({ ... }), perfConfig)` (in a CommonJS config:
+`withPerf(config, require('./pw-perf.config').default)`). To use the defaults on purpose, delete
+the file or pass `{}`.
+
 ### CONFIG_INVALID_REGEX
 
 **Error.** A `{ "regex": ..., "flags": ... }` pattern in `measure.include`, `measure.exclude` or

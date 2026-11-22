@@ -34,6 +34,11 @@ export interface RegisteredState {
    * the reporter reports them.
    */
   warnings: Issue[];
+  /**
+   * withPerf() got the package config as its second argument; false warns about a config file
+   * next to the Playwright config that is not passed (03-REQ-29). Unset counts as passed.
+   */
+  perfConfigPassed?: boolean;
 }
 
 /** The collector of the test running in this worker, as trackContext() sees it (05-REQ-23). */

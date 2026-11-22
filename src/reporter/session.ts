@@ -37,7 +37,12 @@ import {
   formatThresholdsDiffMarkdown,
 } from '../core/thresholds/index.ts';
 import type { ThresholdsDiff } from '../core/thresholds/index.ts';
-import { PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
+import {
+  CONFIG_FILE_BASENAME,
+  CONFIG_FILE_EXTENSIONS,
+  PACKAGE_NAME,
+  SAMPLES_ATTACHMENT_NAME,
+} from '../core/types/index.ts';
 import type { Issue, Outcome, RawRequestSample, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
@@ -113,6 +118,8 @@ export interface RunSettings {
   warnings: Issue[];
   /** Problems that make the run result untrustworthy, e.g. an invalid PW_PERF_* value. */
   toolErrors: Issue[];
+  /** withPerf() got the package config; false checks for CONFIG_FILE_NOT_PASSED (03-REQ-29). */
+  perfConfigPassed?: boolean;
 }
 
 /**
@@ -136,6 +143,7 @@ export function runSettings(
       registered: true,
       warnings: [...registered.warnings],
       toolErrors: [],
+      perfConfigPassed: registered.perfConfigPassed ?? true,
     };
   }
   const read = readModeState(env);
@@ -362,6 +370,10 @@ export class RunSession {
     if (duplicate !== null) this.warnings.push(duplicate);
     const empty = emptyBaseUrlWarning(this.conditions, config);
     if (empty !== null) this.warnings.push(empty);
+    if (this.settings.registered && this.settings.perfConfigPassed === false) {
+      const notPassed = configFileNotPassedWarning(io.listDirSync(this.configDir));
+      if (notPassed !== null) this.warnings.push(notPassed);
+    }
     if (this.settings.registered && this.measured.size === 0) {
       this.toolErrors.push(noMeasuredProjectError(inRun));
     }
@@ -1446,6 +1458,23 @@ export class RunSession {
       return null;
     }
   }
+}
+
+/**
+ * CONFIG_FILE_NOT_PASSED (03-REQ-29): withPerf() without the package config, but a package config
+ * file lies in the directory of the Playwright config.
+ */
+export function configFileNotPassedWarning(entries: readonly string[]): Issue | null {
+  const names = new Set(entries);
+  const file = CONFIG_FILE_EXTENSIONS.map((ext) => `${CONFIG_FILE_BASENAME}${ext}`).find((name) =>
+    names.has(name),
+  );
+  if (file === undefined) return null;
+  return {
+    code: 'CONFIG_FILE_NOT_PASSED',
+    message: `${file} is not passed to withPerf(), so the run uses the default settings.`,
+    hint: 'Import it in the Playwright config and pass it as the second argument: withPerf(config, perfConfig).',
+  };
 }
 
 /**
