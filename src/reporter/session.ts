@@ -590,7 +590,7 @@ export class RunSession {
       issues.push({
         code: 'RUN_PROJECT_NO_REQUESTS',
         message: `Measured ${silent.length === 1 ? 'project' : 'projects'} ${silent.join(', ')} recorded no request sample.`,
-        hint: 'Check use.baseURL, withPerfFixtures and measure.include/exclude; API tests are measured when they import test from the wrapped test object.',
+        hint: 'Check use.baseURL, withPerfFixtures and measure.include/exclude; API tests are measured when they import test from the wrapped test object, and clients from request.newContext() after trackRequestContext().',
       });
     }
     const notInstrumented = notInstrumentedWarning(this.notInstrumented, this.crashedTests);

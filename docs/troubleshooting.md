@@ -374,7 +374,9 @@ A wrong guess only costs this line.
 **Warning.** A measured project ran tests with the pw-perf fixtures, but no request was recorded
 in it, neither from the browser nor from `request` calls. Check `use.baseURL`, that the tests
 (also API tests) import the test object wrapped with `withPerfFixtures()`, and `measure.include` /
-`measure.exclude`.
+`measure.exclude`. API clients made with `request.newContext()` (for example a logged-in client in a
+fixture or `beforeAll`) are measured only after `trackRequestContext(context)` from
+`playwright-performance-regression/fixture`.
 
 ### RUN_REPORTER_FLAG
 
