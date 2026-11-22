@@ -413,7 +413,7 @@ function keyRow(
   return join(
     html`<tbody data-g="${group}" data-s="${ev.thresholdSource}"${muted ? html` data-m=""` : null}><tr class="${rowClass(ev)}">`,
     html`<th scope="row" class="k">${kind === 'step' ? stepDepth(key) : null}${keyLink(ctx, kind, key)}</th>`,
-    kind === 'api' ? html`<td class="src">${endpointSource(key)}</td>` : null,
+    kind === 'api' ? html`<td class="es">${endpointSource(key)}</td>` : null,
     html`<td class="r">${resultPill(ev)}${sourceToken(ev.thresholdSource)}${mutedPill(ev.muted)}`,
     reason === null ? null : html`<small class="why">${reason}</small>`,
     html`</td>`,

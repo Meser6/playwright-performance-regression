@@ -531,6 +531,29 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.context().close();
   });
 
+  test('15-REQ-15 the Source column is a table cell, its text centred like the other cells', async () => {
+    const { page } = await open(fullRun());
+    await page.evaluate(`location.hash = '#tab=endpoints'`);
+    const cells =
+      (await page.evaluate(`[...document.querySelectorAll('#table-api > tbody > tr:first-child')].map((tr) => {
+      const cell = tr.querySelector('th + td');
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      const chip = range.getBoundingClientRect();
+      const key = tr.querySelector('th').getBoundingClientRect();
+      return {
+        display: getComputedStyle(cell).display,
+        offset: Math.abs(chip.top + chip.height / 2 - (key.top + key.height / 2)),
+      };
+    })`)) as { display: string; offset: number }[];
+    expect(cells.length).toBeGreaterThan(0);
+    for (const c of cells) {
+      expect(c.display).toBe('table-cell');
+      expect(c.offset).toBeLessThan(3);
+    }
+    await page.context().close();
+  });
+
   test('11-REQ-15 dark theme follows prefers-color-scheme', async () => {
     const { page } = await open(fullRun(), { colorScheme: 'dark' });
     const background = await page.evaluate(
