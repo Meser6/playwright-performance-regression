@@ -41,6 +41,17 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The wizard checks for `playwright.config` right after the language question. Without one, it
+  lists the configs it finds in subfolders (up to 3 levels) with `cd <folder> && npx pw-perf`
+  for each.
+- Step 6 of the wizard suggests `npm run <script>` (or the pnpm/yarn form) when exactly one
+  `package.json` script runs `playwright test`. It warns when the command or its script sets
+  `--reporter` (a measurement run stops with `RUN_REPORTER_FLAG`) and when the script runs other
+  commands before `playwright test`, since they run in every pass.
+- The wizard says that `globalSetup` and setup projects run once per pass, warns about
+  `request.newContext()` contexts that are not passed to `trackRequestContext()`, gives the most
+  likely cause of a failed check run from `outcome.json`, and reminds you to format the changed
+  files.
 - The wizard changes the imports of your test files when they take `test` straight from
   `@playwright/test` and there is no fixtures module: `test` and `expect` come from
   `playwright-performance-regression/test`, other names stay. Each file is a diff you confirm;

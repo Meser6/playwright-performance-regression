@@ -23,15 +23,16 @@ import {
   checkRuns,
   commandProblem,
   commandSpawn,
+  defaultTestCommand,
   runCommands,
-  testCommand,
+  scriptHints,
 } from './commands.ts';
 import type { CheckRun, RunCommands } from './commands.ts';
 import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
-import { readProjectFiles } from './files.ts';
+import { findPlaywrightConfigs, readProjectFiles } from './files.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers, MeasureAnswer } from './perf-config.ts';
@@ -130,10 +131,16 @@ class Dialog {
     if (issues.length > 0) this.#host.stderr.write(formatIssues(issues, 'warning', this.#style));
   }
 
-  error(code: string, message: MessageKey, hint: MessageKey, values: MessageValues): number {
+  error(
+    code: string,
+    message: MessageKey,
+    hint: MessageKey | string[],
+    values: MessageValues,
+  ): number {
+    const hintText = typeof hint === 'string' ? this.t(hint, values) : hint.join('\n');
     this.#host.stderr.write(
       formatIssues(
-        [{ code, message: this.t(message, values), hint: this.t(hint, values) }],
+        [{ code, message: this.t(message, values), hint: hintText }],
         'error',
         this.#style,
       ),
@@ -293,7 +300,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   if (scope === 'tagged')
     dialog.line(t('taggedSaved', { configFile: configFileName(info) }), 'dim');
 
-  dialog.stepOf(3, 'stepPasses', 'passesLesson');
+  dialog.stepOf(3, 'stepPasses', 'passesLesson', 'passesSetup');
   const passesTest = await dialog.ask(
     t('passesQuestion'),
     String(DEFAULT_ANSWERS_PASSES),
@@ -337,7 +344,7 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   // Step 6: the test command C as typed; Enter keeps the default, 'skip' also skips the check
   // (04-REQ-55, 04-REQ-58, 04-D-42).
   dialog.stepOf(6, 'stepCommand', 'commandLesson1', 'commandLesson2');
-  const suggested = testCommand(info.packageManager);
+  const suggested = defaultTestCommand(info.packageManager, info.scriptTexts);
   // An answer is never empty (Enter gives the default), so '' stands for 'skip'.
   const typed = await dialog.ask<string>(
     t('commandQuestion'),
@@ -350,6 +357,11 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   const skipped = typed === '';
   const command = skipped ? suggested : typed;
   if (chainsCommands(command)) dialog.line(`⚠ ${t('commandChain')}`, 'yellow');
+  // What the script behind the command does in every pass (04-REQ-55, 04-D-50).
+  const hints = scriptHints(command, info.scriptTexts);
+  if (hints.reporter) dialog.line(`⚠ ${t('commandReporter')}`, 'yellow');
+  if (hints.everyPass !== null)
+    dialog.line(`⚠ ${t('commandEveryPass', { prep: hints.everyPass })}`, 'yellow');
 
   dialog.stepOf(7, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
   let addCi = false;
@@ -565,6 +577,27 @@ function nextSteps(
 interface CheckResult {
   mode: CheckRun['mode'];
   code: number;
+  /** The first tool error of the run's outcome.json, as "CODE: message" (04-REQ-58). */
+  cause: string | null;
+}
+
+/** The first tool error in outcome.json of a run in `mode`, or null (04-REQ-58, 04-D-50). */
+async function checkCause(host: CliHost, mode: CheckRun['mode']): Promise<string | null> {
+  const text = await host.readText(
+    host.paths.join(host.cwd, `${DEFAULT_CONFIG.report.dir}/outcome.json`),
+  );
+  if (text === null) return null;
+  try {
+    const outcome = JSON.parse(text) as {
+      mode?: unknown;
+      toolErrors?: { code?: unknown; message?: unknown }[];
+    };
+    const first = outcome.toolErrors?.[0];
+    if (outcome.mode !== mode || first === undefined) return null;
+    return `${String(first.code)}: ${String(first.message)}`;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -611,9 +644,14 @@ async function runCheck(
         child.once('exit', (exit, signal) => resolve(signal === 'SIGINT' ? 130 : (exit ?? 1)));
         child.once('error', () => resolve(1));
       });
-      results.push({ mode: run.mode, code });
-      if (code === 130) break;
+      if (code === 130) {
+        results.push({ mode: run.mode, code, cause: null });
+        break;
+      }
+      const cause = code === 0 ? null : await checkCause(host, run.mode);
+      results.push({ mode: run.mode, code, cause });
       dialog.line(dialog.t('checkExit', { mode: run.mode, code }), code === 0 ? 'green' : 'yellow');
+      if (cause !== null) dialog.line(dialog.t('checkCause', { cause }), 'yellow');
     }
   } finally {
     stop();
@@ -649,17 +687,30 @@ export async function runInit(
 
     if (!write) host.stderr.write(infoLine(t(cmd.dryRun ? 'dryRun' : 'noTerminal')));
     const info = detectProject(await readProjectFiles(host, host.cwd));
+    if (info.playwrightConfig === null) {
+      // Right after the language, before step 1 and without writing anything (04-REQ-41,
+      // 04-REQ-73): the configs in subdirectories, each with the command to run there.
+      const found = await findPlaywrightConfigs(host, host.cwd);
+      const values = { dir: host.cwd, command: INIT_COMMAND };
+      return dialog.error(
+        'INIT_NO_PLAYWRIGHT_CONFIG',
+        'noConfigMessage',
+        found.length === 0
+          ? 'noConfigHint'
+          : [
+              t('noConfigFound'),
+              ...found.map((path) => {
+                const dir = path.split('/').slice(0, -1).join('/');
+                return `  cd ${dir} && npx pw-perf   (${path})`;
+              }),
+            ],
+        values,
+      );
+    }
     // Step 1: what the package does and how to run it; the detection stays silent and only a
-    // missing playwright.config or a too old Playwright stops here (04-REQ-38).
+    // too old Playwright stops here (04-REQ-38).
     dialog.step(1, t('stepProject'), t('about1', { pkg: PACKAGE_NAME }), t('about2'));
     printUsage(dialog, host.platform, configFileName(info));
-    if (info.playwrightConfig === null) {
-      // Before any question and without writing anything (04-REQ-41).
-      return dialog.error('INIT_NO_PLAYWRIGHT_CONFIG', 'noConfigMessage', 'noConfigHint', {
-        dir: host.cwd,
-        command: INIT_COMMAND,
-      });
-    }
     if (
       info.playwrightVersion !== null &&
       !versionAtLeast(info.playwrightVersion, host.minPlaywrightVersion)
@@ -725,12 +776,14 @@ export async function runInit(
     }
 
     dialog.step(10, t('stepSummary'));
-    if (written.length > 0)
+    if (written.length > 0) {
       dialog.say(
         `  ${t('changedFiles')}`,
         ...written.map((p) => `    ${paint('✔', 'green')} ${p}`),
       );
-    else if (write) dialog.say(`  ${t('noFilesChanged')}`);
+      // The wizard does not detect the project's code style (04-REQ-59, 04-D-50).
+      dialog.line(t('formatNote'), 'dim');
+    } else if (write) dialog.say(`  ${t('noFilesChanged')}`);
     else
       dialog.say(
         `  ${t('plannedChanges')}`,
@@ -739,8 +792,10 @@ export async function runInit(
     if (plan.manualSteps.length > 0)
       dialog.line(`⚠ ${t('manualSteps', { count: plan.manualSteps.length })}`, 'yellow');
     if (redBox !== null) host.stdout.write(redBox);
-    for (const r of checkResults ?? [])
+    for (const r of checkResults ?? []) {
       if (r.code !== 0) dialog.say(`  ${t('checkExit', { mode: r.mode, code: r.code })}`);
+      if (r.code !== 0 && r.cause !== null) dialog.say(`  ${t('checkCause', { cause: r.cause })}`);
+    }
     dialog.say('', `  ${paint(t('runLine', { command: commands.test }), 'bold')}`);
     dialog.line(t('runLesson'), 'dim');
     if (host.platform === 'win32') dialog.line(t('windowsNote'), 'dim');

@@ -5,7 +5,9 @@ import {
   checkRuns,
   commandProblem,
   commandSpawn,
+  defaultTestCommand,
   runCommands,
+  scriptHints,
   testCommand,
 } from '../../../src/cli/init/commands.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
@@ -156,5 +158,35 @@ describe('test command of step 6 (04-REQ-55, 04-REQ-58)', () => {
     expect(chainsCommands("npx playwright test --grep 'a|b'")).toBe(false);
     expect(chainsCommands('npx playwright test --grep a\\;b')).toBe(false);
     expect(chainsCommands('npm run e2e -- --grep "@smoke"')).toBe(false);
+  });
+});
+
+describe('step 6 default and script hints (04-REQ-55, 04-D-50)', () => {
+  test('04-AC-62 the only script with playwright test is the default; its --reporter and preparation are reported', () => {
+    const one = { e2e: 'playwright test', lint: 'eslint .' };
+    expect(defaultTestCommand('npm', one)).toBe('npm run e2e');
+    expect(defaultTestCommand('pnpm', one)).toBe('pnpm run e2e');
+    expect(defaultTestCommand('yarn', one)).toBe('yarn e2e');
+    expect(defaultTestCommand('npm', { ...one, 'e2e:ci': 'playwright test --reporter=dot' })).toBe(
+      'npx playwright test',
+    );
+    expect(defaultTestCommand('pnpm', {})).toBe('pnpm exec playwright test');
+    const scripts = {
+      'e2e:ci': 'playwright test --reporter=dot',
+      'e2e:reset': 'npm run reset && npx playwright test --project=e2e',
+      'e2e:seed': 'node seed.mjs; node warm.mjs && playwright test',
+      e2e: 'playwright test',
+    };
+    expect(scriptHints('npm run e2e:ci', scripts)).toEqual({ reporter: true, everyPass: null });
+    expect(scriptHints('pnpm e2e:reset', scripts)).toEqual({
+      reporter: false,
+      everyPass: 'npm run reset',
+    });
+    expect(scriptHints('yarn run e2e:seed', scripts).everyPass).toBe(
+      'node seed.mjs; node warm.mjs',
+    );
+    expect(scriptHints('npm run e2e', scripts)).toEqual({ reporter: false, everyPass: null });
+    expect(scriptHints('npx playwright test --reporter list', scripts).reporter).toBe(true);
+    expect(scriptHints('npm run missing', scripts)).toEqual({ reporter: false, everyPass: null });
   });
 });

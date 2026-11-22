@@ -26,6 +26,10 @@ export interface ProjectInfo {
   /** Source files with a test.step( call (04-REQ-47). */
   stepFiles: number;
   ciPlatform: CiPlatform | null;
+  /** Scripts of package.json: name → command (04-REQ-55). */
+  scriptTexts: Record<string, string>;
+  /** Source files with request.newContext( and no trackRequestContext (04-REQ-74). */
+  untrackedContextFiles: string[];
   existing: {
     perfConfig: string | null;
     wrappedConfig: boolean;
@@ -81,6 +85,8 @@ export const EXTEND_CALL = /(?<!\bexpect)\.extend\s*[<(]/gu;
 const FIXTURE_SIGNATURE =
   /\(\s*\{[^{}]*\}\s*,\s*use\b|\boption\s*:\s*true\b|\bscope\s*:\s*['"]worker['"]/u;
 const PERF_TAG = /@perf\b/u;
+/** `request.newContext(`, also `playwright.request.newContext(` (04-REQ-74). */
+const NEW_REQUEST_CONTEXT = /\brequest\s*\.\s*newContext\s*\(/u;
 const WRAPPED_TEST = new RegExp(
   String.raw`\bwithPerfFixtures\s*\(|(['"])${PACKAGE_NAME}/test\1`,
   'u',
@@ -199,6 +205,15 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     taggedPerfTestFiles: sources.filter((p) => PERF_TAG.test(text(p))).length,
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
+    scriptTexts:
+      typeof scripts === 'object' && scripts !== null
+        ? Object.fromEntries(
+            Object.entries(scripts).filter((e): e is [string, string] => typeof e[1] === 'string'),
+          )
+        : {},
+    untrackedContextFiles: sources.filter(
+      (p) => NEW_REQUEST_CONTEXT.test(text(p)) && !text(p).includes('trackRequestContext'),
+    ),
     existing: {
       perfConfig: PERF_CONFIG_NAMES.find((name) => files.has(name)) ?? null,
       wrappedConfig: /\bwithPerf\s*\(/u.test(configText),

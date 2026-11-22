@@ -47,6 +47,34 @@ const SKIP_DIRS = new Set([
 const MAX_DEPTH = 8;
 const MAX_FILES = 3000;
 
+/** Most playwright.config files listed when the directory has none (04-REQ-73). */
+const MAX_CONFIGS = 20;
+
+/**
+ * playwright.config files in the subdirectories of `root`, at most 3 levels deep, without
+ * node_modules and hidden directories (04-REQ-73), as "/"-separated relative paths.
+ */
+export async function findPlaywrightConfigs(host: CliHost, root: string): Promise<string[]> {
+  const found: string[] = [];
+  let level = [''];
+  for (let depth = 1; depth <= 3 && found.length < MAX_CONFIGS; depth += 1) {
+    const next: string[] = [];
+    for (const rel of level) {
+      for (const entry of await host.listDir(rel === '' ? root : host.paths.join(root, rel))) {
+        if (!entry.directory || entry.name === 'node_modules' || entry.name.startsWith('.'))
+          continue;
+        const dir = rel === '' ? entry.name : `${rel}/${entry.name}`;
+        next.push(dir);
+        const names = new Set((await host.listDir(host.paths.join(root, dir))).map((e) => e.name));
+        const config = PLAYWRIGHT_CONFIG_NAMES.find((name) => names.has(name));
+        if (config !== undefined && found.length < MAX_CONFIGS) found.push(`${dir}/${config}`);
+      }
+    }
+    level = next;
+  }
+  return found.sort();
+}
+
 /** Project files relative to `root` with "/" separators, as detectProject() takes them. */
 export async function readProjectFiles(host: CliHost, root: string): Promise<Map<string, string>> {
   const files = new Map<string, string>();

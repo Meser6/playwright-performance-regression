@@ -23,6 +23,66 @@ export function testCommand(manager: PackageManager): string {
       : 'yarn playwright test';
 }
 
+/** A script of package.json that runs Playwright tests. */
+const PLAYWRIGHT_TEST = /\bplaywright\s+test\b/u;
+
+/** `npm run <name>` and its forms for the package manager (04-REQ-55). */
+export function scriptCommand(manager: PackageManager, name: string): string {
+  return manager === 'yarn' ? `yarn ${name}` : `${manager} run ${name}`;
+}
+
+/**
+ * The default answer of step 6 (04-REQ-55, 04-D-50): the only script with `playwright test` in
+ * the package manager's form, else the command of the package manager.
+ */
+export function defaultTestCommand(
+  manager: PackageManager,
+  scripts: Readonly<Record<string, string>>,
+): string {
+  const runs = Object.keys(scripts).filter((name) => PLAYWRIGHT_TEST.test(scripts[name] ?? ''));
+  return runs.length === 1 ? scriptCommand(manager, runs[0] as string) : testCommand(manager);
+}
+
+/** What step 6 says about the script a command runs (04-REQ-55, 04-D-50). */
+export interface ScriptHints {
+  /** The command or its script sets --reporter (RUN_REPORTER_FLAG, 04-REQ-61). */
+  reporter: boolean;
+  /** Commands before `playwright test` in the script, chained with && or ;, else null. */
+  everyPass: string | null;
+}
+
+/** The package.json script a command runs (`npm run x`, `pnpm x`, `yarn run x`), or null. */
+export function scriptOf(
+  command: string,
+  scripts: Readonly<Record<string, string>>,
+): { name: string; text: string } | null {
+  const m =
+    /^(?:npm\s+(?:run|run-script)|pnpm(?:\s+run)?|yarn(?:\s+run)?)\s+([^\s'"&|;]+)(?:\s|$)/u.exec(
+      command.trim(),
+    );
+  const name = m?.[1];
+  if (name === undefined || !Object.hasOwn(scripts, name)) return null;
+  return { name, text: scripts[name] as string };
+}
+
+/** The hints of step 6 for the command and the script it runs (04-REQ-55, 04-D-50). */
+export function scriptHints(
+  command: string,
+  scripts: Readonly<Record<string, string>>,
+): ScriptHints {
+  const script = scriptOf(command, scripts)?.text ?? '';
+  const reporter = /(?:^|\s)--reporter(?:[=\s]|$)/u;
+  let everyPass: string | null = null;
+  const at = script.search(PLAYWRIGHT_TEST);
+  if (at > 0) {
+    const before = script.slice(0, at);
+    const separators = [...before.matchAll(/&&|;/gu)];
+    const last = separators.at(-1);
+    if (last !== undefined) everyPass = before.slice(0, last.index).trim() || null;
+  }
+  return { reporter: reporter.test(command) || reporter.test(script), everyPass };
+}
+
 /**
  * The run commands of every mode (04-REQ-55): `PW_PERF_MODE=m C` with C as typed, on Windows
  * with cross-env.
