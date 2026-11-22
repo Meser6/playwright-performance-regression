@@ -69,8 +69,22 @@ export function exceedance(check: Pick<Check, 'rule' | 'actual' | 'limit'>): num
   return check.limit === 0 ? Infinity : check.actual / check.limit;
 }
 
-/** Column `over`: Math.round((r − 1) · 100) with "+" and "%", or ">999%" (09-REQ-19, 09-D-15). */
+/** Rules on shares: the excess is in percentage points (09-REQ-19, 09-D-20). */
+const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
+  'apdex',
+  'wilson',
+  'errors',
+]);
+
+/**
+ * Column `over`: Math.round((r − 1) · 100) with "+" and "%", or ">999%" (09-REQ-19, 09-D-15);
+ * for the share rules the difference in percentage points, at least 1: "+81 pp" (09-D-20).
+ */
 export function overText(check: Pick<Check, 'rule' | 'actual' | 'limit'>): string {
+  if (SHARE_RULES.has(check.rule)) {
+    const points = Math.max(1, Math.round(Math.abs(check.actual - check.limit) * 100));
+    return `+${String(points)} pp`;
+  }
   const r = exceedance(check);
   if (!Number.isFinite(r)) return '>999%';
   const over = Math.round((r - 1) * 100);
@@ -334,6 +348,18 @@ function resultLines(report: RunReport, opts: FrameOptions, m: Marks): string[] 
   const counts = report.evaluation.counts;
   const sum = (field: 'violations' | 'blockingViolations' | 'keys' | 'notEvaluated'): number =>
     KINDS.reduce((total, kind) => total + counts[kind][field], 0);
+  // Violations are failed checks, counted with their keys as in the HTML report (09-D-20).
+  const failed = (blocking: boolean): number =>
+    KINDS.reduce(
+      (total, kind) =>
+        total +
+        Object.values(aggregatesOf(report, kind)).reduce(
+          (n, a) =>
+            n + a.evaluation.checks.filter((c) => !c.passed && (!blocking || c.blocking)).length,
+          0,
+        ),
+      0,
+    );
   const gate = report.config.gate;
   const policy = gate?.tolerance === undefined ? '' : ` (tolerance: ${gate.tolerance})`;
   let verdict: [mark: string, word: string, color: ColorStyle, badge: ColorStyle];
@@ -345,10 +371,10 @@ function resultLines(report: RunReport, opts: FrameOptions, m: Marks): string[] 
     reason = `${causes.length === 0 ? '' : `${causes.join(', ')}; `}the performance result is not trustworthy`;
   } else if (status === 'failed') {
     verdict = [m.error, 'FAILED', 'red', 'badge-red'];
-    reason = `${plural(sum('blockingViolations'), 'blocking violation')}${policy}`;
+    reason = `${plural(failed(true), 'blocking violation')} in ${plural(sum('blockingViolations'), 'key')}${policy}`;
   } else if (status === 'warned') {
     verdict = [m.warn, 'PASSED WITH WARNINGS', 'yellow', 'badge-yellow'];
-    reason = `${plural(sum('violations'), 'key')} with violations, none blocking${policy}`;
+    reason = `${plural(failed(false), 'violation')} in ${plural(sum('violations'), 'key')}, none blocking${policy}`;
   } else {
     verdict = [m.ok, 'PASSED', 'green', 'badge-green'];
     reason = `no violations in ${plural(sum('keys') - sum('notEvaluated'), 'evaluated key')}`;

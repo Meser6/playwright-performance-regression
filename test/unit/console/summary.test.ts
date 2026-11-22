@@ -61,31 +61,38 @@ describe('console summary golden files', () => {
     expect(row).toContain('│ GET /api/organi…lude&page&sort │');
   });
 
-  test('09-AC-20 the over column follows Math.round((r - 1) * 100), also for apdex and >999%', () => {
+  test('09-AC-20 the over column follows Math.round((r - 1) * 100), >999%, and points for share rules', () => {
     const text = formatSummary(report('failed-run'), { width: 120, color: false });
     const rows = text.split('\n');
     const row = (key: string, rule: string) =>
       rows.find((l) => l.includes(` ${key} `) && l.includes(` ${rule} `)) ?? '';
-    // errors: actual 0.1176 / limit 0.05 = 2.352 → +135%.
-    expect(row('POST /api/orders', 'errors')).toMatch(/0\.118 \(0\.400\)[\s│]+0\.050[\s│]+\+135%/u);
-    // apdex: limit / actual.
+    // errors: actual 0.1176 − limit 0.05 = 6.76 percentage points → +7 pp (09-D-20).
+    expect(row('POST /api/orders', 'errors')).toMatch(/0\.118 \(0\.400\)[\s│]+0\.050[\s│]+\+7 pp/u);
+    // apdex: limit − actual, in points.
     const search = report('failed-run').endpoints['GET /api/search']?.evaluation.checks;
     const apdex = search?.find((c) => c.rule === 'apdex');
     expect(apdex).toBeDefined();
     if (apdex !== undefined) {
-      const over = Math.round((apdex.limit / apdex.actual - 1) * 100);
-      expect(row('GET /api/search', 'apdex')).toContain(`+${over}%`);
+      const over = Math.round((apdex.limit - apdex.actual) * 100);
+      expect(row('GET /api/search', 'apdex')).toContain(`+${over} pp`);
     }
     // median 50 ms at limit 1 ms: +4900% is shown as >999%.
     expect(row('GET /api/health', 'median')).toContain('>999%');
     expect(row('GET /api/tickets/:id?search', 'p95')).toMatch(/1712 ms[\s│]+1400 ms[\s│]+\+22%/u);
   });
 
+  test('09-AC-33 the FAILED verdict counts blocking violations (failed checks) and their keys', () => {
+    const text = formatSummary(report('failed-run'), { width: 120, color: false });
+    const blockingRows = text.split('\n').filter((l) => /^│ ❌ │ /u.test(l)).length;
+    expect(text).toContain(`FAILED  ${String(blockingRows)} blocking violations in 5 keys`);
+  });
+
   test('09-AC-20 over and exceedance edge cases', () => {
-    expect(overText({ rule: 'errors', actual: 0.1176, limit: 0.05 })).toBe('+135%');
-    expect(overText({ rule: 'apdex', actual: 0.7811, limit: 0.85 })).toBe('+9%');
-    expect(overText({ rule: 'apdex', actual: 0, limit: 0.85 })).toBe('>999%');
-    expect(overText({ rule: 'errors', actual: 0.01, limit: 0 })).toBe('>999%');
+    expect(overText({ rule: 'errors', actual: 0.1176, limit: 0.05 })).toBe('+7 pp');
+    expect(overText({ rule: 'wilson', actual: 0.839, limit: 0.03 })).toBe('+81 pp');
+    expect(overText({ rule: 'apdex', actual: 0.7811, limit: 0.85 })).toBe('+7 pp');
+    expect(overText({ rule: 'apdex', actual: 0, limit: 0.85 })).toBe('+85 pp');
+    expect(overText({ rule: 'errors', actual: 0.001, limit: 0 })).toBe('+1 pp');
     expect(overText({ rule: 'median', actual: 1100, limit: 100 })).toBe('>999%');
     expect(overText({ rule: 'median', actual: 1099.4, limit: 100 })).toBe('+999%');
     expect(overText({ rule: 'median', actual: 1400.1, limit: 1400 })).toBe('+0%');
@@ -151,7 +158,9 @@ describe('console summary golden files', () => {
     expect(row('2150 ms')).toContain(`${ESC}[33m⚠ ${ESC}[0m ${ESC}[2m│${ESC}[0m ${ESC}[33mapi `);
     // Verdict: a box in the verdict color with a badge on a colored background.
     expect(colored).toContain(`${ESC}[31m╭`);
-    expect(colored).toContain(`❌ ${ESC}[1;97;41m FAILED ${ESC}[0m 5 blocking violations`);
+    expect(colored).toContain(
+      `❌ ${ESC}[1;97;41m FAILED ${ESC}[0m 9 blocking violations in 5 keys`,
+    );
     const errors = formatSummary(report('tool-error'), { width: 120, color: true });
     expect(errors).toContain(`${ESC}[1m❌ Errors (1)${ESC}[0m`);
     expect(errors).toContain(`${ESC}[31m❌ SCHEMA_INVALID_JSON${ESC}[0m: `);
@@ -168,13 +177,13 @@ describe('console summary golden files', () => {
     const plain = formatSummary(report('failed-run'), { width: 120, color: false });
     expect(plain).toContain('╭─ ⚠ Warnings (4) ─');
     expect(plain).toContain('│ ❌ │ api  │ GET /api/health');
-    expect(plain).toContain('│ ❌  FAILED  5 blocking violations (tolerance: 0) │');
+    expect(plain).toContain('│ ❌  FAILED  9 blocking violations in 5 keys (tolerance: 0) │');
     const dumb = formatSummary(report('failed-run'), { width: 120, color: false, ascii: true });
     expect(dumb).toMatch(/^[\x20-\x7e✖!─·…—›\n]*$/u);
     expect(dumb).toContain('+- Warnings (4) -');
     expect(dumb).toContain('| ✖ | api  | GET /api/health');
     expect(dumb).toContain('| ! | api  | POST /api/reports/export');
-    expect(dumb).toContain('| ✖  FAILED  5 blocking violations (tolerance: 0) |');
+    expect(dumb).toContain('| ✖  FAILED  9 blocking violations in 5 keys (tolerance: 0) |');
     // The same words in the same order: only frames and marks differ.
     const words = (text: string) =>
       text

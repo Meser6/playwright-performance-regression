@@ -37,27 +37,28 @@ playwright-performance-regression · mode: test · env: qa · 128 tests (127 pas
 └──────────────────────────────────────┴───────────┘
 Muted: POST /api/reports/export until 2026-12-31 — "Depends on report service, tracked in backlog"
 
-┌────┬──────┬────────────────────────────────┬────────┬───────────────┬─────────┬───────┬─────┬──────┬───────┐
-│    │ kind │ key                            │ rule   │        actual │   limit │  over │   n │ src  │ flag  │
-├────┼──────┼────────────────────────────────┼────────┼───────────────┼─────────┼───────┼─────┼──────┼───────┤
-│ ❌ │ api  │ GET /api/health                │ median │         50 ms │    1 ms │ >999% │  20 │ file │ HARD  │
-│ ❌ │ api  │ GET /api/health                │ p95    │         50 ms │    1 ms │ >999% │  20 │ file │ HARD  │
-│ ❌ │ api  │ GET /api/search                │ wilson │ 0.309 (0.400) │   0.100 │ +209% │ 100 │ file │       │
-│ ❌ │ api  │ POST /api/orders               │ errors │ 0.118 (0.400) │   0.050 │ +135% │   5 │ file │       │
-│ ❌ │ api  │ GET /api/organi…lude&page&sort │ median │       2600 ms │ 2000 ms │  +30% │  20 │ file │       │
-│ ❌ │ api  │ GET /api/tickets/:id?search    │ median │        890 ms │  700 ms │  +27% │  40 │ file │       │
-│ ❌ │ api  │ GET /api/tickets/:id?search    │ p95    │       1712 ms │ 1400 ms │  +22% │  40 │ file │       │
-│ ❌ │ api  │ GET /api/search                │ apdex  │ 0.781 (0.700) │   0.900 │  +15% │ 100 │ file │       │
-│ ❌ │ api  │ GET /api/organi…lude&page&sort │ p95    │       2600 ms │ 2500 ms │   +4% │  20 │ file │       │
-│ ⚠  │ api  │ POST /api/reports/export       │ p95    │       2150 ms │ 2000 ms │   +7% │  20 │ file │ MUTED │
-└────┴──────┴────────────────────────────────┴────────┴───────────────┴─────────┴───────┴─────┴──────┴───────┘
+┌────┬──────┬────────────────────────────────┬────────┬───────────────┬─────────┬────────┬─────┬──────┬───────┐
+│    │ kind │ key                            │ rule   │        actual │   limit │   over │   n │ src  │ flag  │
+├────┼──────┼────────────────────────────────┼────────┼───────────────┼─────────┼────────┼─────┼──────┼───────┤
+│ ❌ │ api  │ GET /api/health                │ median │         50 ms │    1 ms │  >999% │  20 │ file │ HARD  │
+│ ❌ │ api  │ GET /api/health                │ p95    │         50 ms │    1 ms │  >999% │  20 │ file │ HARD  │
+│ ❌ │ api  │ GET /api/search                │ wilson │ 0.309 (0.400) │   0.100 │ +21 pp │ 100 │ file │       │
+│ ❌ │ api  │ POST /api/orders               │ errors │ 0.118 (0.400) │   0.050 │  +7 pp │   5 │ file │       │
+│ ❌ │ api  │ GET /api/organi…lude&page&sort │ median │       2600 ms │ 2000 ms │   +30% │  20 │ file │       │
+│ ❌ │ api  │ GET /api/tickets/:id?search    │ median │        890 ms │  700 ms │   +27% │  40 │ file │       │
+│ ❌ │ api  │ GET /api/tickets/:id?search    │ p95    │       1712 ms │ 1400 ms │   +22% │  40 │ file │       │
+│ ❌ │ api  │ GET /api/search                │ apdex  │ 0.781 (0.700) │   0.900 │ +12 pp │ 100 │ file │       │
+│ ❌ │ api  │ GET /api/organi…lude&page&sort │ p95    │       2600 ms │ 2500 ms │    +4% │  20 │ file │       │
+│ ⚠  │ api  │ POST /api/reports/export       │ p95    │       2150 ms │ 2000 ms │    +7% │  20 │ file │ MUTED │
+└────┴──────┴────────────────────────────────┴────────┴───────────────┴─────────┴────────┴─────┴──────┴───────┘
   slowest: GET /api/health — 50 ms in "health" (tests/health.spec.ts:3)
   slowest: GET /api/search — 1500 ms in "search › full text" (tests/search.spec.ts:8)
   slowest: POST /api/orders — 212 ms in "orders › place order" (tests/orders.spec.ts:17)
   slowest: GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&include&page&sort — 2600 ms in "deployments › list" (tests/deployments.spec.ts:120)
   slowest: GET /api/tickets/:id?search — 2431 ms in "tickets › search by id" (tests/tickets.spec.ts:42)
 
-╭──────────────────────────────────────────────────╮
-│ ❌  FAILED  5 blocking violations (tolerance: 0) │
-╰──────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮
+│ ❌  FAILED  9 blocking violations in 5 keys (tolerance:  │
+│             0)                                           │
+╰──────────────────────────────────────────────────────────╯
 Report: /work/app/reports/pw-perf/report.html
