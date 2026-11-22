@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- Types of `playwright-performance-regression/config`, `/fixture`, `/test` and `/reporter`
+  resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
+  `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
+  wrapped `test` keeps its fixture types instead of `any`.
 - `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
 - HTML report: the Source column of the Endpoints table (`browser`, `request`) is an ordinary
   cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.
