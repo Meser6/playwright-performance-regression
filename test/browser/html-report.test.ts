@@ -614,6 +614,78 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await steps.page.context().close();
   });
 
+  test('11-AC-38 tabs: 44 px targets, accent underline and background on the selected tab, scrolled into view', async () => {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      for (const width of [1280, 360]) {
+        const at = `${colorScheme} ${String(width)}`;
+        const { page } = await open(stepsRun(), { colorScheme, viewport: { width, height: 800 } });
+        interface Tab {
+          selected: boolean;
+          height: number;
+          inBar: boolean;
+          line: number;
+          lineColor: string;
+          color: string;
+          background: string;
+        }
+        const looks = async () =>
+          (await page.evaluate(`(() => {
+            const rgb = (hex) => {
+              const h = hex.trim().replace('#', '');
+              const n = (i) => parseInt(h.slice(i, i + 2), 16);
+              return 'rgb(' + n(0) + ', ' + n(2) + ', ' + n(4) + ')';
+            };
+            const root = getComputedStyle(document.documentElement);
+            const bar = document.querySelector('[data-tabs]').getBoundingClientRect();
+            return {
+              accent: rgb(root.getPropertyValue('--accent')),
+              soft: rgb(root.getPropertyValue('--accent-soft')),
+              tabs: [...document.querySelectorAll('a[data-tab]')].map((a) => {
+                const s = getComputedStyle(a);
+                const r = a.getBoundingClientRect();
+                return {
+                  selected: a.getAttribute('aria-selected') === 'true',
+                  height: r.height,
+                  inBar: r.left >= bar.left - 0.5 && r.right <= bar.right + 0.5,
+                  line: parseFloat(s.borderBottomWidth),
+                  lineColor: s.borderBottomColor,
+                  color: s.color,
+                  background: s.backgroundColor,
+                };
+              }),
+            };
+          })()`)) as { accent: string; soft: string; tabs: Tab[] };
+        const check = async () => {
+          const { accent, soft, tabs } = await looks();
+          expect(
+            tabs.filter((t) => t.selected),
+            at,
+          ).toHaveLength(1);
+          for (const t of tabs) {
+            expect(t.height, at).toBeGreaterThanOrEqual(44);
+            if (t.selected) {
+              expect(t.line, at).toBeGreaterThanOrEqual(3);
+              expect(t.lineColor, at).toBe(accent);
+              expect(t.color, at).toBe(accent);
+              expect(t.background, at).toBe(soft);
+              expect(t.inBar, at).toBe(true);
+            } else {
+              expect(t.lineColor, at).toBe('rgba(0, 0, 0, 0)');
+              expect(t.background, at).toBe('rgba(0, 0, 0, 0)');
+            }
+          }
+        };
+        await check();
+        await page.getByRole('tab', { name: 'Overview' }).focus();
+        await page.keyboard.press('End');
+        await pw(page.getByRole('tab', { name: /Run/u })).toBeFocused();
+        await page.mouse.move(0, 0);
+        await check();
+        await page.context().close();
+      }
+    }
+  });
+
   test('11-AC-36 a filter without results shows "No keys match the filters" with Reset', async () => {
     const { page } = await open(fullRun(), {}, '#tab=endpoints');
     const card = page.locator('[data-for="table-api"]');

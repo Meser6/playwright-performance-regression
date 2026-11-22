@@ -41,6 +41,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- HTML report: the view switch (Overview, Endpoints, Steps, Tests, …) is a row of tabs. The
+  selected tab has an accent underline and background, every tab is at least 44 px high, and on a
+  narrow screen the bar scrolls to show the selected tab.
 - `pw-perf.config.ts` written by the wizard is short: the 15 most important options (including
   `measure.api`, `measure.steps` and `run.overrideSlowMo`), each with a short comment, and a link
   to the full option list in `docs/configuration.md`. The "Most important settings" block and the
