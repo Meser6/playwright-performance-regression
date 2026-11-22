@@ -1,4 +1,4 @@
 node_modules/
 test-results/
-pw-perf-results/
+reports/pw-perf/
 .auth/

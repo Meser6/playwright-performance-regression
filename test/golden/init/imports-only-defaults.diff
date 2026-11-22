@@ -7,7 +7,7 @@
 +#      that measure.
 +#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
 +#   3. The pipeline runs every Monday with mode "test" and fails on a regression.
-+# The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) ends the job
++# The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) ends the job
 +# as "succeeded with issues", 3 (tool or config error) fails it.
 +trigger: none
 +pr: none
@@ -44,9 +44,9 @@
 +      - script: npx playwright install --with-deps chromium
 +        displayName: Install Chromium
 +      - bash: |
-+          rm -f pw-perf-results/outcome.json
++          rm -f reports/pw-perf/outcome.json
 +          npx playwright test || true
-+          code=$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)
++          code=$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)
 +          if [ "$code" -eq 2 ]; then
 +            echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
 +            exit 0
@@ -60,8 +60,8 @@
 +        artifact: pw-perf-thresholds
 +        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
 +        displayName: Publish the thresholds files
-+      - publish: pw-perf-results
-+        artifact: pw-perf-results
++      - publish: reports/pw-perf
++        artifact: pw-perf-report
 +        condition: always()
 +        displayName: Publish the performance report
 --- a/playwright.config.ts
@@ -171,6 +171,6 @@
 +  // report: {
 +  //   // Directory of report.json and report.html (do not commit it), relative to the Playwright
 +  //   // config directory.
-+  //   dir: 'pw-perf-results',
++  //   dir: 'reports/pw-perf',
 +  // },
 +});

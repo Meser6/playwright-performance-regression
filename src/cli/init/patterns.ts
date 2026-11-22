@@ -65,11 +65,12 @@ export function wrapTestObject(text: string): string | null {
   ]);
 }
 
-/** Whether .gitignore already ignores `dir`. */
+/** Whether .gitignore already ignores `dir` or a folder that contains it (D-47). */
 export function ignores(gitignore: string, dir: string): boolean {
   return gitignore
     .split(/\r?\n/u)
-    .some((line) => line.trim().replace(/^\//u, '').replace(/\/$/u, '') === dir);
+    .map((line) => line.trim().replace(/^\//u, '').replace(/\/$/u, ''))
+    .some((entry) => entry !== '' && (entry === dir || dir.startsWith(`${entry}/`)));
 }
 
 /** .gitignore with `dir/` appended. */

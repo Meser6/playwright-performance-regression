@@ -83,7 +83,7 @@ describe('diff golden cases', () => {
           width: 120,
           color: false,
           prune: c.input.options.prune ?? false,
-          diffPath: 'pw-perf-results/thresholds-diff.md',
+          diffPath: 'reports/pw-perf/thresholds-diff.md',
         }),
       );
       compareText(`${base}.md`, formatThresholdsDiffMarkdown(diffs, paths));

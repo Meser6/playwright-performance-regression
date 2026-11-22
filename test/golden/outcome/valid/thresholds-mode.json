@@ -13,7 +13,7 @@
       "thresholds": [
         "/p/pw-perf-thresholds.api.json"
       ],
-      "thresholdsDiff": "/p/pw-perf-results/thresholds-diff.md"
+      "thresholdsDiff": "/p/reports/pw-perf/thresholds-diff.md"
     },
     "runId": "run-1",
     "schemaVersion": 1,

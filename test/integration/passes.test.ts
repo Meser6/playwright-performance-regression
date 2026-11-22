@@ -47,7 +47,7 @@ interface Run {
 
 /** Runs `file args` in the project copy with a clean environment (no PW_PERF_* or npm_*). */
 function run(file: string, args: string[], env: Record<string, string>): Promise<Run> {
-  for (const old of ['pw-perf-results', 'test-results', 'prep.log']) {
+  for (const old of ['reports/pw-perf', 'test-results', 'prep.log']) {
     rmSync(join(dir, old), { recursive: true, force: true });
   }
   const clean = Object.fromEntries(
@@ -66,7 +66,7 @@ function run(file: string, args: string[], env: Record<string, string>): Promise
     child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.on('error', reject);
     child.on('close', (status) => {
-      const path = join(dir, 'pw-perf-results', 'report.json');
+      const path = join(dir, 'reports/pw-perf', 'report.json');
       let report: RunReport | null = null;
       if (existsSync(path)) {
         const parsed = parseRunReport(readFileSync(path, 'utf8'), path);
@@ -84,12 +84,12 @@ const prepRuns = (): number =>
     ? readFileSync(join(dir, 'prep.log'), 'utf8').split('\n').filter(Boolean).length
     : 0;
 const passRunIds = (): string[] =>
-  readdirSync(join(dir, 'pw-perf-results'))
+  readdirSync(join(dir, 'reports/pw-perf'))
     .filter((f) => /^pass-\d+\.json$/u.test(f))
     .sort()
     .map(
       (f) =>
-        (JSON.parse(readFileSync(join(dir, 'pw-perf-results', f), 'utf8')) as { runId: string })
+        (JSON.parse(readFileSync(join(dir, 'reports/pw-perf', f), 'utf8')) as { runId: string })
           .runId,
     );
 
@@ -113,7 +113,7 @@ describe('passes of the test script (04-REQ-63, 04-REQ-64)', () => {
       expect(result.output).toMatch(/pass 2\/3: starting .*run e2e -- --grep cart/u);
       expect(result.output).toContain('Tests     1 test × 3 passes = 3 test runs');
       expect(
-        JSON.parse(readFileSync(join(dir, 'pw-perf-results', 'outcome.json'), 'utf8')).exitCode,
+        JSON.parse(readFileSync(join(dir, 'reports/pw-perf', 'outcome.json'), 'utf8')).exitCode,
       ).toBe(0);
     },
     RUN_TIMEOUT,

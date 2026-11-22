@@ -18,5 +18,5 @@ PW_PERF_MODE=thresholds npm test   # measure and write pw-perf-thresholds.json
 PW_PERF_MODE=test npm test         # measure again and compare with the thresholds
 ```
 
-`pw-perf-results/report.html` shows the result. Outside the repository, depend on the published
+`reports/pw-perf/report.html` shows the result. Outside the repository, depend on the published
 package instead of `file:../..`.

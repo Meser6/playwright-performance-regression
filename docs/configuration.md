@@ -1013,7 +1013,7 @@ Options: [`dir`](#reportdir), [`html`](#reporthtml), [`rawUrls`](#reportrawurls)
 Directory of report.json and report.html, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.
 
 - Type: string (at least 1 character)
-- Default: `"pw-perf-results"`
+- Default: `"reports/pw-perf"`
 
 ### `report.html`
 

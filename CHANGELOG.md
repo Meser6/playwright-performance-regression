@@ -41,6 +41,15 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- **Breaking:** the default `report.dir` is now `reports/pw-perf/` (was `pw-perf-results/`).
+  `report.html`, `report.json`, `outcome.json`, `pass-<k>.json` and `thresholds-diff.md` are
+  written directly into it. Only `reports/pw-perf/` is emptied when a run starts; the parent
+  `reports/` folder and the reports of other tools in it are never touched. To migrate: replace
+  `pw-perf-results` with `reports/pw-perf` in `.gitignore` and in your CI jobs (the artifact path
+  and the `outcome.json` path; the GitHub and Azure artifact is now named `pw-perf-report`), and
+  delete the old `pw-perf-results/` folder. To keep the old folder, set
+  `report: { dir: 'pw-perf-results' }`. The wizard adds `reports/pw-perf/` to `.gitignore` unless
+  `reports/` is ignored already.
 - HTML report: the view switch (Overview, Endpoints, Steps, Tests, …) is a row of tabs. The
   selected tab has an accent underline and background, every tab is at least 44 px high, and on a
   narrow screen the bar scrolls to show the selected tab.
@@ -75,7 +84,7 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally and in CI,
   with `--project <name>` to measure one browser), the other `PW_PERF_*` variables and which
   files to commit. The Playwright version shows up only as an error when it is too old.
-- Every `test` and `thresholds` run empties `report.dir` (default `pw-perf-results/`) when its
+- Every `test` and `thresholds` run empties `report.dir` (default `reports/pw-perf/`) when its
   first test starts, so reports of earlier runs never stay next to the new ones. A guard keeps
   the folder when it is the project directory, the `playwright.config` directory, the home
   directory, the filesystem root, `thresholds.dir`, a folder containing one of them, or a folder
@@ -110,6 +119,8 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Added
 
+- The HTML report has a stopwatch logo in its header and as the page icon (an inline
+  `data:` URI, no extra files).
 - `run.overrideSlowMo` (default `false`): when `true`, perf mode sets
   `use.launchOptions.slowMo` to 0 in every measured project and lists `slowMo` in the
   "perf mode overrides …" line. With `false`, the `CONFIG_SLOW_MO` warning stays and now points

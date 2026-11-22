@@ -106,9 +106,9 @@ function runPlaywright(
           output,
           out,
           outcomeFile,
-          report: readReport(join(out, 'pw-perf-results', 'report.json')),
+          report: readReport(join(out, 'reports/pw-perf', 'report.json')),
           outcome: readOutcome(
-            environmentMode ? join(out, 'pw-perf-results', 'outcome.json') : outcomeFile,
+            environmentMode ? join(out, 'reports/pw-perf', 'outcome.json') : outcomeFile,
           ),
         });
       } catch (error) {
@@ -147,7 +147,7 @@ describe('reporter with real Playwright', () => {
       expect(codes(report.warnings)).toEqual(expect.arrayContaining(['THRESHOLDS_FILE_MISSING']));
       expect(report.toolErrors).toEqual([]);
       expect(run.outcome).toMatchObject({ runId: 'run-1', exitCode: 0 });
-      expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'pw-perf-results', 'report.json'));
+      expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'reports/pw-perf', 'report.json'));
       expect(run.output).toContain('Tests     4 tests × 5 passes = 20 test runs');
       expect(run.output).toContain('playwright-performance-regression: pass 5/5 done: 4 tests');
       expect(run.output).toContain('PASSED');
@@ -250,7 +250,7 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
       const seen = readFileSync(join(run.out, 'worker-run-id.txt'), 'utf8').trim().split('\n');
       expect(new Set(seen)).toEqual(new Set([runId]));
       expect(run.output).toContain(
-        `Outcome: performance passed · exit code 0 in ${join(run.out, 'pw-perf-results', 'outcome.json')} (Playwright exits with 0)`,
+        `Outcome: performance passed · exit code 0 in ${join(run.out, 'reports/pw-perf', 'outcome.json')} (Playwright exits with 0)`,
       );
     },
     RUN_TIMEOUT,

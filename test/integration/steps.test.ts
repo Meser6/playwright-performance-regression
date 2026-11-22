@@ -61,7 +61,7 @@ describe('steps project', () => {
         expect.arrayContaining(['Login as :email', 'Open :url', 'Use :secret', 'Open order :id']),
       );
       expect(warningCodes(run)).toContain('STEPS_SECRET_REDACTED');
-      const results = join(dir, 'pw-perf-results');
+      const results = join(dir, 'reports/pw-perf');
       const texts = [
         run.output,
         ...readdirSync(results).map((f) => readFileSync(join(results, f), 'utf8')),

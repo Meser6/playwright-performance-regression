@@ -117,11 +117,11 @@ function runMode(
   });
 }
 
-const reportPath = (run: Run): string => join(run.out, 'pw-perf-results', 'report.json');
+const reportPath = (run: Run): string => join(run.out, 'reports/pw-perf', 'report.json');
 
-/** exitCode of pw-perf-results/outcome.json (04-REQ-62), or null without the file. */
+/** exitCode of reports/pw-perf/outcome.json (04-REQ-62), or null without the file. */
 function outcomeCode(run: Run): number | null {
-  const file = join(run.out, 'pw-perf-results', 'outcome.json');
+  const file = join(run.out, 'reports/pw-perf', 'outcome.json');
   if (!existsSync(file)) return null;
   return (JSON.parse(readFileSync(file, 'utf8')) as { exitCode: number }).exitCode;
 }

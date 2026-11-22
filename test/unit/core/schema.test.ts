@@ -256,14 +256,14 @@ describe('issue messages (02, chapter 10)', () => {
   });
 
   test('invalid JSON names the source and the parser error', () => {
-    const result = parseRunReport('{', 'pw-perf-results/report.json');
+    const result = parseRunReport('{', 'reports/pw-perf/report.json');
     expect(!result.ok && result.issues[0]).toMatchObject({
       code: 'SCHEMA_INVALID_JSON',
-      source: 'pw-perf-results/report.json',
+      source: 'reports/pw-perf/report.json',
       problems: [],
     });
     expect(!result.ok && result.issues[0]?.message).toMatch(
-      /^pw-perf-results\/report\.json: run report is not valid JSON \(/,
+      /^reports\/pw-perf\/report\.json: run report is not valid JSON \(/,
     );
   });
 

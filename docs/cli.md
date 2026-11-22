@@ -65,7 +65,7 @@ result. Every test runs once per pass, and so does everything the script does be
   arguments you added after `--`), or the Playwright command line itself without a script. A
   script called from another script (`e2e:qa` runs `npm run e2e`) is repeated from the inner one:
   its variables are kept, the steps of the outer script before it do not run again.
-- Each pass writes `pw-perf-results/pass-<k>.json`; the first pass merges them. A pass that writes
+- Each pass writes `reports/pw-perf/pass-<k>.json`; the first pass merges them. A pass that writes
   no file (for example its setup step failed) gives
   [`RUN_PASS_FAILED`](troubleshooting.md#run_pass_failed) and the other passes are evaluated.
 - Ctrl+C stops the run: the following passes do not start and nothing is evaluated.
@@ -106,10 +106,10 @@ files may still run. A check has one pass and never prunes. Playwright's exit co
 ## Exit code and result
 
 The exit code is Playwright's: 1 when a test failed or the performance result is not 0, else 0.
-The exact result is in `pw-perf-results/outcome.json` (`exitCode` 0, 2 or 3, see
+The exact result is in `reports/pw-perf/outcome.json` (`exitCode` 0, 2 or 3, see
 [Exit codes](#exit-codes)), written next to `report.json` and removed at the start of every run,
 so a CI job never reads an old one. Read it with
-`node -p "require('./pw-perf-results/outcome.json').exitCode"` or `jq .exitCode`. The summary ends
+`node -p "require('./reports/pw-perf/outcome.json').exitCode"` or `jq .exitCode`. The summary ends
 with a line like `Outcome: performance failed · exit code 2 in …/outcome.json (Playwright exits
 with 1)`.
 
@@ -216,7 +216,7 @@ What it can change:
   tests): wrapped in `withPerfFixtures()`. Test files are never changed; in every other layout
   the wizard shows a red box with the code to paste
   ([`INIT_TEST_OBJECT_MANUAL`](troubleshooting.md#init_test_object_manual));
-- `.gitignore`: `pw-perf-results/`;
+- `.gitignore`: `reports/pw-perf/`;
 - a CI file from the [CI recipes](ci.md) with a manual thresholds job and a weekly measurement
   job that run your test command.
 
@@ -257,16 +257,16 @@ with [`CLI_UNKNOWN_COMMAND`](troubleshooting.md#cli_unknown_command).
 
 | File                                      | Written by                                |
 | ----------------------------------------- | ----------------------------------------- |
-| `pw-perf-results/report.json`             | every run (`report.dir`)                  |
-| `pw-perf-results/report.html`             | every run unless `report.html` is `false` |
-| `pw-perf-results/outcome.json`            | every `test` and `thresholds` run         |
-| `pw-perf-results/thresholds-diff.md`      | thresholds runs                           |
+| `reports/pw-perf/report.json`             | every run (`report.dir`)                  |
+| `reports/pw-perf/report.html`             | every run unless `report.html` is `false` |
+| `reports/pw-perf/outcome.json`            | every `test` and `thresholds` run         |
+| `reports/pw-perf/thresholds-diff.md`      | thresholds runs                           |
 | `pw-perf-thresholds[.steps][.<env>].json` | thresholds runs (in `thresholds.dir`)     |
 
 Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and
 [`thresholds.filePrefix`](configuration.md#thresholdsfileprefix). Commit the thresholds files;
-keep `pw-perf-results/` out of version control.
+keep `reports/pw-perf/` out of version control.
 
 Every `test` and `thresholds` run empties `report.dir` when its first test starts, so it holds
 only the files of the last run; keep nothing else in it. The folder is left alone when it is the

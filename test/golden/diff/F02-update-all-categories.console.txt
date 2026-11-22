@@ -13,4 +13,4 @@ Thresholds: pw-perf-thresholds.api.json (updated)
   2 entries were not seen in this run and were kept. Run with PW_PERF_PRUNE=1 to remove them.
 
 Review the changes and commit the thresholds files.
-Diff: pw-perf-results/thresholds-diff.md
+Diff: reports/pw-perf/thresholds-diff.md
