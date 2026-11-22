@@ -341,6 +341,28 @@ function planTestObject(
   plan.testObject = box;
 }
 
+/** Contexts of request.newContext() that are not tracked (04-REQ-74): a manual step. */
+function planRequestContexts(
+  info: ProjectInfo,
+  answers: InitAnswers,
+  plan: InitPlan,
+  t: Translate,
+): void {
+  const files = info.untrackedContextFiles;
+  if (files.length === 0 || answers.measure === 'steps') return;
+  plan.manualSteps.push(
+    manual(
+      t('manualNewContext', { count: files.length, files: files.join(', ') }),
+      [
+        t('manualNewContextHint'),
+        `  import { trackRequestContext } from '${PACKAGE_NAME}/fixture';`,
+        '  const ctx = await request.newContext();',
+        '  trackRequestContext(ctx);',
+      ].join('\n'),
+    ),
+  );
+}
+
 function planGitignore(info: ProjectInfo, plan: InitPlan): void {
   const dir = DEFAULT_CONFIG.report.dir;
   const current = info.files.get('.gitignore') ?? null;
@@ -401,6 +423,7 @@ export function planInitChanges(
   planPerfConfig(info, answers, plan, t);
   planPlaywrightConfig(info, answers, plan, t);
   planTestObject(info, answers, plan, t);
+  planRequestContexts(info, answers, plan, t);
   planGitignore(info, plan);
   planCi(info, answers, plan, t);
   return plan;

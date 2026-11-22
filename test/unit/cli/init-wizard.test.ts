@@ -1,7 +1,7 @@
 // Init wizard flow (04, chapter 4.10) with a fake host: default answers in a terminal, no
 // terminal, PW_PERF_DRY_RUN, scripted answers on stdin, Ctrl+C, a second run and the errors.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { PassThrough, Writable } from 'node:stream';
 import { afterAll, describe, expect, test } from 'vitest';
 import type { Prompt } from '../../../src/cli/host.ts';
@@ -87,7 +87,7 @@ describe('init wizard', () => {
     expect(fake.stderr.join('')).not.toContain('INIT_NO_TAGGED_TESTS');
     // package.json is never changed (D-35); the summary shows the command with the variable.
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toEqual({
-      test: 'playwright test',
+      typecheck: 'tsc --noEmit',
     });
     expect(out).toContain('Run: PW_PERF_MODE=test npx playwright test');
     expect(out).toContain('PW_PERF_MODE=check npx playwright test: see what will be measured');
@@ -663,6 +663,118 @@ describe('init wizard', () => {
     const tie = defaultsHost(dir);
     expect(await main([], tie.host)).toBe(0);
     expect(tie.stdout.join('')).not.toContain('Wrap the one your tests import');
+  });
+
+  test('04-AC-61 without playwright.config the wizard lists the configs in subfolders before step 1', async () => {
+    const dir = copyProject('init-esm-ts');
+    for (const [path, text] of [
+      ['apps/web/playwright.config.ts', 'export default {};\n'],
+      ['apps/admin/e2e/playwright.config.js', 'module.exports = {};\n'],
+      ['node_modules/x/playwright.config.ts', 'export default {};\n'],
+      ['apps/a/b/c/playwright.config.ts', 'export default {};\n'],
+    ] as const) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    rmSync(join(dir, 'playwright.config.ts'));
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(3);
+    const err = fake.stderr.join('');
+    expect(err).toContain('INIT_NO_PLAYWRIGHT_CONFIG');
+    expect(err).toContain('cd apps/web && npx pw-perf   (apps/web/playwright.config.ts)');
+    expect(err).toContain(
+      'cd apps/admin/e2e && npx pw-perf   (apps/admin/e2e/playwright.config.js)',
+    );
+    expect(err).not.toContain('node_modules');
+    expect(err).not.toContain('apps/a/b/c');
+    expect(fake.stdout.join('')).not.toContain('[1/10]');
+  });
+
+  test('04-AC-62 step 6 defaults to the only playwright script and warns about its --reporter and preparation', async () => {
+    const dir = copyProject('init-esm-ts');
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    const withScripts = (scripts: Record<string, string>): void =>
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ ...pkg, scripts }));
+    withScripts({ e2e: 'playwright test' });
+    const one = defaultsHost(dir);
+    expect(await main([], one.host)).toBe(0);
+    expect(one.stdout.join('')).toContain(
+      'Which command do you usually run your tests with? (npm run e2e)',
+    );
+    expect(one.stdout.join('')).toContain('Run: PW_PERF_MODE=test npm run e2e');
+    withScripts({
+      e2e: 'playwright test',
+      'e2e:ci': 'npm run reset && playwright test --reporter=dot',
+    });
+    const answers = scriptedPrompt(['', '', '', '', '', '', '', 'npm run e2e:ci']);
+    const typed = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      env: { NO_COLOR: '1' },
+      prompt: answers.prompt,
+    });
+    expect(await main([], typed.host)).toBe(0);
+    expect(answers.asked).toContain(
+      '  Which command do you usually run your tests with? (npx playwright test) ',
+    );
+    const out = typed.stdout.join('');
+    expect(out).toContain('⚠ This command or its script sets --reporter');
+    expect(out).toContain('RUN_REPORTER_FLAG');
+    expect(out).toContain('it runs in every pass: npm run reset.');
+  });
+
+  test('04-AC-63 step 3 setup sentence, format note, untracked request contexts and the check cause', async () => {
+    const dir = copyProject('init-esm-ts');
+    writeFileSync(
+      join(dir, 'tests/api.spec.ts'),
+      "import { request } from '@playwright/test';\nimport { test } from './fixtures';\ntest('a', async () => {\n  const ctx = await request.newContext();\n});\n",
+    );
+    const reportDir = join(dir, 'reports/pw-perf');
+    const fake = fakeCliHost({
+      cwd: dir,
+      env: { NO_COLOR: '1' },
+      prompt: scriptedPrompt([]).prompt,
+      onSpawn: (f) => {
+        if (f.spawned.length === 1) {
+          mkdirSync(reportDir, { recursive: true });
+          writeFileSync(
+            join(reportDir, 'outcome.json'),
+            JSON.stringify({
+              mode: 'thresholds',
+              exitCode: 3,
+              toolErrors: [
+                { code: 'THRESHOLDS_NOTHING_TO_DERIVE', message: 'No key has enough samples.' },
+              ],
+            }),
+          );
+          f.child.exit(1);
+        } else f.child.exit(0);
+      },
+    });
+    expect(await main([], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    const err = fake.stderr.join('');
+    expect(out).toContain('globalSetup and setup projects also run once per pass');
+    expect(out).toContain('Format the changed files with your formatter (e.g. prettier --write).');
+    expect(err).toContain(
+      'Requests of contexts made with request.newContext() are not measured until each context is tracked (1): tests/api.spec.ts.',
+    );
+    expect(err).toContain('trackRequestContext(ctx);');
+    expect(
+      out.split('Most likely cause: THRESHOLDS_NOTHING_TO_DERIVE: No key has enough samples.'),
+    ).toHaveLength(3);
+    // A tracked context, or only steps measured: no warning; nothing written: no format note.
+    writeFileSync(
+      join(dir, 'tests/api.spec.ts'),
+      "import { request } from '@playwright/test';\nimport { trackRequestContext } from 'playwright-performance-regression/fixture';\nconst ctx = await request.newContext();\ntrackRequestContext(ctx);\n",
+    );
+    const again = defaultsHost(dir);
+    expect(await main([], again.host)).toBe(0);
+    expect(again.stderr.join('')).not.toContain('request.newContext()');
+    expect(again.stdout.join('')).not.toContain('Format the changed files');
   });
 
   test('09-REQ-22 the red box takes the terminal width, and 100 when the terminal reports 0 columns', async () => {

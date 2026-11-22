@@ -101,7 +101,7 @@ describe('detectProject', () => {
       perfConfig: null,
       wrappedConfig: false,
       wrappedTest: false,
-      scripts: ['test'],
+      scripts: ['typecheck'],
     });
 
     const cjs = await detectDir(join(PROJECTS, 'init-cjs-js'));

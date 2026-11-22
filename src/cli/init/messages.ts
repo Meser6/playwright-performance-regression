@@ -200,6 +200,19 @@ const en = {
   manualDirectImportsHint: 'Change the import in each of them:',
   manualDirectImportsModuleHint:
     'Import test from {module} in them, or change the import in each of them:',
+  passesSetup:
+    'globalSetup and setup projects also run once per pass and their requests are not measured: make seeding idempotent.',
+  commandReporter:
+    'This command or its script sets --reporter: a measurement or thresholds run with it stops with RUN_REPORTER_FLAG. Use a command without --reporter for the measurement.',
+  commandEveryPass:
+    'The script runs this before playwright test, and it runs in every pass: {prep}. Move long preparation to its own script and give a script without it here.',
+  noConfigFound:
+    'playwright.config found in subfolders; run the setup in the folder of each one you want to measure:',
+  checkCause: 'Most likely cause: {cause}',
+  formatNote: 'Format the changed files with your formatter (e.g. prettier --write).',
+  manualNewContext:
+    'Requests of contexts made with request.newContext() are not measured until each context is tracked ({count}): {files}.',
+  manualNewContextHint: 'Track each context right after it is created:',
 };
 
 export type MessageKey = keyof typeof en;
@@ -384,6 +397,19 @@ const pl: Messages = {
   manualDirectImportsHint: 'Zmień import w każdym z nich:',
   manualDirectImportsModuleHint:
     'Importuj w nich test z {module} albo zmień import w każdym z nich:',
+  passesSetup:
+    'globalSetup i projekty setup też wykonują się raz na przebieg, a ich żądania nie są mierzone: seed danych musi być idempotentny.',
+  commandReporter:
+    'To polecenie albo jego skrypt ustawia --reporter: run pomiarowy albo progów z nim kończy się błędem RUN_REPORTER_FLAG. Do pomiaru użyj polecenia bez --reporter.',
+  commandEveryPass:
+    'Skrypt uruchamia to przed playwright test, więc wykona się w każdym przebiegu: {prep}. Długie przygotowanie przenieś do osobnego skryptu, a tu podaj skrypt bez niego.',
+  noConfigFound:
+    'Znaleziono playwright.config w podkatalogach; uruchom konfigurację w katalogu każdego, który chcesz mierzyć:',
+  checkCause: 'Najbardziej prawdopodobna przyczyna: {cause}',
+  formatNote: 'Sformatuj zmienione pliki swoim formatterem (np. prettier --write).',
+  manualNewContext:
+    'Żądania kontekstów tworzonych przez request.newContext() nie są mierzone, dopóki każdy kontekst nie jest śledzony ({count}): {files}.',
+  manualNewContextHint: 'Śledź każdy kontekst zaraz po jego utworzeniu:',
 };
 
 const es: Messages = {
@@ -573,6 +599,19 @@ const es: Messages = {
   manualDirectImportsHint: 'Cambia la importación en cada uno de ellos:',
   manualDirectImportsModuleHint:
     'Importa en ellos test desde {module} o cambia la importación en cada uno:',
+  passesSetup:
+    'globalSetup y los proyectos de setup también se ejecutan una vez por pasada y sus peticiones no se miden: haz que la carga de datos sea idempotente.',
+  commandReporter:
+    'Este comando o su script define --reporter: una ejecución de medición o de umbrales con él se detiene con RUN_REPORTER_FLAG. Usa un comando sin --reporter para la medición.',
+  commandEveryPass:
+    'El script ejecuta esto antes de playwright test, y se ejecuta en cada pasada: {prep}. Mueve la preparación larga a su propio script e indica aquí un script sin ella.',
+  noConfigFound:
+    'Se encontró playwright.config en subcarpetas; ejecuta la configuración en la carpeta de cada uno que quieras medir:',
+  checkCause: 'Causa más probable: {cause}',
+  formatNote: 'Formatea los archivos cambiados con tu formateador (p. ej. prettier --write).',
+  manualNewContext:
+    'Las peticiones de contextos creados con request.newContext() no se miden hasta que cada contexto se registra ({count}): {files}.',
+  manualNewContextHint: 'Registra cada contexto justo después de crearlo:',
 };
 
 const fr: Messages = {
@@ -766,6 +805,19 @@ const fr: Messages = {
   manualDirectImportsHint: "Modifiez l'import dans chacun d'eux :",
   manualDirectImportsModuleHint:
     "Importez-y test depuis {module}, ou modifiez l'import dans chacun d'eux :",
+  passesSetup:
+    "globalSetup et les projets de setup s'exécutent aussi une fois par passe et leurs requêtes ne sont pas mesurées : rendez l'initialisation des données idempotente.",
+  commandReporter:
+    "Cette commande ou son script définit --reporter : un run de mesure ou de seuils s'arrête alors avec RUN_REPORTER_FLAG. Utilisez une commande sans --reporter pour la mesure.",
+  commandEveryPass:
+    "Le script exécute ceci avant playwright test, et cela s'exécute à chaque passe : {prep}. Déplacez une longue préparation dans son propre script et indiquez ici un script sans elle.",
+  noConfigFound:
+    'playwright.config trouvé dans des sous-dossiers ; lancez la configuration dans le dossier de chacun de ceux que vous voulez mesurer :',
+  checkCause: 'Cause la plus probable : {cause}',
+  formatNote: 'Formatez les fichiers modifiés avec votre formateur (par ex. prettier --write).',
+  manualNewContext:
+    "Les requêtes des contextes créés avec request.newContext() ne sont pas mesurées tant que chaque contexte n'est pas suivi ({count}) : {files}.",
+  manualNewContextHint: 'Suivez chaque contexte juste après sa création :',
 };
 
 const it: Messages = {
@@ -954,6 +1006,19 @@ const it: Messages = {
   manualDirectImportsHint: "Cambia l'import in ciascuno di essi:",
   manualDirectImportsModuleHint:
     "Importa in essi test da {module}, oppure cambia l'import in ciascuno:",
+  passesSetup:
+    "globalSetup e i progetti di setup vengono eseguiti anch'essi una volta per passata e le loro richieste non sono misurate: rendi idempotente il seeding dei dati.",
+  commandReporter:
+    "Questo comando o il suo script imposta --reporter: un'esecuzione di misura o di soglie si ferma con RUN_REPORTER_FLAG. Usa un comando senza --reporter per la misura.",
+  commandEveryPass:
+    'Lo script esegue questo prima di playwright test, e viene eseguito a ogni passata: {prep}. Sposta una preparazione lunga in uno script a parte e indica qui uno script senza di essa.',
+  noConfigFound:
+    'Trovato playwright.config in sottocartelle; esegui la configurazione nella cartella di ciascuno che vuoi misurare:',
+  checkCause: 'Causa più probabile: {cause}',
+  formatNote: 'Formatta i file modificati con il tuo formatter (ad es. prettier --write).',
+  manualNewContext:
+    'Le richieste dei contesti creati con request.newContext() non sono misurate finché ogni contesto non è tracciato ({count}): {files}.',
+  manualNewContextHint: 'Traccia ogni contesto subito dopo averlo creato:',
 };
 
 const uk: Messages = {
@@ -1137,6 +1202,19 @@ const uk: Messages = {
   manualDirectImportsHint: 'Змініть імпорт у кожному з них:',
   manualDirectImportsModuleHint:
     'Імпортуйте в них test з {module} або змініть імпорт у кожному з них:',
+  passesSetup:
+    'globalSetup і проєкти setup теж виконуються один раз за прохід, а їхні запити не вимірюються: зробіть заповнення даних ідемпотентним.',
+  commandReporter:
+    'Ця команда або її скрипт задає --reporter: вимірювальний запуск або запуск порогів із ним завершується помилкою RUN_REPORTER_FLAG. Для вимірювання використайте команду без --reporter.',
+  commandEveryPass:
+    'Скрипт запускає це перед playwright test, тож воно виконується в кожному проході: {prep}. Перенесіть довгу підготовку в окремий скрипт, а тут вкажіть скрипт без неї.',
+  noConfigFound:
+    'playwright.config знайдено в підкаталогах; запустіть налаштування в каталозі кожного, який хочете вимірювати:',
+  checkCause: 'Найімовірніша причина: {cause}',
+  formatNote: 'Відформатуйте змінені файли своїм форматером (напр. prettier --write).',
+  manualNewContext:
+    'Запити контекстів, створених через request.newContext(), не вимірюються, доки кожен контекст не відстежується ({count}): {files}.',
+  manualNewContextHint: 'Відстежуйте кожен контекст одразу після створення:',
 };
 
 const ru: Messages = {
@@ -1319,6 +1397,19 @@ const ru: Messages = {
   manualDirectImportsHint: 'Измените импорт в каждом из них:',
   manualDirectImportsModuleHint:
     'Импортируйте в них test из {module} или измените импорт в каждом из них:',
+  passesSetup:
+    'globalSetup и проекты setup тоже выполняются один раз за проход, а их запросы не измеряются: сделайте заполнение данных идемпотентным.',
+  commandReporter:
+    'Эта команда или её скрипт задаёт --reporter: измерительный запуск или запуск порогов с ним завершается ошибкой RUN_REPORTER_FLAG. Для измерения используйте команду без --reporter.',
+  commandEveryPass:
+    'Скрипт запускает это перед playwright test, поэтому оно выполняется в каждом проходе: {prep}. Перенесите долгую подготовку в отдельный скрипт, а здесь укажите скрипт без неё.',
+  noConfigFound:
+    'playwright.config найден в подкаталогах; запустите настройку в каталоге каждого, который хотите измерять:',
+  checkCause: 'Наиболее вероятная причина: {cause}',
+  formatNote: 'Отформатируйте изменённые файлы своим форматтером (напр. prettier --write).',
+  manualNewContext:
+    'Запросы контекстов, созданных через request.newContext(), не измеряются, пока каждый контекст не отслеживается ({count}): {files}.',
+  manualNewContextHint: 'Отслеживайте каждый контекст сразу после создания:',
 };
 
 export const MESSAGES: Record<WizardLanguage, Messages> = { en, es, fr, pl, it, uk, ru };
