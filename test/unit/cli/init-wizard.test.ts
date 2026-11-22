@@ -98,16 +98,32 @@ describe('init wizard', () => {
     expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).not.toMatch(/^\s*grep: /mu);
   });
 
-  test('04-AC-17 04-AC-48 steps [0/9] to [9/9] without skipped ones; no command, projects, origin, trial or environment question', async () => {
+  test('04-AC-17 04-AC-48 04-AC-52 steps [0/10] to [10/10] without skipped ones; a command step, no script, projects, origin, trial or environment question', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = defaultsHost(dir);
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
-    expect(steps).toEqual(['0/9', '1/9', '2/9', '3/9', '4/9', '5/9', '6/9', '7/9', '8/9', '9/9']);
-    expect(out).toContain('[1/9] What it does and how to run it');
-    expect(out).toContain('[2/9] Which tests');
-    expect(out).not.toMatch(/Test command|Which command runs|Which projects/u);
+    expect(steps).toEqual([
+      '0/10',
+      '1/10',
+      '2/10',
+      '3/10',
+      '4/10',
+      '5/10',
+      '6/10',
+      '7/10',
+      '8/10',
+      '9/10',
+      '10/10',
+    ]);
+    expect(out).toContain('[1/10] What it does and how to run it');
+    expect(out).toContain('[2/10] Which tests');
+    expect(out).toContain('[6/10] Test command');
+    expect(out).toContain(
+      'Which command do you usually run your tests with? (npx playwright test)',
+    );
+    expect(out).not.toMatch(/Which command runs|Which projects/u);
     expect(out).toContain('measures the response times of backend endpoints');
     expect(out).not.toMatch(/warn-only|several environments|Environment labels/u);
     expect(out).toContain(
@@ -155,7 +171,7 @@ describe('init wizard', () => {
       };
     };
     const all = await measured('');
-    expect(all.out).toContain('[4/9] What to measure');
+    expect(all.out).toContain('[4/10] What to measure');
     expect(all.out).toContain('api: response times of the backend requests');
     expect(all.out).toContain('steps: durations of your test.step blocks');
     expect(all.out).toContain('Step titles are sanitized');
@@ -184,7 +200,7 @@ describe('init wizard', () => {
     const fake = defaultsHost(dir);
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
-    const step1 = out.slice(out.indexOf('[1/9]'), out.indexOf('[2/9]'));
+    const step1 = out.slice(out.indexOf('[1/10]'), out.indexOf('[2/10]'));
     expect(step1).toContain('1. PW_PERF_MODE=thresholds <your test command>');
     expect(step1).toContain('2. commit the thresholds files to the repository;');
     expect(step1).toContain('3. PW_PERF_MODE=test <your test command>');
@@ -281,6 +297,8 @@ describe('init wizard', () => {
       'all',
       'tight', // invalid preset, asked again
       'loose',
+      'PW_PERF_MODE=test npm run e2e', // refused: the wizard adds PW_PERF_MODE, asked again
+      'npm run e2e -- --grep "@smoke"', // test command
       'yes', // CI
       '', // apply: pw-perf.config.ts
       '', // playwright.config.ts
@@ -308,7 +326,10 @@ describe('init wizard', () => {
     expect(await main([], fake.host)).toBe(0);
     expect(output).toContain('Passes of the test command in measurement runs? (5)');
     expect(output).toContain('Run a check now? (Y/n)');
-    expect(fake.stdout.join('')).toContain('Run: PW_PERF_MODE=test npx playwright test');
+    expect(fake.stdout.join('')).toContain(
+      'Type the command without PW_PERF_ variables: the wizard adds PW_PERF_MODE itself.',
+    );
+    expect(fake.stdout.join('')).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
     const golden = readFileSync(join(INIT_GOLDEN, 'esm-ts-answers.diff'), 'utf8');
     expect(snapshotDiff(before, snapshot(dir))).toBe(golden);
   });
@@ -342,7 +363,7 @@ describe('init wizard', () => {
     expect(noTty.stdout.join('')).toContain('pw-perf.config.ts exists and is kept.');
 
     // Interactive: every default, then "y" to the overwrite question.
-    const script = scriptedPrompt(['', '', '', '', '', '', '', '', 'y']);
+    const script = scriptedPrompt(['', '', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
     expect(await main([], tty.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toContain(
@@ -404,6 +425,75 @@ describe('init wizard', () => {
     // Without a terminal it never runs.
     const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
     expect(await main([], noTty.host)).toBe(0);
+    expect(noTty.spawned).toEqual([]);
+  });
+
+  test('04-AC-52 step 6: a typed command is run for the check through the shell and used everywhere', async () => {
+    const session = (
+      command: string,
+      options: Partial<FakeHostOptions> = {},
+    ): { fake: FakeHost; asked: string[] } => {
+      const asked: string[] = [];
+      const fake: FakeHost = fakeCliHost({
+        cwd: copyProject('init-esm-ts'),
+        ...options,
+        env: { NO_COLOR: '1', SHELL: '/bin/zsh', ...options.env },
+        prompt: () => ({
+          ask: async (question) => {
+            asked.push(question);
+            return /usually run your tests/u.test(question) ? command : '';
+          },
+          close: () => undefined,
+        }),
+      });
+      return { fake, asked };
+    };
+
+    const typed = session('npm run e2e -- --grep "@smoke"');
+    expect(await main([], typed.fake.host)).toBe(0);
+    expect(typed.asked).toContain(
+      '  Which command do you usually run your tests with? (npx playwright test) ',
+    );
+    expect(typed.fake.spawned).toHaveLength(1);
+    expect(typed.fake.spawned[0]?.file).toBe('npm run e2e -- --grep "@smoke"');
+    expect(typed.fake.spawned[0]?.args).toEqual([]);
+    expect(typed.fake.spawned[0]?.options).toMatchObject({ shell: '/bin/zsh', stdio: 'inherit' });
+    expect(typed.fake.spawned[0]?.options.env['PW_PERF_MODE']).toBe('check');
+    const out = typed.fake.stdout.join('');
+    expect(out).toContain('$ PW_PERF_MODE=check npm run e2e -- --grep "@smoke"');
+    expect(out).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
+    expect(out).not.toContain('chains several commands');
+    const ci = readFileSync(join(typed.fake.host.cwd, '.github/workflows/perf.yml'), 'utf8');
+    expect(ci).toContain('          npm run e2e -- --grep "@smoke" || true\n');
+
+    // Windows: the platform shell (%ComSpec%), cross-env in the shown commands.
+    const win = session('npm run e2e', { platform: 'win32' });
+    expect(await main([], win.fake.host)).toBe(0);
+    expect(win.fake.spawned[0]?.options.shell).toBe(true);
+    expect(win.fake.stdout.join('')).toContain('Run: npx cross-env PW_PERF_MODE=test npm run e2e');
+
+    // A chain gets the yellow line.
+    const chain = session('npm run seed && npx playwright test');
+    expect(await main([], chain.fake.host)).toBe(0);
+    expect(chain.fake.stdout.join('')).toContain(
+      'This command chains several commands: PW_PERF_MODE=... in front of it only reaches the first one.',
+    );
+
+    // skip: no check question and no process; the default command everywhere.
+    const skip = session('skip');
+    expect(await main([], skip.fake.host)).toBe(0);
+    expect(skip.asked).not.toContain('  Run a check now? (Y/n) ');
+    expect(skip.fake.spawned).toEqual([]);
+    const skipped = skip.fake.stdout.join('');
+    expect(skipped).toContain('PW_PERF_MODE=check npx playwright test: see what will be measured');
+    expect(skipped).toContain('Run: PW_PERF_MODE=test npx playwright test');
+
+    // Without a terminal: the default command, no check.
+    const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
+    expect(await main([], noTty.host)).toBe(0);
+    expect(noTty.stdout.join('')).toContain(
+      'Which command do you usually run your tests with? (npx playwright test) → npx playwright test',
+    );
     expect(noTty.spawned).toEqual([]);
   });
 
@@ -491,7 +581,7 @@ export default defineConfig({
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
-    expect(out).toContain('[1/9] Co robi paczka i jak ją uruchamiać');
+    expect(out).toContain('[1/10] Co robi paczka i jak ją uruchamiać');
     expect(out).toContain('Zastosować tę zmianę?');
     expect(out).toContain('Następne kroki:');
     expect(out).not.toContain('Apply this change?');
@@ -613,7 +703,7 @@ export default defineConfig({
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).not.toContain('guided tutorial');
-    expect(out).toContain('[0/9] Language');
+    expect(out).toContain('[0/10] Language');
     expect(out).toContain('+++ b/pw-perf.config.ts');
     expect(fake.written).toEqual([]);
   });
@@ -628,7 +718,7 @@ export default defineConfig({
     const help = fake.stdout.join('');
     expect(help).toContain('Run your usual test command with PW_PERF_MODE set');
     expect(help).toContain('PW_PERF_DRY_RUN=1');
-    expect(help).not.toContain('[0/9]');
+    expect(help).not.toContain('[0/10]');
     expect(fake.written).toEqual([]);
   });
 });

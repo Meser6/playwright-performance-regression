@@ -1,4 +1,4 @@
-// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and nine
+// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and ten
 // steps, each with a short lesson. Origin labels and environments are not asked (07-REQ-03,
 // note #26). Interactive only when stdin and stdout are terminals; without a terminal it takes
 // the default answers and only shows the plan, like PW_PERF_DRY_RUN=1 (04-REQ-37, 04-D-20, 04-D-38).
@@ -18,7 +18,13 @@ import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
 import { CI_PATHS } from './ci.ts';
-import { commandSpawn, runCommands } from './commands.ts';
+import {
+  chainsCommands,
+  commandProblem,
+  commandSpawn,
+  runCommands,
+  testCommand,
+} from './commands.ts';
 import type { RunCommands } from './commands.ts';
 import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
@@ -54,8 +60,8 @@ export function versionAtLeast(version: string, minimum: string): boolean {
   return true;
 }
 
-/** Steps shown as [n/9] (04-REQ-38); a skipped step keeps its number. */
-const STEPS = 9;
+/** Steps shown as [n/10] (04-REQ-38); a skipped step keeps its number. */
+const STEPS = 10;
 const PLATFORM_NAMES: Record<CiPlatform, string> = {
   github: 'GitHub Actions',
   gitlab: 'GitLab CI',
@@ -106,7 +112,7 @@ class Dialog {
     this.say(`${indent}${this.paint(text, style)}`);
   }
 
-  /** Step header in cyan ("[2/9] Which tests") and the lesson dimmed. */
+  /** Step header in cyan ("[2/10] Which tests") and the lesson dimmed. */
   step(n: number | string, title: string, ...lesson: string[]): void {
     this.say('', this.paint(`[${n}/${STEPS}] ${title}`, 'cyan'));
     for (const l of lesson) this.line(l, 'dim');
@@ -131,13 +137,17 @@ class Dialog {
     return 3;
   }
 
-  /** A question with a default; `parse` returns the value or null to ask again. */
+  /**
+   * A question with a default; `parse` returns the value or null to ask again, with `again(answer)`
+   * as the reason when given.
+   */
   async ask<T>(
     question: string,
     shownDefault: string,
     fallback: T,
     parse: (answer: string) => T | null,
     fallbackText = shownDefault,
+    again?: (answer: string) => string,
   ): Promise<T> {
     const text = `  ${this.paint(question, 'bold')} ${this.paint(`(${shownDefault})`, 'dim')} `;
     if (this.#prompt === null) {
@@ -149,7 +159,7 @@ class Dialog {
       if (answer === '') return fallback;
       const value = parse(answer);
       if (value !== null) return value;
-      this.line(`⚠ ${this.t('answerAgain')}`, 'yellow');
+      this.line(`⚠ ${again === undefined ? this.t('answerAgain') : again(answer)}`, 'yellow');
     }
   }
 
@@ -314,7 +324,24 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     return MARGIN_PRESETS.includes(answer) ? answer : null;
   });
 
-  dialog.stepOf(6, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
+  // Step 6: the test command C as typed; Enter keeps the default, 'skip' also skips the check
+  // (04-REQ-55, 04-REQ-58, 04-D-42).
+  dialog.stepOf(6, 'stepCommand', 'commandLesson1', 'commandLesson2');
+  const suggested = testCommand(info.packageManager);
+  // An answer is never empty (Enter gives the default), so '' stands for 'skip'.
+  const typed = await dialog.ask<string>(
+    t('commandQuestion'),
+    suggested,
+    suggested,
+    (a) => (a.toLowerCase() === 'skip' ? '' : commandProblem(a) === null ? a : null),
+    suggested,
+    () => t('commandVariable'),
+  );
+  const skipped = typed === '';
+  const command = skipped ? suggested : typed;
+  if (chainsCommands(command)) dialog.line(`⚠ ${t('commandChain')}`, 'yellow');
+
+  dialog.stepOf(7, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
   let addCi = false;
   if (info.ciPlatform === null) {
     dialog.say(`  ${t('noCi', { url: `${DOCS}/ci.md` })}`);
@@ -329,8 +356,9 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     passesTest,
     measure,
     preset,
+    command,
     addCi,
-    runCheck: false,
+    runCheck: dialog.interactive && !skipped,
   };
 }
 
@@ -494,7 +522,10 @@ function nextSteps(
   return steps;
 }
 
-/** Step 8 (04-REQ-58): runs the check command as a child process with the terminal. */
+/**
+ * Step 9 (04-REQ-58): runs the test command of step 6 with PW_PERF_MODE=check in the environment,
+ * as a child process with the terminal.
+ */
 async function runCheck(
   dialog: Dialog,
   host: CliHost,
@@ -502,10 +533,12 @@ async function runCheck(
   commands: RunCommands,
 ): Promise<number | null> {
   const spec = commandSpawn({
+    command: commands.base,
     nodePath: host.execPath,
     playwrightCli: host.resolvePlaywright(host.cwd)?.cliPath ?? null,
     packageManager: info.packageManager,
     platform: host.platform,
+    shell: host.env.SHELL,
   });
   if (!spec.ok) {
     dialog.line(dialog.t('checkManual', { command: commands.check }), 'yellow');
@@ -586,10 +619,10 @@ export async function runInit(
 
     const answers = await askAnswers(dialog, info);
     const plan = planInitChanges(info, answers, lang);
-    const commands = runCommands(info.packageManager, host.platform);
+    const commands = runCommands(answers.command, host.platform);
 
     dialog.stepOf(
-      7,
+      8,
       'stepChanges',
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
@@ -606,12 +639,13 @@ export async function runInit(
     const redBox = plan.testObject === null ? null : testObjectBox(dialog, host, plan.testObject);
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
-    // Step 8: a check only when something was written and playwright.config is wrapped.
-    dialog.stepOf(8, 'stepCheck', 'checkLesson');
+    // Step 9: a check only when something was written, playwright.config is wrapped and step 6
+    // was not skipped.
+    dialog.stepOf(9, 'stepCheck', 'checkLesson');
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkCode: number | null = null;
-    if (dialog.interactive && written.length > 0 && wrapped) {
+    if (answers.runCheck && written.length > 0 && wrapped) {
       if (await dialog.confirm(t('checkQuestion'), true)) {
         prompt?.close();
         checkCode = await runCheck(dialog, host, info, commands);
@@ -624,7 +658,7 @@ export async function runInit(
       dialog.line(t('skipped'), 'dim');
     }
 
-    dialog.step(9, t('stepSummary'));
+    dialog.step(10, t('stepSummary'));
     if (written.length > 0)
       dialog.say(
         `  ${t('changedFiles')}`,

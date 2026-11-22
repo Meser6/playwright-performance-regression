@@ -40,7 +40,7 @@
 +      - name: Thresholds run
 +        run: |
 +          rm -f pw-perf-results/outcome.json
-+          npx playwright test || true
++          npm run e2e -- --grep "@smoke" || true
 +          exit "$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)"
 +      - name: Upload the thresholds files
 +        if: always()
@@ -69,7 +69,7 @@
 +      - name: Measurement run
 +        run: |
 +          rm -f pw-perf-results/outcome.json
-+          npx playwright test || true
++          npm run e2e -- --grep "@smoke" || true
 +          exit "$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)"
 +      - name: Upload the performance report
 +        if: always()

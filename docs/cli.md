@@ -48,6 +48,11 @@ cross-env: PowerShell `$env:PW_PERF_MODE='test'; npm run e2e; Remove-Item Env:PW
 `set` stays in the terminal session: remove it, or the next normal run is in perf mode too. In CI,
 set `PW_PERF_MODE` in the `env` of the job.
 
+`cross-env` sets the variable and starts the rest of the line as one command with its arguments,
+so `npx cross-env PW_PERF_MODE=test npm run e2e -- --grep "@cart"` works as typed. In a chain
+(`npx cross-env PW_PERF_MODE=test npm run seed && npm run e2e`) the shell runs the part after
+`&&` without the variable; put the chain in a `package.json` script instead.
+
 ## Passes
 
 A run has several passes (`run.passes`: 5 for `test`, 10 for `thresholds`; `PW_PERF_PASSES=3` for
@@ -178,10 +183,21 @@ npm init playwright-performance-regression
 It installs the package as a dev dependency when it is missing and sets it up in the current
 project. Run it again at any time; in a project that is already set up it changes nothing. It
 reads the project files as text (the Playwright config is never executed), asks a few questions
-(all tests or only those tagged `@perf`, passes, `test.step` timings, the threshold headroom preset, the CI jobs), shows a diff of
-every change and applies the changes after you confirm them. At the end it offers a check
-(`PW_PERF_MODE=check` with your test command) and prints the exact commands for your project,
-e.g. `Run: PW_PERF_MODE=test npx playwright test`; use your own test command in its place. It does not ask for origin labels: requests to the
+(all tests or only those tagged `@perf`, passes, what to measure, the threshold headroom preset,
+your test command, the CI jobs), shows a diff of every change and applies the changes after you
+confirm them. At the end it offers a check (your test command with `PW_PERF_MODE=check`) and
+prints the exact commands for your project, e.g. `Run: PW_PERF_MODE=test npm run e2e:qa`.
+
+The test command question suggests the command of your package manager (`npx playwright test`,
+`pnpm exec playwright test` or `yarn playwright test`); press Enter to keep it, or type the
+command you usually run, e.g. `npm run e2e:qa`, without `PW_PERF_` variables. Type `skip` to keep
+the suggestion and skip the check. The wizard takes the command as typed: the summary puts
+`PW_PERF_MODE=<mode> ` in front of it (on Windows `npx cross-env PW_PERF_MODE=<mode> `), the CI
+jobs run it with `PW_PERF_MODE` in the job environment (quoted where YAML or Groovy need it), and
+the check runs it through your shell (`$SHELL`, else `/bin/sh`; on Windows `%ComSpec%`, usually
+cmd) with `PW_PERF_MODE=check` in its environment. A prefix only reaches the first command of a
+chain (`a && b`), so the wizard warns about chains: put them in a `package.json` script and type
+`npm run <script>`. The CI jobs run on Linux: fix a command written for cmd or PowerShell there. It does not ask for origin labels: requests to the
 `baseURL` origin get no label in the endpoint keys and other hosts are labeled with their host;
 set shorter labels in `keys.origins`. The default is to measure all tests, also when some are
 tagged `@perf`; when no test is tagged, the wizard shows how to tag them

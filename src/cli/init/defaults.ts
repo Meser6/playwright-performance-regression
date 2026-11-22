@@ -2,6 +2,7 @@
 // Origin labels and environments are not asked (07-REQ-03, note #26). Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { ProjectInfo } from './detect.ts';
+import { testCommand } from './commands.ts';
 import type { InitAnswers } from './perf-config.ts';
 
 /** Default of the passes step: the default of run.passes.test. */
@@ -15,6 +16,7 @@ export function defaultAnswers(info: ProjectInfo): InitAnswers {
     // Endpoints and steps, also without test.step calls (04-REQ-47).
     measure: 'all',
     preset: DEFAULT_CONFIG.thresholds.preset,
+    command: testCommand(info.packageManager),
     addCi: info.ciPlatform !== null,
     // Never without a terminal (04-REQ-58).
     runCheck: false,

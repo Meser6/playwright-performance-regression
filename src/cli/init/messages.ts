@@ -64,6 +64,16 @@ const en = {
   measureQuestion: 'What to measure? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Only steps, but no test.step was found: nothing is measured until you add test.step blocks.',
+  stepCommand: 'Test command',
+  commandLesson1:
+    'Type the command you usually run your tests with, e.g. npm run e2e:qa. The wizard puts PW_PERF_MODE in front of it in the commands below, writes it into the CI jobs and runs it for the check.',
+  commandLesson2:
+    'Enter keeps the suggested command; "skip" keeps it too and skips the check at the end.',
+  commandQuestion: 'Which command do you usually run your tests with?',
+  commandVariable:
+    'Type the command without PW_PERF_ variables: the wizard adds PW_PERF_MODE itself.',
+  commandChain:
+    'This command chains several commands: PW_PERF_MODE=... in front of it only reaches the first one. Put the chain in a package.json script and type npm run <script>.',
   stepCi: 'CI',
   noCi: 'No CI configuration found. Recipes for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines: {url}',
   stepChanges: 'Changes',
@@ -228,6 +238,15 @@ const pl: Messages = {
   measureQuestion: 'Co mierzyć? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Tylko kroki, ale nie znaleziono test.step: nic nie będzie mierzone, dopóki nie dodasz bloków test.step.',
+  stepCommand: 'Polecenie testów',
+  commandLesson1:
+    'Wpisz polecenie, którym zwykle uruchamiasz testy, np. npm run e2e:qa. Kreator dopisze przed nim PW_PERF_MODE w poleceniach poniżej, wpisze je do jobów CI i uruchomi je w sprawdzeniu.',
+  commandLesson2:
+    'Enter zostawia proponowane polecenie; "skip" też je zostawia i pomija sprawdzenie na końcu.',
+  commandQuestion: 'Jakim poleceniem zwykle uruchamiasz testy?',
+  commandVariable: 'Wpisz polecenie bez zmiennych PW_PERF_: kreator sam dodaje PW_PERF_MODE.',
+  commandChain:
+    'To polecenie łączy kilka poleceń: PW_PERF_MODE=... przed nim dociera tylko do pierwszego. Zamknij łańcuch w skrypcie package.json i wpisz npm run <skrypt>.',
   stepCi: 'CI',
   noCi: 'Nie znaleziono konfiguracji CI. Przepisy dla GitHub Actions, GitLab CI, Jenkinsa i Azure Pipelines: {url}',
   stepChanges: 'Zmiany',
@@ -390,6 +409,16 @@ const es: Messages = {
   measureQuestion: '¿Qué medir? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Solo pasos, pero no se encontró ningún test.step: no se mide nada hasta que añadas bloques test.step.',
+  stepCommand: 'Comando de pruebas',
+  commandLesson1:
+    'Escribe el comando con el que sueles ejecutar tus pruebas, p. ej. npm run e2e:qa. El asistente pone PW_PERF_MODE delante en los comandos de abajo, lo escribe en los jobs de CI y lo ejecuta en la comprobación.',
+  commandLesson2:
+    'Enter mantiene el comando sugerido; "skip" también lo mantiene y omite la comprobación final.',
+  commandQuestion: '¿Con qué comando sueles ejecutar tus pruebas?',
+  commandVariable:
+    'Escribe el comando sin variables PW_PERF_: el asistente añade PW_PERF_MODE por sí mismo.',
+  commandChain:
+    'Este comando encadena varios comandos: PW_PERF_MODE=... delante solo llega al primero. Pon la cadena en un script de package.json y escribe npm run <script>.',
   stepCi: 'CI',
   noCi: 'No se encontró configuración de CI. Recetas para GitHub Actions, GitLab CI, Jenkins y Azure Pipelines: {url}',
   stepChanges: 'Cambios',
@@ -556,6 +585,16 @@ const fr: Messages = {
   measureQuestion: 'Que mesurer ? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Étapes seulement, mais aucun test.step trouvé : rien n’est mesuré tant que vous n’ajoutez pas de blocs test.step.',
+  stepCommand: 'Commande de test',
+  commandLesson1:
+    "Saisissez la commande avec laquelle vous lancez d'habitude vos tests, p. ex. npm run e2e:qa. L'assistant ajoute PW_PERF_MODE devant dans les commandes ci-dessous, l'écrit dans les jobs de CI et l'exécute pour la vérification.",
+  commandLesson2:
+    'Entrée garde la commande proposée ; "skip" la garde aussi et saute la vérification finale.',
+  commandQuestion: "Avec quelle commande lancez-vous d'habitude vos tests ?",
+  commandVariable:
+    "Saisissez la commande sans variables PW_PERF_ : l'assistant ajoute PW_PERF_MODE lui-même.",
+  commandChain:
+    "Cette commande enchaîne plusieurs commandes : PW_PERF_MODE=... devant n'atteint que la première. Mettez la chaîne dans un script de package.json et saisissez npm run <script>.",
   stepCi: 'CI',
   noCi: 'Aucune configuration CI trouvée. Recettes pour GitHub Actions, GitLab CI, Jenkins et Azure Pipelines : {url}',
   stepChanges: 'Modifications',
@@ -726,6 +765,16 @@ const it: Messages = {
   measureQuestion: 'Cosa misurare? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Solo step, ma nessun test.step trovato: non viene misurato nulla finché non aggiungi blocchi test.step.',
+  stepCommand: 'Comando dei test',
+  commandLesson1:
+    'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura mette PW_PERF_MODE davanti nei comandi qui sotto, lo scrive nei job di CI e lo esegue per la verifica.',
+  commandLesson2:
+    'Invio mantiene il comando proposto; "skip" lo mantiene e salta la verifica finale.',
+  commandQuestion: 'Con quale comando esegui di solito i test?',
+  commandVariable:
+    'Scrivi il comando senza variabili PW_PERF_: la procedura aggiunge PW_PERF_MODE da sola.',
+  commandChain:
+    'Questo comando concatena più comandi: PW_PERF_MODE=... davanti raggiunge solo il primo. Metti la catena in uno script di package.json e scrivi npm run <script>.',
   stepCi: 'CI',
   noCi: 'Nessuna configurazione CI trovata. Ricette per GitHub Actions, GitLab CI, Jenkins e Azure Pipelines: {url}',
   stepChanges: 'Modifiche',
@@ -893,6 +942,15 @@ const uk: Messages = {
   measureQuestion: 'Що вимірювати? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Лише кроки, але test.step не знайдено: нічого не вимірюється, доки ви не додасте блоки test.step.',
+  stepCommand: 'Команда тестів',
+  commandLesson1:
+    'Введіть команду, якою ви зазвичай запускаєте тести, напр. npm run e2e:qa. Майстер додасть перед нею PW_PERF_MODE у командах нижче, запише її в job-и CI і запустить для перевірки.',
+  commandLesson2:
+    'Enter залишає запропоновану команду; "skip" теж її залишає і пропускає перевірку наприкінці.',
+  commandQuestion: 'Якою командою ви зазвичай запускаєте тести?',
+  commandVariable: 'Введіть команду без змінних PW_PERF_: майстер сам додає PW_PERF_MODE.',
+  commandChain:
+    'Ця команда поєднує кілька команд: PW_PERF_MODE=... перед нею доходить лише до першої. Помістіть ланцюжок у скрипт package.json і введіть npm run <скрипт>.',
   stepCi: 'CI',
   noCi: 'Конфігурацію CI не знайдено. Рецепти для GitHub Actions, GitLab CI, Jenkins та Azure Pipelines: {url}',
   stepChanges: 'Зміни',
@@ -1056,6 +1114,15 @@ const ru: Messages = {
   measureQuestion: 'Что измерять? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Только шаги, но test.step не найдено: ничего не измеряется, пока вы не добавите блоки test.step.',
+  stepCommand: 'Команда тестов',
+  commandLesson1:
+    'Введите команду, которой вы обычно запускаете тесты, напр. npm run e2e:qa. Мастер добавит перед ней PW_PERF_MODE в командах ниже, запишет её в job-ы CI и запустит для проверки.',
+  commandLesson2:
+    'Enter оставляет предложенную команду; "skip" тоже её оставляет и пропускает проверку в конце.',
+  commandQuestion: 'Какой командой вы обычно запускаете тесты?',
+  commandVariable: 'Введите команду без переменных PW_PERF_: мастер сам добавляет PW_PERF_MODE.',
+  commandChain:
+    'Эта команда объединяет несколько команд: PW_PERF_MODE=... перед ней доходит только до первой. Поместите цепочку в скрипт package.json и введите npm run <скрипт>.',
   stepCi: 'CI',
   noCi: 'Конфигурация CI не найдена. Рецепты для GitHub Actions, GitLab CI, Jenkins и Azure Pipelines: {url}',
   stepChanges: 'Изменения',
