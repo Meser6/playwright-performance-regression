@@ -138,6 +138,7 @@ describe('04-AC-35 estimate and output', () => {
       topKeys: [
         { kind: 'api', key: 'GET /api/session', samples: 20, tests: 10 },
         { kind: 'api', key: 'GET api-pr-4821.ci.example.com/v1/catalog', samples: 18, tests: 9 },
+        { kind: 'step', key: 'checkout › pay', samples: 1, tests: 1 },
       ],
       thresholdsFiles: [{ kind: 'api', name: 'pw-perf-thresholds.json', state: 'missing' }],
       warnings: [
@@ -156,6 +157,9 @@ describe('04-AC-35 estimate and output', () => {
       }),
     };
     const text = formatCheckSummary(data, { width: 120, color: false });
+    expect(text).toContain(
+      'checkout › pay                                     1 sample · 1 test\n',
+    );
     const file = join(import.meta.dirname, '../../golden/console/check.w120.txt');
     if (process.env.GOLDEN_UPDATE === '1') writeFileSync(file, text);
     expect(text).toBe(readFileSync(file, 'utf8'));

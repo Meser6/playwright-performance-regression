@@ -5,7 +5,7 @@ import type { Issue } from '../core/types/index.ts';
 import { marks } from './box.ts';
 import { painter } from './color.ts';
 import { issueBox, verdictBox } from './summary.ts';
-import { padEnd, truncateMiddle } from './text.ts';
+import { padEnd, plural, truncateMiddle } from './text.ts';
 
 export interface CheckProject {
   name: string;
@@ -112,7 +112,7 @@ export function formatCheckSummary(
     const keyWidth = Math.max(30, opts.width - 40);
     s.topKeys.forEach((k, i) => {
       lines.push(
-        `  ${String(i + 1).padStart(2)}. ${padEnd(k.kind, 4)} ${padEnd(truncateMiddle(k.key, keyWidth), Math.min(keyWidth, 50))} ${String(k.samples)} samples · ${String(k.tests)} tests`,
+        `  ${String(i + 1).padStart(2)}. ${padEnd(k.kind, 4)} ${padEnd(truncateMiddle(k.key, keyWidth), Math.min(keyWidth, 50))} ${plural(k.samples, 'sample')} · ${plural(k.tests, 'test')}`,
       );
     });
   }

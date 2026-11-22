@@ -107,6 +107,7 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
 - The wizard's red box (`INIT_TEST_OBJECT_MANUAL`) is full width in a pseudo-terminal that reports
   0 columns (e.g. `expect`, `docker -t`) instead of being cut to 40 columns.
 - `request` calls of a browser context with its own `baseURL` (`browser.newContext({ baseURL })`
