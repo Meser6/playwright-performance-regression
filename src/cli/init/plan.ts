@@ -1,4 +1,4 @@
-// The change plan of the init wizard (04-REQ-38 step 7, 04-REQ-39, 04-REQ-40, 04-REQ-42,
+// The change plan of the init wizard (04-REQ-38 step 8, 04-REQ-39, 04-REQ-40, 04-REQ-42,
 // 04-REQ-67): file changes for recognized layouts, manual instructions (INIT_MANUAL_STEP) for
 // everything else. Test files are never changed: only a fixtures module is wrapped, otherwise the
 // wizard shows the red box of INIT_TEST_OBJECT_MANUAL. package.json is never changed (D-35).
@@ -14,7 +14,6 @@ import type { Translate, WizardLanguage } from './messages.ts';
 import { activeValues, renderPerfConfig, ts } from './perf-config.ts';
 import type { InitAnswers } from './perf-config.ts';
 import { addIgnore, ignores, wrapPlaywrightConfig, wrapTestObject } from './patterns.ts';
-import { testCommand } from './commands.ts';
 
 export interface FileChange {
   path: string;
@@ -152,7 +151,7 @@ const INSTALL: Record<ProjectInfo['packageManager'], string> = {
 function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan, t: Translate): void {
   const platform = info.ciPlatform;
   if (!answers.addCi || platform === null) return;
-  const file = ciFile(platform, testCommand(info.packageManager));
+  const file = ciFile(platform, answers.command);
   const before = info.files.get(file.path) ?? null;
   if (before === file.text) return;
   if (before !== null) {

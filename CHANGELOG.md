@@ -47,6 +47,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   own test command in its place, e.g. `PW_PERF_MODE=test npm run e2e:qa`. The check at the end
   runs the Playwright CLI. The warnings `INIT_SCRIPT_FLAG` and `INIT_SCRIPT_LATER_STEPS` are
   removed.
+- The wizard asks for your usual test command (new step 6, steps `[n/10]`), with the command of
+  your package manager as the default (Enter) and `skip` to skip the check. The typed command is
+  used as typed in the summary commands, in the CI jobs (quoted for GitLab YAML and Jenkins
+  Groovy) and for the check, which runs it through your shell with `PW_PERF_MODE=check`.
 - Step 4 of the wizard asks "What to measure? [all/api/steps]" instead of whether to measure
   `test.step` blocks, and is asked in every project, also without `test.step` calls. `all` (the
   default) keeps both kinds on, `api` writes `measure: { steps: false }` and `steps` writes

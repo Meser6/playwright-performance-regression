@@ -1,5 +1,5 @@
 {
-  "specCommit": "pw-benchmark-docs@d5f294d",
+  "specCommit": "pw-benchmark-docs@d6f85c7",
   "ids": [
     {"id":"01-AC-01","kind":"AC"},
     {"id":"01-AC-02","kind":"AC"},
@@ -249,6 +249,7 @@
     {"id":"04-AC-49","kind":"AC"},
     {"id":"04-AC-50","kind":"AC"},
     {"id":"04-AC-51","kind":"AC"},
+    {"id":"04-AC-52","kind":"AC"},
     {"id":"04-D-01","kind":"D","withdrawn":true},
     {"id":"04-D-02","kind":"D","withdrawn":true},
     {"id":"04-D-03","kind":"D","withdrawn":true},
@@ -290,6 +291,7 @@
     {"id":"04-D-39","kind":"D"},
     {"id":"04-D-40","kind":"D"},
     {"id":"04-D-41","kind":"D"},
+    {"id":"04-D-42","kind":"D"},
     {"id":"04-REQ-01","kind":"REQ"},
     {"id":"04-REQ-02","kind":"REQ","withdrawn":true},
     {"id":"04-REQ-03","kind":"REQ","withdrawn":true},

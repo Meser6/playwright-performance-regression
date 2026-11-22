@@ -24,7 +24,7 @@ export interface ProcessOptions {
   cwd: string;
   env: Record<string, string>;
   stdio: 'inherit';
-  shell: boolean;
+  shell: boolean | string;
 }
 
 export interface PlaywrightInstall {

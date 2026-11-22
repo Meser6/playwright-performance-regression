@@ -4,7 +4,13 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import typescript from 'typescript';
 import { describe, expect, test } from 'vitest';
-import { CI_COMMAND, CI_PATHS, ciFile } from '../../../src/cli/init/ci.ts';
+import {
+  CI_COMMAND,
+  CI_PATHS,
+  ciFile,
+  groovySingleQuoted,
+  yamlScalar,
+} from '../../../src/cli/init/ci.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
 import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
 import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
@@ -52,6 +58,7 @@ const ANSWERS: InitAnswers = {
   passesTest: 5,
   measure: 'all',
   preset: 'normal',
+  command: 'npx playwright test',
   addCi: false,
   runCheck: false,
 };
@@ -531,6 +538,26 @@ describe('CI templates', () => {
     expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
       CI_TEMPLATES.github.replaceAll(CI_COMMAND, 'npx playwright test'),
     );
+  });
+});
+
+describe('04-REQ-55 test command of step 6 in the CI files', () => {
+  test('04-AC-52 GitHub and Azure take the command literally, GitLab and Jenkins quote it', () => {
+    const cmd = `npm run e2e -- --grep "@smoke" --project 'a: b' \\x`;
+    expect(ciFile('github', cmd).text).toContain(`          ${cmd} || true\n`);
+    expect(ciFile('azure', cmd).text).toContain(`          ${cmd} || true\n`);
+    expect(ciFile('gitlab', cmd).text).toContain(
+      `    - 'npm run e2e -- --grep "@smoke" --project ''a: b'' \\x || true'\n`,
+    );
+    expect(ciFile('jenkins', cmd).text).toContain(
+      `sh(script: 'npm run e2e -- --grep "@smoke" --project \\'a: b\\' \\\\x', returnStatus: true)`,
+    );
+    // Plain commands stay plain; a command containing the placeholder is replaced once.
+    expect(ciFile('gitlab', 'npm run e2e:qa').text).toContain('    - npm run e2e:qa || true\n');
+    expect(ciFile('jenkins', 'npm run e2e:qa').text).toContain("sh(script: 'npm run e2e:qa',");
+    expect(yamlScalar('# x')).toBe("'# x'");
+    expect(yamlScalar('npx playwright test || true')).toBe('npx playwright test || true');
+    expect(groovySingleQuoted("a'b\\c")).toBe("a\\'b\\\\c");
   });
 });
 

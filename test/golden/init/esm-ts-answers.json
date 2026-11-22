@@ -1,5 +1,5 @@
 {
-  "name": "esm-ts with answers other than the defaults: plain playwright test, @perf, 3 passes, loose preset, CI",
+  "name": "esm-ts with answers other than the defaults: typed test command, @perf, 3 passes, loose preset, CI",
   "input": {
     "project": "init-esm-ts",
     "answers": {
@@ -7,6 +7,7 @@
       "passesTest": 3,
       "measure": "all",
       "preset": "loose",
+      "command": "npm run e2e -- --grep \"@smoke\"",
       "addCi": true,
       "runCheck": false
     }

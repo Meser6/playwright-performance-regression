@@ -7,7 +7,7 @@ export { readProjectFiles } from './files.ts';
 export type { InitAnswers } from './perf-config.ts';
 export { planInitChanges } from './plan.ts';
 export type { FileChange, InitPlan, TestObjectBox } from './plan.ts';
-export { commandSpawn, runCommands } from './commands.ts';
+export { commandSpawn, runCommands, testCommand } from './commands.ts';
 export type { RunCommands } from './commands.ts';
 export { PromptAborted, readlinePrompt } from './prompt.ts';
 export { runInit } from './wizard.ts';

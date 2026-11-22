@@ -264,7 +264,7 @@ describe('the pw-perf binary', () => {
     expect(run.stderr).toContain(
       'no terminal: the default answers are used and nothing is written',
     );
-    expect(run.stdout).toContain('[9/9] Summary');
+    expect(run.stdout).toContain('[10/10] Summary');
     expect(run.stdout).toContain('+++ b/pw-perf.config.ts');
     expect(snapshot(dir)).toEqual(before);
   });
