@@ -1597,13 +1597,17 @@ th.k::before {
   background: var(--ok-mark);
 }
 
+/* Long keys wrap inside the Key cell instead of running into the next column (11-REQ-53) */
 th.k .kl {
   display: inline-flex;
   vertical-align: middle;
+  width: max-content;
+  max-width: 360px;
 }
 
 th.k .key {
-  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 tr.blocking th.k::before,

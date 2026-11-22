@@ -134,11 +134,18 @@ export const KEY_COLUMN_MAX = 80;
 
 /**
  * Link to the details of a key with the key view of 11-REQ-53, shortened to `max` code points;
- * the view without a link when the key is not in the report.
+ * the view without a link when the key is not in the report. `full` puts the full key in `title`
+ * even when it is not shortened (cards, 11-REQ-53).
  */
-export function keyLink(ctx: Ctx, kind: LinkKind, key: string, max = KEY_COLUMN_MAX): SafeHtml {
+export function keyLink(
+  ctx: Ctx,
+  kind: LinkKind,
+  key: string,
+  max = KEY_COLUMN_MAX,
+  full = false,
+): SafeHtml {
   const anchor = keyAnchor(ctx, kind, key);
-  const view = keyView(kind, key, max);
+  const view = keyView(kind, key, max, full);
   return anchor === null
     ? html`<span class="kl">${view}</span>`
     : html`<a class="kl" href="#${anchor}">${view}</a>`;

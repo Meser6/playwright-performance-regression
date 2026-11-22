@@ -93,6 +93,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- HTML report: long endpoint and step names no longer run into the next column. In the
+  Endpoints and Steps tables the name wraps inside the Key cell; in the Overview cards it is cut
+  with an ellipsis and the full name is shown on hover.
 - A `PW_PERF_MODE=thresholds` run no longer warns with `THRESHOLDS_FILE_MISSING` about the
   thresholds file it is creating.
 - With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2
