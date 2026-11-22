@@ -6,8 +6,8 @@ name: CI
 #   three cells; the release workflow (input full) and a manual run with "full" run the whole
 #   OS x Node x Playwright matrix;
 # - browsers: Firefox and WebKit, informational (best effort, D-13), full matrix only.
-# Performance and statistical tests run before every release (nightly.yml, called by the release
-# workflow, or by hand); there are no nightly runs (12-D-05, 13-D-20).
+# Performance tests run before every release (perf.yml, called by the release workflow, or by
+# hand; never on a schedule, 12-D-05, 13-D-20); statistical tests run in weekly.yml.
 
 on:
   pull_request:

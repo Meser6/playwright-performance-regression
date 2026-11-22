@@ -63,7 +63,7 @@ jobs:
   perf:
     name: Performance
     needs: prepare
-    uses: ./.github/workflows/nightly.yml
+    uses: ./.github/workflows/perf.yml
 
   publish:
     name: Publish to npm

@@ -87,7 +87,7 @@ pnpm lint                    # ESLint, including the src/core import boundary ru
 pnpm format                  # Prettier --write; `pnpm format:check` in CI
 pnpm test                    # Vitest: unit, contract, script and integration tests
                              # (integration runs Playwright on dist/: `pnpm build` first)
-pnpm test:perf               # performance tests (12-PERF-*, nightly CI; `pnpm build` first)
+pnpm test:perf               # performance tests (12-PERF-*, perf.yml before a release; `pnpm build` first)
 pnpm test:stats              # statistical tests (12-STAT-*, weekly CI; `pnpm build` first)
 pnpm gen:types               # regenerate src/core/types/generated/ from schemas/
 pnpm check:types-generated   # fail when the generated types are out of date
