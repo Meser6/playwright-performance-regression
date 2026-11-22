@@ -116,3 +116,49 @@ export function addIgnore(gitignore: string | null, dir: string): string {
   const nl = gitignore.includes('\r\n') ? '\r\n' : '\n';
   return `${gitignore}${gitignore.endsWith('\n') ? '' : nl}${dir}/${nl}`;
 }
+
+const ESM_PLAYWRIGHT_IMPORT = /^import\s*\{([^}]*)\}\s*from\s*(['"])@playwright\/test\2(\s*;)?/gmu;
+const CJS_PLAYWRIGHT_REQUIRE =
+  /^(const|let|var)\s*\{([^}]*)\}\s*=\s*require\s*\(\s*(['"])@playwright\/test\3\s*\)(\s*;)?/gmu;
+
+/** Whether a named import (`test`, `test as setup`, `test: setup`) is the value `name`. */
+function isName(item: string, name: string): boolean {
+  return new RegExp(String.raw`^${name}\s*(?:(?:as|:)\s*[A-Za-z_$][\w$]*)?$`, 'u').test(item);
+}
+
+/**
+ * A test file with `test` (and `expect`) imported from `<pkg>/test` instead of @playwright/test
+ * (04-D-49): `import { test, expect } from '@playwright/test'` or
+ * `const { test, expect } = require('@playwright/test')`, the only statement that imports the
+ * value test. Other names (types, devices) stay in an import of @playwright/test. Null for any
+ * other layout.
+ */
+export function swapTestImport(text: string): string | null {
+  const esm = [...text.matchAll(ESM_PLAYWRIGHT_IMPORT)];
+  const cjs = [...text.matchAll(CJS_PLAYWRIGHT_REQUIRE)];
+  const items = (m: RegExpExecArray, i: number): string[] =>
+    (m[i] as string)
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== '');
+  const matches = [
+    ...esm.map((m) => ({ m, list: items(m, 1), quote: m[2] as string, semi: m[3] ?? '' })),
+    ...cjs.map((m) => ({ m, list: items(m, 2), quote: m[3] as string, semi: m[4] ?? '' })),
+  ].filter((x) => x.list.some((item) => isName(item, 'test')));
+  if (matches.length !== 1) return null;
+  const { m, list, quote, semi } = matches[0] as (typeof matches)[number];
+  const moved = list.filter((item) => isName(item, 'test') || isName(item, 'expect'));
+  const kept = list.filter((item) => !moved.includes(item));
+  const isEsm = esm.includes(m);
+  const pkg = `${quote}${PACKAGE_NAME}/test${quote}`;
+  const statement = (names: string[], from: string): string =>
+    isEsm
+      ? `import { ${names.join(', ')} } from ${from}${semi}`
+      : `${m[1] as string} { ${names.join(', ')} } = require(${from})${semi}`;
+  const playwright = `${quote}@playwright/test${quote}`;
+  const replacement =
+    kept.length === 0
+      ? statement(moved, pkg)
+      : `${statement(kept, playwright)}\n${statement(moved, pkg)}`;
+  return `${text.slice(0, m.index)}${replacement}${text.slice(m.index + m[0].length)}`;
+}

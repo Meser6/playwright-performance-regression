@@ -175,3 +175,20 @@
 +  //   dir: 'reports/pw-perf',
 +  // },
 +});
+--- a/tests/home.spec.ts
++++ b/tests/home.spec.ts
+@@ -1,4 +1,5 @@
+-import { expect, test, type Page } from '@playwright/test';
++import { type Page } from '@playwright/test';
++import { expect, test } from 'playwright-performance-regression/test';
+ 
+ async function open(page: Page): Promise<void> {
+   await page.goto('/page');
+--- a/tests/shop.spec.ts
++++ b/tests/shop.spec.ts
+@@ -1,4 +1,4 @@
+-import { test, expect } from '@playwright/test';
++import { test, expect } from 'playwright-performance-regression/test';
+ 
+ test('item @perf', async ({ page }) => {
+   await page.goto('/page');

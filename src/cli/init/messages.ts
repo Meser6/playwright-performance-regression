@@ -174,7 +174,7 @@ const en = {
   boxWhySteps:
     'Without the perf fixture the package measures no request (test.step durations are measured). The wizard does not change your test files; add one of these by hand:',
   boxFixtures: 'If you have a fixtures file that exports test:',
-  boxFixturesFiles: 'Files with .extend(): {files}',
+  boxFixturesFiles: 'Files with .extend() and the number of test files that import each:',
   boxImports:
     'If your tests import test from @playwright/test (files: {count}), change the import in each of them:',
   boxDocs: 'Other layouts (mergeTests, several test objects, playwright-bdd): {url}',
@@ -192,6 +192,14 @@ const en = {
     '{command}: a measurement run that fails on a regression. Results: {report}; exit code details: {outcome}.',
   nextCiJobs: 'The measurement job in {path} runs once a week and can be started by hand.',
   windowsNote: 'PowerShell and cmd forms of these commands: docs/cli.md.',
+  boxWrapThis: 'Wrap the one your tests import: {file}',
+  boxWorkspace:
+    '{file} is in the workspace package {pkg}: install {self} in the workspace root (e.g. pnpm add -Dw) or in that package too.',
+  manualDirectImports:
+    'Test files that import test straight from @playwright/test are not measured ({count}): {files}.',
+  manualDirectImportsHint: 'Change the import in each of them:',
+  manualDirectImportsModuleHint:
+    'Import test from {module} in them, or change the import in each of them:',
 };
 
 export type MessageKey = keyof typeof en;
@@ -350,7 +358,7 @@ const pl: Messages = {
   boxWhySteps:
     "Bez fixture'u perf paczka nie mierzy żadnego requestu (czasy test.step są mierzone). Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
   boxFixtures: "Jeśli masz plik fixture'ów, który eksportuje test:",
-  boxFixturesFiles: 'Pliki z .extend(): {files}',
+  boxFixturesFiles: 'Pliki z .extend() i liczba plików testów, które importują każdy z nich:',
   boxImports:
     'Jeśli testy importują test z @playwright/test (plików: {count}), zmień import w każdym z nich:',
   boxDocs: 'Inne układy (mergeTests, kilka obiektów test, playwright-bdd): {url}',
@@ -368,6 +376,14 @@ const pl: Messages = {
     '{command}: run pomiarowy, który oblewa się przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
   nextCiJobs: 'Job pomiarowy w {path} działa raz w tygodniu i można go uruchomić ręcznie.',
   windowsNote: 'Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.',
+  boxWrapThis: 'Owiń ten, który importują Twoje testy: {file}',
+  boxWorkspace:
+    '{file} jest w pakiecie workspace {pkg}: zainstaluj {self} w korzeniu workspace (np. pnpm add -Dw) albo także w tym pakiecie.',
+  manualDirectImports:
+    'Pliki testów, które importują test prosto z @playwright/test, nie są mierzone ({count}): {files}.',
+  manualDirectImportsHint: 'Zmień import w każdym z nich:',
+  manualDirectImportsModuleHint:
+    'Importuj w nich test z {module} albo zmień import w każdym z nich:',
 };
 
 const es: Messages = {
@@ -528,7 +544,8 @@ const es: Messages = {
   boxWhySteps:
     'Sin el fixture perf el paquete no mide ninguna petición (las duraciones de test.step sí se miden). El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
   boxFixtures: 'Si tienes un archivo de fixtures que exporta test:',
-  boxFixturesFiles: 'Archivos con .extend(): {files}',
+  boxFixturesFiles:
+    'Archivos con .extend() y el número de archivos de prueba que importan cada uno:',
   boxImports:
     'Si tus tests importan test de @playwright/test (archivos: {count}), cambia el import en cada uno:',
   boxDocs: 'Otras estructuras (mergeTests, varios objetos test, playwright-bdd): {url}',
@@ -548,6 +565,14 @@ const es: Messages = {
   nextCiJobs:
     'El job de medición en {path} se ejecuta una vez por semana y se puede lanzar a mano.',
   windowsNote: 'Formas de estos comandos para PowerShell y cmd: docs/cli.md.',
+  boxWrapThis: 'Envuelve el que importan tus pruebas: {file}',
+  boxWorkspace:
+    '{file} está en el paquete del workspace {pkg}: instala {self} en la raíz del workspace (p. ej. pnpm add -Dw) o también en ese paquete.',
+  manualDirectImports:
+    'Los archivos de prueba que importan test directamente de @playwright/test no se miden ({count}): {files}.',
+  manualDirectImportsHint: 'Cambia la importación en cada uno de ellos:',
+  manualDirectImportsModuleHint:
+    'Importa en ellos test desde {module} o cambia la importación en cada uno:',
 };
 
 const fr: Messages = {
@@ -711,7 +736,8 @@ const fr: Messages = {
   boxWhySteps:
     'Sans la fixture perf, le paquet ne mesure aucune requête (les durées des test.step sont mesurées). L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
   boxFixtures: 'Si vous avez un fichier de fixtures qui exporte test :',
-  boxFixturesFiles: 'Fichiers avec .extend() : {files}',
+  boxFixturesFiles:
+    'Fichiers avec .extend() et le nombre de fichiers de test qui importent chacun :',
   boxImports:
     'Si vos tests importent test depuis @playwright/test (fichiers : {count}), changez l’import dans chacun :',
   boxDocs: 'Autres structures (mergeTests, plusieurs objets test, playwright-bdd) : {url}',
@@ -732,6 +758,14 @@ const fr: Messages = {
   nextCiJobs:
     'Le job de mesure dans {path} s’exécute une fois par semaine et peut être lancé à la main.',
   windowsNote: 'Formes de ces commandes pour PowerShell et cmd : docs/cli.md.',
+  boxWrapThis: "Enveloppez celui qu'importent vos tests : {file}",
+  boxWorkspace:
+    '{file} se trouve dans le paquet du workspace {pkg} : installez {self} à la racine du workspace (par ex. pnpm add -Dw) ou aussi dans ce paquet.',
+  manualDirectImports:
+    'Les fichiers de test qui importent test directement depuis @playwright/test ne sont pas mesurés ({count}) : {files}.',
+  manualDirectImportsHint: "Modifiez l'import dans chacun d'eux :",
+  manualDirectImportsModuleHint:
+    "Importez-y test depuis {module}, ou modifiez l'import dans chacun d'eux :",
 };
 
 const it: Messages = {
@@ -892,7 +926,7 @@ const it: Messages = {
   boxWhySteps:
     'Senza la fixture perf il pacchetto non misura alcuna richiesta (le durate dei test.step sono misurate). La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
   boxFixtures: 'Se hai un file di fixture che esporta test:',
-  boxFixturesFiles: 'File con .extend(): {files}',
+  boxFixturesFiles: 'File con .extend() e il numero di file di test che importano ciascuno:',
   boxImports:
     'Se i tuoi test importano test da @playwright/test (file: {count}), cambia l’import in ognuno:',
   boxDocs: 'Altre strutture (mergeTests, più oggetti test, playwright-bdd): {url}',
@@ -912,6 +946,14 @@ const it: Messages = {
   nextCiJobs:
     'Il job di misura in {path} viene eseguito una volta a settimana e può essere avviato a mano.',
   windowsNote: 'Forme di questi comandi per PowerShell e cmd: docs/cli.md.',
+  boxWrapThis: 'Avvolgi quello che importano i tuoi test: {file}',
+  boxWorkspace:
+    '{file} è nel pacchetto del workspace {pkg}: installa {self} nella radice del workspace (ad es. pnpm add -Dw) o anche in quel pacchetto.',
+  manualDirectImports:
+    'I file di test che importano test direttamente da @playwright/test non vengono misurati ({count}): {files}.',
+  manualDirectImportsHint: "Cambia l'import in ciascuno di essi:",
+  manualDirectImportsModuleHint:
+    "Importa in essi test da {module}, oppure cambia l'import in ciascuno:",
 };
 
 const uk: Messages = {
@@ -1069,7 +1111,7 @@ const uk: Messages = {
   boxWhySteps:
     'Без фікстури perf пакет не вимірює жодного запиту (тривалість test.step вимірюється). Майстер не змінює ваші файли тестів; додайте вручну один із варіантів:',
   boxFixtures: 'Якщо у вас є файл фікстур, що експортує test:',
-  boxFixturesFiles: 'Файли з .extend(): {files}',
+  boxFixturesFiles: 'Файли з .extend() і кількість файлів тестів, які імпортують кожен із них:',
   boxImports:
     'Якщо тести імпортують test з @playwright/test (файлів: {count}), змініть імпорт у кожному з них:',
   boxDocs: 'Інші структури (mergeTests, кілька об’єктів test, playwright-bdd): {url}',
@@ -1087,6 +1129,14 @@ const uk: Messages = {
     '{command}: вимірювальний запуск, що падає при регресії. Результати: {report}; подробиці коду виходу: {outcome}.',
   nextCiJobs: 'Вимірювальний job у {path} виконується раз на тиждень, його можна запустити вручну.',
   windowsNote: 'Форми цих команд для PowerShell і cmd: docs/cli.md.',
+  boxWrapThis: 'Обгорніть той, який імпортують ваші тести: {file}',
+  boxWorkspace:
+    '{file} у пакеті workspace {pkg}: встановіть {self} у корені workspace (напр. pnpm add -Dw) або також у цьому пакеті.',
+  manualDirectImports:
+    'Файли тестів, які імпортують test напряму з @playwright/test, не вимірюються ({count}): {files}.',
+  manualDirectImportsHint: 'Змініть імпорт у кожному з них:',
+  manualDirectImportsModuleHint:
+    'Імпортуйте в них test з {module} або змініть імпорт у кожному з них:',
 };
 
 const ru: Messages = {
@@ -1243,7 +1293,7 @@ const ru: Messages = {
   boxWhySteps:
     'Без фикстуры perf пакет не измеряет ни одного запроса (длительность test.step измеряется). Мастер не меняет ваши файлы тестов; добавьте вручную один из вариантов:',
   boxFixtures: 'Если у вас есть файл фикстур, который экспортирует test:',
-  boxFixturesFiles: 'Файлы с .extend(): {files}',
+  boxFixturesFiles: 'Файлы с .extend() и число файлов тестов, которые импортируют каждый из них:',
   boxImports:
     'Если тесты импортируют test из @playwright/test (файлов: {count}), измените импорт в каждом из них:',
   boxDocs: 'Другие структуры (mergeTests, несколько объектов test, playwright-bdd): {url}',
@@ -1261,6 +1311,14 @@ const ru: Messages = {
     '{command}: измерительный запуск, который падает при регрессии. Результаты: {report}; подробности кода выхода: {outcome}.',
   nextCiJobs: 'Измерительный job в {path} выполняется раз в неделю, его можно запустить вручную.',
   windowsNote: 'Формы этих команд для PowerShell и cmd: docs/cli.md.',
+  boxWrapThis: 'Оберните тот, который импортируют ваши тесты: {file}',
+  boxWorkspace:
+    '{file} находится в пакете workspace {pkg}: установите {self} в корне workspace (напр. pnpm add -Dw) или также в этом пакете.',
+  manualDirectImports:
+    'Файлы тестов, которые импортируют test напрямую из @playwright/test, не измеряются ({count}): {files}.',
+  manualDirectImportsHint: 'Измените импорт в каждом из них:',
+  manualDirectImportsModuleHint:
+    'Импортируйте в них test из {module} или измените импорт в каждом из них:',
 };
 
 export const MESSAGES: Record<WizardLanguage, Messages> = { en, es, fr, pl, it, uk, ru };

@@ -41,6 +41,16 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The wizard changes the imports of your test files when they take `test` straight from
+  `@playwright/test` and there is no fixtures module: `test` and `expect` come from
+  `playwright-performance-regression/test`, other names stay. Each file is a diff you confirm;
+  setup files are left alone. The red box appears only when you decline one of them.
+- The wizard's red box lists the files with `.extend()` with the number of test files that
+  import each, the most imported first, and names the one to wrap. A fixtures module of a
+  workspace package is listed too, with a note to install the package in the workspace root.
+  Nested git repositories (submodules) are no longer scanned unless your sources import from them.
+- After wrapping your fixtures module, the wizard warns about test files that still import
+  `test` straight from `@playwright/test`, since they are not measured.
 - The wizard writes `pw-perf.config.js` in a JavaScript project (a `playwright.config.js`,
   `.mjs` or `.cjs` without `tsconfig.json`): an ES module or CommonJS like the Playwright config,
   with `// @ts-check`. A CommonJS config requires it without `.default`. TypeScript projects keep

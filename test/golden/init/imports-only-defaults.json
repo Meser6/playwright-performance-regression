@@ -1,15 +1,15 @@
 {
-  "name": "tests import test from @playwright/test: no test file is changed, the red box instead (04-REQ-67)",
+  "name": "tests import test from @playwright/test and there is no fixtures module: the import changes in the test files, not in the setup file (04-REQ-67, 04-D-49)",
   "input": {
     "project": "init-import-swap",
     "answers": null
   },
   "expected": {
     "manualSteps": [],
-    "testObject": {
-      "extendFiles": [],
-      "importingFiles": 3,
-      "stepsMeasured": false
-    }
+    "testObject": null,
+    "importSwap": [
+      "tests/home.spec.ts",
+      "tests/shop.spec.ts"
+    ]
   }
 }

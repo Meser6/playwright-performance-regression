@@ -386,6 +386,33 @@ function wrapText(text: string, width: number): string[] {
   return lines;
 }
 
+/**
+ * Variant (a) of the red box (04-REQ-67, 04-D-49): the files with `.extend(`, the most imported by
+ * test files first, the one to wrap when one is imported more than the others, and where to
+ * install the package for a fixtures module in a workspace package.
+ */
+function fixtureLines(box: TestObjectBox, t: Translate, inner: number): BoxLine[] {
+  if (box.extendFiles.length === 0) return [];
+  const dim = (s: string): BoxLine[] => wrapText(s, inner).map((l) => ({ text: l, style: 'dim' }));
+  const count = (file: string): number => box.importedBy[file] ?? 0;
+  const lines: BoxLine[] = [
+    ...dim(t('boxFixturesFiles')),
+    ...box.extendFiles.flatMap((file) => dim(`  ${file} · ${count(file)}`)),
+  ];
+  const [first, second] = box.extendFiles;
+  if (
+    first !== undefined &&
+    count(first) > 0 &&
+    (second === undefined || count(first) > count(second))
+  )
+    lines.push(...wrapText(t('boxWrapThis', { file: first }), inner).map((l) => ({ text: l })));
+  for (const file of box.extendFiles) {
+    const pkg = box.workspace[file];
+    if (pkg !== undefined) lines.push(...dim(t('boxWorkspace', { file, pkg, self: PACKAGE_NAME })));
+  }
+  return lines;
+}
+
 /** The red box of 04-REQ-67: what to paste so that the tests are measured. */
 function testObjectBox(dialog: Dialog, host: CliHost, box: TestObjectBox): string {
   const { t } = dialog;
@@ -404,9 +431,7 @@ function testObjectBox(dialog: Dialog, host: CliHost, box: TestObjectBox): strin
     ...text(t(box.stepsMeasured ? 'boxWhySteps' : 'boxWhy')),
     { text: '' },
     ...text(`(a) ${t('boxFixtures')}`, 'bold'),
-    ...(box.extendFiles.length > 0
-      ? text(t('boxFixturesFiles', { files: box.extendFiles.join(', ') }), 'dim')
-      : []),
+    ...fixtureLines(box, t, inner),
     { text: `    import { withPerfFixtures } from '${PACKAGE_NAME}/fixture';`, style: 'cyan' },
     { text: '    export const test = withPerfFixtures(base.extend({ ... }));', style: 'cyan' },
     { text: '' },
@@ -438,6 +463,7 @@ async function applyChanges(
   info: ProjectInfo,
   changes: readonly FileChange[],
   write: boolean,
+  accepted: string[] = [],
 ): Promise<string[]> {
   const { t, paint } = dialog;
   const written: string[] = [];
@@ -465,6 +491,7 @@ async function applyChanges(
     } else {
       apply = await dialog.confirm(t('applyQuestion'), true);
     }
+    if (apply) accepted.push(change.path);
     if (!apply || !write) continue;
     try {
       await host.writeText(host.paths.join(host.cwd, change.path), change.after);
@@ -656,8 +683,9 @@ export async function runInit(
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
     let written: string[];
+    const accepted: string[] = [];
     try {
-      written = await applyChanges(dialog, host, info, plan.changes, write);
+      written = await applyChanges(dialog, host, info, plan.changes, write, accepted);
     } catch (error) {
       if (!(error instanceof WriteFailed)) throw error;
       return dialog.error('INIT_WRITE_FAILED', 'writeFailedMessage', 'writeFailedHint', {
@@ -665,7 +693,13 @@ export async function runInit(
       });
     }
     dialog.warn(plan.manualSteps);
-    const redBox = plan.testObject === null ? null : testObjectBox(dialog, host, plan.testObject);
+    // The import changes of 04-D-49 replace the red box only when every one is applied.
+    const testObject =
+      plan.testObject ??
+      (plan.importSwap !== null && !plan.importSwap.paths.every((p) => accepted.includes(p))
+        ? plan.importSwap.box
+        : null);
+    const redBox = testObject === null ? null : testObjectBox(dialog, host, testObject);
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
     // Step 9: a check only when something was written, playwright.config is wrapped and step 6
@@ -674,7 +708,7 @@ export async function runInit(
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkResults: CheckResult[] | null = null;
-    if (plan.testObject === null || plan.testObject.stepsMeasured) {
+    if (testObject === null || testObject.stepsMeasured) {
       dialog.stepOf(9, 'stepCheck', 'checkLesson');
       if (answers.runCheck && written.length > 0 && wrapped) {
         if (await dialog.confirm(t('checkQuestion'), true)) {

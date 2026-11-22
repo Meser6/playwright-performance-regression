@@ -136,18 +136,29 @@ describe('setup wizard', () => {
     );
   }
 
-  test('04-AC-46 the defaults in import-swap change no test file and show the red box', async () => {
-    const dir = linkedCopy('init-import-swap');
-    const before = snapshot(dir);
-    const init = await setUp(dir);
-    expect(init.status, init.stdout + init.stderr).toBe(0);
-    expect(snapshotDiff(before, snapshot(dir))).toBe(
-      readFileSync(join(INIT_GOLDEN, 'imports-only-defaults.diff'), 'utf8'),
-    );
-    expect(init.stdout).toContain(
-      'INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet',
-    );
-  });
+  test(
+    '04-AC-57 the defaults in import-swap change the test imports, show no red box and measure',
+    async () => {
+      const dir = linkedCopy('init-import-swap');
+      const before = snapshot(dir);
+      const init = await setUp(dir);
+      expect(init.status, init.stdout + init.stderr).toBe(0);
+      expect(snapshotDiff(before, snapshot(dir))).toBe(
+        readFileSync(join(INIT_GOLDEN, 'imports-only-defaults.diff'), 'utf8'),
+      );
+      expect(init.stdout).not.toContain('INIT_TEST_OBJECT_MANUAL');
+      expect(init.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
+
+      const run = await runNode([playwright, 'test'], dir, {
+        PW_PERF_MODE: 'thresholds',
+        PW_PERF_PASSES: '5',
+      });
+      expect(run.status, run.stdout + run.stderr).toBe(0);
+      expect(run.stdout).toContain('thresholds derived');
+      expect(run.stdout + run.stderr).not.toContain('TESTS_NOT_INSTRUMENTED');
+    },
+    RUN_TIMEOUT,
+  );
 
   test('04-AC-18 the wizard in existing-project keeps the config wrapper and the test objects and prints INIT_MANUAL_STEP', async () => {
     const dir = linkedCopy('init-existing-project');
@@ -159,7 +170,10 @@ describe('setup wizard', () => {
       expect(after.get(file), file).toBe(before.get(file));
     }
     expect(run.stderr).toContain('warning INIT_MANUAL_STEP: playwright.config.ts was not changed');
-    expect(run.stdout).toContain('Files with .extend(): tests/a11y.ts, tests/fixtures.ts');
+    expect(run.stdout).toContain(
+      'Files with .extend() and the number of test files that import each:',
+    );
+    expect(run.stdout).toContain('Wrap the one your tests import: tests/fixtures.ts');
     expect(run.stderr).toContain('withPerf(otherWrapper(defineConfig({ ... })), perfConfig)');
   });
 

@@ -74,6 +74,8 @@ export interface CliHost {
   onSignal(signal: ForwardedSignal, handler: () => void): () => void;
   /** Text of a file, or null when it does not exist. */
   readText(path: string): Promise<string | null>;
+  /** The real path of a file or directory (links resolved), or null when it does not exist. */
+  realPath(path: string): Promise<string | null>;
   /** Entries of a directory; empty when it does not exist. */
   listDir(path: string): Promise<DirEntry[]>;
   /** Writes a UTF-8 file, creating its directory. */

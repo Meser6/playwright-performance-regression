@@ -154,6 +154,8 @@ function sourceFiles(files: ReadonlyMap<string, string>, configPath: string | nu
         SOURCE_FILE.test(path) &&
         path !== configPath &&
         !path.startsWith('node_modules/') &&
+        // Workspace package entries (files.ts) are outside the project: never changed.
+        !path.startsWith('../') &&
         !path.includes('/node_modules/') &&
         !PERF_CONFIG_NAMES.includes(path),
     )
