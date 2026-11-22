@@ -6,8 +6,6 @@ import {
   CONFIG_FILE_EXTENSIONS,
   PACKAGE_NAME,
 } from '../../core/types/index.ts';
-import { detectTestScripts } from './scripts.ts';
-import type { DetectedScript } from './scripts.ts';
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn';
 export type CiPlatform = 'github' | 'gitlab' | 'jenkins' | 'azure';
@@ -23,10 +21,6 @@ export interface ProjectInfo {
   taggedPerfTestFiles: number;
   /** Source files with a test.step( call (04-REQ-47). */
   stepFiles: number;
-  baseUrls: string[];
-  projectNames: string[];
-  /** 04-REQ-54: scripts that run playwright test, in package.json order. */
-  testScripts: DetectedScript[];
   ciPlatform: CiPlatform | null;
   existing: {
     perfConfig: string | null;
@@ -62,7 +56,7 @@ export const LOCKFILES: Readonly<Record<string, PackageManager>> = {
   'package-lock.json': 'npm',
 };
 
-/** CI markers in the order of 04-REQ-38 step 8. */
+/** CI markers in the order of 04-REQ-38 step 6. */
 const CI_MARKERS: readonly [CiPlatform, (path: string) => boolean][] = [
   ['github', (p) => p.startsWith('.github/')],
   ['gitlab', (p) => p === '.gitlab-ci.yml'],
@@ -172,30 +166,7 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
           ? 'esm'
           : 'cjs';
 
-  const baseUrls = [
-    ...new Set(
-      [...configText.matchAll(/\bbaseURL\s*:[^\n]*?(['"`])(https?:\/\/[^'"`\s]+)\1/gu)].flatMap(
-        (m) => {
-          try {
-            return [new URL(m[2] as string).origin];
-          } catch {
-            return [];
-          }
-        },
-      ),
-    ),
-  ];
-  const projectNames = [
-    ...new Set(
-      [...configText.matchAll(/\bname\s*:\s*(['"`])([^'"`\n]+)\1/gu)].map((m) => m[2] as string),
-    ),
-  ];
   const scripts = pkg?.['scripts'];
-  const scriptMap = new Map(
-    typeof scripts === 'object' && scripts !== null
-      ? Object.entries(scripts).filter((e): e is [string, string] => typeof e[1] === 'string')
-      : [],
-  );
   const paths = [...files.keys()];
   return {
     playwrightConfig: configPath === null ? null : { path: configPath, text: configText },
@@ -207,9 +178,6 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     filesWithExtend: sources.filter((p) => text(p).search(EXTEND_CALL) !== -1),
     taggedPerfTestFiles: sources.filter((p) => PERF_TAG.test(text(p))).length,
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
-    baseUrls,
-    projectNames,
-    testScripts: detectTestScripts(scriptMap),
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
     existing: {
       perfConfig: PERF_CONFIG_NAMES.find((name) => files.has(name)) ?? null,

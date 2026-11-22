@@ -178,11 +178,10 @@ npm init playwright-performance-regression
 It installs the package as a dev dependency when it is missing and sets it up in the current
 project. Run it again at any time; in a project that is already set up it changes nothing. It
 reads the project files as text (the Playwright config is never executed), asks a few questions
-(which test script runs your tests, which projects to measure, all tests or only those tagged
-`@perf`, passes, `test.step` timings, the threshold headroom preset, the CI jobs), shows a diff of
+(all tests or only those tagged `@perf`, passes, `test.step` timings, the threshold headroom preset, the CI jobs), shows a diff of
 every change and applies the changes after you confirm them. At the end it offers a check
 (`PW_PERF_MODE=check` with your test command) and prints the exact commands for your project,
-e.g. `Run: PW_PERF_MODE=test npm run e2e:qa`. It does not ask for origin labels: requests to the
+e.g. `Run: PW_PERF_MODE=test npx playwright test`; use your own test command in its place. It does not ask for origin labels: requests to the
 `baseURL` origin get no label in the endpoint keys and other hosts are labeled with their host;
 set shorter labels in `keys.origins`. The default is to measure all tests, also when some are
 tagged `@perf`; when no test is tagged, the wizard shows how to tag them

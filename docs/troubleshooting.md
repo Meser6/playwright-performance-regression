@@ -207,19 +207,6 @@ withPerfFixtures(base.extend({ ... }))` with `withPerfFixtures` from
 `playwright-performance-regression/test` instead of `@playwright/test` in your test files.
 [adoption.md](adoption.md) covers `mergeTests`, several test objects and playwright-bdd.
 
-### INIT_SCRIPT_FLAG
-
-**Warning.** The test script you chose has flags that break a measurement run (`--ui`, `--debug`,
-`--shard`, `--reporter`, `--last-failed`, `--only-changed`, `--workers`, `--repeat-each`,
-`--max-failures`, `-x`, `--global-timeout`). The script is not changed: add a script without them,
-e.g. `e2e:perf`, and choose it when you run `init` again.
-
-### INIT_SCRIPT_LATER_STEPS
-
-**Warning.** The chosen script runs more steps after Playwright (e.g. uploading a report); they
-also run in measurement runs when Playwright exits with 0. If they should not, add a script
-without them.
-
 ### INIT_WRITE_FAILED
 
 **Error (exit code 3).** A file could not be written while applying the changes. Check the

@@ -1,4 +1,4 @@
-// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and eleven
+// The init wizard (04, chapter 4.10): the tutorial question (0a), the language (0) and nine
 // steps, each with a short lesson. Origin labels and environments are not asked (07-REQ-03,
 // note #26). Interactive only when stdin and stdout are terminals; without a terminal it takes
 // the default answers and only shows the plan, like PW_PERF_DRY_RUN=1 (04-REQ-37, 04-D-20, 04-D-38).
@@ -18,6 +18,8 @@ import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
 import { CI_PATHS } from './ci.ts';
+import { commandSpawn, runCommands } from './commands.ts';
+import type { RunCommands } from './commands.ts';
 import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
@@ -29,8 +31,6 @@ import type { InitAnswers } from './perf-config.ts';
 import { isProtected, planInitChanges } from './plan.ts';
 import type { FileChange, TestObjectBox } from './plan.ts';
 import { PromptAborted } from './prompt.ts';
-import { breakingFlags, commandSpawn, defaultScript, runCommands } from './scripts.ts';
-import type { DetectedScript, FlagEffect, RunCommands } from './scripts.ts';
 
 /** The wizard settings from PW_PERF_DRY_RUN, PW_PERF_LANG and PW_PERF_NO_TUTORIAL (D-43). */
 export interface InitCommand {
@@ -54,8 +54,8 @@ export function versionAtLeast(version: string, minimum: string): boolean {
   return true;
 }
 
-/** Steps shown as [n/11] (04-REQ-38); skipped steps keep their number. */
-const STEPS = 11;
+/** Steps shown as [n/9] (04-REQ-38); a skipped step keeps its number. */
+const STEPS = 9;
 const PLATFORM_NAMES: Record<CiPlatform, string> = {
   github: 'GitHub Actions',
   gitlab: 'GitLab CI',
@@ -106,7 +106,7 @@ class Dialog {
     this.say(`${indent}${this.paint(text, style)}`);
   }
 
-  /** Step header in cyan ("[3/10] Which tests") and the lesson dimmed. */
+  /** Step header in cyan ("[2/9] Which tests") and the lesson dimmed. */
   step(n: number | string, title: string, ...lesson: string[]): void {
     this.say('', this.paint(`[${n}/${STEPS}] ${title}`, 'cyan'));
     for (const l of lesson) this.line(l, 'dim');
@@ -251,112 +251,29 @@ async function askLanguage(
   });
 }
 
-/** Numbers separated by commas (1-based) → indexes, or null when one is out of range. */
-function parseNumbers(answer: string, count: number): number[] | null {
-  const parts = answer
-    .split(',')
-    .map((p) => p.trim())
-    .filter((p) => p !== '');
-  if (parts.length === 0) return null;
-  const indexes = parts.map((p) => (/^\d+$/u.test(p) ? Number(p) - 1 : -1));
-  if (indexes.some((i) => i < 0 || i >= count)) return null;
-  return [...new Set(indexes)].sort((a, b) => a - b);
-}
-
-/** Step 2 (04-REQ-54, 04-REQ-56): the test script and its warnings. */
-async function askScript(dialog: Dialog, info: ProjectInfo): Promise<DetectedScript | null> {
-  const { t, paint } = dialog;
-  const scripts = info.testScripts;
-  if (scripts.length === 0) return null;
-  dialog.step(2, t('stepScript'), t('scriptLesson'));
-  const options = [...scripts.map((s) => s.name), null];
-  options.forEach((name, i) => {
-    const script = scripts[i];
-    const text = script === undefined ? '' : paint(` ${shorten(script.text, 70)}`, 'dim');
-    dialog.say(`    ${i + 1}. ${name ?? t('scriptPlain')}${text}`);
-  });
-  const fallback = defaultScript(scripts);
-  const fallbackIndex = options.indexOf(fallback);
-  const index = await dialog.ask(
-    t('scriptQuestion', { count: options.length }),
-    String(fallbackIndex + 1),
-    fallbackIndex,
-    (a) => parseNumbers(a, options.length)?.[0] ?? null,
-    `${fallbackIndex + 1}. ${fallback ?? t('scriptPlain')}`,
-  );
-  const chosen = scripts[index] ?? null;
-  if (chosen === null) return null;
-  const flags = breakingFlags(chosen);
-  if (flags.length > 0) {
-    dialog.warn([
-      {
-        code: 'INIT_SCRIPT_FLAG',
-        message: t('scriptFlagMessage', {
-          name: chosen.name,
-          flags: flags.map((f) => `${f.flag} (${t(FLAG_EFFECT_KEYS[f.effect])})`).join('; '),
-        }),
-        hint: t('scriptFlagHint', { name: chosen.name }),
-      },
-    ]);
-  }
-  if (chosen.laterSegments.length > 0) {
-    dialog.warn([
-      {
-        code: 'INIT_SCRIPT_LATER_STEPS',
-        message: t('laterStepsMessage', {
-          name: chosen.name,
-          steps: chosen.laterSegments.join(' && '),
-        }),
-        hint: t('laterStepsHint'),
-      },
-    ]);
-  }
-  return chosen;
-}
-
-const FLAG_EFFECT_KEYS: Readonly<Record<FlagEffect, MessageKey>> = {
-  interactive: 'flagInteractive',
-  sharded: 'flagSharded',
-  reporter: 'flagReporter',
-  changingTests: 'flagChangingTests',
-  conditions: 'flagConditions',
-};
-
-function shorten(text: string, width: number): string {
-  const chars = Array.from(text);
-  return chars.length <= width ? text : `${chars.slice(0, width - 1).join('')}…`;
-}
-
 async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswers> {
   const { t } = dialog;
-  const script = await askScript(dialog, info);
-
-  let scope: 'all' | 'tagged' = 'all';
-  if (script?.selectsTests === true) {
-    dialog.step(4, t('stepTests'), t('scriptSelectsTests'));
-  } else {
-    dialog.step(
-      4,
-      t('stepTests'),
-      t('testsLesson'),
-      t('taggedFiles', { count: info.taggedPerfTestFiles }),
-    );
-    if (info.taggedPerfTestFiles === 0) {
-      // Information only: the default is all tests either way.
-      const code = 'INIT_NO_TAGGED_TESTS';
-      dialog.say(`  ${dialog.paint(`ℹ ${code}`, 'cyan')} ${t('noTaggedMessage')}`);
-      dialog.line(t('noTaggedHint'), 'dim', '    ');
-    }
-    const all = t('scopeAll');
-    scope = await dialog.ask<'all' | 'tagged'>(t('scopeQuestion', { all }), all, 'all', (a) => {
-      const answer = a.toLowerCase();
-      if (answer === 'all' || answer === all) return 'all';
-      return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
-    });
-    if (scope === 'tagged') dialog.line(t('taggedSaved'), 'dim');
+  dialog.step(
+    2,
+    t('stepTests'),
+    t('testsLesson'),
+    t('taggedFiles', { count: info.taggedPerfTestFiles }),
+  );
+  if (info.taggedPerfTestFiles === 0) {
+    // Information only: the default is all tests either way.
+    const code = 'INIT_NO_TAGGED_TESTS';
+    dialog.say(`  ${dialog.paint(`ℹ ${code}`, 'cyan')} ${t('noTaggedMessage')}`);
+    dialog.line(t('noTaggedHint'), 'dim', '    ');
   }
+  const all = t('scopeAll');
+  const scope = await dialog.ask<'all' | 'tagged'>(t('scopeQuestion', { all }), all, 'all', (a) => {
+    const answer = a.toLowerCase();
+    if (answer === 'all' || answer === all) return 'all';
+    return answer === '@perf' || answer === 'perf' ? 'tagged' : null;
+  });
+  if (scope === 'tagged') dialog.line(t('taggedSaved'), 'dim');
 
-  dialog.stepOf(5, 'stepPasses', 'passesLesson');
+  dialog.stepOf(3, 'stepPasses', 'passesLesson');
   const passesTest = await dialog.ask(
     t('passesQuestion'),
     String(DEFAULT_ANSWERS_PASSES),
@@ -367,21 +284,21 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     },
   );
 
-  // Step 6 only when the project has test.step calls (04-REQ-47); otherwise the default (on).
+  // Step 4 only when the project has test.step calls (04-REQ-47); otherwise the default (on).
   let steps = DEFAULT_CONFIG.measure.steps;
   if (info.stepFiles > 0) {
-    dialog.step(6, t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
+    dialog.step(4, t('stepSteps'), t('stepsLesson'), t('stepsPrivacy'));
     steps = await dialog.confirm(t('stepsQuestion', { count: info.stepFiles }), true);
   }
 
-  dialog.stepOf(7, 'stepPreset', 'presetLesson', 'presetStrict', 'presetNormal', 'presetLoose');
+  dialog.stepOf(5, 'stepPreset', 'presetLesson', 'presetStrict', 'presetNormal', 'presetLoose');
   const normal = DEFAULT_CONFIG.thresholds.preset;
   const preset = await dialog.ask<MarginPreset>(t('presetQuestion'), normal, normal, (a) => {
     const answer = a.toLowerCase() as MarginPreset;
     return MARGIN_PRESETS.includes(answer) ? answer : null;
   });
 
-  dialog.stepOf(8, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
+  dialog.stepOf(6, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
   let addCi = false;
   if (info.ciPlatform === null) {
     dialog.say(`  ${t('noCi', { url: `${DOCS}/ci.md` })}`);
@@ -392,7 +309,6 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
     );
   }
   return {
-    script: script?.name ?? null,
     scope,
     passesTest,
     steps,
@@ -560,20 +476,17 @@ function nextSteps(
   return steps;
 }
 
-/** Step 10 (04-REQ-58): runs the check command as a child process with the terminal. */
+/** Step 8 (04-REQ-58): runs the check command as a child process with the terminal. */
 async function runCheck(
   dialog: Dialog,
   host: CliHost,
   info: ProjectInfo,
-  answers: InitAnswers,
   commands: RunCommands,
 ): Promise<number | null> {
   const spec = commandSpawn({
-    script: answers.script,
-    packageManager: info.packageManager,
-    npmExecPath: host.env.npm_execpath,
     nodePath: host.execPath,
     playwrightCli: host.resolvePlaywright(host.cwd)?.cliPath ?? null,
+    packageManager: info.packageManager,
     platform: host.platform,
   });
   if (!spec.ok) {
@@ -655,10 +568,10 @@ export async function runInit(
 
     const answers = await askAnswers(dialog, info);
     const plan = planInitChanges(info, answers, lang);
-    const commands = runCommands(answers.script, info.packageManager, host.platform);
+    const commands = runCommands(info.packageManager, host.platform);
 
     dialog.stepOf(
-      9,
+      7,
       'stepChanges',
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
@@ -675,15 +588,15 @@ export async function runInit(
     const redBox = plan.testObject === null ? null : testObjectBox(dialog, host, plan.testObject);
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
-    // Step 10: a check only when something was written and playwright.config is wrapped.
-    dialog.stepOf(10, 'stepCheck', 'checkLesson');
+    // Step 8: a check only when something was written and playwright.config is wrapped.
+    dialog.stepOf(8, 'stepCheck', 'checkLesson');
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkCode: number | null = null;
     if (dialog.interactive && written.length > 0 && wrapped) {
       if (await dialog.confirm(t('checkQuestion'), true)) {
         prompt?.close();
-        checkCode = await runCheck(dialog, host, info, answers, commands);
+        checkCode = await runCheck(dialog, host, info, commands);
         if (checkCode === 130) {
           host.stderr.write(infoLine(t('interrupted')));
           return 130;
@@ -693,7 +606,7 @@ export async function runInit(
       dialog.line(t('skipped'), 'dim');
     }
 
-    dialog.step(11, t('stepSummary'));
+    dialog.step(9, t('stepSummary'));
     if (written.length > 0)
       dialog.say(
         `  ${t('changedFiles')}`,
@@ -723,7 +636,6 @@ export async function runInit(
     if (oldScripts.length > 0) dialog.say(`  ${t('oldScripts', { names: oldScripts.join(', ') })}`);
     dialog.say(`  ${t('originsNote')}`);
     const links = [`${DOCS}/adoption.md`, `${DOCS}/cli.md`, `${DOCS}/ci.md`];
-    if (answers.script !== null) links.push(`${DOCS}/dynamic-environments.md`);
     dialog.line(t('docs', { links: links.join(' · ') }), 'dim');
     if (write) dialog.line(`✔ ${t('finished')}`, 'green');
     return 0;

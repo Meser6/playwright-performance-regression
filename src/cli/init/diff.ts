@@ -1,4 +1,4 @@
-// Unified diff of a planned file change (04-REQ-38 step 9, 04-REQ-39): shown before each
+// Unified diff of a planned file change (04-REQ-38 step 7, 04-REQ-39): shown before each
 // confirmation and used for the golden files of init (12, chapter 8). Pure.
 import type { FileChange } from './plan.ts';
 

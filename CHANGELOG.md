@@ -41,6 +41,12 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The wizard no longer asks which test script runs your tests and has nine steps (`[n/9]`). The
+  commands it shows and writes to the CI jobs use the plain Playwright command of your package
+  manager (`npx playwright test`, `pnpm exec playwright test`, `yarn playwright test`); put your
+  own test command in its place, e.g. `PW_PERF_MODE=test npm run e2e:qa`. The check at the end
+  runs the Playwright CLI. The warnings `INIT_SCRIPT_FLAG` and `INIT_SCRIPT_LATER_STEPS` are
+  removed.
 - Step 1 of the wizard no longer lists what it detected (files, `baseURL`, projects, CI). It
   says what the package does, how to run it (`PW_PERF_MODE=thresholds <your test command>`,
   commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally and in CI,

@@ -130,25 +130,6 @@ const en = {
   fileConfig: 'settings of the package; commit it',
   fileThresholds: 'thresholds (test steps in .steps.json); commit them',
   fileReport: 'HTML report and data of the last run; do not commit (listed in .gitignore)',
-  stepScript: 'Test command',
-  scriptLesson:
-    'A measurement uses your own test command, so its setup steps, variables and flags work as they are. Scripts that run playwright test:',
-  scriptPlain: 'plain playwright test',
-  scriptQuestion: 'Which command runs the tests you want to measure? [1-{count}]',
-  scriptSelectsTests:
-    'This script selects its tests itself (--grep or file paths), so the question about @perf is skipped.',
-  scriptFlagMessage: 'The script "{name}" has flags that break a measurement run: {flags}.',
-  scriptFlagHint:
-    'Add a script without them (e.g. "{name}:perf") and choose it when you run init again. The script was not changed.',
-  flagInteractive: 'interactive run, nothing useful is measured',
-  flagSharded: 'sharded run (RUN_SHARDED, exit code 3)',
-  flagReporter: 'replaces the package reporter: no report and no outcome.json',
-  flagChangingTests: 'the tests change between runs, so keys and thresholds drift',
-  flagConditions: 'overrides the run conditions of perf mode',
-  laterStepsMessage:
-    'The script "{name}" runs more steps after Playwright, also in measurement runs: {steps}.',
-  laterStepsHint:
-    'If they should not run then, add a script without them; the wizard does not create it.',
   oldScripts: 'The perf:* scripts of an earlier wizard ({names}) no longer work; remove them.',
   taggedSaved: '@perf is saved as run.grep in pw-perf.config.ts; your commands stay the same.',
   stepPreset: 'Threshold headroom',
@@ -306,25 +287,6 @@ const pl: Messages = {
   fileConfig: 'ustawienia paczki; commituj',
   fileThresholds: 'progi (kroki testów w .steps.json); commituj',
   fileReport: 'raport HTML i dane ostatniego runu; nie commituj (wpis w .gitignore)',
-  stepScript: 'Polecenie testów',
-  scriptLesson:
-    'Pomiar używa Twojego polecenia testów, więc jego kroki przygotowania, zmienne i flagi działają bez zmian. Skrypty uruchamiające playwright test:',
-  scriptPlain: 'zwykłe playwright test',
-  scriptQuestion: 'Które polecenie uruchamia testy do pomiaru? [1-{count}]',
-  scriptSelectsTests:
-    'Ten skrypt sam wybiera testy (--grep albo ścieżki plików), więc pytanie o @perf jest pominięte.',
-  scriptFlagMessage: 'Skrypt "{name}" ma flagi, które psują run pomiarowy: {flags}.',
-  scriptFlagHint:
-    'Dodaj skrypt bez nich (np. "{name}:perf") i wybierz go przy ponownym uruchomieniu init. Skrypt nie został zmieniony.',
-  flagInteractive: 'run interaktywny, pomiar bez sensu',
-  flagSharded: 'run podzielony (RUN_SHARDED, kod 3)',
-  flagReporter: 'zastępuje reporter paczki: brak raportu i outcome.json',
-  flagChangingTests: 'testy zmieniają się między runami, więc klucze i progi się rozjeżdżają',
-  flagConditions: 'nadpisuje warunki runu trybu perfo',
-  laterStepsMessage:
-    'Skrypt "{name}" wykonuje po Playwrighcie dalsze kroki, także w runie pomiarowym: {steps}.',
-  laterStepsHint:
-    'Jeśli nie powinny się wtedy wykonać, dodaj skrypt bez nich; kreator go nie tworzy.',
   oldScripts: 'Skrypty perf:* z wcześniejszej wersji kreatora ({names}) już nie działają; usuń je.',
   taggedSaved: '@perf trafia do pw-perf.config.ts jako run.grep; polecenia zostają bez zmian.',
   stepPreset: 'Zapas progów',
@@ -483,26 +445,6 @@ const es: Messages = {
   fileConfig: 'ajustes del paquete; haz commit',
   fileThresholds: 'umbrales (los pasos de test en .steps.json); haz commit',
   fileReport: 'informe HTML y datos de la última ejecución; sin commit (está en .gitignore)',
-  stepScript: 'Comando de tests',
-  scriptLesson:
-    'La medición usa tu propio comando de tests, así que sus pasos de preparación, variables y flags funcionan tal cual. Scripts que ejecutan playwright test:',
-  scriptPlain: 'playwright test sin script',
-  scriptQuestion: '¿Qué comando ejecuta los tests que quieres medir? [1-{count}]',
-  scriptSelectsTests:
-    'Este script ya elige sus tests (--grep o rutas de archivos), así que se omite la pregunta sobre @perf.',
-  scriptFlagMessage:
-    'El script "{name}" tiene flags que estropean una ejecución de medición: {flags}.',
-  scriptFlagHint:
-    'Añade un script sin ellos (p. ej. "{name}:perf") y elígelo al volver a ejecutar init. El script no se ha cambiado.',
-  flagInteractive: 'ejecución interactiva, no se mide nada útil',
-  flagSharded: 'ejecución dividida (RUN_SHARDED, código 3)',
-  flagReporter: 'sustituye el reporter del paquete: sin informe ni outcome.json',
-  flagChangingTests: 'los tests cambian entre ejecuciones, así que claves y umbrales se desvían',
-  flagConditions: 'sobrescribe las condiciones de ejecución del modo perf',
-  laterStepsMessage:
-    'El script "{name}" ejecuta más pasos después de Playwright, también en las mediciones: {steps}.',
-  laterStepsHint:
-    'Si no deben ejecutarse entonces, añade un script sin ellos; el asistente no lo crea.',
   oldScripts: 'Los scripts perf:* de un asistente anterior ({names}) ya no funcionan; elimínalos.',
   taggedSaved: '@perf se guarda como run.grep en pw-perf.config.ts; tus comandos no cambian.',
   stepPreset: 'Margen de los umbrales',
@@ -663,26 +605,6 @@ const fr: Messages = {
   fileThresholds: 'seuils (étapes de test dans .steps.json) ; à commiter',
   fileReport:
     'rapport HTML et données de la dernière exécution ; à ne pas commiter (dans .gitignore)',
-  stepScript: 'Commande de tests',
-  scriptLesson:
-    'La mesure utilise votre propre commande de tests : ses étapes de préparation, variables et options fonctionnent telles quelles. Scripts qui lancent playwright test :',
-  scriptPlain: 'playwright test sans script',
-  scriptQuestion: 'Quelle commande lance les tests à mesurer ? [1-{count}]',
-  scriptSelectsTests:
-    'Ce script choisit déjà ses tests (--grep ou chemins de fichiers) : la question sur @perf est sautée.',
-  scriptFlagMessage:
-    'Le script "{name}" contient des options qui faussent une exécution de mesure : {flags}.',
-  scriptFlagHint:
-    'Ajoutez un script sans elles (par ex. "{name}:perf") et choisissez-le en relançant init. Le script n’a pas été modifié.',
-  flagInteractive: 'exécution interactive, rien d’utile n’est mesuré',
-  flagSharded: 'exécution découpée (RUN_SHARDED, code 3)',
-  flagReporter: 'remplace le reporter du paquet : ni rapport ni outcome.json',
-  flagChangingTests: 'les tests changent d’une exécution à l’autre, clés et seuils dérivent',
-  flagConditions: 'écrase les conditions d’exécution du mode perf',
-  laterStepsMessage:
-    'Le script "{name}" exécute d’autres étapes après Playwright, aussi pendant les mesures : {steps}.',
-  laterStepsHint:
-    'Si elles ne doivent pas s’exécuter alors, ajoutez un script sans elles ; l’assistant ne le crée pas.',
   oldScripts:
     'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
   taggedSaved:
@@ -844,27 +766,6 @@ const it: Messages = {
   fileConfig: 'impostazioni del pacchetto; da committare',
   fileThresholds: 'soglie (passi di test in .steps.json); da committare',
   fileReport: 'report HTML e dati dell’ultima esecuzione; da non committare (in .gitignore)',
-  stepScript: 'Comando di test',
-  scriptLesson:
-    'La misura usa il tuo comando di test, quindi passi di preparazione, variabili e flag funzionano così come sono. Script che eseguono playwright test:',
-  scriptPlain: 'playwright test senza script',
-  scriptQuestion: 'Quale comando esegue i test da misurare? [1-{count}]',
-  scriptSelectsTests:
-    'Questo script sceglie già i suoi test (--grep o percorsi di file), quindi la domanda su @perf viene saltata.',
-  scriptFlagMessage:
-    'Lo script "{name}" ha flag che compromettono un’esecuzione di misura: {flags}.',
-  scriptFlagHint:
-    'Aggiungi uno script senza di essi (es. "{name}:perf") e sceglilo rieseguendo init. Lo script non è stato modificato.',
-  flagInteractive: 'esecuzione interattiva, non si misura nulla di utile',
-  flagSharded: 'esecuzione divisa (RUN_SHARDED, codice 3)',
-  flagReporter: 'sostituisce il reporter del pacchetto: niente report né outcome.json',
-  flagChangingTests:
-    'i test cambiano tra un’esecuzione e l’altra, quindi chiavi e soglie divergono',
-  flagConditions: 'sovrascrive le condizioni di esecuzione della modalità perf',
-  laterStepsMessage:
-    'Lo script "{name}" esegue altri passi dopo Playwright, anche nelle misure: {steps}.',
-  laterStepsHint:
-    'Se non devono essere eseguiti allora, aggiungi uno script senza di essi; la procedura non lo crea.',
   oldScripts:
     'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
   taggedSaved:
@@ -1024,25 +925,6 @@ const uk: Messages = {
   fileConfig: 'налаштування пакета; комітьте',
   fileThresholds: 'пороги (кроки тестів у .steps.json); комітьте',
   fileReport: 'HTML-звіт і дані останнього запуску; не комітьте (є в .gitignore)',
-  stepScript: 'Команда тестів',
-  scriptLesson:
-    'Вимірювання використовує вашу власну команду тестів, тож її кроки підготовки, змінні й прапорці працюють як є. Скрипти, що запускають playwright test:',
-  scriptPlain: 'звичайний playwright test',
-  scriptQuestion: 'Яка команда запускає тести для вимірювання? [1-{count}]',
-  scriptSelectsTests:
-    'Цей скрипт сам вибирає тести (--grep або шляхи файлів), тому питання про @perf пропущено.',
-  scriptFlagMessage: 'Скрипт "{name}" має прапорці, що псують вимірювальний запуск: {flags}.',
-  scriptFlagHint:
-    'Додайте скрипт без них (напр. "{name}:perf") і виберіть його під час повторного init. Скрипт не змінено.',
-  flagInteractive: 'інтерактивний запуск, нічого корисного не вимірюється',
-  flagSharded: 'розділений запуск (RUN_SHARDED, код 3)',
-  flagReporter: 'замінює репортер пакета: немає звіту й outcome.json',
-  flagChangingTests: 'тести змінюються між запусками, тож ключі й пороги розходяться',
-  flagConditions: 'перевизначає умови запуску режиму perf',
-  laterStepsMessage:
-    'Скрипт "{name}" виконує після Playwright інші кроки, також у вимірювальних запусках: {steps}.',
-  laterStepsHint:
-    'Якщо вони не мають тоді виконуватися, додайте скрипт без них; майстер його не створює.',
   oldScripts:
     'Скрипти perf:* з попередньої версії майстра ({names}) більше не працюють; видаліть їх.',
   taggedSaved: '@perf зберігається як run.grep у pw-perf.config.ts; ваші команди не змінюються.',
@@ -1199,25 +1081,6 @@ const ru: Messages = {
   fileConfig: 'настройки пакета; коммитьте',
   fileThresholds: 'пороги (шаги тестов в .steps.json); коммитьте',
   fileReport: 'HTML-отчёт и данные последнего запуска; не коммитьте (есть в .gitignore)',
-  stepScript: 'Команда тестов',
-  scriptLesson:
-    'Измерение использует вашу собственную команду тестов, поэтому её шаги подготовки, переменные и флаги работают как есть. Скрипты, запускающие playwright test:',
-  scriptPlain: 'обычный playwright test',
-  scriptQuestion: 'Какая команда запускает тесты для измерения? [1-{count}]',
-  scriptSelectsTests:
-    'Этот скрипт сам выбирает тесты (--grep или пути файлов), поэтому вопрос про @perf пропущен.',
-  scriptFlagMessage: 'В скрипте "{name}" есть флаги, которые портят измерительный запуск: {flags}.',
-  scriptFlagHint:
-    'Добавьте скрипт без них (напр. "{name}:perf") и выберите его при повторном init. Скрипт не изменён.',
-  flagInteractive: 'интерактивный запуск, ничего полезного не измеряется',
-  flagSharded: 'разделённый запуск (RUN_SHARDED, код 3)',
-  flagReporter: 'заменяет репортер пакета: нет отчёта и outcome.json',
-  flagChangingTests: 'тесты меняются между запусками, поэтому ключи и пороги расходятся',
-  flagConditions: 'переопределяет условия запуска режима perf',
-  laterStepsMessage:
-    'Скрипт "{name}" выполняет после Playwright другие шаги, в том числе в измерительных запусках: {steps}.',
-  laterStepsHint:
-    'Если они не должны тогда выполняться, добавьте скрипт без них; мастер его не создаёт.',
   oldScripts: 'Скрипты perf:* из прежней версии мастера ({names}) больше не работают; удалите их.',
   taggedSaved: '@perf сохраняется как run.grep в pw-perf.config.ts; ваши команды не меняются.',
   stepPreset: 'Запас порогов',
