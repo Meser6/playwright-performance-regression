@@ -51,6 +51,7 @@ export interface ProjectRun {
   wallMs: number;
   /** reports/pw-perf/report.json; null when none was written. */
   report: RunReport | null;
+  /** reports/pw-perf/outcome.json (04-REQ-62); null when none was written. */
   outcome: Outcome | null;
   /** results.json of the JSON reporter, when the project config writes it. */
   results: JsonResult[];
@@ -70,11 +71,6 @@ export interface Harness {
 export interface RunOptions {
   env?: Record<string, string>;
   args?: string[];
-  /**
-   * The environment mode as a user runs it: without the internal PW_PERF_RUN_ID and
-   * PW_PERF_OUTCOME_FILE the harness otherwise sets in perf mode (04-REQ-62).
-   */
-  environmentMode?: boolean;
 }
 
 export async function startHarness(): Promise<Harness> {
@@ -83,7 +79,6 @@ export async function startHarness(): Promise<Harness> {
   }
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'pw-perf-projects-')));
   const server = await startDemoServer();
-  let runs = 0;
   return {
     server,
     copy(name, from = PROJECTS) {
@@ -100,7 +95,7 @@ export async function startHarness(): Promise<Harness> {
       symlinkSync(ROOT, join(dir, 'node_modules/playwright-performance-regression'), type);
       return dir;
     },
-    run: (dir, options = {}) => runProject(dir, server, `run-${++runs}`, options),
+    run: (dir, options = {}) => runProject(dir, server, options),
     async close() {
       await server.close();
       rmSync(scratch, { recursive: true, force: true });
@@ -163,20 +158,13 @@ function readResults(path: string): JsonResult[] {
 }
 
 /** Runs `playwright test` in `dir` asynchronously (the demo server lives in this process). */
-function runProject(
-  dir: string,
-  server: DemoServer,
-  runId: string,
-  options: RunOptions,
-): Promise<ProjectRun> {
-  for (const old of ['reports/pw-perf', 'test-results', 'results.json', 'outcome.json']) {
+function runProject(dir: string, server: DemoServer, options: RunOptions): Promise<ProjectRun> {
+  for (const old of ['reports/pw-perf', 'test-results', 'results.json']) {
     rmSync(join(dir, old), { recursive: true, force: true });
   }
   const clean = Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith('PW_PERF_')),
   );
-  const perf = options.env?.PW_PERF_MODE !== undefined && options.environmentMode !== true;
-  const outcomeFile = join(dir, 'outcome.json');
   const started = performance.now();
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [RUNNER, 'test', ...(options.args ?? [])], {
@@ -187,7 +175,6 @@ function runProject(
         NO_COLOR: '1',
         BASE_URL: server.url,
         API_URL: server.apiUrl,
-        ...(perf ? { PW_PERF_RUN_ID: runId, PW_PERF_OUTCOME_FILE: outcomeFile } : {}),
         ...options.env,
       },
     });
@@ -202,7 +189,7 @@ function runProject(
           output,
           wallMs: performance.now() - started,
           report: readReport(join(dir, 'reports/pw-perf', 'report.json')),
-          outcome: readOutcome(outcomeFile),
+          outcome: readOutcome(join(dir, 'reports/pw-perf', 'outcome.json')),
           results: readResults(join(dir, 'results.json')),
         });
       } catch (error) {

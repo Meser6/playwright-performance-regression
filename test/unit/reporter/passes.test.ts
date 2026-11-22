@@ -208,10 +208,10 @@ describe('passes of the first pass (04-REQ-64)', () => {
 
   test('04-REQ-64 an interrupted pass stops the passes with RUN_PASS_INTERRUPTED (exit code 3)', async () => {
     const first = fakeHost(dir, { runPass: async () => ({ code: null, signal: 'SIGINT' }) });
-    const outcomeFile = join(dir, 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const s = session(
       first,
-      registered({ run: { passes: { test: 4 } } }, { mode: 'test', runId: RUN_ID, outcomeFile }),
+      registered({ run: { passes: { test: 4 } } }, { mode: 'test', runId: RUN_ID }),
     );
     s.begin(fakeConfig(dir), { allTests: () => [] });
     runPass(s, 1);

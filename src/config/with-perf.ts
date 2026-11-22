@@ -18,9 +18,8 @@ import { version } from '../../package.json';
  * reporter and the fixtures of this process and returns a copy of `config` with the run
  * conditions of perf mode; invalid config or mode variables throw ConfigError before any test
  * runs. The returned config depends only on the arguments and the environment, so it is the same
- * in the main process and in the workers (01-REQ-09). Only in the main process of the
- * environment mode it sets PW_PERF_RUN_ID for the workers and warns about arguments
- * (04-REQ-60, 04-REQ-61).
+ * in the main process and in the workers (01-REQ-09). Only in the main process it sets
+ * PW_PERF_RUN_ID for the workers and warns about arguments (04-REQ-60, 04-REQ-61).
  */
 export function withPerf<T extends PlaywrightTestConfig>(
   config: T,
@@ -29,7 +28,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const first = readModeState(process.env);
   if (!first.ok) throw new ConfigError(first.issues);
   if (first.value === null) return config;
-  const argvIssues = mainProcessSetup(first.value.outcomeFile === undefined);
+  const argvIssues = mainProcessSetup();
   const mode = readModeState(process.env);
   if (!mode.ok || mode.value === null) throw new Error('withPerf: the mode state changed');
   const state = mode.value;
@@ -78,12 +77,12 @@ export function passesOverride(state: PerfModeState): { passes?: number } {
 const SETUP_DONE = Symbol.for('playwright-performance-regression.mainProcessSetup');
 
 /**
- * Main process of the environment mode (04-REQ-60, 04-REQ-61): a run id for the workers and the
- * argument warnings on stderr. Returns the warnings that also go to the report. Workers
- * (TEST_WORKER_INDEX set) and runs with the internal PW_PERF_OUTCOME_FILE do nothing.
+ * Main process (04-REQ-60, 04-REQ-61): a run id for the workers and the argument warnings on
+ * stderr. Returns the warnings that also go to the report. Workers (TEST_WORKER_INDEX set) do
+ * nothing.
  */
-function mainProcessSetup(environmentMode: boolean): Issue[] {
-  if (!environmentMode || process.env.TEST_WORKER_INDEX !== undefined) return [];
+function mainProcessSetup(): Issue[] {
+  if (process.env.TEST_WORKER_INDEX !== undefined) return [];
   const store = globalThis as Record<symbol, Issue[] | undefined>;
   const done = store[SETUP_DONE];
   if (done !== undefined) return done;

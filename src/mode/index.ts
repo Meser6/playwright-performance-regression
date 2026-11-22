@@ -12,8 +12,8 @@ export interface PerfModeState {
   /** PW_PERF_PASS=k/N: set by the first pass for passes 2…N (04-REQ-64). */
   pass?: { index: number; total: number };
   env?: string;
+  /** PW_PERF_RUN_ID: shared by the main process, the workers and passes 2…N (04-REQ-60). */
   runId?: string;
-  outcomeFile?: string;
   /** Internal PW_PERF_THRESHOLDS_DIR: thresholds.dir of the wizard's check (04-REQ-58). */
   thresholdsDir?: string;
   prune?: boolean;
@@ -28,7 +28,6 @@ const PASS = 'PW_PERF_PASS';
 const REPEAT = 'PW_PERF_REPEAT';
 const ENV = 'PW_PERF_ENV';
 const RUN_ID = 'PW_PERF_RUN_ID';
-const OUTCOME_FILE = 'PW_PERF_OUTCOME_FILE';
 const THRESHOLDS_DIR = 'PW_PERF_THRESHOLDS_DIR';
 const PRUNE = 'PW_PERF_PRUNE';
 const MAX_TESTS = 'PW_PERF_MAX_TESTS';
@@ -182,8 +181,6 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
 
   const runId = read(env, RUN_ID);
   if (runId !== undefined) state.runId = runId;
-  const outcomeFile = read(env, OUTCOME_FILE);
-  if (outcomeFile !== undefined) state.outcomeFile = outcomeFile;
   const thresholdsDir = read(env, THRESHOLDS_DIR);
   if (thresholdsDir !== undefined) state.thresholdsDir = thresholdsDir;
 
@@ -229,7 +226,6 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
     env[PASS] = `${String(state.pass.index)}/${String(state.pass.total)}`;
   if (state.env !== undefined) env[ENV] = state.env;
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
-  if (state.outcomeFile !== undefined) env[OUTCOME_FILE] = state.outcomeFile;
   if (state.thresholdsDir !== undefined) env[THRESHOLDS_DIR] = state.thresholdsDir;
   if (state.prune === true) env[PRUNE] = '1';
   if (state.maxTests !== undefined) env[MAX_TESTS] = String(state.maxTests);
