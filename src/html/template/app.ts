@@ -81,6 +81,14 @@ for (const panel of all<HTMLElement>('[data-panel]')) {
 }
 let currentTab = 'overview';
 
+/** Scrolls the tab bar sideways so that the selected tab is fully visible (11-REQ-50). */
+function reveal(bar: HTMLElement, link: HTMLElement): void {
+  const left = link.offsetLeft;
+  const right = left + link.offsetWidth;
+  if (left < bar.scrollLeft) bar.scrollLeft = left;
+  else if (right > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = right - bar.clientWidth;
+}
+
 function selectTab(id: string, focus = false): void {
   if (!panels.has(id)) return;
   currentTab = id;
@@ -89,6 +97,7 @@ function selectTab(id: string, focus = false): void {
     link.setAttribute('aria-selected', String(selected));
     link.tabIndex = selected ? 0 : -1;
     if (selected && focus) link.focus();
+    if (selected && tabList !== null) reveal(tabList, link);
   }
   for (const [name, panel] of panels) panel.hidden = name !== id;
 }
