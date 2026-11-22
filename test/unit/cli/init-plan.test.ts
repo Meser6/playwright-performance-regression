@@ -455,6 +455,28 @@ describe('recognized layouts (04-REQ-39)', () => {
     expect(imports.testObject).toEqual({ extendFiles: [], importingFiles: 2 });
   });
 
+  test('04-AC-53 only steps measured: no red box, the fixtures module is still wrapped', () => {
+    const config = 'export default defineConfig({});\n';
+    const imports = files({
+      'playwright.config.ts': config,
+      'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
+    });
+    expect(planInitChanges(detectProject(imports), ANSWERS).testObject).not.toBeNull();
+    expect(
+      planInitChanges(detectProject(imports), { ...ANSWERS, measure: 'api' }).testObject,
+    ).not.toBeNull();
+    expect(
+      planInitChanges(detectProject(imports), { ...ANSWERS, measure: 'steps' }).testObject,
+    ).toBeNull();
+    const module =
+      "import { test as base } from '@playwright/test';\nexport const test = base.extend({});\n";
+    const wrapped = planInitChanges(
+      detectProject(files({ 'playwright.config.ts': config, 'tests/fixtures.ts': module })),
+      { ...ANSWERS, measure: 'steps' },
+    );
+    expect(wrapped.changes.map((c) => c.path)).toContain('tests/fixtures.ts');
+  });
+
   test('scanning skips strings, comments, templates and regular expressions', () => {
     const text = "f(')', \"(\", `${g(')')}`, /\\)/u, // )\n/* ) */ x)";
     expect(matchBracket(text, 1)).toBe(text.length);

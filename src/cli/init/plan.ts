@@ -110,7 +110,7 @@ function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan, t: Translate): 
 const TEST_CALL =
   /^\s*(?:test|it)(?:\.(?:describe|only|skip|fixme|fail|serial|parallel|step)(?:\.\w+)?)?\s*\(\s*['"`]/mu;
 
-function planTestObject(info: ProjectInfo, plan: InitPlan): void {
+function planTestObject(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
   if (info.existing.wrappedTest) return;
   const text = (path: string): string => info.files.get(path) ?? '';
   const extendFiles = info.filesWithExtend;
@@ -128,6 +128,9 @@ function planTestObject(info: ProjectInfo, plan: InitPlan): void {
     plan.changes.push({ path: only, kind: 'modify', before: text(only), after });
     return;
   }
+  // Only steps measured: the reporter records them without the perf fixture (06), so something
+  // is measured and there is no red box (v4 D5).
+  if (answers.measure === 'steps') return;
   plan.testObject = {
     extendFiles: [...new Set([...extendFiles, ...merges])].sort(),
     importingFiles: info.filesImportingPlaywrightTest.length,
@@ -193,7 +196,7 @@ export function planInitChanges(
   const plan: InitPlan = { changes: [], manualSteps: [], testObject: null };
   planPerfConfig(info, answers, plan, t);
   planPlaywrightConfig(info, plan, t);
-  planTestObject(info, plan);
+  planTestObject(info, answers, plan);
   planGitignore(info, plan);
   planCi(info, answers, plan, t);
   return plan;

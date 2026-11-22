@@ -60,7 +60,10 @@ export function versionAtLeast(version: string, minimum: string): boolean {
   return true;
 }
 
-/** Steps shown as [n/10] (04-REQ-38); a skipped step keeps its number. */
+/**
+ * Steps shown as [n/10] (04-REQ-38); a skipped step keeps its number, and step 9 is not shown at
+ * all with the red box, so the summary stays [10/10] (04-D-43).
+ */
 const STEPS = 10;
 const PLATFORM_NAMES: Record<CiPlatform, string> = {
   github: 'GitHub Actions',
@@ -640,22 +643,24 @@ export async function runInit(
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
     // Step 9: a check only when something was written, playwright.config is wrapped and step 6
-    // was not skipped.
-    dialog.stepOf(9, 'stepCheck', 'checkLesson');
+    // was not skipped; with the red box nothing would be measured, so no step 9 at all (04-REQ-58).
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkCode: number | null = null;
-    if (answers.runCheck && written.length > 0 && wrapped) {
-      if (await dialog.confirm(t('checkQuestion'), true)) {
-        prompt?.close();
-        checkCode = await runCheck(dialog, host, info, commands);
-        if (checkCode === 130) {
-          host.stderr.write(infoLine(t('interrupted')));
-          return 130;
+    if (redBox === null) {
+      dialog.stepOf(9, 'stepCheck', 'checkLesson');
+      if (answers.runCheck && written.length > 0 && wrapped) {
+        if (await dialog.confirm(t('checkQuestion'), true)) {
+          prompt?.close();
+          checkCode = await runCheck(dialog, host, info, commands);
+          if (checkCode === 130) {
+            host.stderr.write(infoLine(t('interrupted')));
+            return 130;
+          }
         }
+      } else {
+        dialog.line(t('skipped'), 'dim');
       }
-    } else {
-      dialog.line(t('skipped'), 'dim');
     }
 
     dialog.step(10, t('stepSummary'));
