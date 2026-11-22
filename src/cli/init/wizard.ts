@@ -383,7 +383,9 @@ function wrapText(text: string, width: number): string[] {
 /** The red box of 04-REQ-67: what to paste so that the tests are measured. */
 function testObjectBox(dialog: Dialog, host: CliHost, box: TestObjectBox): string {
   const { t } = dialog;
-  const width = Math.min(100, Math.max(40, host.stdout.columns ?? 100));
+  // 0 columns: a pseudo-terminal without a size, as without a terminal (09-REQ-22).
+  const columns = host.stdout.columns ?? 0;
+  const width = Math.min(100, Math.max(40, columns > 0 ? columns : 100));
   const inner = width - 4;
   const text = (s: string, style?: ColorStyle): BoxLine[] =>
     wrapText(s, inner).map((l) => (style === undefined ? { text: l } : { text: l, style }));
