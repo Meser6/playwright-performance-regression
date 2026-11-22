@@ -135,29 +135,34 @@ describe('RequestTracker', () => {
     ]);
   });
 
-  test('05-AC-24 a 204 response followed by requestfailed is a sample, a 200 one is FAILED', async () => {
+  test('05-AC-24 a 204 or an aborted 201 after the response is a sample, ERR_FAILED is FAILED', async () => {
     const { context, tracker, finished } = setup();
     const emit = (
       url: string,
       status: number,
       t: { responseStart: number; responseEnd: number },
+      errorText = 'net::ERR_ABORTED',
     ) => {
       const request = new FakeRequest(url, { method: 'DELETE' });
       context.emit('request', request);
       request.timingValue = timing({ requestStart: 0.5, ...t });
       request.responseValue = new FakeResponse(request, status);
       context.emit('response', request.responseValue);
-      request.failureValue = { errorText: 'net::ERR_ABORTED' };
+      request.failureValue = { errorText };
       context.emit('requestfailed', request);
     };
     emit(`${API}/1`, 204, { responseStart: 20.5, responseEnd: -1 });
     emit(`${API}/2`, 204, { responseStart: 20.5, responseEnd: 21.25 });
-    emit(`${API}/3`, 200, { responseStart: 20.5, responseEnd: -1 });
+    emit(`${API}/3`, 201, { responseStart: 30.5, responseEnd: -1 });
+    emit(`${API}/4`, 201, { responseStart: 30.5, responseEnd: 31.25 }, 'NS_BINDING_ABORTED');
+    emit(`${API}/5`, 200, { responseStart: 20.5, responseEnd: -1 }, 'net::ERR_FAILED');
     await tracker.drain(0);
     expect(finished).toEqual([
       expect.objectContaining({ status: 204, duration: 20.5, ttfb: 20, timeSource: 'browser' }),
       expect.objectContaining({ status: 204, duration: 21.3, timeSource: 'browser' }),
-      expect.objectContaining({ status: 'FAILED', failureText: 'net::ERR_ABORTED' }),
+      expect.objectContaining({ status: 201, duration: 30.5, ttfb: 30, timeSource: 'browser' }),
+      expect.objectContaining({ status: 201, duration: 31.3, timeSource: 'browser' }),
+      expect.objectContaining({ status: 'FAILED', failureText: 'net::ERR_FAILED' }),
     ]);
   });
 
