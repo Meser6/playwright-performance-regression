@@ -163,10 +163,10 @@ const en = {
   ciQuestion: 'Add the CI jobs for thresholds and measurement runs ({platform})?',
   stepCheck: 'Check',
   checkLesson:
-    'The check runs a few tests once and shows what will be measured and how long a full run takes. Nothing is evaluated or written.',
+    'The check runs your test command like the real runs, only with 2 passes: first PW_PERF_MODE=thresholds, then PW_PERF_MODE=test. Its thresholds go to a temporary folder that is deleted afterwards; your thresholds files are not touched.',
   checkQuestion: 'Run a check now?',
   checkManual: 'Run it yourself: {command}',
-  checkExit: 'The check ended with exit code {code}.',
+  checkExit: 'The check with PW_PERF_MODE={mode} ended with exit code {code}.',
   boxTitle: 'Action needed: nothing is measured yet',
   boxWhy:
     'Without the perf fixture the package measures no request. The wizard does not change your test files; add one of these by hand:',
@@ -183,7 +183,7 @@ const en = {
   nextThresholdsNoCi:
     '{command}: derive thresholds first, on the CI machines that will measure (see {url}). Until the thresholds files exist, measurement runs use the loose default thresholds. {estimate}',
   estimateUnknown: '(Run the check command for an estimate.)',
-  estimateAbove: '(The check above shows an estimate.)',
+  estimateAbove: '(The start box of the run shows a time estimate from the last run.)',
   nextCommit: 'Commit {files}.',
   nextTest:
     '{command}: a measurement run that fails on a regression. Results: {report}; exit code details: {outcome}.',
@@ -336,10 +336,10 @@ const pl: Messages = {
   ciQuestion: 'Dodać joby CI dla runów progów i pomiarowych ({platform})?',
   stepCheck: 'Sprawdzenie',
   checkLesson:
-    'Sprawdzenie uruchamia kilka testów raz i pokazuje, co zostanie zmierzone i ile potrwa pełny run. Niczego nie ocenia ani nie zapisuje.',
+    'Sprawdzenie uruchamia Twoje polecenie testów jak prawdziwe runy, tylko z 2 przebiegami: najpierw PW_PERF_MODE=thresholds, potem PW_PERF_MODE=test. Jego progi trafiają do katalogu tymczasowego, usuwanego na końcu; Twoje pliki progów zostają nietknięte.',
   checkQuestion: 'Uruchomić sprawdzenie teraz?',
   checkManual: 'Uruchom je sam: {command}',
-  checkExit: 'Sprawdzenie zakończyło się kodem {code}.',
+  checkExit: 'Sprawdzenie z PW_PERF_MODE={mode} zakończyło się kodem {code}.',
   boxTitle: 'Wymagane działanie: na razie nic nie jest mierzone',
   boxWhy:
     "Bez fixture'u perf paczka nie mierzy żadnego requestu. Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
@@ -356,7 +356,7 @@ const pl: Messages = {
   nextThresholdsNoCi:
     '{command}: najpierw wyznacz progi na maszynach CI, które będą mierzyć (zobacz {url}). Dopóki plików progów nie ma, runy pomiarowe używają luźnych progów domyślnych. {estimate}',
   estimateUnknown: '(Szacunek czasu da polecenie sprawdzenia.)',
-  estimateAbove: '(Szacunek czasu jest w wyniku sprawdzenia powyżej.)',
+  estimateAbove: '(Ramka startowa runu podaje szacunek czasu z ostatniego runu.)',
   nextCommit: 'Zacommituj {files}.',
   nextTest:
     '{command}: run pomiarowy, który oblewa się przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
@@ -511,10 +511,10 @@ const es: Messages = {
   ciQuestion: '¿Añadir los jobs de CI para umbrales y mediciones ({platform})?',
   stepCheck: 'Comprobación',
   checkLesson:
-    'La comprobación ejecuta unos pocos tests una vez y muestra qué se medirá y cuánto dura una ejecución completa. No evalúa ni escribe nada.',
+    'La comprobación ejecuta tu comando de tests como las ejecuciones reales, solo con 2 pasadas: primero PW_PERF_MODE=thresholds y luego PW_PERF_MODE=test. Sus umbrales van a una carpeta temporal que se borra al final; tus archivos de umbrales no se tocan.',
   checkQuestion: '¿Ejecutar la comprobación ahora?',
   checkManual: 'Ejecútala tú: {command}',
-  checkExit: 'La comprobación terminó con el código {code}.',
+  checkExit: 'La comprobación con PW_PERF_MODE={mode} terminó con el código {code}.',
   boxTitle: 'Acción necesaria: todavía no se mide nada',
   boxWhy:
     'Sin el fixture perf el paquete no mide ninguna petición. El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
@@ -531,7 +531,8 @@ const es: Messages = {
   nextThresholdsNoCi:
     '{command}: primero calcula los umbrales en las máquinas de CI que van a medir (ver {url}). Mientras no existan los archivos de umbrales, las mediciones usan los umbrales por defecto, amplios. {estimate}',
   estimateUnknown: '(El comando de comprobación da una estimación.)',
-  estimateAbove: '(La comprobación de arriba muestra una estimación.)',
+  estimateAbove:
+    '(El recuadro de inicio de la ejecución muestra una estimación de tiempo según la última ejecución.)',
   nextCommit: 'Haz commit de {files}.',
   nextTest:
     '{command}: una medición que falla ante una regresión. Resultados: {report}; detalles del código de salida: {outcome}.',
@@ -690,10 +691,10 @@ const fr: Messages = {
   ciQuestion: 'Ajouter les jobs de CI pour les seuils et les mesures ({platform}) ?',
   stepCheck: 'Vérification',
   checkLesson:
-    'La vérification lance quelques tests une fois et montre ce qui sera mesuré et combien de temps dure une exécution complète. Rien n’est évalué ni écrit.',
+    'La vérification lance votre commande de tests comme les vraies exécutions, mais avec 2 passes : d’abord PW_PERF_MODE=thresholds, puis PW_PERF_MODE=test. Ses seuils vont dans un dossier temporaire supprimé à la fin ; vos fichiers de seuils ne sont pas touchés.',
   checkQuestion: 'Lancer la vérification maintenant ?',
   checkManual: 'Lancez-la vous-même : {command}',
-  checkExit: 'La vérification s’est terminée avec le code {code}.',
+  checkExit: 'La vérification avec PW_PERF_MODE={mode} s’est terminée avec le code {code}.',
   boxTitle: 'Action requise : rien n’est encore mesuré',
   boxWhy:
     'Sans la fixture perf, le paquet ne mesure aucune requête. L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
@@ -711,7 +712,8 @@ const fr: Messages = {
   nextThresholdsNoCi:
     '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront (voir {url}). Tant que les fichiers de seuils n’existent pas, les mesures utilisent les seuils par défaut, larges. {estimate}',
   estimateUnknown: '(La commande de vérification donne une estimation.)',
-  estimateAbove: '(La vérification ci-dessus donne une estimation.)',
+  estimateAbove:
+    '(Le cadre de démarrage de l’exécution donne une estimation du temps d’après la dernière exécution.)',
   nextCommit: 'Commitez {files}.',
   nextTest:
     '{command} : une mesure qui échoue en cas de régression. Résultats : {report} ; détail du code de sortie : {outcome}.',
@@ -868,10 +870,10 @@ const it: Messages = {
   ciQuestion: 'Aggiungere i job di CI per soglie e misure ({platform})?',
   stepCheck: 'Verifica',
   checkLesson:
-    'La verifica esegue pochi test una volta e mostra cosa verrà misurato e quanto dura un’esecuzione completa. Non valuta né scrive nulla.',
+    'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passate: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file di soglie non vengono toccati.',
   checkQuestion: 'Eseguire la verifica adesso?',
   checkManual: 'Eseguila tu: {command}',
-  checkExit: 'La verifica è terminata con il codice {code}.',
+  checkExit: 'La verifica con PW_PERF_MODE={mode} è terminata con il codice {code}.',
   boxTitle: 'Azione richiesta: per ora non si misura nulla',
   boxWhy:
     'Senza la fixture perf il pacchetto non misura alcuna richiesta. La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
@@ -888,7 +890,8 @@ const it: Messages = {
   nextThresholdsNoCi:
     '{command}: prima calcola le soglie sulle macchine di CI che misureranno (vedi {url}). Finché i file delle soglie non esistono, le misure usano le soglie predefinite, larghe. {estimate}',
   estimateUnknown: '(Il comando di verifica fornisce una stima.)',
-  estimateAbove: '(La verifica qui sopra mostra una stima.)',
+  estimateAbove:
+    '(Il riquadro iniziale dell’esecuzione mostra una stima del tempo basata sull’ultima esecuzione.)',
   nextCommit: 'Fai commit di {files}.',
   nextTest:
     '{command}: una misura che fallisce in caso di regressione. Risultati: {report}; dettagli del codice di uscita: {outcome}.',
@@ -1041,10 +1044,10 @@ const uk: Messages = {
   ciQuestion: 'Додати job-и CI для запусків порогів і вимірювань ({platform})?',
   stepCheck: 'Перевірка',
   checkLesson:
-    'Перевірка запускає кілька тестів один раз і показує, що буде виміряно і скільки триватиме повний запуск. Нічого не оцінює й не записує.',
+    'Перевірка запускає вашу команду тестів як справжні запуски, лише з 2 проходами: спершу PW_PERF_MODE=thresholds, потім PW_PERF_MODE=test. Її пороги потрапляють у тимчасову папку, яку потім видаляють; ваші файли порогів не змінюються.',
   checkQuestion: 'Запустити перевірку зараз?',
   checkManual: 'Запустіть її самі: {command}',
-  checkExit: 'Перевірка завершилася з кодом {code}.',
+  checkExit: 'Перевірка з PW_PERF_MODE={mode} завершилася з кодом {code}.',
   boxTitle: 'Потрібна дія: поки що нічого не вимірюється',
   boxWhy:
     'Без фікстури perf пакет не вимірює жодного запиту. Майстер не змінює ваші файли тестів; додайте вручну один із варіантів:',
@@ -1061,7 +1064,7 @@ const uk: Messages = {
   nextThresholdsNoCi:
     '{command}: спершу обчисліть пороги на машинах CI, які будуть вимірювати (див. {url}). Поки файлів порогів немає, вимірювання використовують широкі типові пороги. {estimate}',
   estimateUnknown: '(Оцінку часу дасть команда перевірки.)',
-  estimateAbove: '(Оцінка часу — у результаті перевірки вище.)',
+  estimateAbove: '(Стартова рамка запуску показує оцінку часу за останнім запуском.)',
   nextCommit: 'Закомітьте {files}.',
   nextTest:
     '{command}: вимірювальний запуск, що падає при регресії. Результати: {report}; подробиці коду виходу: {outcome}.',
@@ -1212,10 +1215,10 @@ const ru: Messages = {
   ciQuestion: 'Добавить job-ы CI для запусков порогов и измерений ({platform})?',
   stepCheck: 'Проверка',
   checkLesson:
-    'Проверка запускает несколько тестов один раз и показывает, что будет измерено и сколько займёт полный запуск. Ничего не оценивает и не записывает.',
+    'Проверка запускает вашу команду тестов как настоящие запуски, только с 2 проходами: сначала PW_PERF_MODE=thresholds, затем PW_PERF_MODE=test. Её пороги попадают во временную папку, которая затем удаляется; ваши файлы порогов не меняются.',
   checkQuestion: 'Запустить проверку сейчас?',
   checkManual: 'Запустите её сами: {command}',
-  checkExit: 'Проверка завершилась с кодом {code}.',
+  checkExit: 'Проверка с PW_PERF_MODE={mode} завершилась с кодом {code}.',
   boxTitle: 'Требуется действие: пока ничего не измеряется',
   boxWhy:
     'Без фикстуры perf пакет не измеряет ни одного запроса. Мастер не меняет ваши файлы тестов; добавьте вручную один из вариантов:',
@@ -1232,7 +1235,7 @@ const ru: Messages = {
   nextThresholdsNoCi:
     '{command}: сначала вычислите пороги на машинах CI, которые будут измерять (см. {url}). Пока файлов порогов нет, измерения используют широкие пороги по умолчанию. {estimate}',
   estimateUnknown: '(Оценку времени даст команда проверки.)',
-  estimateAbove: '(Оценка времени — в результате проверки выше.)',
+  estimateAbove: '(Стартовая рамка запуска показывает оценку времени по последнему запуску.)',
   nextCommit: 'Закоммитьте {files}.',
   nextTest:
     '{command}: измерительный запуск, который падает при регрессии. Результаты: {report}; подробности кода выхода: {outcome}.',

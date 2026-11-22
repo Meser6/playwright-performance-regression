@@ -1,7 +1,8 @@
 // The example projects in examples/ (13, chapter 8.3) run as integration tests: copies with the
 // built package linked, against the demo server (BASE_URL, so their webServer is not started),
 // in the environment mode: a thresholds run, then a test run against the derived files.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
@@ -85,6 +86,35 @@ describe.each([
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');
       expect(existsSync(join(dir, 'pw-perf-results/report.html'))).toBe(true);
+    },
+    RUN_TIMEOUT,
+  );
+
+  test.runIf(name === 'basic')(
+    '04-AC-38 PW_PERF_THRESHOLDS_DIR keeps the thresholds of the wizard check out of the project',
+    async () => {
+      // The variables of the wizard's check (04-REQ-58, v4 D4b); the project's files stay as they are.
+      const tmp = mkdtempSync(join(tmpdir(), 'pw-perf-check-'));
+      const before = readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'));
+      const contents = before.map((f) => readFileSync(join(dir, f), 'utf8'));
+      try {
+        // 5 passes, not the 2 of the check: this small suite needs them to derive anything.
+        const env = { PW_PERF_PASSES: '5', PW_PERF_THRESHOLDS_DIR: tmp };
+        const thresholds = await harness.run(dir, {
+          env: { ...env, PW_PERF_MODE: 'thresholds' },
+        });
+        expectStatus(thresholds, 0);
+        expect(readdirSync(tmp)).toContain('pw-perf-thresholds.json');
+        const run = await harness.run(dir, { env: { ...env, PW_PERF_MODE: 'test' } });
+        expectStatus(run, 0);
+        expect(run.report?.config.thresholds?.dir).toBe(tmp);
+        expect(warningCodes(run)).not.toContain('THRESHOLDS_FILE_MISSING');
+        const after = readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'));
+        expect(after).toEqual(before);
+        expect(after.map((f) => readFileSync(join(dir, f), 'utf8'))).toEqual(contents);
+      } finally {
+        rmSync(tmp, { recursive: true, force: true });
+      }
     },
     RUN_TIMEOUT,
   );

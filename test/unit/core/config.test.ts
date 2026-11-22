@@ -115,6 +115,14 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
     expect(resolved(input, {}).snapshot.run).toMatchObject({ env: 'staging' });
   });
 
+  test('04-AC-38 the thresholds dir of the wizard check replaces thresholds.dir', () => {
+    const input = { thresholds: { dir: 'perf' } };
+    expect(resolved(input, { thresholdsDir: '/tmp/pw-perf-check-1' }).snapshot.thresholds.dir).toBe(
+      '/tmp/pw-perf-check-1',
+    );
+    expect(resolved(input, {}).snapshot.thresholds.dir).toBe('perf');
+  });
+
   test('invalid overrides are reported with the option they replace', () => {
     const list = issues({}, { env: 'Prod', passes: 0, mode: 'thresholds' });
     expect(list.map((i) => [i.code, i.path])).toEqual([

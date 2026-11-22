@@ -1,8 +1,9 @@
 // Run commands of the init wizard (04-REQ-55, 04-REQ-58; D-35): the test command C (the answer of
 // step 6, by default the command of the detected package manager), the commands of every mode
-// shown by the wizard and written to the CI jobs, and the process of the wizard's check run.
+// shown by the wizard and written to the CI jobs, and the runs and process of the wizard's check.
 // Nothing is executed here. Pure.
 import type { CliIssue, Result } from '../../core/types/index.ts';
+import { writeModeState } from '../../mode/index.ts';
 import type { PackageManager } from './detect.ts';
 
 export interface RunCommands {
@@ -35,6 +36,33 @@ export function runCommands(command: string, platform: string): RunCommands {
     thresholds: mode('thresholds'),
     check: mode('check'),
   };
+}
+
+/** Passes of each run of the wizard's check (04-REQ-58, v4 D4b). */
+export const CHECK_PASSES = 2;
+
+/** One run of the wizard's check (04-REQ-58). */
+export interface CheckRun {
+  mode: 'thresholds' | 'test';
+  /** Variables for the child process. */
+  env: Record<string, string>;
+  /** The command as shown, with the public variables in front of C. */
+  shown: string;
+}
+
+/**
+ * The two runs of the wizard's check (04-REQ-58, v4 D4b): C with PW_PERF_MODE=thresholds, then
+ * with PW_PERF_MODE=test, both with PW_PERF_PASSES=2 and the internal PW_PERF_THRESHOLDS_DIR, so
+ * the thresholds of the check stay in a temporary directory. The internal variable is not shown.
+ */
+export function checkRuns(command: string, platform: string, thresholdsDir: string): CheckRun[] {
+  const prefix = platform === 'win32' ? 'npx cross-env ' : '';
+  const passes = String(CHECK_PASSES);
+  return (['thresholds', 'test'] as const).map((mode) => ({
+    mode,
+    env: writeModeState({ mode, passes: CHECK_PASSES, thresholdsDir }),
+    shown: `${prefix}PW_PERF_MODE=${mode} PW_PERF_PASSES=${passes} ${command}`,
+  }));
 }
 
 /** Why an answer of step 6 is not taken, or null (04-REQ-55): the wizard adds PW_PERF_MODE. */

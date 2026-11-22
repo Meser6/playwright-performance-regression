@@ -151,6 +151,7 @@ export function runSettings(
           ? {}
           : { passes: mode.passes }),
     ...(mode.env === undefined ? {} : { env: mode.env }),
+    ...(mode.thresholdsDir === undefined ? {} : { thresholdsDir: mode.thresholdsDir }),
   });
   if (!resolved.ok) throw new Error('the default package config is not valid');
   return {

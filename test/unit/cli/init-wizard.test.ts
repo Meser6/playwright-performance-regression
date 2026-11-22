@@ -398,29 +398,61 @@ describe('init wizard', () => {
     expect(existsSync(join(dir, 'pw-perf.config.ts'))).toBe(false);
   });
 
-  test('04-AC-38 step 8 runs the check through the Playwright CLI with PW_PERF_MODE=check', async () => {
+  test('04-AC-38 step 9 runs thresholds then test through the Playwright CLI with 2 passes', async () => {
     const dir = copyProject('init-esm-ts');
     const script = scriptedPrompt([]);
     const fake = fakeCliHost({
       cwd: dir,
-      env: { NO_COLOR: '1', npm_execpath: '/usr/lib/node_modules/npm/bin/npm-cli.js' },
+      env: {
+        NO_COLOR: '1',
+        npm_execpath: '/usr/lib/node_modules/npm/bin/npm-cli.js',
+        PW_PERF_PASSES: '9',
+      },
       prompt: script.prompt,
-      onSpawn: (f) => f.child.exit(1),
+      // The thresholds run fails; the test run still starts.
+      onSpawn: (f) => f.child.exit(f.spawned.length === 1 ? 1 : 0),
     });
-    // A failing check does not change the exit code of the wizard.
+    // A failing run does not change the exit code of the wizard.
     expect(await main([], fake.host)).toBe(0);
     expect(script.asked).toContain('  Run a check now? (Y/n) ');
-    expect(fake.spawned).toHaveLength(1);
-    const [spawned] = fake.spawned;
-    expect(spawned?.file).toBe('/usr/bin/node');
-    expect(spawned?.args).toEqual(['/project/node_modules/@playwright/test/cli.js', 'test']);
-    expect(spawned?.options).toMatchObject({ shell: false, stdio: 'inherit' });
-    expect(spawned?.options.env['PW_PERF_MODE']).toBe('check');
+    expect(fake.spawned).toHaveLength(2);
+    for (const spawned of fake.spawned) {
+      expect(spawned.file).toBe('/usr/bin/node');
+      expect(spawned.args).toEqual(['/project/node_modules/@playwright/test/cli.js', 'test']);
+      expect(spawned.options).toMatchObject({ shell: false, stdio: 'inherit' });
+      expect(spawned.options.env['PW_PERF_PASSES']).toBe('2');
+      expect(spawned.options.env['NO_COLOR']).toBe('1');
+    }
+    expect(fake.spawned.map((s) => s.options.env['PW_PERF_MODE'])).toEqual(['thresholds', 'test']);
+    // Both runs use the same temporary thresholds dir, outside the project, removed afterwards.
+    expect(fake.tempDirs).toHaveLength(1);
+    const [tmp] = fake.tempDirs;
+    expect(tmp).toBeDefined();
+    expect(tmp?.startsWith(dir)).toBe(false);
+    expect(fake.spawned.map((s) => s.options.env['PW_PERF_THRESHOLDS_DIR'])).toEqual([tmp, tmp]);
+    expect(fake.removedDirs).toEqual([tmp]);
+    expect(existsSync(tmp ?? '')).toBe(false);
     const out = fake.stdout.join('');
-    expect(out).toContain('The check ended with exit code 1.');
+    expect(out).toContain('$ PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npx playwright test');
+    expect(out).toContain('$ PW_PERF_MODE=test PW_PERF_PASSES=2 npx playwright test');
+    expect(out).not.toContain('PW_PERF_THRESHOLDS_DIR');
+    expect(out).toContain('The check with PW_PERF_MODE=thresholds ended with exit code 1.');
+    expect(out).toContain('The check with PW_PERF_MODE=test ended with exit code 0.');
     // The check ran: no check step in the next steps.
     expect(out).not.toContain('PW_PERF_MODE=check npx playwright test: see what');
-    expect(out).toContain('(The check above shows an estimate.)');
+    expect(out).toContain('(The start box of the run shows a time estimate from the last run.)');
+
+    // Ctrl+C in the thresholds run: no test run, the temporary dir is removed, code 130.
+    const stopped = fakeCliHost({
+      cwd: copyProject('init-esm-ts'),
+      env: { NO_COLOR: '1' },
+      prompt: scriptedPrompt([]).prompt,
+      onSpawn: (f) => f.child.exit(null, 'SIGINT'),
+    });
+    expect(await main([], stopped.host)).toBe(130);
+    expect(stopped.spawned).toHaveLength(1);
+    expect(stopped.removedDirs).toEqual(stopped.tempDirs);
+    expect(stopped.tempDirs).toHaveLength(1);
 
     // Without a terminal it never runs.
     const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
@@ -454,13 +486,20 @@ describe('init wizard', () => {
     expect(typed.asked).toContain(
       '  Which command do you usually run your tests with? (npx playwright test) ',
     );
-    expect(typed.fake.spawned).toHaveLength(1);
-    expect(typed.fake.spawned[0]?.file).toBe('npm run e2e -- --grep "@smoke"');
-    expect(typed.fake.spawned[0]?.args).toEqual([]);
-    expect(typed.fake.spawned[0]?.options).toMatchObject({ shell: '/bin/zsh', stdio: 'inherit' });
-    expect(typed.fake.spawned[0]?.options.env['PW_PERF_MODE']).toBe('check');
+    expect(typed.fake.spawned).toHaveLength(2);
+    for (const spawned of typed.fake.spawned) {
+      expect(spawned.file).toBe('npm run e2e -- --grep "@smoke"');
+      expect(spawned.args).toEqual([]);
+      expect(spawned.options).toMatchObject({ shell: '/bin/zsh', stdio: 'inherit' });
+    }
+    expect(typed.fake.spawned.map((s) => s.options.env['PW_PERF_MODE'])).toEqual([
+      'thresholds',
+      'test',
+    ]);
     const out = typed.fake.stdout.join('');
-    expect(out).toContain('$ PW_PERF_MODE=check npm run e2e -- --grep "@smoke"');
+    expect(out).toContain(
+      '$ PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npm run e2e -- --grep "@smoke"',
+    );
     expect(out).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
     expect(out).not.toContain('chains several commands');
     const ci = readFileSync(join(typed.fake.host.cwd, '.github/workflows/perf.yml'), 'utf8');

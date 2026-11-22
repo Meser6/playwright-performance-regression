@@ -98,6 +98,8 @@ export interface ConfigOverrides {
   passes?: number;
   /** Mode the passes override applies to. Default 'test'. */
   mode?: 'test' | 'thresholds';
+  /** From the internal PW_PERF_THRESHOLDS_DIR (the wizard's check, 04-REQ-58); replaces thresholds.dir. */
+  thresholdsDir?: string;
   /** Where the input came from; 'json' rejects keys.keyBuilder (03-REQ-10). Default 'code'. */
   source?: 'code' | 'json' | 'snapshot';
 }
