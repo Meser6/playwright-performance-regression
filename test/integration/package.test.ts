@@ -155,13 +155,15 @@ describe('published packages', () => {
       const dir = existsSync(join(consumers, 'module'))
         ? join(consumers, 'module')
         : consumer('module');
+      // No commands or options (04-REQ-01): an argument prints the error and the help.
       const result = spawnSync(
         process.execPath,
         [join(dir, 'node_modules', NAME, 'dist/cli.js'), '--version'],
         { cwd: dir, encoding: 'utf8' },
       );
-      expect(result.status, result.stderr).toBe(0);
-      expect(result.stdout.trim()).toBe(readPackage(ROOT)['version']);
+      expect(result.status, result.stderr).toBe(3);
+      expect(result.stderr).toContain('error CLI_UNKNOWN_COMMAND');
+      expect(result.stdout).toContain('Run your usual test command with PW_PERF_MODE set');
     },
     TIMEOUT,
   );

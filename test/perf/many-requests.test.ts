@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { SAMPLES_ATTACHMENT_NAME } from '../../src/core/types/index.ts';
-import { CLI, PLAYWRIGHT, recordResult, ROOT, runNode, startWorkspace } from './helpers.ts';
+import { PLAYWRIGHT, recordResult, ROOT, runNode, startWorkspace } from './helpers.ts';
 import type { Workspace } from './helpers.ts';
 
 const PROJECT = join(ROOT, 'test/perf/projects/many-requests');
@@ -44,7 +44,10 @@ describe('12-PERF-04 a test with 20,000 requests', () => {
 
     const plain = await runNode([PLAYWRIGHT, 'test', '--workers=1'], PROJECT, env('plain'));
     expect(plain.status, plain.output).toBe(0);
-    const perf = await runNode([CLI, 'thresholds'], PROJECT, env('perf'));
+    const perf = await runNode([PLAYWRIGHT, 'test'], PROJECT, {
+      ...env('perf'),
+      PW_PERF_MODE: 'thresholds',
+    });
     expect(perf.status, perf.output).toBe(0);
 
     const p = probe('plain');

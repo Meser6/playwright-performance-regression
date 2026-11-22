@@ -110,7 +110,7 @@ export interface ReporterHost {
   argv: readonly string[];
   /** Wall clock. */
   now(): Date;
-  /** Uniform random number in [0, 1), for a run id without the CLI. */
+  /** Uniform random number in [0, 1), for a run id without PW_PERF_RUN_ID. */
   random(): number;
   /** CI and host metadata of the run (02-REQ-28). */
   ci: RunReport['ci'];

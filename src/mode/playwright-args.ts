@@ -1,6 +1,6 @@
-// Reading the arguments passed to `playwright test` (04, chapters 4.1, 4.3 and 4.9). The CLI never
-// changes them except for the --reporter value (04-REQ-15); it only looks for the options that
-// matter to perf mode. Pure.
+// Reading the arguments passed to `playwright test` in the main Playwright process (04-REQ-35,
+// 04-REQ-61): the package never changes them, it only looks for the options that matter to perf
+// mode. Pure.
 
 /** Options of `playwright test` that take a value (`--name value` or `--name=value`). */
 const WITH_VALUE: ReadonlySet<string> = new Set([
@@ -141,34 +141,6 @@ export function testFilters(args: readonly string[]): string[] {
       .map((o) => args.slice(o.index, o.index + 1 + (o.inline ? 0 : o.values.length)).join(' ')),
     ...scanned.positionals,
   ];
-}
-
-/** Playwright options perf mode does not support (04-REQ-07): --ui (and its host/port), --debug, --shard. */
-const UNSUPPORTED: ReadonlySet<string> = new Set([
-  '--ui',
-  '--ui-host',
-  '--ui-port',
-  '--debug',
-  '--shard',
-]);
-
-export function unsupportedOptions(args: readonly string[]): string[] {
-  return scanPlaywrightArgs(args)
-    .options.filter((o) => UNSUPPORTED.has(o.name))
-    .map((o) => o.name);
-}
-
-/** `--list`: Playwright only lists the tests (01-REQ-40, 04-REQ-22). */
-export function isListOnly(args: readonly string[]): boolean {
-  return scanPlaywrightArgs(args).options.some((o) => o.name === '--list');
-}
-
-/** Value of the last -c/--config, or null (04-REQ-13). */
-export function playwrightConfigArg(args: readonly string[]): string | null {
-  const configs = scanPlaywrightArgs(args).options.filter(
-    (o) => o.name === '--config' && o.values.length > 0,
-  );
-  return configs.length === 0 ? null : (configs[configs.length - 1]?.values[0] ?? null);
 }
 
 /**

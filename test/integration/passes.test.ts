@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { parseRunReport } from '../../src/core/schema/index.ts';
 import type { RunReport } from '../../src/core/types/index.ts';
-import { ROOT, RUN_TIMEOUT, startHarness } from './harness.ts';
+import { RUN_TIMEOUT, startHarness } from './harness.ts';
 import type { Harness } from './harness.ts';
 
 let harness: Harness;
@@ -145,24 +145,6 @@ describe('passes of the test script (04-REQ-63, 04-REQ-64)', () => {
       expect(prepRuns(), result.output).toBe(2);
       expect(result.report?.passes).toEqual({ planned: 2, completed: 2, failed: [] });
       expect(result.report?.tests.expected).toBe(2);
-    },
-    RUN_TIMEOUT,
-  );
-
-  test(
-    '04-AC-42 pw-perf test --passes 2 runs Playwright again and ends with the code of the outcome',
-    async () => {
-      const result = await run(
-        process.execPath,
-        [join(ROOT, 'dist/cli.js'), 'test', '--passes', '2'],
-        {},
-      );
-      expect(result.status, result.output).toBe(0);
-      // The CLI runs Playwright itself, so the npm script and its setup step are not involved.
-      expect(prepRuns()).toBe(0);
-      expect(result.report?.passes).toEqual({ planned: 2, completed: 2, failed: [] });
-      expect(result.report?.tests.expected).toBe(4);
-      expect(result.output).toContain('exit code 0');
     },
     RUN_TIMEOUT,
   );

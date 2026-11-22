@@ -27,7 +27,6 @@ import type { DemoServer } from '../demo-server/server.ts';
 export const ROOT = join(import.meta.dirname, '../..');
 const PROJECTS = join(import.meta.dirname, 'projects');
 const RUNNER = join(ROOT, 'node_modules/@playwright/test/cli.js');
-const CLI = join(ROOT, 'dist/cli.js');
 const LINKED = ['@playwright/test', 'playwright-bdd'];
 export const RUN_TIMEOUT = 180_000;
 
@@ -71,8 +70,11 @@ export interface Harness {
 export interface RunOptions {
   env?: Record<string, string>;
   args?: string[];
-  /** Run `pw-perf <args>` (the built CLI) instead of `playwright test <args>`. */
-  cli?: boolean;
+  /**
+   * The environment mode as a user runs it: without the internal PW_PERF_RUN_ID and
+   * PW_PERF_OUTCOME_FILE the harness otherwise sets in perf mode (04-REQ-62).
+   */
+  environmentMode?: boolean;
 }
 
 export async function startHarness(): Promise<Harness> {
@@ -173,12 +175,11 @@ function runProject(
   const clean = Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith('PW_PERF_')),
   );
-  const perf = options.env?.PW_PERF_MODE !== undefined;
+  const perf = options.env?.PW_PERF_MODE !== undefined && options.environmentMode !== true;
   const outcomeFile = join(dir, 'outcome.json');
   const started = performance.now();
   return new Promise((resolve, reject) => {
-    const command = options.cli === true ? [CLI] : [RUNNER, 'test'];
-    const child = spawn(process.execPath, [...command, ...(options.args ?? [])], {
+    const child = spawn(process.execPath, [RUNNER, 'test', ...(options.args ?? [])], {
       cwd: dir,
       env: {
         ...clean,

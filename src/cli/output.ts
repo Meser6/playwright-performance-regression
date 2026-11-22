@@ -1,10 +1,9 @@
-// Messages of the CLI (04-REQ-30, 04-REQ-31): on stderr, in English, each line prefixed with the
+// Messages of the binary and the wizard (04-REQ-31): on stderr, in English, each line prefixed with the
 // package name; errors and warnings with their code and a hint. Colors by the rules of
 // 04-REQ-44 (colorEnabled). Pure.
 import { colorEnabled, paint as paintText } from '../console/color.ts';
-import { TESTS_TEXT, performanceText } from '../console/outcome-line.ts';
 import { PACKAGE_NAME } from '../core/types/index.ts';
-import type { Issue, Outcome } from '../core/types/index.ts';
+import type { Issue } from '../core/types/index.ts';
 
 export const PREFIX = `${PACKAGE_NAME}: `;
 
@@ -45,18 +44,4 @@ export function formatIssues(
   opts: OutputStyle,
 ): string {
   return issues.map((issue) => formatIssue(issue, level, opts)).join('');
-}
-
-/**
- * One line after a run (04-REQ-30). The reporter prints the report and thresholds diff paths at
- * the end of its output (09-REQ-30), so they are not repeated here.
- */
-export function resultLines(outcome: Outcome | null, exitCode: number, opts: OutputStyle): string {
-  const parts: string[] = [];
-  // A check has no performance result (04-REQ-53).
-  if (outcome?.mode === 'check')
-    parts.push(exitCode === 0 ? 'check finished' : 'check not completed');
-  else if (outcome !== null) parts.push(TESTS_TEXT[outcome.tests.status], performanceText(outcome));
-  parts.push(paint(`exit code ${exitCode}`, exitCode === 0 ? 'green' : 'red', opts));
-  return infoLine(parts.join(' · '));
 }

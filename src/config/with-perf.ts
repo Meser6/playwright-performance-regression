@@ -19,7 +19,7 @@ import { version } from '../../package.json';
  * conditions of perf mode; invalid config or mode variables throw ConfigError before any test
  * runs. The returned config depends only on the arguments and the environment, so it is the same
  * in the main process and in the workers (01-REQ-09). Only in the main process of the
- * environment mode (no CLI) it sets PW_PERF_RUN_ID for the workers and warns about arguments
+ * environment mode it sets PW_PERF_RUN_ID for the workers and warns about arguments
  * (04-REQ-60, 04-REQ-61).
  */
 export function withPerf<T extends PlaywrightTestConfig>(
@@ -79,7 +79,7 @@ const SETUP_DONE = Symbol.for('playwright-performance-regression.mainProcessSetu
 /**
  * Main process of the environment mode (04-REQ-60, 04-REQ-61): a run id for the workers and the
  * argument warnings on stderr. Returns the warnings that also go to the report. Workers
- * (TEST_WORKER_INDEX set) and runs through the CLI do nothing.
+ * (TEST_WORKER_INDEX set) and runs with the internal PW_PERF_OUTCOME_FILE do nothing.
  */
 function mainProcessSetup(environmentMode: boolean): Issue[] {
   if (!environmentMode || process.env.TEST_WORKER_INDEX !== undefined) return [];

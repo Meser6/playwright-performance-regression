@@ -1,8 +1,9 @@
-// Help text of the CLI (04, chapters 3 and 6; 04-REQ-21). Printed on stdout. It shows only the
-// environment form, the user's own test command with PW_PERF_* variables, and the setup command
-// (04-REQ-70): never runner subcommands or options.
+// Help text (04, chapter 6; 04-REQ-21), printed on stdout after CLI_UNKNOWN_COMMAND (04-REQ-01).
+// It shows only the environment form, the user's own test command with PW_PERF_* variables, and
+// the setup command with its variables (04-REQ-70, D-43): the package has no commands or options.
 import { DEFAULT_CONFIG } from '../core/config/index.ts';
 import { INIT_COMMAND } from '../core/types/index.ts';
+import { LANGUAGES } from './init/messages.ts';
 
 const HELP = [
   'Run your usual test command with PW_PERF_MODE set, e.g.',
@@ -20,7 +21,10 @@ const HELP = [
   '  PW_PERF_MAX_TESTS=<n>  (check) At most n measured tests, the first of each file (default 10)',
   '  PW_PERF_YES=1          Skip the "Continue?" question of the start banner',
   '',
-  `Setup: ${INIT_COMMAND} (guided; changes nothing without asking).`,
+  `Setup: ${INIT_COMMAND} (guided; changes nothing without asking). Wizard variables:`,
+  `  PW_PERF_LANG=<code>    Wizard language (${LANGUAGES.join(', ')}) without the question`,
+  '  PW_PERF_DRY_RUN=1      Show the planned changes only, write nothing',
+  '  PW_PERF_NO_TUTORIAL=1  Print the manual setup steps only, change nothing',
   '',
   'By default only Chromium projects are measured; other projects are left out of the run',
   '(option "run.projects"). --ui and --debug are not measured reliably.',
@@ -34,7 +38,7 @@ const HELP = [
   'config error, or an untrustworthy result (too many failed tests, incomplete run).',
 ];
 
-/** The help, the same for `--help` of every command (04-REQ-70: no runner options to show). */
+/** The help (04-REQ-70: environment form only). */
 export function helpText(): string {
   return `${HELP.join('\n')}\n`;
 }

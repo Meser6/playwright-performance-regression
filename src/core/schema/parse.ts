@@ -552,7 +552,7 @@ export function parseThresholdsFile(
   return { ok: true, value: { file, migratedFrom: parsed.value.migratedFrom } };
 }
 
-/** CLI side of 02-REQ-26. */
+/** Reader side of 02-REQ-26 (tests and CI tooling). */
 export function parseOutcome(text: string, source: string): Result<OutcomeFile, SchemaIssue> {
   const parsed = parseVersioned(text, source, OUTCOME_FORMAT);
   return parsed.ok ? { ok: true, value: parsed.value.document as unknown as OutcomeFile } : parsed;

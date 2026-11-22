@@ -35,7 +35,7 @@ export type CompleteEntry = ThresholdsEntry & {
 export interface DeriveOptions {
   /** Current environment label, after the --env flag. */
   env: string | null;
-  /** --prune: remove unlocked entries of keys not seen in the run (10-REQ-10). */
+  /** PW_PERF_PRUNE=1: remove unlocked entries of keys not seen in the run (10-REQ-10). */
   prune: boolean;
   /** Version of this package, written to generated.tool. */
   toolVersion: string;

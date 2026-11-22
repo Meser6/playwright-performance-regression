@@ -67,7 +67,6 @@ export type {
   ThresholdsDiff,
 } from './thresholds.ts';
 export {
-  CLI_COMMAND,
   CONFIG_FILE_BASENAME,
   CONFIG_FILE_EXTENSIONS,
   CONTEXT_CLOSED_FAILURE_TEXT,

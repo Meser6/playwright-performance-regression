@@ -1,5 +1,7 @@
-// End-to-end tests of the built CLI (`node dist/cli.js`, 04 chapter 10): real Playwright with
-// Chromium on test/integration/projects/reporter against the demo server. Needs `pnpm build` and
+// End-to-end tests (04 chapter 10): measurement runs in the environment mode (`PW_PERF_MODE=…
+// playwright test`, D-35) on test/integration/projects/reporter against the demo server, with
+// their exit codes, outcome.json and signals; and the built binary (`node dist/cli.js`), which
+// has no commands or options and only starts the wizard (04-REQ-01, D-43). Needs `pnpm build` and
 // the Chromium of the installed Playwright.
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
@@ -17,40 +19,42 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { PACKAGE_NAME } from '../../src/core/types/index.ts';
 import { startDemoServer } from '../demo-server/server.ts';
 import type { DemoServer } from '../demo-server/server.ts';
+import { copyProject, removeCopies, snapshot } from '../unit/cli/init-helpers.ts';
 
 const root = join(import.meta.dirname, '../..');
 const cli = join(root, 'dist/cli.js');
+const playwright = join(root, 'node_modules/@playwright/test/cli.js');
 const project = join(import.meta.dirname, '../integration/projects/reporter');
 const RUN_TIMEOUT = 120_000;
 const POSIX = process.platform !== 'win32';
 
 let scratch = '';
-/** Outcome files go here (TMPDIR), so the tests can check that none is left (04-REQ-11). */
-let tmp = '';
 let server: DemoServer;
 let runs = 0;
 
 beforeAll(async () => {
   if (!existsSync(cli)) {
-    throw new Error('The e2e tests run the built CLI: run "pnpm build" first.');
+    throw new Error('The e2e tests use the built package: run "pnpm build" first.');
   }
-  // A space in every path the CLI handles (04-AC-06).
+  // A space in every path of the run.
   scratch = realpathSync(mkdtempSync(join(tmpdir(), 'pw-perf e2e-')));
-  tmp = join(scratch, 'tmp dir');
-  mkdirSync(tmp);
   server = await startDemoServer();
 });
 
 afterAll(async () => {
   await server?.close();
-  if (scratch !== '') rmSync(scratch, { recursive: true, force: true });
+  // A run ended by SIGTERM leaves its workers to finish writing for a moment.
+  if (scratch !== '')
+    rmSync(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  removeCopies();
 });
 
-interface CliRun {
+interface Run {
   status: number | null;
+  /** The signal that ended the process, if any. */
+  signal: NodeJS.Signals | null;
   stdout: string;
   stderr: string;
   /** stdout and stderr together. */
@@ -58,30 +62,26 @@ interface CliRun {
   out: string;
 }
 
-interface CliOptions {
+interface RunOptions {
   cwd?: string;
   env?: Record<string, string>;
   /** Called with the child process and its output so far on every chunk of output. */
   onOutput?: (child: ChildProcess, output: string) => void;
 }
 
-/** Runs `node dist/cli.js <args>`; INTEGRATION_OUT is a fresh directory of this run. */
-function runCli(args: string[], options: CliOptions = {}): Promise<CliRun> {
+function spawnRun(command: string[], options: RunOptions): Promise<Run> {
   const out = join(scratch, `run ${++runs}`);
   mkdirSync(out);
   const clean = Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith('PW_PERF_')),
   );
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [cli, ...args], {
+    const child = spawn(process.execPath, command, {
       cwd: options.cwd ?? project,
       env: {
         ...clean,
         CI: '',
         NO_COLOR: '1',
-        TMPDIR: tmp,
-        TEMP: tmp,
-        TMP: tmp,
         INTEGRATION_OUT: out,
         DEMO_URL: server.url,
         ...options.env,
@@ -99,22 +99,39 @@ function runCli(args: string[], options: CliOptions = {}): Promise<CliRun> {
       seen();
     });
     child.on('error', reject);
-    child.on('close', (status) => {
-      resolve({ status, stdout, stderr, output: stdout + stderr, out });
+    child.on('close', (status, signal) => {
+      resolve({ status, signal, stdout, stderr, output: stdout + stderr, out });
     });
   });
 }
 
-const outcomeFilesLeft = (): string[] =>
-  readdirSync(tmp).filter((f) => f.endsWith('.outcome.json'));
-const reportPath = (run: CliRun): string => join(run.out, 'pw-perf-results', 'report.json');
+/** `PW_PERF_MODE=<mode> playwright test <args>`; INTEGRATION_OUT is a fresh directory. */
+function runMode(
+  mode: 'test' | 'thresholds',
+  args: string[] = [],
+  options: RunOptions = {},
+): Promise<Run> {
+  return spawnRun([playwright, 'test', ...args], {
+    ...options,
+    env: { PW_PERF_MODE: mode, ...options.env },
+  });
+}
 
-/** A thresholds run whose report and thresholds files other tests reuse. */
-let source: Promise<{ run: CliRun; thresholds: string }> | undefined;
-function sourceRun(): Promise<{ run: CliRun; thresholds: string }> {
+const reportPath = (run: Run): string => join(run.out, 'pw-perf-results', 'report.json');
+
+/** exitCode of pw-perf-results/outcome.json (04-REQ-62), or null without the file. */
+function outcomeCode(run: Run): number | null {
+  const file = join(run.out, 'pw-perf-results', 'outcome.json');
+  if (!existsSync(file)) return null;
+  return (JSON.parse(readFileSync(file, 'utf8')) as { exitCode: number }).exitCode;
+}
+
+/** A thresholds run whose thresholds files other tests reuse. */
+let source: Promise<{ run: Run; thresholds: string }> | undefined;
+function sourceRun(): Promise<{ run: Run; thresholds: string }> {
   source ??= (async () => {
     const thresholds = join(scratch, 'source thresholds');
-    const run = await runCli(['thresholds'], { env: { THRESHOLDS_DIR: thresholds } });
+    const run = await runMode('thresholds', [], { env: { THRESHOLDS_DIR: thresholds } });
     return { run, thresholds };
   })();
   return source;
@@ -123,81 +140,37 @@ function sourceRun(): Promise<{ run: CliRun; thresholds: string }> {
 /** Output after the start banner of the reporter (04-REQ-65). */
 const afterBanner = (output: string): string => output.split('╯').slice(1).join('');
 
-describe('pw-perf test and thresholds', () => {
+describe('environment mode runs', () => {
   test(
-    '04-AC-03 04-AC-06 a passing test run from another directory with -c: exit code 0, no outcome file left',
+    '04-AC-03 a passing measurement run from another directory with -c: exit code 0 and exitCode 0',
     async () => {
       const cwd = join(scratch, 'monorepo root');
       mkdirSync(cwd);
-      const run = await runCli(
-        ['test', '-c', join(project, 'playwright.config.ts'), '--passes', '2'],
-        {
-          cwd,
-        },
-      );
+      const run = await runMode('test', ['-c', join(project, 'playwright.config.ts')], {
+        cwd,
+        env: { PW_PERF_PASSES: '2' },
+      });
       expect(run.status, run.output).toBe(0);
-      // The start banner of the reporter replaces the mode line of the CLI (04-REQ-20, 04-REQ-65).
-      expect(run.stderr).not.toContain('perf mode "test"');
+      expect(outcomeCode(run)).toBe(0);
+      // The start banner of the reporter shows the runs and the subset tip (04-REQ-65).
       expect(run.stdout).toContain('4 tests × 2 passes = 8 test runs');
       expect(run.stdout).toContain('Tip       measure a subset');
-      expect(run.stderr).toContain(
-        `${PACKAGE_NAME}: tests passed · performance passed · exit code 0`,
-      );
+      // One absolute Report line at the end of the summary (09-REQ-30).
       const html = join(dirname(reportPath(run)), 'report.html');
-      // One absolute Report line at the end of the summary; the CLI does not repeat it (09-REQ-30).
-      expect(run.stderr).not.toContain(`${PACKAGE_NAME}: report:`);
       const shown = /^Report: (.+)$/mu.exec(run.stdout)?.[1];
       expect(shown, run.stdout).toBeDefined();
       expect(realpathSync(shown ?? '')).toBe(realpathSync(html));
-      expect(existsSync(reportPath(run))).toBe(true);
       expect(readFileSync(html, 'utf8').startsWith('<!doctype html>')).toBe(true);
-      expect(outcomeFilesLeft()).toEqual([]);
     },
     RUN_TIMEOUT,
   );
 
   test(
-    '04-AC-07 thresholds --from gives the same thresholds files as the thresholds run',
+    '04-AC-03 a blocking violation gives exit code 1 of Playwright and exitCode 2',
     async () => {
-      const { run, thresholds } = await sourceRun();
-      expect(run.status, run.output).toBe(0);
-      expect(run.stderr).toContain(
-        `${PACKAGE_NAME}: tests passed · thresholds derived · exit code 0`,
-      );
-      const files = readdirSync(thresholds).sort();
-      expect(files).toEqual(['pw-perf-thresholds.json']);
-
-      // From another directory: the config file is found in the configDir of the report.
-      const again = join(scratch, 'from thresholds');
-      const cwd = join(scratch, 'elsewhere');
-      mkdirSync(cwd);
-      const from = await runCli(['thresholds', '--from', reportPath(run)], {
-        cwd,
-        env: { THRESHOLDS_DIR: again },
-      });
-      expect(from.status, from.output).toBe(0);
-      expect(from.stderr).toContain(
-        `${PACKAGE_NAME}: config: ${join(project, 'pw-perf.config.ts')}`,
-      );
-      expect(from.stderr).toContain(`${PACKAGE_NAME}: base directory: ${project}`);
-      // 01-REQ-41: Node's own warnings while loading the .ts config are no errors.
-      expect(from.stderr).not.toMatch(/^\(node:\d+\)/mu);
-      expect(from.stderr).not.toContain('CONFIG_SNAPSHOT_DIFFERS');
-      expect(readdirSync(again).sort()).toEqual(files);
-      for (const file of files) {
-        expect(
-          readFileSync(join(again, file)).equals(readFileSync(join(thresholds, file))),
-          file,
-        ).toBe(true);
-      }
-    },
-    RUN_TIMEOUT,
-  );
-
-  test(
-    '04-AC-03 a blocking violation gives exit code 2',
-    async () => {
-      const { thresholds } = await sourceRun();
+      const { run: thresholdsRun, thresholds } = await sourceRun();
+      expect(thresholdsRun.status, thresholdsRun.output).toBe(0);
+      expect(readdirSync(thresholds).sort()).toEqual(['pw-perf-thresholds.json']);
       const tight = join(scratch, 'tight thresholds');
       cpSync(thresholds, tight, { recursive: true });
       const file = join(tight, 'pw-perf-thresholds.json');
@@ -211,93 +184,16 @@ describe('pw-perf test and thresholds', () => {
         p99: 3,
       };
       writeFileSync(file, JSON.stringify(content));
-      const run = await runCli(['test'], { env: { THRESHOLDS_DIR: tight } });
-      expect(run.status, run.output).toBe(2);
-      expect(run.stderr).toContain(
-        `${PACKAGE_NAME}: tests passed · performance failed · exit code 2`,
-      );
-      expect(outcomeFilesLeft()).toEqual([]);
+      const run = await runMode('test', [], { env: { THRESHOLDS_DIR: tight } });
+      expect(run.status, run.output).toBe(1);
+      expect(outcomeCode(run)).toBe(2);
+      expect(run.stdout).toMatch(/Outcome: performance failed · exit code 2 in .+outcome\.json/u);
     },
     RUN_TIMEOUT,
   );
 
   test(
-    '04-AC-04 04-AC-22 with --reporter the package reporter runs on the last flag and writes the outcome',
-    async () => {
-      const run = await runCli([
-        'test',
-        '--reporter=line',
-        '--reporter',
-        'list',
-        '--grep',
-        'checkout',
-      ]);
-      expect(run.status, run.output).toBe(0);
-      expect(existsSync(reportPath(run))).toBe(true);
-      // The list reporter marks a passed test with ✓, or with "ok" where the console has no
-      // Unicode symbols (Windows without a terminal).
-      expect(run.stdout).toMatch(/^\s+(✓|ok)\s+1 \[chromium\]/mu);
-      expect(run.stderr).toContain('exit code 0');
-      // A grep is a test filter: no tip.
-      expect(run.stderr).not.toContain('tip:');
-    },
-    RUN_TIMEOUT,
-  );
-
-  test(
-    '01-AC-07 test --list ends with the Playwright code, without report and outcome file',
-    async () => {
-      const run = await runCli(['test', '--list']);
-      expect(run.status, run.output).toBe(0);
-      // Every test once per pass (repeatEach 1, D-39).
-      expect(run.stdout).toContain('Total: 4 tests in 1 file');
-      expect(existsSync(reportPath(run))).toBe(false);
-      expect(run.stderr).not.toContain('exit code');
-      expect(outcomeFilesLeft()).toEqual([]);
-    },
-    RUN_TIMEOUT,
-  );
-
-  test(
-    '04-AC-11 04-AC-03 without withPerf() a run with failed tests ends with 3 and the init hint',
-    async () => {
-      const run = await runCli(['test', '-c', 'playwright.plain.config.ts'], {
-        env: { FAIL_REPEATS: '1' },
-      });
-      expect(run.status, run.output).toBe(3);
-      expect(run.stderr).toContain(`${PACKAGE_NAME}: error CLI_OUTCOME_MISSING`);
-      expect(run.stderr).toContain('Playwright exited with code 1');
-      expect(run.stderr).toContain('npm init playwright-performance-regression');
-    },
-    RUN_TIMEOUT,
-  );
-
-  test('04-AC-14 invalid options and --prune with a filter end with 3 before Playwright starts', async () => {
-    const prune = await runCli(['thresholds', '--prune', '--grep', '@cart']);
-    expect(prune.status).toBe(3);
-    expect(prune.stderr).toContain(`${PACKAGE_NAME}: error CLI_PRUNE_WITH_FILTER`);
-    expect(prune.stdout).toBe('');
-    expect(prune.stderr).not.toContain('perf mode');
-
-    const invalid = await runCli(['test', '--passes', 'many']);
-    expect(invalid.status).toBe(3);
-    expect(invalid.stderr).toContain('error CLI_INVALID_OPTION: --passes: expected an integer');
-    const ui = await runCli(['test', '--ui']);
-    expect(ui.status).toBe(3);
-    expect(ui.stderr).toContain('error CLI_UNSUPPORTED_PLAYWRIGHT_OPTION');
-  });
-
-  test('04-REQ-14 without @playwright/test in the project: CLI_PLAYWRIGHT_NOT_FOUND', async () => {
-    const cwd = join(scratch, 'no playwright');
-    mkdirSync(cwd);
-    const run = await runCli(['test'], { cwd });
-    expect(run.status).toBe(3);
-    expect(run.stderr).toContain('error CLI_PLAYWRIGHT_NOT_FOUND');
-    expect(run.stderr).toContain('npm i -D @playwright/test');
-  });
-
-  test(
-    '04-AC-05 04-AC-15 SIGINT ends Playwright and the CLI with 130; thresholds files and the outcome file are not left changed',
+    '04-AC-15 04-AC-03 SIGINT ends a thresholds run with 1 and exitCode 3 and leaves the thresholds files unchanged',
     // Signals between processes are POSIX only; Windows is covered by the OS matrix (13-REQ-09).
     { skip: !POSIX, timeout: RUN_TIMEOUT },
     async () => {
@@ -306,8 +202,8 @@ describe('pw-perf test and thresholds', () => {
       cpSync(thresholds, kept, { recursive: true });
       const before = readdirSync(kept).map((f) => readFileSync(join(kept, f)));
       let sent = false;
-      const run = await runCli(['thresholds', '--passes', '10'], {
-        env: { THRESHOLDS_DIR: kept },
+      const run = await runMode('thresholds', [], {
+        env: { THRESHOLDS_DIR: kept, PW_PERF_PASSES: '10' },
         onOutput: (child, output) => {
           // After the first finished test (dot reporter, 04-REQ-32); the start banner has a "·"
           // too, and Playwright ignores a SIGINT while it starts its workers.
@@ -318,19 +214,22 @@ describe('pw-perf test and thresholds', () => {
         },
       });
       expect(sent).toBe(true);
-      expect(run.status, run.output).toBe(130);
+      // Interrupted: RUN_INCOMPLETE, so the reporter returns failed and Playwright exits with 1.
+      expect(run.status, run.output).toBe(1);
+      expect(outcomeCode(run)).toBe(3);
+      expect(run.stdout).toContain('RUN_INCOMPLETE');
       expect(readdirSync(kept).map((f) => readFileSync(join(kept, f)))).toEqual(before);
-      expect(outcomeFilesLeft()).toEqual([]);
     },
   );
 
   test(
-    '04-AC-03 SIGTERM ends the run with 143',
+    '04-AC-03 SIGTERM ends the run by the signal (exit code 143 in a shell)',
     // Signals between processes are POSIX only; Windows is covered by the OS matrix (13-REQ-09).
     { skip: !POSIX, timeout: RUN_TIMEOUT },
     async () => {
       let sent = false;
-      const run = await runCli(['test', '--passes', '10'], {
+      const run = await runMode('test', [], {
+        env: { PW_PERF_PASSES: '10' },
         onOutput: (child, output) => {
           if (!sent && afterBanner(output).includes('·')) {
             sent = true;
@@ -338,112 +237,35 @@ describe('pw-perf test and thresholds', () => {
           }
         },
       });
-      expect(run.status, run.output).toBe(143);
-      expect(outcomeFilesLeft()).toEqual([]);
+      expect(sent).toBe(true);
+      expect({ status: run.status, signal: run.signal }, run.output).toEqual({
+        status: null,
+        signal: 'SIGTERM',
+      });
     },
   );
 });
 
-describe('pw-perf without tests', () => {
-  /** A directory without node_modules with a copy of the source report. */
-  async function workspace(name: string): Promise<{ cwd: string; report: string }> {
-    const { run } = await sourceRun();
-    const cwd = join(scratch, name);
-    mkdirSync(cwd);
-    const report = join(cwd, 'report.json');
-    cpSync(reportPath(run), report);
-    return { cwd, report };
-  }
-
-  test(
-    '01-AC-08 a .ts config with an extensionless import, a tsconfig alias or an enum gives CONFIG_FILE_LOAD_FAILED with its hint',
-    async () => {
-      const { cwd } = await workspace('ts configs');
-      writeFileSync(join(cwd, 'helpers.ts'), 'export const tolerance: number = 2;\n');
-      const files: Record<string, [string, string]> = {
-        'noext.ts': [
-          "import { tolerance } from './helpers';\nexport default { gate: { tolerance } };\n",
-          '"./helpers.ts"',
-        ],
-        'alias.ts': [
-          "import { tolerance } from '@cfg/helpers';\nexport default { gate: { tolerance } };\n",
-          'use a relative import',
-        ],
-        'enum.ts': [
-          "enum Mode { On = 'on' }\nexport default { gate: { tolerance: Mode.On === 'on' ? 2 : 0 } };\n",
-          'replace enums',
-        ],
-      };
-      for (const [name, [code, hint]] of Object.entries(files)) {
-        writeFileSync(join(cwd, name), code);
-        const run = await runCli(['thresholds', '--from', 'report.json', '--config', name], {
-          cwd,
-        });
-        expect(run.status, run.output).toBe(3);
-        expect(run.stderr, name).toContain(
-          `error CONFIG_FILE_LOAD_FAILED: The package config ${join(cwd, name)} cannot be loaded`,
-        );
-        expect(run.stderr, name).toContain(hint);
-      }
-
-      // 04-AC-08 (thresholds --from part): no @playwright/test in this directory.
-      writeFileSync(
-        join(cwd, 'good.ts'),
-        "import { tolerance } from './helpers.ts';\nexport default { gate: { tolerance }, thresholds: { dir: 'thr' } };\n",
-      );
-      const good = await runCli(['thresholds', '--from', 'report.json', '--config', 'good.ts'], {
-        cwd,
-      });
-      expect(good.status, good.output).toBe(0);
-      expect(good.stderr).not.toMatch(/^\(node:\d+\)/mu);
-      expect(good.stderr).not.toContain('ExperimentalWarning:');
-      expect(existsSync(join(cwd, 'thr', 'pw-perf-thresholds.json'))).toBe(true);
-    },
-    RUN_TIMEOUT,
-  );
-
-  test(
-    '04-AC-08 11-AC-10 report without @playwright/test gives the HTML of the run; a missing report for thresholds --from',
-    async () => {
-      const { cwd } = await workspace('report command');
-      const missing = await runCli(['thresholds', '--from', 'nope.json'], { cwd });
-      expect(missing.status).toBe(3);
-      expect(missing.stderr).toContain('error CLI_REPORT_NOT_FOUND');
-      const { run } = await sourceRun();
-      const report = await runCli(['report', '--input', 'report.json'], { cwd });
-      expect(report.status, report.output).toBe(0);
-      const fromRun = readFileSync(join(dirname(reportPath(run)), 'report.html'), 'utf8');
-      expect(readFileSync(join(cwd, 'report.html'), 'utf8') === fromRun).toBe(true);
-    },
-    RUN_TIMEOUT,
-  );
-
-  test('--help and --version', async () => {
-    const help = await runCli(['--help']);
-    expect(help.status).toBe(0);
-    expect(help.stdout).toContain('Run your usual test command with PW_PERF_MODE');
-    const version = await runCli(['--version']);
-    expect(version.status).toBe(0);
-    expect(version.stdout.trim()).toBe(
-      (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string }).version,
-    );
+describe('the pw-perf binary', () => {
+  test('04-AC-01 arguments end with 3, CLI_UNKNOWN_COMMAND and the help', async () => {
+    const run = await spawnRun([cli, 'test', '--passes', '2'], {});
+    expect(run.status).toBe(3);
+    expect(run.stderr).toContain('error CLI_UNKNOWN_COMMAND');
+    expect(run.stderr).toContain('PW_PERF_MODE=test <your test command>');
+    expect(run.stdout).toContain('Run your usual test command with PW_PERF_MODE set');
+    expect(run.stdout).toContain('PW_PERF_NO_TUTORIAL=1');
   });
 
-  test('04-AC-02 no own option of the run commands is an option of playwright test', async () => {
-    const help = await new Promise<string>((resolve, reject) => {
-      const child = spawn(process.execPath, [
-        join(root, 'node_modules/@playwright/test/cli.js'),
-        'test',
-        '--help',
-      ]);
-      let text = '';
-      child.stdout.on('data', (chunk: Buffer) => (text += chunk.toString()));
-      child.on('error', reject);
-      child.on('close', () => resolve(text));
-    });
-    expect(help).toContain('--repeat-each');
-    for (const option of ['--env', '--passes', '--prune', '--from']) {
-      expect(help, option).not.toMatch(new RegExp(`${option}[ ,=\\n]`, 'u'));
-    }
+  test('04-REQ-01 04-AC-19 without arguments and without a terminal: the wizard shows the plan and writes nothing', async () => {
+    const dir = copyProject('init-esm-ts');
+    const before = snapshot(dir);
+    const run = await spawnRun([cli], { cwd: dir });
+    expect(run.status, run.output).toBe(0);
+    expect(run.stderr).toContain(
+      'no terminal: the default answers are used and nothing is written',
+    );
+    expect(run.stdout).toContain('[11/11] Summary');
+    expect(run.stdout).toContain('+++ b/pw-perf.config.ts');
+    expect(snapshot(dir)).toEqual(before);
   });
 });

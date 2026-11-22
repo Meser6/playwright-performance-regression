@@ -205,7 +205,7 @@ that Playwright's HTML report and traces contain the full URLs.
 ## Documentation
 
 - [Configuration](docs/configuration.md): every option with its default
-- [CLI](docs/cli.md): commands, options and exit codes
+- [Running](docs/cli.md): variables, the guided setup and exit codes
 - [Adoption](docs/adoption.md): existing projects, choosing tests, sample counts
 - [Thresholds](docs/thresholds.md): deriving, reviewing, locking and muting
 - [Step timings](docs/steps.md): measuring `test.step` blocks, keys and title sanitization

@@ -1,16 +1,14 @@
 // The published create package in a fresh Playwright project (13-AC-10): `npm init`,
-// `pnpm create` or `yarn create` with --yes installs the package from npm and sets it up, and a
-// thresholds run then works against the demo server. Runs only in the release workflow, after
+// `pnpm create` or `yarn create` installs the package from npm and runs the wizard, which shows
+// the plan without a terminal and writes nothing (04-D-38); with an argument it ends with 3 before
+// the installation (04-REQ-01). Runs only in the release workflow, after
 // both packages were published (RELEASE_VERSION, e.g. 0.1.0-next.0; RELEASE_PACKAGE_MANAGER:
 // npm, pnpm or yarn); skipped everywhere else, because the version must exist on npm.
-// Needs the Chromium of the Playwright version of this repository.
 import { spawn } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { startDemoServer } from '../demo-server/server.ts';
-import type { DemoServer } from '../demo-server/server.ts';
-import { copyProject, removeCopies } from '../unit/cli/init-helpers.ts';
+import { afterAll, describe, expect, test } from 'vitest';
+import { copyProject, removeCopies, snapshot } from '../unit/cli/init-helpers.ts';
 
 const VERSION = process.env['RELEASE_VERSION'] ?? '';
 const MANAGER = process.env['RELEASE_PACKAGE_MANAGER'] ?? 'npm';
@@ -27,24 +25,23 @@ const playwrightVersion = (
 
 /** The create command of each package manager, as the README gives it. */
 const CREATE: Record<string, string[]> = {
-  npm: ['init', `${PACKAGE}@${VERSION}`, '--', '--yes'],
-  pnpm: ['create', `${PACKAGE}@${VERSION}`, '--yes'],
+  npm: ['init', `${PACKAGE}@${VERSION}`],
+  pnpm: ['create', `${PACKAGE}@${VERSION}`],
   // Yarn 1 cannot run `yarn create <pkg>@<version>` (it calls the bin with the version appended);
   // the check uses current Yarn through corepack.
-  yarn: ['create', `${PACKAGE}@${VERSION}`, '--yes'],
+  yarn: ['create', `${PACKAGE}@${VERSION}`],
+};
+/** The same command with an argument (npm passes it after "--"). */
+const WITH_ARGUMENT: Record<string, string[]> = {
+  npm: [...(CREATE['npm'] ?? []), '--', '--yes'],
+  pnpm: [...(CREATE['pnpm'] ?? []), '--yes'],
+  yarn: [...(CREATE['yarn'] ?? []), '--yes'],
 };
 
 /** Yarn version used through corepack (`packageManager` in the fresh project). */
 const YARN_VERSION = 'yarn@4.18.1';
 
-let server: DemoServer;
-
-beforeAll(async () => {
-  if (VERSION !== '') server = await startDemoServer();
-});
-
-afterAll(async () => {
-  await server?.close();
+afterAll(() => {
   removeCopies();
 });
 
@@ -62,7 +59,7 @@ function run(
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
-      env: { ...env, CI: '', NO_COLOR: '1', DEMO_URL: server.url },
+      env: { ...env, CI: '', NO_COLOR: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
@@ -77,10 +74,12 @@ function run(
 
 describe.runIf(VERSION !== '')('create package from npm', () => {
   test(
-    `13-AC-10 ${MANAGER} create with --yes in a fresh Playwright project gives a working integration`,
+    `13-AC-10 ${MANAGER} create in a fresh Playwright project installs the package and shows the plan`,
     async () => {
       const create = CREATE[MANAGER];
-      if (create === undefined) throw new Error(`unknown package manager ${MANAGER}`);
+      const withArgument = WITH_ARGUMENT[MANAGER];
+      if (create === undefined || withArgument === undefined)
+        throw new Error(`unknown package manager ${MANAGER}`);
       // A fresh Playwright project: config, tests and @playwright/test, nothing of this package.
       const dir = copyProject('init-esm-ts');
       const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
@@ -102,26 +101,34 @@ describe.runIf(VERSION !== '')('create package from npm', () => {
       const install = await run(MANAGER, ['install'], dir);
       expect(install.status, install.output).toBe(0);
 
+      // An argument ends with 3 before the installation (04-REQ-01).
+      const refused = await run(MANAGER, withArgument, dir);
+      expect(refused.status, refused.output).toBe(3);
+      expect(refused.output).toContain('takes no arguments');
+      const unchanged = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
+        devDependencies: Record<string, string>;
+      };
+      expect(unchanged.devDependencies[PACKAGE]).toBeUndefined();
+
+      const before = snapshot(dir);
       const created = await run(MANAGER, create, dir);
       expect(created.status, created.output).toBe(0);
       const after = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
         devDependencies: Record<string, string>;
       };
       expect(after.devDependencies[PACKAGE], created.output).toContain(VERSION);
-      expect(readdirSync(dir), created.output).toContain('pw-perf.config.ts');
+      // Without a terminal the wizard shows the plan and writes nothing (04-D-38).
+      expect(created.output).toContain('no terminal');
+      expect(created.output).toContain('+++ b/pw-perf.config.ts');
+      const now = snapshot(dir);
+      expect(now.has('pw-perf.config.ts')).toBe(false);
+      for (const path of ['playwright.config.ts', 'tests/fixtures.ts'])
+        expect(now.get(path), path).toBe(before.get(path));
 
       const installed = JSON.parse(
         readFileSync(join(dir, 'node_modules', PACKAGE, 'package.json'), 'utf8'),
       ) as { version: string };
       expect(installed.version).toBe(VERSION);
-
-      const cli = join(dir, 'node_modules', PACKAGE, 'dist/cli.js');
-      const thresholds = await run(process.execPath, [cli, 'thresholds', '--passes', '5'], dir);
-      expect(thresholds.status, thresholds.output).toBe(0);
-      expect(thresholds.output).toContain('thresholds derived');
-      expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
-        'pw-perf-thresholds.json',
-      ]);
     },
     TIMEOUT,
   );

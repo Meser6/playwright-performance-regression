@@ -11,14 +11,13 @@ import { startDemoServer } from '../demo-server/server.ts';
 import type { DemoServer } from '../demo-server/server.ts';
 
 export const ROOT = join(import.meta.dirname, '../..');
-export const CLI = join(ROOT, 'dist/cli.js');
 export const PLAYWRIGHT = join(ROOT, 'node_modules/@playwright/test/cli.js');
 /** The reporter integration project: four tests calling /api/items/:id, /api/cart, /api/orders. */
 export const DEMO_PROJECT = join(ROOT, 'test/integration/projects/reporter');
 const RESULTS_DIR = process.env.PERF_RESULTS_DIR ?? join(ROOT, 'perf-test-results');
 
 export function requireBuild(): void {
-  if (!existsSync(CLI)) {
+  if (!existsSync(join(ROOT, 'dist/reporter.js'))) {
     throw new Error('The performance tests use the built package: run "pnpm build" first.');
   }
 }

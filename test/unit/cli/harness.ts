@@ -1,6 +1,6 @@
-// Fake CLI host: captured streams, a scripted Playwright child process and signal handlers.
+// Fake wizard host: captured streams, a scripted check child process and signal handlers.
 import { EventEmitter } from 'node:events';
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type {
   ChildProcessLike,
@@ -8,7 +8,6 @@ import type {
   ForwardedSignal,
   Prompt,
   ProcessOptions,
-  SpawnOptions,
 } from '../../../src/cli/host.ts';
 import * as io from '../../../src/io/index.ts';
 
@@ -29,12 +28,11 @@ export interface FakeHost {
   host: CliHost;
   stdout: string[];
   stderr: string[];
-  spawned: { file?: string; args: string[]; options: SpawnOptions | ProcessOptions }[];
+  spawned: { file?: string; args: string[]; options: ProcessOptions }[];
   child: FakeChild;
   signals: Map<ForwardedSignal, (() => void)[]>;
-  /** Sends a signal to the CLI. */
+  /** Sends a signal to the wizard. */
   signal(name: ForwardedSignal): void;
-  advance(ms: number): void;
   /** Directory @playwright/test was resolved from. */
   resolvedFrom?: string;
   /** Files written through the host, in order. */
@@ -46,18 +44,14 @@ export interface FakeHostOptions {
   env?: Record<string, string>;
   /** null: @playwright/test is not installed. */
   playwright?: { cliPath: string; version: string } | null;
-  /** Called when Playwright is started: the script of the run (write the outcome, exit). */
-  onSpawn?: (fake: FakeHost, options: SpawnOptions | ProcessOptions) => void;
+  /** Called when the check process is started: the script of the run (exit). */
+  onSpawn?: (fake: FakeHost, options: ProcessOptions) => void;
   platform?: string;
-  directories?: string[];
-  reporterPath?: string;
-  importModule?: (url: string) => Promise<unknown>;
   /** Terminal questions (init); without it the host has no terminal. */
   prompt?: () => Prompt;
 }
 
 export function fakeCliHost(options: FakeHostOptions): FakeHost {
-  let time = Date.UTC(2026, 10, 18, 10, 0, 0);
   const signals = new Map<ForwardedSignal, (() => void)[]>();
   const fake: FakeHost = {
     stdout: [],
@@ -68,9 +62,6 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     signal: (name) => {
       for (const handler of [...(signals.get(name) ?? [])]) handler();
     },
-    advance: (ms) => {
-      time += ms;
-    },
     host: undefined as unknown as CliHost,
     written: [],
   };
@@ -80,25 +71,15 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     env: options.env ?? {},
     platform: options.platform ?? 'linux',
     execPath: '/usr/bin/node',
-    tmpdir: join(options.cwd, 'tmp'),
     stdin: { isTTY: options.prompt !== undefined },
     stdout: { write: (t: string) => fake.stdout.push(t), isTTY: options.prompt !== undefined },
     stderr: { write: (t: string) => fake.stderr.push(t) },
-    now: () => new Date(time),
-    random: () => 0.0408,
-    packageVersion: '1.2.3',
     minPlaywrightVersion: '1.57.0',
-    reporterPath: options.reporterPath ?? '/pkg/dist/reporter.js',
     resolvePlaywright: (dir) => {
       fake.resolvedFrom = dir;
       return options.playwright === undefined
         ? { cliPath: '/project/node_modules/@playwright/test/cli.js', version: '1.57.0' }
         : options.playwright;
-    },
-    spawnNode: (args, spawnOptions) => {
-      fake.spawned.push({ args, options: spawnOptions });
-      setImmediate(() => options.onSpawn?.(fake, spawnOptions));
-      return fake.child;
     },
     spawnProcess: (file, args, spawnOptions) => {
       fake.spawned.push({ file, args, options: spawnOptions });
@@ -118,10 +99,6 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
       };
     },
     readText: io.readTextFile,
-    removeFile: (path) => rm(path, { force: true }),
-    exists: io.fileExists,
-    isDirectory: async (path) => (options.directories ?? []).includes(path),
-    importModule: options.importModule ?? ((url) => import(url)),
     listDir: async (path) => {
       try {
         return (await readdir(path, { withFileTypes: true }))

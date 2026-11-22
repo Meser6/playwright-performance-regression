@@ -1,5 +1,5 @@
 // Terminal colors (04-REQ-44): 16 ANSI colors with a fixed meaning, used by the init wizard, the
-// CLI messages, the run summary and the thresholds diff. Colors never carry information alone
+// package messages, the run summary and the thresholds diff. Colors never carry information alone
 // (symbols and words stay), so the text without them is the same apart from the ANSI sequences.
 // Pure: the caller passes the stream and the environment.
 

@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { MODE_ENV_NAMES, isCiEnv, readModeState, writeModeState } from '../../../src/mode/index.ts';
+import {
+  generateRunId,
+  isCiEnv,
+  readInitEnv,
+  readModeState,
+  writeModeState,
+} from '../../../src/mode/index.ts';
 import type { PerfModeState } from '../../../src/mode/index.ts';
 
 function issuesOf(env: Record<string, string | undefined>): { code: string; message: string }[] {
@@ -142,19 +148,52 @@ describe('writeModeState', () => {
     expect(writeModeState({ mode: 'test', prune: false })).toEqual({ PW_PERF_MODE: 'test' });
   });
 
-  test('MODE_ENV_NAMES lists every variable of the contract', () => {
-    expect([...MODE_ENV_NAMES]).toEqual([
-      'PW_PERF_MODE',
-      'PW_PERF_PASSES',
-      'PW_PERF_PASS',
-      'PW_PERF_YES',
-      'PW_PERF_REPEAT',
-      'PW_PERF_ENV',
-      'PW_PERF_RUN_ID',
-      'PW_PERF_OUTCOME_FILE',
-      'PW_PERF_PRUNE',
-      'PW_PERF_MAX_TESTS',
+  test('04-AC-10 the format of 04-REQ-10; two ids in the same second differ with other random values', () => {
+    const at = new Date(Date.UTC(2026, 10, 18, 10, 0, 0, 999));
+    const a = generateRunId(at, () => 0.0408);
+    const b = generateRunId(at, () => 0.9999);
+    expect(a).toBe('2026-11-18T10-00-00-0a71');
+    expect(b).toMatch(/^\d{4}-\d\d-\d\dT\d\d-\d\d-\d\d-[0-9a-f]{4}$/u);
+    expect(a).not.toBe(b);
+    expect(generateRunId(at, () => 0)).toBe('2026-11-18T10-00-00-0000');
+  });
+});
+
+describe('readInitEnv', () => {
+  const LANGS = ['en', 'pl'];
+
+  test('04-AC-19 04-AC-23 04-AC-25 the wizard variables; unset or empty means off', () => {
+    expect(readInitEnv({}, LANGS)).toEqual({
+      ok: true,
+      value: { dryRun: false, noTutorial: false },
+    });
+    expect(readInitEnv({ PW_PERF_DRY_RUN: '', PW_PERF_LANG: '' }, LANGS)).toEqual({
+      ok: true,
+      value: { dryRun: false, noTutorial: false },
+    });
+    expect(
+      readInitEnv({ PW_PERF_DRY_RUN: '1', PW_PERF_NO_TUTORIAL: '1', PW_PERF_LANG: 'PL' }, LANGS),
+    ).toEqual({ ok: true, value: { dryRun: true, noTutorial: true, lang: 'pl' } });
+  });
+
+  test('03-AC-03 04-AC-19 04-AC-23 MODE_INVALID_VALUE for each invalid variable, all at once', () => {
+    const result = readInitEnv(
+      { PW_PERF_DRY_RUN: 'yes', PW_PERF_NO_TUTORIAL: 'true', PW_PERF_LANG: 'xx' },
+      LANGS,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.map((i) => i.code)).toEqual([
+      'MODE_INVALID_VALUE',
+      'MODE_INVALID_VALUE',
+      'MODE_INVALID_VALUE',
     ]);
+    expect(result.issues.map((i) => i.message)).toEqual([
+      'PW_PERF_DRY_RUN: expected "1", got "yes"',
+      'PW_PERF_NO_TUTORIAL: expected "1", got "true"',
+      'PW_PERF_LANG: expected one of en, pl, got "xx"',
+    ]);
+    expect(result.issues[2]?.hint).toContain('one of en, pl');
   });
 });
 

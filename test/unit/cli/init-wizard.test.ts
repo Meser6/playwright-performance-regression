@@ -1,14 +1,16 @@
-// Init wizard flow (04, chapter 4.10) with a fake host: --yes, no terminal, --dry-run, scripted
-// answers on stdin, Ctrl+C, a second run and the errors.
+// Init wizard flow (04, chapter 4.10) with a fake host: default answers in a terminal, no
+// terminal, PW_PERF_DRY_RUN, scripted answers on stdin, Ctrl+C, a second run and the errors.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PassThrough, Writable } from 'node:stream';
 import { afterAll, describe, expect, test } from 'vitest';
 import type { Prompt } from '../../../src/cli/host.ts';
 import { PromptAborted, readlinePrompt } from '../../../src/cli/init/index.ts';
+import { versionAtLeast } from '../../../src/cli/init/wizard.ts';
 import { main } from '../../../src/cli/main.ts';
 import { stripAnsi } from '../../../src/console/color.ts';
 import { fakeCliHost } from './harness.ts';
+import type { FakeHost, FakeHostOptions } from './harness.ts';
 import { copyProject, INIT_GOLDEN, removeCopies, snapshot, snapshotDiff } from './init-helpers.ts';
 
 afterAll(removeCopies);
@@ -32,11 +34,38 @@ function scriptedPrompt(
   };
 }
 
+/**
+ * A terminal session that takes every default answer (Enter), except "no" to the check question
+ * (04-REQ-58). The questions are echoed to stdout like a terminal shows them; no colors.
+ */
+function defaultsHost(dir: string, options: Partial<FakeHostOptions> = {}): FakeHost {
+  const fake: FakeHost = fakeCliHost({
+    cwd: dir,
+    playwright: null,
+    ...options,
+    env: { NO_COLOR: '1', ...options.env },
+    prompt: () => ({
+      ask: async (question) => {
+        fake.stdout.push(`${question}\n`);
+        return /Run a check now\?/u.test(question) ? 'n' : '';
+      },
+      close: () => undefined,
+    }),
+  });
+  return fake;
+}
+
 describe('init wizard', () => {
-  test('04-REQ-38 without tests tagged @perf, --yes measures all tests and shows INIT_NO_TAGGED_TESTS as information', async () => {
+  test('versionAtLeast compares major, minor and patch; pre-release parts are ignored', () => {
+    expect(versionAtLeast('1.57.0', '1.57.0')).toBe(true);
+    expect(versionAtLeast('1.65.0-alpha-2026', '1.57.0')).toBe(true);
+    expect(versionAtLeast('1.9.0', '1.57.0')).toBe(false);
+  });
+
+  test('04-REQ-38 without tests tagged @perf, the defaults measure all tests and show INIT_NO_TAGGED_TESTS as information', async () => {
     const dir = copyProject('init-esm-ts');
-    const fake = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).toContain(
       'ℹ INIT_NO_TAGGED_TESTS No test is tagged @perf yet; all tests are measured.',
@@ -55,13 +84,13 @@ describe('init wizard', () => {
     expect(out).not.toMatch(/warnOnly|warn-only/u);
   });
 
-  test('04-AC-17 with tests tagged @perf the default is still all tests, also with --yes', async () => {
+  test('04-AC-17 with tests tagged @perf the default is still all tests', async () => {
     const dir = copyProject('init-import-swap');
-    const fake = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).toContain('Files with tests tagged @perf: 1.');
-    expect(out).toContain('Measure all tests or only tests tagged @perf? [all/@perf] (all) → all');
+    expect(out).toContain('Measure all tests or only tests tagged @perf? [all/@perf] (all)');
     expect(out).not.toContain('INIT_NO_TAGGED_TESTS');
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))).not.toHaveProperty(
       'scripts',
@@ -71,8 +100,8 @@ describe('init wizard', () => {
 
   test('04-AC-17 04-AC-48 steps [0/11] to [11/11] without skipped ones; no origin, trial or environment question', async () => {
     const dir = copyProject('init-esm-ts');
-    const fake = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
     // 3 (one project) and 6 (no test.step) are skipped.
@@ -92,7 +121,7 @@ describe('init wizard', () => {
     expect(out).toContain('measures the response times of backend endpoints');
     expect(out).not.toMatch(/warn-only|several environments|Environment labels/u);
     expect(out).toContain(
-      'How much headroom should derived thresholds have? [strict/normal/loose] (normal) → normal',
+      'How much headroom should derived thresholds have? [strict/normal/loose] (normal)',
     );
     expect(out).toContain('A CI job you start by hand with PW_PERF_MODE=thresholds');
     expect(out).not.toMatch(/Label for|Backend/u);
@@ -104,24 +133,24 @@ describe('init wizard', () => {
     expect(config).not.toContain("'https://api.example.com':");
   });
 
-  test('04-AC-19 --yes writes the changes; a second run changes no file', async () => {
+  test('04-AC-19 the default answers in a terminal write the changes; a second run changes no file', async () => {
     const dir = copyProject('init-esm-ts');
-    const first = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], first.host)).toBe(0);
+    const first = defaultsHost(dir);
+    expect(await main([], first.host)).toBe(0);
     expect(first.written.length).toBe(5);
     const after = snapshot(dir);
-    const second = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], second.host)).toBe(0);
+    const second = defaultsHost(dir);
+    expect(await main([], second.host)).toBe(0);
     expect(second.written).toEqual([]);
     expect(snapshot(dir)).toEqual(after);
     expect(second.stdout.join('')).toContain('Nothing to change');
   });
 
-  test('04-AC-19 without a terminal and without --yes, and with --dry-run, nothing is written', async () => {
+  test('04-AC-19 without a terminal, and with PW_PERF_DRY_RUN=1 in one, nothing is written', async () => {
     const dir = copyProject('init-import-swap');
     const before = snapshot(dir);
     const noTty = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init'], noTty.host)).toBe(0);
+    expect(await main([], noTty.host)).toBe(0);
     expect(noTty.written).toEqual([]);
     expect(noTty.stderr.join('')).toContain(
       'no terminal: the default answers are used and nothing is written',
@@ -129,9 +158,24 @@ describe('init wizard', () => {
     // The plan is shown in full; test files are never changed (04-REQ-67).
     expect(noTty.stdout.join('')).toContain('+++ b/pw-perf.config.ts');
     expect(noTty.stdout.join('')).not.toContain('+++ b/tests/shop.spec.ts');
-    const dry = fakeCliHost({ cwd: dir, playwright: null, prompt: scriptedPrompt([]).prompt });
-    expect(await main(['init', '--dry-run'], dry.host)).toBe(0);
+    const script = scriptedPrompt([]);
+    const dry = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      prompt: script.prompt,
+      env: { PW_PERF_DRY_RUN: '1' },
+    });
+    expect(await main([], dry.host)).toBe(0);
+    expect(script.asked).toEqual([]);
     expect(dry.written).toEqual([]);
+    expect(dry.stderr.join('')).toContain('dry run: the planned changes are shown');
+    // An invalid value is an error before any question (01-REQ-27).
+    const invalid = fakeCliHost({ cwd: dir, playwright: null, env: { PW_PERF_DRY_RUN: 'yes' } });
+    expect(await main([], invalid.host)).toBe(3);
+    expect(invalid.stderr.join('')).toContain(
+      'error MODE_INVALID_VALUE: PW_PERF_DRY_RUN: expected "1", got "yes"',
+    );
+    expect(invalid.stdout).toEqual([]);
     expect(snapshot(dir)).toEqual(before);
   });
 
@@ -143,7 +187,7 @@ describe('init wizard', () => {
     for (let at = 0; at < 8; at += 1) {
       const script = scriptedPrompt([], at);
       const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
-      expect(await main(['init'], fake.host), `abort at question ${at}`).toBe(130);
+      expect(await main([], fake.host), `abort at question ${at}`).toBe(130);
       expect(fake.written).toEqual([]);
       expect(fake.stderr.join('')).toContain('interrupted');
     }
@@ -188,7 +232,7 @@ describe('init wizard', () => {
       playwright: null,
       prompt: () => readlinePrompt(input, out, false),
     });
-    expect(await main(['init'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     expect(output).toContain('Passes of the test command in measurement runs? (5)');
     expect(output).toContain('Run a check now? (Y/n)');
     expect(fake.stdout.join('')).toContain('Run: PW_PERF_MODE=test npx playwright test');
@@ -212,24 +256,22 @@ describe('init wizard', () => {
       playwright: null,
       prompt: () => readlinePrompt(input, out, true),
     });
-    expect(await main(['init'], fake.host)).toBe(130);
+    expect(await main([], fake.host)).toBe(130);
     expect(fake.written).toEqual([]);
   });
 
   test('an existing pw-perf.config.ts is overwritten only after its own confirmation', async () => {
     const dir = copyProject('init-esm-ts');
     writeFileSync(join(dir, 'pw-perf.config.ts'), 'export default {};\n');
-    const yes = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], yes.host)).toBe(0);
+    const noTty = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main([], noTty.host)).toBe(0);
     expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toBe('export default {};\n');
-    expect(yes.stdout.join('')).toContain(
-      'pw-perf.config.ts exists and is kept (the default answers do not overwrite it).',
-    );
+    expect(noTty.stdout.join('')).toContain('pw-perf.config.ts exists and is kept.');
 
     // Interactive: every default, then "y" to the overwrite question.
     const script = scriptedPrompt(['', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
-    expect(await main(['init'], tty.host)).toBe(0);
+    expect(await main([], tty.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toContain(
       '  pw-perf.config.ts exists. Overwrite it? (y/N) ',
     );
@@ -240,22 +282,22 @@ describe('init wizard', () => {
     const empty = copyProject('init-esm-ts');
     for (const name of ['playwright.config.ts']) writeFileSync(join(empty, name), '');
     const none = fakeCliHost({ cwd: join(empty, 'tests'), playwright: null });
-    expect(await main(['init', '--yes'], none.host)).toBe(3);
+    expect(await main([], none.host)).toBe(3);
     expect(none.stderr.join('')).toContain('error INIT_NO_PLAYWRIGHT_CONFIG');
 
     const old = fakeCliHost({ cwd: empty, playwright: { cliPath: '/x', version: '1.49.1' } });
-    expect(await main(['init', '--yes'], old.host)).toBe(3);
+    expect(await main([], old.host)).toBe(3);
     expect(old.stderr.join('')).toContain(
       'error INIT_PLAYWRIGHT_TOO_OLD: @playwright/test 1.49.1 is older than 1.57.0',
     );
     expect(old.written).toEqual([]);
 
     const dir = copyProject('init-esm-ts');
-    const failing = fakeCliHost({ cwd: dir, playwright: null });
+    const failing = defaultsHost(dir);
     failing.host.writeText = async () => {
       throw new Error('EACCES: permission denied');
     };
-    expect(await main(['init', '--yes'], failing.host)).toBe(3);
+    expect(await main([], failing.host)).toBe(3);
     expect(failing.stderr.join('')).toContain(
       'error INIT_WRITE_FAILED: Could not write pw-perf.config.ts: EACCES: permission denied',
     );
@@ -273,7 +315,7 @@ describe('init wizard', () => {
       onSpawn: (f) => f.child.exit(1),
     });
     // A failing check does not change the exit code of the wizard.
-    expect(await main(['init'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     expect(script.asked).toContain('  Run a check now? (Y/n) ');
     expect(fake.spawned).toHaveLength(1);
     const [spawned] = fake.spawned;
@@ -287,10 +329,10 @@ describe('init wizard', () => {
     expect(out).not.toContain('PW_PERF_MODE=check npm run test: see what');
     expect(out).toContain('(The check above shows an estimate.)');
 
-    // --yes never runs it.
-    const yes = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
-    expect(await main(['init', '--yes'], yes.host)).toBe(0);
-    expect(yes.spawned).toEqual([]);
+    // Without a terminal it never runs.
+    const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
+    expect(await main([], noTty.host)).toBe(0);
+    expect(noTty.spawned).toEqual([]);
   });
 
   test('04-AC-46 tests importing @playwright/test: no test file changes and the red box', async () => {
@@ -298,7 +340,7 @@ describe('init wizard', () => {
       const dir = copyProject('init-import-swap');
       const before = snapshot(dir);
       const fake = fakeCliHost({ cwd: dir, playwright: null, env });
-      expect(await main(['init', '--yes'], fake.host)).toBe(0);
+      expect(await main([], fake.host)).toBe(0);
       const after = snapshot(dir);
       for (const path of before.keys())
         if (path.startsWith('tests/')) expect(after.get(path), path).toBe(before.get(path));
@@ -349,7 +391,7 @@ export default defineConfig({
       prompt: script.prompt,
       env: { NO_COLOR: '1' },
     });
-    expect(await main(['init'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).toContain('1. [x] E2E');
     expect(out).toContain('2. [ ] API (looks like API tests');
@@ -361,7 +403,7 @@ export default defineConfig({
     const yes = copyProject('init-esm-ts');
     for (const name of ['playwright.config.ts', 'package.json'])
       writeFileSync(join(yes, name), readFileSync(join(dir, name), 'utf8'));
-    expect(await main(['init', '--yes'], fakeCliHost({ cwd: yes, playwright: null }).host)).toBe(0);
+    expect(await main([], defaultsHost(yes).host)).toBe(0);
     expect(readFileSync(join(yes, 'pw-perf.config.ts'), 'utf8')).toContain(
       "    projects: ['E2E'],",
     );
@@ -376,9 +418,9 @@ export default defineConfig({
       cwd: empty,
       playwright: null,
       prompt: script.prompt,
-      env: { NO_COLOR: '1' },
+      env: { NO_COLOR: '1', PW_PERF_LANG: 'en' },
     });
-    expect(await main(['init', '--lang', 'en'], fake.host)).toBe(3);
+    expect(await main([], fake.host)).toBe(3);
     // Only the tutorial question comes before the language is known.
     expect(script.asked).toEqual([
       '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
@@ -387,13 +429,13 @@ export default defineConfig({
     expect(fake.stderr.join('')).toContain('error INIT_NO_PLAYWRIGHT_CONFIG');
   });
 
-  test('04-AC-23 init --yes --lang pl gives Polish wizard texts and the same files as --lang en', async () => {
+  test('04-AC-23 PW_PERF_LANG=pl gives Polish wizard texts and the same files as PW_PERF_LANG=en', async () => {
     const en = copyProject('init-esm-ts');
     const pl = copyProject('init-esm-ts');
-    const fakeEn = fakeCliHost({ cwd: en, playwright: null });
-    const fakePl = fakeCliHost({ cwd: pl, playwright: null });
-    expect(await main(['init', '--yes', '--lang', 'en'], fakeEn.host)).toBe(0);
-    expect(await main(['init', '--yes', '--lang', 'pl'], fakePl.host)).toBe(0);
+    const fakeEn = defaultsHost(en, { env: { PW_PERF_LANG: 'en' } });
+    const fakePl = defaultsHost(pl, { env: { PW_PERF_LANG: 'pl' } });
+    expect(await main([], fakeEn.host)).toBe(0);
+    expect(await main([], fakePl.host)).toBe(0);
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
@@ -405,11 +447,19 @@ export default defineConfig({
     expect(out).toContain('+++ b/pw-perf.config.ts');
     expect(out).toContain('ℹ INIT_NO_TAGGED_TESTS Żaden test nie ma jeszcze tagu @perf');
     expect(out).toContain('keys.origins w pw-perf.config.ts');
-    // Without --lang and without a terminal: English.
+    // Without PW_PERF_LANG and without a terminal: English, the same as PW_PERF_LANG=en.
     const plain = copyProject('init-esm-ts');
     const fakeDefault = fakeCliHost({ cwd: plain, playwright: null });
-    expect(await main(['init', '--yes'], fakeDefault.host)).toBe(0);
-    expect(fakeDefault.stdout.join('')).toBe(fakeEn.stdout.join(''));
+    const fakeLangEn = fakeCliHost({ cwd: plain, playwright: null, env: { PW_PERF_LANG: 'en' } });
+    expect(await main([], fakeDefault.host)).toBe(0);
+    expect(await main([], fakeLangEn.host)).toBe(0);
+    expect(fakeDefault.stdout.join('')).toBe(fakeLangEn.stdout.join(''));
+    // An unknown code is an error with the list of codes.
+    const unknown = fakeCliHost({ cwd: plain, playwright: null, env: { PW_PERF_LANG: 'xx' } });
+    expect(await main([], unknown.host)).toBe(3);
+    expect(unknown.stderr.join('')).toContain(
+      'PW_PERF_LANG: expected one of en, es, fr, pl, it, uk, ru, got "xx"',
+    );
   });
 
   test('04-AC-23 the language chosen in step 0 of a terminal session is used for the questions', async () => {
@@ -421,7 +471,7 @@ export default defineConfig({
       prompt: script.prompt,
       env: { NO_COLOR: '1' },
     });
-    expect(await main(['init'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     expect(script.asked[0]).toBe(
       '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
     );
@@ -441,10 +491,10 @@ export default defineConfig({
       const fake = fakeCliHost({
         cwd: dir,
         playwright: null,
-        env,
+        env: tty ? { ...env, PW_PERF_LANG: 'en' } : env,
         ...(tty ? { prompt: script.prompt } : {}),
       });
-      expect(await main(tty ? ['init', '--lang', 'en'] : ['init', '--yes'], fake.host)).toBe(0);
+      expect(await main([], fake.host)).toBe(0);
       return [...script.asked, ...fake.stdout, ...fake.stderr].join('');
     };
     const colored = await output({}, true);
@@ -467,7 +517,7 @@ export default defineConfig({
     const before = snapshot(dir);
     const script = scriptedPrompt(['n']);
     const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
-    expect(await main(['init'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toEqual([
       '  Set up playwright-performance-regression with a guided tutorial? (Y/n) ',
     ]);
@@ -481,28 +531,52 @@ export default defineConfig({
     expect(out).toContain('docs/adoption.md');
   });
 
-  test('04-AC-25 --no-tutorial does the same without the question, also with --yes or --lang', async () => {
+  test('04-AC-25 PW_PERF_NO_TUTORIAL=1 does the same without the question, also with PW_PERF_LANG', async () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
     const script = scriptedPrompt([]);
-    const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
-    expect(await main(['init', '--no-tutorial'], tty.host)).toBe(0);
+    const tty = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      prompt: script.prompt,
+      env: { PW_PERF_NO_TUTORIAL: '1' },
+    });
+    expect(await main([], tty.host)).toBe(0);
     expect(script.asked).toEqual([]);
     expect(stripAnsi(tty.stdout.join(''))).toContain('To set it up by hand:');
-    const yes = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes', '--no-tutorial', '--lang', 'pl'], yes.host)).toBe(0);
-    expect(yes.stdout.join('')).toContain('Konfiguracja ręczna:');
-    expect(yes.written).toEqual([]);
+    const pl = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      env: { PW_PERF_NO_TUTORIAL: '1', PW_PERF_LANG: 'pl' },
+    });
+    expect(await main([], pl.host)).toBe(0);
+    expect(pl.stdout.join('')).toContain('Konfiguracja ręczna:');
+    expect(pl.written).toEqual([]);
     expect(snapshot(dir)).toEqual(before);
   });
 
-  test('04-AC-25 --yes skips the tutorial question and sets the project up', async () => {
+  test('04-AC-25 without a terminal the tutorial question is skipped and the plan is shown', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = fakeCliHost({ cwd: dir, playwright: null });
-    expect(await main(['init', '--yes'], fake.host)).toBe(0);
+    expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).not.toContain('guided tutorial');
     expect(out).toContain('[0/11] Language');
-    expect(fake.written.length).toBe(5);
+    expect(out).toContain('+++ b/pw-perf.config.ts');
+    expect(fake.written).toEqual([]);
+  });
+
+  test('04-AC-01 arguments end with CLI_UNKNOWN_COMMAND and the help, without the wizard', async () => {
+    const dir = copyProject('init-esm-ts');
+    const fake = fakeCliHost({ cwd: dir, playwright: null });
+    expect(await main(['init', '--yes'], fake.host)).toBe(3);
+    expect(fake.stderr.join('')).toContain(
+      'error CLI_UNKNOWN_COMMAND: The package has no commands or options, got "init --yes".',
+    );
+    const help = fake.stdout.join('');
+    expect(help).toContain('Run your usual test command with PW_PERF_MODE set');
+    expect(help).toContain('PW_PERF_DRY_RUN=1');
+    expect(help).not.toContain('[0/11]');
+    expect(fake.written).toEqual([]);
   });
 });

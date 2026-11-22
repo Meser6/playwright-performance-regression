@@ -1,4 +1,4 @@
-// File writing for the reporter and the CLI (01, chapter 4.7).
+// File writing for the reporter and the wizard (01, chapter 4.7).
 import { randomUUID } from 'node:crypto';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';

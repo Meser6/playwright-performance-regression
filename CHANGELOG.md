@@ -7,6 +7,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking:** the `pw-perf` commands and options are gone: `pw-perf test`, `thresholds`,
+  `check`, `report`, `init`, `thresholds --from`, `--env`, `--passes`, `--prune`, `--max-tests`,
+  `--config`, `--input`, `--output`, `--help` and `--version`. Run your test command with the
+  variables instead, e.g. `PW_PERF_MODE=test PW_PERF_PASSES=3 npx playwright test`. The HTML
+  report is written by every run, so there is no command to render it again; thresholds come
+  from a `PW_PERF_MODE=thresholds` run (the CI thresholds job and its artifact). The codes of the
+  runner (`CLI_INVALID_OPTION`, `CLI_OUTCOME_MISSING`, `CONFIG_FILE_LOAD_FAILED`, …) are removed.
+  `perf:*` scripts written by an early wizard no longer work; remove them.
+- **Breaking:** the wizard takes no options. `npx pw-perf` without arguments starts it in a
+  project with the package installed (any argument is `CLI_UNKNOWN_COMMAND` with the help), and
+  `npm init playwright-performance-regression` takes no arguments either. Use
+  `PW_PERF_LANG=<code>` instead of `--lang`, `PW_PERF_DRY_RUN=1` instead of `--dry-run` and
+  `PW_PERF_NO_TUTORIAL=1` instead of `--no-tutorial`. `--yes` has no replacement: the wizard
+  writes changes only in a terminal (press Enter for each default); without one it shows the
+  plan.
+
 ### Changed
 
 - `measure.steps` is on by default: `test.step` blocks give step keys, a
