@@ -72,7 +72,7 @@ export function formatCheckSummary(
   const failed = s.failed > 0 ? `, ${String(s.failed)} failed` : '';
   lines.push(
     paint(
-      `${s.packageName} · check · ${String(s.ran)} of ${String(s.selected)} tests run (${String(s.passed)} passed${failed}) · ${String(s.skippedByCheck)} skipped by check`,
+      `${s.packageName} · check · ${String(s.ran)} of ${plural(s.selected, 'test')} run (${String(s.passed)} passed${failed}) · ${String(s.skippedByCheck)} skipped by check`,
       'bold',
     ),
     '',
@@ -83,7 +83,7 @@ export function formatCheckSummary(
     if (p.role === 'measured') {
       const browser = p.browserName === null ? '' : ` (${p.browserName})`;
       lines.push(
-        `  measured    ${p.name}${browser} · baseURL ${p.baseURL ?? '(not set)'} · ${String(p.requests)} requests in ${String(p.tests)} tests`,
+        `  measured    ${p.name}${browser} · baseURL ${p.baseURL ?? '(not set)'} · ${plural(p.requests, 'request')} in ${plural(p.tests, 'test')}`,
       );
     } else {
       lines.push(`  dependency  ${p.name} · runs once, not measured`);
@@ -97,7 +97,7 @@ export function formatCheckSummary(
   lines.push(`${paint('Reporters:', 'bold')}    ${reporterParts.join(' · ')}`);
 
   lines.push(
-    `${paint('Requests:', 'bold')}     ${String(s.requests)} requests · ${String(s.apiKeys)} api keys · ${String(s.stepKeys)} step keys · ${String(s.origins.length)} ${s.origins.length === 1 ? 'origin' : 'origins'}`,
+    `${paint('Requests:', 'bold')}     ${plural(s.requests, 'request')} · ${plural(s.apiKeys, 'api key')} · ${plural(s.stepKeys, 'step key')} · ${plural(s.origins.length, 'origin')}`,
   );
   const labelWidth = Math.max(6, ...s.origins.map((o) => (o.label === '' ? 6 : o.label.length)));
   const originWidth = Math.max(...s.origins.map((o) => o.origin.length), 0);
