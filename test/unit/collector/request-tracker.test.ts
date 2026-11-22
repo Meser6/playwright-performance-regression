@@ -135,6 +135,32 @@ describe('RequestTracker', () => {
     ]);
   });
 
+  test('05-AC-24 a 204 response followed by requestfailed is a sample, a 200 one is FAILED', async () => {
+    const { context, tracker, finished } = setup();
+    const emit = (
+      url: string,
+      status: number,
+      t: { responseStart: number; responseEnd: number },
+    ) => {
+      const request = new FakeRequest(url, { method: 'DELETE' });
+      context.emit('request', request);
+      request.timingValue = timing({ requestStart: 0.5, ...t });
+      request.responseValue = new FakeResponse(request, status);
+      context.emit('response', request.responseValue);
+      request.failureValue = { errorText: 'net::ERR_ABORTED' };
+      context.emit('requestfailed', request);
+    };
+    emit(`${API}/1`, 204, { responseStart: 20.5, responseEnd: -1 });
+    emit(`${API}/2`, 204, { responseStart: 20.5, responseEnd: 21.25 });
+    emit(`${API}/3`, 200, { responseStart: 20.5, responseEnd: -1 });
+    await tracker.drain(0);
+    expect(finished).toEqual([
+      expect.objectContaining({ status: 204, duration: 20.5, ttfb: 20, timeSource: 'browser' }),
+      expect.objectContaining({ status: 204, duration: 21.3, timeSource: 'browser' }),
+      expect.objectContaining({ status: 'FAILED', failureText: 'net::ERR_ABORTED' }),
+    ]);
+  });
+
   test('skips events of requests it did not see start, without diagnostics (05-REQ-25)', async () => {
     const { context, tracker, finished, pending, diag } = setup();
     const before = new FakeRequest(API);

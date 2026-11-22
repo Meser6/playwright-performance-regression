@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- Collector: with Playwright 1.57 (Chromium) a `fetch` answered with `204 No Content` was
+  recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
+  measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
+  and time.
 - Setup wizard: project detection reads the whole project, not only `testDir`, so fixtures
   modules and page objects next to the test directory (e.g. `testDir: './tests/specs'` with
   `tests/fixtures/`) are found: a single fixtures module there is wrapped, and the "nothing is
