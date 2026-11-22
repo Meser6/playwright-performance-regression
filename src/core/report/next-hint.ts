@@ -124,6 +124,8 @@ export interface NextHintInput {
   commands: Record<PerfMode, string>;
   /** Thresholds files written in this run (thresholds mode). */
   written: readonly WrittenFile[];
+  /** The thresholds files are temporary: the wizard's check (04-REQ-58, 09-REQ-32 row 5). */
+  temporary?: boolean;
 }
 
 /** Text after `Next: `, or null when there is no hint (09-REQ-32, rows 1–8). */
@@ -135,7 +137,7 @@ export function nextHint(input: NextHintInput): string | null {
     return `nothing was measured: check use.baseURL and the projects of the test command, then run ${commands.check}`;
   }
   if (report.mode === 'thresholds') {
-    if (written.length === 0) return null;
+    if (written.length === 0 || input.temporary === true) return null;
     const files = written
       .map((f) => `${f.name} (${String(f.entries)} ${f.entries === 1 ? 'key' : 'keys'})`)
       .join(' and ');

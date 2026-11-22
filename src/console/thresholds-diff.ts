@@ -22,6 +22,11 @@ export interface ThresholdsDiffOptions {
   prune: boolean;
   /** Absolute path of thresholds-diff.md (10, chapter 9.1), or null when it was not written. */
   diffPath: string | null;
+  /**
+   * The files are in the temporary folder of the wizard's check (PW_PERF_THRESHOLDS_DIR,
+   * 04-REQ-58): nothing to commit (10, chapter 9.1).
+   */
+  temporary?: boolean;
 }
 
 /** At most this many change rows per file; the rest is in thresholds-diff.md (10, chapter 9.1). */
@@ -122,9 +127,11 @@ export function formatThresholdsDiff(diffs: ThresholdsDiff[], opts: ThresholdsDi
   const written = diffs.some((d) => d.fileStatus === 'created' || d.fileStatus === 'updated');
   lines.push('');
   lines.push(
-    written
-      ? 'Review the changes and commit the thresholds files.'
-      : 'The thresholds files are up to date.',
+    opts.temporary === true
+      ? 'These thresholds are temporary (the setup check deletes them); there is nothing to commit.'
+      : written
+        ? 'Review the changes and commit the thresholds files.'
+        : 'The thresholds files are up to date.',
   );
   if (opts.diffPath !== null) lines.push(`Diff: ${opts.diffPath}`);
   return `${lines.join('\n')}\n`;

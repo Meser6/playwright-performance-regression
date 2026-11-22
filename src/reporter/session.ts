@@ -991,6 +991,8 @@ export class RunSession {
     }
 
     const { width, color } = this.terminal();
+    // Thresholds of the wizard's check go to a temporary folder (04-REQ-58).
+    const temporary = this.settings.mode.thresholdsDir !== undefined;
     this.host.stdout.write(
       formatSummary(report, {
         width,
@@ -1004,16 +1006,23 @@ export class RunSession {
     if (diffs.length > 0) {
       this.host.stdout.write(
         formatThresholdsDiff(diffs, {
-          paths: diffPaths.map((p) => io.relativeSlashPath(this.host.cwd, p)),
+          // The check's temporary folder is shown absolute, not as ../../… (10, chapter 9.1).
+          paths: diffPaths.map((p) => (temporary ? p : io.relativeSlashPath(this.host.cwd, p))),
           width,
           color,
           prune: this.pruned,
           // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
           diffPath: paths.thresholdsDiff,
+          temporary,
         }),
       );
     }
-    this.next = nextHint({ report, commands: this.commands(), written: this.written });
+    this.next = nextHint({
+      report,
+      commands: this.commands(),
+      written: this.written,
+      temporary,
+    });
     return buildOutcome(report, paths);
   }
 
