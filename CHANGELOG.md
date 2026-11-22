@@ -41,6 +41,11 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The check at the end of the wizard runs your test command like the real runs: first with
+  `PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`, instead
+  of once with `PW_PERF_MODE=check`. The thresholds of the check go to a temporary folder that is
+  deleted afterwards; your thresholds files are not touched. The wizard shows the exit code of
+  each run.
 - The wizard no longer shows the check step when it shows the red "Action needed: nothing is
   measured yet" box; the summary still suggests the check. With the answer `steps` to "What to
   measure?" there is no red box, because steps are measured without the `perf` fixture.

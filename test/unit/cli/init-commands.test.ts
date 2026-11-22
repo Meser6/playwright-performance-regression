@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   chainsCommands,
+  checkRuns,
   commandProblem,
   commandSpawn,
   runCommands,
@@ -70,6 +71,35 @@ describe('check process (04-REQ-58)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok)
       expect(result.issues[0]?.hint).toContain('PW_PERF_MODE=check npx playwright test');
+  });
+});
+
+describe('runs of the check (04-REQ-58, v4 D4b)', () => {
+  test('04-AC-38 thresholds then test, both with 2 passes and the temporary thresholds dir', () => {
+    expect(checkRuns('npm run e2e', 'linux', '/tmp/pw-perf-check-x')).toEqual([
+      {
+        mode: 'thresholds',
+        env: {
+          PW_PERF_MODE: 'thresholds',
+          PW_PERF_PASSES: '2',
+          PW_PERF_THRESHOLDS_DIR: '/tmp/pw-perf-check-x',
+        },
+        shown: 'PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npm run e2e',
+      },
+      {
+        mode: 'test',
+        env: {
+          PW_PERF_MODE: 'test',
+          PW_PERF_PASSES: '2',
+          PW_PERF_THRESHOLDS_DIR: '/tmp/pw-perf-check-x',
+        },
+        shown: 'PW_PERF_MODE=test PW_PERF_PASSES=2 npm run e2e',
+      },
+    ]);
+    expect(checkRuns('npm run e2e', 'win32', 'C:\\t').map((r) => r.shown)).toEqual([
+      'npx cross-env PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npm run e2e',
+      'npx cross-env PW_PERF_MODE=test PW_PERF_PASSES=2 npm run e2e',
+    ]);
   });
 });
 

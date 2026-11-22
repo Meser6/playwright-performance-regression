@@ -20,12 +20,13 @@ import type { OutputStyle } from '../output.ts';
 import { CI_PATHS } from './ci.ts';
 import {
   chainsCommands,
+  checkRuns,
   commandProblem,
   commandSpawn,
   runCommands,
   testCommand,
 } from './commands.ts';
-import type { RunCommands } from './commands.ts';
+import type { CheckRun, RunCommands } from './commands.ts';
 import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
@@ -525,16 +526,24 @@ function nextSteps(
   return steps;
 }
 
+/** Exit code of one run of the wizard's check. */
+interface CheckResult {
+  mode: CheckRun['mode'];
+  code: number;
+}
+
 /**
- * Step 9 (04-REQ-58): runs the test command of step 6 with PW_PERF_MODE=check in the environment,
- * as a child process with the terminal.
+ * Step 9 (04-REQ-58, v4 D4b): runs the test command of step 6 twice, as a child process with the
+ * terminal: PW_PERF_MODE=thresholds, then PW_PERF_MODE=test, both with PW_PERF_PASSES=2 and the
+ * thresholds in a temporary directory that is removed afterwards. Returns the exit codes of the
+ * runs that ran (an empty list when the command is shown instead); Ctrl+C (130) stops the check.
  */
 async function runCheck(
   dialog: Dialog,
   host: CliHost,
   info: ProjectInfo,
   commands: RunCommands,
-): Promise<number | null> {
+): Promise<CheckResult[]> {
   const spec = commandSpawn({
     command: commands.base,
     nodePath: host.execPath,
@@ -545,28 +554,37 @@ async function runCheck(
   });
   if (!spec.ok) {
     dialog.line(dialog.t('checkManual', { command: commands.check }), 'yellow');
-    return null;
+    return [];
   }
-  const env: Record<string, string> = {};
-  for (const [name, value] of Object.entries(host.env)) if (value !== undefined) env[name] = value;
-  env.PW_PERF_MODE = 'check';
-  dialog.line(`$ ${commands.check}`, 'dim');
-  // Ctrl+C goes to the whole process group: the check stops and the wizard reports 130.
+  const inherited: Record<string, string> = {};
+  for (const [name, value] of Object.entries(host.env))
+    if (value !== undefined) inherited[name] = value;
+  const results: CheckResult[] = [];
+  const dir = await host.makeTempDir('pw-perf-check-');
+  // Ctrl+C goes to the whole process group: the run stops and the wizard reports 130.
   const stop = host.onSignal('SIGINT', () => undefined);
   try {
-    const child = host.spawnProcess(spec.value.file, spec.value.args, {
-      cwd: host.cwd,
-      env,
-      stdio: 'inherit',
-      shell: spec.value.shell,
-    });
-    return await new Promise<number>((resolve) => {
-      child.once('exit', (code, signal) => resolve(signal === 'SIGINT' ? 130 : (code ?? 1)));
-      child.once('error', () => resolve(1));
-    });
+    for (const run of checkRuns(commands.base, host.platform, dir)) {
+      dialog.line(`$ ${run.shown}`, 'dim');
+      const child = host.spawnProcess(spec.value.file, spec.value.args, {
+        cwd: host.cwd,
+        env: { ...inherited, ...run.env },
+        stdio: 'inherit',
+        shell: spec.value.shell,
+      });
+      const code = await new Promise<number>((resolve) => {
+        child.once('exit', (exit, signal) => resolve(signal === 'SIGINT' ? 130 : (exit ?? 1)));
+        child.once('error', () => resolve(1));
+      });
+      results.push({ mode: run.mode, code });
+      if (code === 130) break;
+      dialog.line(dialog.t('checkExit', { mode: run.mode, code }), code === 0 ? 'green' : 'yellow');
+    }
   } finally {
     stop();
+    await host.removeDir(dir);
   }
+  return results;
 }
 
 export async function runInit(
@@ -646,14 +664,14 @@ export async function runInit(
     // was not skipped; with the red box nothing would be measured, so no step 9 at all (04-REQ-58).
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
-    let checkCode: number | null = null;
+    let checkResults: CheckResult[] | null = null;
     if (redBox === null) {
       dialog.stepOf(9, 'stepCheck', 'checkLesson');
       if (answers.runCheck && written.length > 0 && wrapped) {
         if (await dialog.confirm(t('checkQuestion'), true)) {
           prompt?.close();
-          checkCode = await runCheck(dialog, host, info, commands);
-          if (checkCode === 130) {
+          checkResults = await runCheck(dialog, host, info, commands);
+          if (checkResults.some((r) => r.code === 130)) {
             host.stderr.write(infoLine(t('interrupted')));
             return 130;
           }
@@ -678,16 +696,21 @@ export async function runInit(
     if (plan.manualSteps.length > 0)
       dialog.line(`⚠ ${t('manualSteps', { count: plan.manualSteps.length })}`, 'yellow');
     if (redBox !== null) host.stdout.write(redBox);
-    if (checkCode !== null && checkCode !== 0)
-      dialog.say(`  ${t('checkExit', { code: checkCode })}`);
+    for (const r of checkResults ?? [])
+      if (r.code !== 0) dialog.say(`  ${t('checkExit', { mode: r.mode, code: r.code })}`);
     dialog.say('', `  ${paint(t('runLine', { command: commands.test }), 'bold')}`);
     dialog.line(t('runLesson'), 'dim');
     if (host.platform === 'win32') dialog.line(t('windowsNote'), 'dim');
     dialog.say(
       `  ${paint(t('nextSteps'), 'bold')}`,
-      ...nextSteps(dialog, info, answers, commands, written, checkCode !== null).map(
-        (s, i) => `    ${i + 1}. ${s}`,
-      ),
+      ...nextSteps(
+        dialog,
+        info,
+        answers,
+        commands,
+        written,
+        checkResults !== null && checkResults.length > 0,
+      ).map((s, i) => `    ${i + 1}. ${s}`),
     );
     const oldScripts = info.existing.scripts.filter((name) => name.startsWith('perf:'));
     if (oldScripts.length > 0) dialog.say(`  ${t('oldScripts', { names: oldScripts.join(', ') })}`);

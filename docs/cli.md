@@ -185,8 +185,10 @@ project. Run it again at any time; in a project that is already set up it change
 reads the project files as text (the Playwright config is never executed), asks a few questions
 (all tests or only those tagged `@perf`, passes, what to measure, the threshold headroom preset,
 your test command, the CI jobs), shows a diff of every change and applies the changes after you
-confirm them. At the end it offers a check (your test command with `PW_PERF_MODE=check`) and
-prints the exact commands for your project, e.g. `Run: PW_PERF_MODE=test npm run e2e:qa`.
+confirm them. At the end it offers a check: your test command runs twice, first with
+`PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`. The
+thresholds of the check go to a temporary folder that is deleted afterwards, so your thresholds
+files are never written or read by it. Then it prints the exact commands for your project, e.g. `Run: PW_PERF_MODE=test npm run e2e:qa`.
 
 The test command question suggests the command of your package manager (`npx playwright test`,
 `pnpm exec playwright test` or `yarn playwright test`); press Enter to keep it, or type the
@@ -195,7 +197,7 @@ the suggestion and skip the check. The wizard takes the command as typed: the su
 `PW_PERF_MODE=<mode> ` in front of it (on Windows `npx cross-env PW_PERF_MODE=<mode> `), the CI
 jobs run it with `PW_PERF_MODE` in the job environment (quoted where YAML or Groovy need it), and
 the check runs it through your shell (`$SHELL`, else `/bin/sh`; on Windows `%ComSpec%`, usually
-cmd) with `PW_PERF_MODE=check` in its environment. A prefix only reaches the first command of a
+cmd) with `PW_PERF_MODE` and `PW_PERF_PASSES` in its environment. A prefix only reaches the first command of a
 chain (`a && b`), so the wizard warns about chains: put them in a `package.json` script and type
 `npm run <script>`. The CI jobs run on Linux: fix a command written for cmd or PowerShell there. It does not ask for origin labels: requests to the
 `baseURL` origin get no label in the endpoint keys and other hosts are labeled with their host;

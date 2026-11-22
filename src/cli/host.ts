@@ -78,6 +78,10 @@ export interface CliHost {
   listDir(path: string): Promise<DirEntry[]>;
   /** Writes a UTF-8 file, creating its directory. */
   writeText(path: string, text: string): Promise<void>;
+  /** A new empty directory in the temporary directory of the system (the wizard's check, 04-REQ-58). */
+  makeTempDir(prefix: string): Promise<string>;
+  /** Removes a directory with its content; nothing when it does not exist. */
+  removeDir(path: string): Promise<void>;
   /** Terminal questions on stdin and stdout (init). */
   createPrompt(): Prompt;
 }

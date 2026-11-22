@@ -2,7 +2,8 @@
 // the project and the check child process (04-REQ-58, NF-05, V-03).
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { readTextFile } from '../io/index.ts';
@@ -81,6 +82,8 @@ export function nodeHost(): CliHost {
       await mkdir(dirname(path), { recursive: true });
       await writeFile(path, text, 'utf8');
     },
+    makeTempDir: (prefix) => mkdtemp(join(tmpdir(), prefix)),
+    removeDir: (path) => rm(path, { recursive: true, force: true }),
     createPrompt: () => readlinePrompt(process.stdin, process.stdout),
   };
 }

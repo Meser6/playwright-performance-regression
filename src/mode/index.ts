@@ -14,6 +14,8 @@ export interface PerfModeState {
   env?: string;
   runId?: string;
   outcomeFile?: string;
+  /** Internal PW_PERF_THRESHOLDS_DIR: thresholds.dir of the wizard's check (04-REQ-58). */
+  thresholdsDir?: string;
   prune?: boolean;
 }
 
@@ -27,6 +29,7 @@ const REPEAT = 'PW_PERF_REPEAT';
 const ENV = 'PW_PERF_ENV';
 const RUN_ID = 'PW_PERF_RUN_ID';
 const OUTCOME_FILE = 'PW_PERF_OUTCOME_FILE';
+const THRESHOLDS_DIR = 'PW_PERF_THRESHOLDS_DIR';
 const PRUNE = 'PW_PERF_PRUNE';
 const MAX_TESTS = 'PW_PERF_MAX_TESTS';
 /** Variables of the wizard (04, chapter 4.10; D-43). */
@@ -181,6 +184,8 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
   if (runId !== undefined) state.runId = runId;
   const outcomeFile = read(env, OUTCOME_FILE);
   if (outcomeFile !== undefined) state.outcomeFile = outcomeFile;
+  const thresholdsDir = read(env, THRESHOLDS_DIR);
+  if (thresholdsDir !== undefined) state.thresholdsDir = thresholdsDir;
 
   const maxTests = read(env, MAX_TESTS);
   if (maxTests !== undefined) {
@@ -225,6 +230,7 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
   if (state.env !== undefined) env[ENV] = state.env;
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
   if (state.outcomeFile !== undefined) env[OUTCOME_FILE] = state.outcomeFile;
+  if (state.thresholdsDir !== undefined) env[THRESHOLDS_DIR] = state.thresholdsDir;
   if (state.prune === true) env[PRUNE] = '1';
   if (state.maxTests !== undefined) env[MAX_TESTS] = String(state.maxTests);
   return env;
@@ -298,6 +304,8 @@ export { testArgsFromArgv, testFilters } from './playwright-args.ts';
 
 /** Name of the run id variable, for the main process of the environment mode (04-REQ-60). */
 export const RUN_ID_ENV = RUN_ID;
+/** Name of the internal thresholds directory variable of the wizard's check (04-REQ-58). */
+export const THRESHOLDS_DIR_ENV = THRESHOLDS_DIR;
 /** Name of the pass variable, set for the processes of passes 2…N (04-REQ-64). */
 export const PASS_ENV = PASS;
 export { passCommand } from './pass-command.ts';
