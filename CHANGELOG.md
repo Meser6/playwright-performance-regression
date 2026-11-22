@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- Collector: with Playwright 1.57 (Chromium) a `fetch` answered with `204 No Content` was
+  recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
+  measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
+  and time.
 - `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
 - HTML report: the Source column of the Endpoints table (`browser`, `request`) is an ordinary
   cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.
