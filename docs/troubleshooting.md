@@ -435,6 +435,17 @@ report, but the result is incomplete. Run the measurement again.
 manager of the script is no longer on the path. The message shows the command. Check that the test
 command runs on its own, or set `run.passes` to 1.
 
+### RUN_REPORT_DIR_NOT_CLEANED
+
+**Warning.** Every `test` and `thresholds` run empties `report.dir` (default `pw-perf-results/`)
+when its first test starts, so old reports never mix with new ones. The folder was left as it is
+because it does not look like a results folder: it is the project directory, the directory of
+`playwright.config`, the home directory, the filesystem root, `thresholds.dir` or a folder that
+contains one of them, or it holds a thresholds file, `package.json`, `playwright.config.*`, `.git`
+or more than 10000 entries. Set `report.dir` to a folder used only for the results, e.g.
+`pw-perf-results`. The same warning with the error text means a file could not be removed;
+check that the folder is writable. The run itself is not affected.
+
 ### TESTS_FAILED
 
 **Warning.** Some test executions failed, but no more than `gate.maxFailedTestShare` (10% by
