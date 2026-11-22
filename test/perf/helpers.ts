@@ -1,5 +1,5 @@
 // Shared helpers of the performance and statistical tests (12, chapter 7). These tests run in the
-// nightly and weekly workflows (`pnpm test:perf`, `pnpm test:stats`), not on every push, and do
+// perf (before a release) and weekly workflows (`pnpm test:perf`, `pnpm test:stats`), not on every push, and do
 // not block a merge (12-D-05). Each test writes its measurements to PERF_RESULTS_DIR
 // (default perf-test-results/), which the workflows upload as an artifact (12-REQ-12, 12-AC-04).
 // Needs `pnpm build` and the Chromium of the installed Playwright.

@@ -7,7 +7,7 @@ Releases are published by `.github/workflows/release.yml` when a tag `vX.Y.Z` or
    **and** `create/package.json`, that `CHANGELOG.md` has a `## [X.Y.Z]` section, and that
    neither `package.json` has `"private": true` (`scripts/check-release.mjs`); otherwise it stops
    before anything is published;
-2. runs the full CI (`ci.yml`) and the performance tests (`nightly.yml`) on the tagged commit;
+2. runs the full CI (`ci.yml`) and the performance tests (`perf.yml`) on the tagged commit;
 3. builds and **stages** both packages on npm from the `npm` environment with npm provenance
    through trusted publishing (OIDC; no npm token; `npm stage publish`), dist-tag `next` for
    `-next.N`, `latest` otherwise; a version already on npm is skipped, so a failed run can be

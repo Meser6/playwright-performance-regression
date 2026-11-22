@@ -147,13 +147,13 @@ describe('workflows', () => {
       '12-STAT-03',
     ]);
     for (const [file, id, command] of [
-      ['nightly.yml', 'perf', 'pnpm test:perf'],
+      ['perf.yml', 'perf', 'pnpm test:perf'],
       ['weekly.yml', 'stats', 'pnpm test:stats'],
     ] as const) {
       const wf = workflow(file);
       // 13-D-20: performance tests run before a release or by hand, never on a schedule.
       expect(Object.keys(wf.on), file).toEqual(
-        file === 'nightly.yml'
+        file === 'perf.yml'
           ? ['workflow_dispatch', 'workflow_call']
           : expect.arrayContaining(['schedule']),
       );
@@ -183,9 +183,9 @@ describe('workflows', () => {
     const release = workflow('release.yml');
     expect(release.on).toEqual({ push: { tags: ['v*'] } });
     expect(job(release, 'ci').uses).toBe('./.github/workflows/ci.yml');
-    expect(job(release, 'perf').uses).toBe('./.github/workflows/nightly.yml');
+    expect(job(release, 'perf').uses).toBe('./.github/workflows/perf.yml');
     expect(Object.keys(workflow('ci.yml').on)).toContain('workflow_call');
-    expect(Object.keys(workflow('nightly.yml').on)).toContain('workflow_call');
+    expect(Object.keys(workflow('perf.yml').on)).toContain('workflow_call');
     expect(job(release, 'ci').needs).toBe('prepare');
     expect(job(release, 'publish').needs).toEqual(['prepare', 'ci', 'perf']);
     expect(job(release, 'github-release').needs).toEqual(['prepare', 'publish']);
