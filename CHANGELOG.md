@@ -41,6 +41,13 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- HTML report: a key without timed samples shows its other statuses under Samples and in its
+  details, e.g. "5 × 404 (not timed)"; the Endpoints and Steps tab counts are neutral with a red
+  badge of keys with violations; the thresholds file source is shortened to the version and the
+  date (full text on hover); Top keys in the Tests tab put the time under each key; "Most
+  expensive tests" names the project when more than one is measured; the TTFB column is hidden
+  when no key has TTFB; a step without a location reads "boxed step (no location)".
+
 - Violations are counted the same way in the console and the HTML report: failed checks with
   the number of keys (`8 blocking violations in 7 keys`); the Violations tile counts failed checks
   too. Apdex, slow share (wilson) and error rate over the limit read in percentage points

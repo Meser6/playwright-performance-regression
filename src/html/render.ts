@@ -30,8 +30,10 @@ interface Tab {
   id: TabId;
   label: string;
   count: number | null;
-  /** Badge tone (11-REQ-50): red for violations, orange for warnings. */
+  /** Badge tone (11-REQ-50): orange for warnings, neutral otherwise. */
   tone: string;
+  /** Keys with a violation, a second red badge when > 0 (11-REQ-50, F2 decision 9). */
+  failing: number;
   /** A sentence next to the panel heading. */
   note: HtmlValue;
   content: HtmlValue;
@@ -66,9 +68,9 @@ function header(report: RunReport): SafeHtml {
   );
 }
 
-function failing(ctx: Ctx, kind: 'api' | 'step'): boolean {
+function failing(ctx: Ctx, kind: 'api' | 'step'): number {
   const data = kind === 'api' ? ctx.data.endpoints : ctx.data.steps;
-  return Object.values(data).some((a) => a.evaluation.result === 'fail');
+  return Object.values(data).filter((a) => a.evaluation.result === 'fail').length;
 }
 
 function tabs(ctx: Ctx): Tab[] {
@@ -83,6 +85,7 @@ function tabs(ctx: Ctx): Tab[] {
       label: 'Overview',
       count: null,
       tone: '',
+      failing: 0,
       note: null,
       content: overview(ctx, DOCS_URL),
     },
@@ -90,7 +93,8 @@ function tabs(ctx: Ctx): Tab[] {
       id: 'endpoints',
       label: 'Endpoints',
       count: endpoints,
-      tone: failing(ctx, 'api') ? 'bad' : '',
+      tone: '',
+      failing: failing(ctx, 'api'),
       note: 'Browser requests and request calls to measured origins, worst first.',
       content:
         endpoints > 0
@@ -114,7 +118,8 @@ function tabs(ctx: Ctx): Tab[] {
       id: 'steps',
       label: 'Steps',
       count: steps,
-      tone: failing(ctx, 'step') ? 'bad' : '',
+      tone: '',
+      failing: failing(ctx, 'step'),
       note: html`<code>test.step</code> durations, grouped by step path across tests.`,
       content: keyTable(ctx, 'step', 'Steps'),
     });
@@ -125,6 +130,7 @@ function tabs(ctx: Ctx): Tab[] {
       label: 'Tests',
       count: report.testBreakdown?.tests.length ?? null,
       tone: '',
+      failing: 0,
       note:
         (report.testBreakdown?.tests.length ?? 0) > 0
           ? 'Total wait is the sum of request durations; parallel requests count in full, so it can exceed the test duration.'
@@ -136,6 +142,7 @@ function tabs(ctx: Ctx): Tab[] {
       label: 'Warnings',
       count: issues,
       tone: issues > 0 ? 'warn' : '',
+      failing: 0,
       note:
         report.toolErrors.length === 0
           ? 'No tool errors.'
@@ -147,6 +154,7 @@ function tabs(ctx: Ctx): Tab[] {
       label: 'Run & config',
       count: null,
       tone: '',
+      failing: 0,
       note: null,
       content: runTab(report),
     },
@@ -158,7 +166,7 @@ function tabs(ctx: Ctx): Tab[] {
 function tabBar(list: readonly Tab[]): SafeHtml {
   return html`<nav class="tabs" aria-label="Report sections"><div class="seg" data-tabs="">${list.map(
     (t) =>
-      html`<a href="#tab-${t.id}" id="tab-${t.id}-link" data-tab="${t.id}">${t.label}${t.count === null ? null : html` ${badge(t.count, t.tone)}`}</a>`,
+      html`<a href="#tab-${t.id}" id="tab-${t.id}-link" data-tab="${t.id}">${t.label}${t.count === null ? null : html` ${badge(t.count, t.tone)}`}${t.failing === 0 ? null : html` <span class="n bad">${t.failing}<span class="sr"> with violations</span></span>`}</a>`,
   )}</div></nav>`;
 }
 

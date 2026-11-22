@@ -587,6 +587,8 @@ function rankingsSection(ctx: Ctx): SafeHtml | null {
 function expensiveTests(ctx: Ctx): SafeHtml | null {
   const tests = ctx.report.testBreakdown?.tests ?? [];
   if (tests.length === 0) return null;
+  // The project under the title when more than one project is measured (F2 decision 20).
+  const several = ctx.report.runConditions.projects.filter((p) => p.role === 'measured').length > 1;
   return join(
     html`<section aria-labelledby="exp-h">`,
     heading(
@@ -599,7 +601,7 @@ function expensiveTests(ctx: Ctx): SafeHtml | null {
       .slice(0, EXPENSIVE_TESTS)
       .map(
         (t) =>
-          html`<li><span class="tt"><span>${truncateMiddle(t.title, 120)}</span><span class="sub">${t.file}:${t.line}</span></span><span class="num">${formatMs(t.totalMs)}<span class="sub">${formatMs(Math.round((t.totalMs / t.executions) * 10) / 10)} per run</span></span><span class="num">${t.requestCount}<span class="sub">requests</span></span></li>`,
+          html`<li><span class="tt"><span>${truncateMiddle(t.title, 120)}</span><span class="sub">${several ? `${t.project === '' ? 'default project' : t.project} · ` : ''}${t.file}:${t.line}</span></span><span class="num">${formatMs(t.totalMs)}<span class="sub">${formatMs(Math.round((t.totalMs / t.executions) * 10) / 10)} per run</span></span><span class="num">${t.requestCount}<span class="sub">requests</span></span></li>`,
       )}</ul></div></section>`,
   );
 }

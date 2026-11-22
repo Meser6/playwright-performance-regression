@@ -1658,7 +1658,8 @@ td.r > * + * {
   margin-left: 6px;
 }
 
-td.r .why {
+td.r .why,
+td.num .why {
   display: block;
   margin: 4px 0 0;
   color: var(--fg-3);
@@ -1754,6 +1755,12 @@ td.tk > * {
 
 td.tk > * + * {
   margin-top: 4px;
+}
+
+td.tk2 > * {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 
 .tk .kl {
