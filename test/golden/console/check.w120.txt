@@ -11,6 +11,7 @@ Requests:     312 requests · 17 api keys · 0 step keys · 2 origins
 Top keys:
    1. api  GET /api/session                                   20 samples · 10 tests
    2. api  GET api-pr-4821.ci.example.com/v1/catalog          18 samples · 9 tests
+   3. step checkout › pay                                     1 sample · 1 test
 Thresholds files: api missing (pw-perf-thresholds.json)
 
 ╭─ ⚠ Warnings (1) ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
