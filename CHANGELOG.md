@@ -124,6 +124,8 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 - `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
 - `PW_PERF_MODE=check`: the project lines, the header and the requests line use the singular too
   (`5 requests in 1 test`, `1 of 1 test run`, `1 api key`) instead of `1 tests`.
+- Setup wizard: the "nothing is measured yet" box counts the test files as `(files: 1)` instead
+  of `(1 files)` (English, Spanish, French, Italian).
 - HTML report: the Source column of the Endpoints table (`browser`, `request`) is an ordinary
   cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.
 - The wizard's red box (`INIT_TEST_OBJECT_MANUAL`) is full width in a pseudo-terminal that reports

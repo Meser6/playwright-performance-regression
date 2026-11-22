@@ -173,7 +173,7 @@ const en = {
   boxFixtures: 'If you have a fixtures file that exports test:',
   boxFixturesFiles: 'Files with .extend(): {files}',
   boxImports:
-    'If your tests import test from @playwright/test ({count} files), change the import in each of them:',
+    'If your tests import test from @playwright/test (files: {count}), change the import in each of them:',
   boxDocs: 'Other layouts (mergeTests, several test objects, playwright-bdd): {url}',
   runLine: 'Run: {command}',
   runLesson: 'A measurement is your usual test command with PW_PERF_MODE set.',
@@ -521,7 +521,7 @@ const es: Messages = {
   boxFixtures: 'Si tienes un archivo de fixtures que exporta test:',
   boxFixturesFiles: 'Archivos con .extend(): {files}',
   boxImports:
-    'Si tus tests importan test de @playwright/test ({count} archivos), cambia el import en cada uno:',
+    'Si tus tests importan test de @playwright/test (archivos: {count}), cambia el import en cada uno:',
   boxDocs: 'Otras estructuras (mergeTests, varios objetos test, playwright-bdd): {url}',
   runLine: 'Ejecutar: {command}',
   runLesson: 'Una medición es tu comando de tests habitual con PW_PERF_MODE.',
@@ -701,7 +701,7 @@ const fr: Messages = {
   boxFixtures: 'Si vous avez un fichier de fixtures qui exporte test :',
   boxFixturesFiles: 'Fichiers avec .extend() : {files}',
   boxImports:
-    'Si vos tests importent test depuis @playwright/test ({count} fichiers), changez l’import dans chacun :',
+    'Si vos tests importent test depuis @playwright/test (fichiers : {count}), changez l’import dans chacun :',
   boxDocs: 'Autres structures (mergeTests, plusieurs objets test, playwright-bdd) : {url}',
   runLine: 'Lancer : {command}',
   runLesson: 'Une mesure est votre commande de tests habituelle avec PW_PERF_MODE.',
@@ -880,7 +880,7 @@ const it: Messages = {
   boxFixtures: 'Se hai un file di fixture che esporta test:',
   boxFixturesFiles: 'File con .extend(): {files}',
   boxImports:
-    'Se i tuoi test importano test da @playwright/test ({count} file), cambia l’import in ognuno:',
+    'Se i tuoi test importano test da @playwright/test (file: {count}), cambia l’import in ognuno:',
   boxDocs: 'Altre strutture (mergeTests, più oggetti test, playwright-bdd): {url}',
   runLine: 'Esegui: {command}',
   runLesson: 'Una misura è il tuo solito comando di test con PW_PERF_MODE.',
