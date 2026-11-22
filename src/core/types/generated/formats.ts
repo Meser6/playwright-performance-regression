@@ -149,6 +149,10 @@ export interface PackageConfig {
      * Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit', 'allure-playwright'). By default withPerf() keeps only the console reporters line, dot and github (list becomes dot; name list here to keep it) and the package reporter (D-23, 04-REQ-32).
      */
     keepReporters?: string[];
+    /**
+     * Sets use.launchOptions.slowMo to 0 in every measured project in perf mode (03-REQ-27, D-45). slowMo delays every browser action and distorts the measured times; off by default because some tests are unstable without it. false: slowMo stays and perf mode warns about it (CONFIG_SLOW_MO).
+     */
+    overrideSlowMo?: boolean;
   };
   /**
    * What the collector measures (05).

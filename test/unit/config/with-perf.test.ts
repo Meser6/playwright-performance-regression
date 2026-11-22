@@ -132,6 +132,16 @@ describe('withPerf in perf mode', () => {
     ]);
   });
 
+  test('03-AC-19 run.overrideSlowMo sets slowMo to 0 without a warning', () => {
+    const result = withPerf(
+      { use: { launchOptions: { slowMo: 50 } } },
+      { run: { overrideSlowMo: true } },
+    );
+    expect(result.use?.launchOptions?.slowMo).toBe(0);
+    expect(getRegistered()?.warnings).toEqual([]);
+    expect(getRegistered()?.runConditions.overridden).toContain('slowMo');
+  });
+
   test('03-AC-10 a plain object gives the same result as a defineConfig() object', () => {
     const plain: PlaywrightTestConfig = {
       testDir: 'e2e',

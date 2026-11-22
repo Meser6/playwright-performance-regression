@@ -1,4 +1,5 @@
-// Run conditions of perf mode (01, chapter 4.4; 04-REQ-18, 04-REQ-32, 04-REQ-33; ADR-0006).
+// Run conditions of perf mode (01, chapter 4.4; 04-REQ-18, 04-REQ-32, 04-REQ-33, 03-REQ-27;
+// ADR-0006).
 // Pure: a copy of the Playwright config is computed from the config object and the resolved run
 // options; the input is never mutated (01-REQ-09).
 import type { PlaywrightTestConfig, ReporterDescription } from '@playwright/test';
@@ -13,6 +14,8 @@ export interface PerfRunInput {
   reporterPath: string;
   /** run.grep of the resolved package config (03-REQ-25); null or absent: all tests. */
   grep?: string | null;
+  /** run.overrideSlowMo (03-REQ-27, D-45): slowMo 0 in every measured project. */
+  overrideSlowMo?: boolean;
 }
 
 export interface PerfRunPlan<T> {
@@ -135,8 +138,36 @@ function planReporters(
   return { reporters, removed, replaced };
 }
 
+type LaunchOptions = NonNullable<Use['launchOptions']>;
+
+/**
+ * The launch options a project runs with: Playwright merges the project use into the config use
+ * shallowly, so the project's own launchOptions replace the global ones as a whole.
+ */
+function effectiveLaunchOptions(config: Config, project?: Project): LaunchOptions | undefined {
+  return project?.use?.launchOptions ?? config.use?.launchOptions;
+}
+
+/**
+ * Measured scopes and their launch options: each measured project or, without a projects list,
+ * the global use (one default project).
+ */
+function measuredLaunchOptions(
+  config: Config,
+  measured: ReadonlySet<string>,
+): (LaunchOptions | undefined)[] {
+  if (config.projects === undefined) return [config.use?.launchOptions];
+  return config.projects
+    .filter((p) => measured.has(projectName(p)))
+    .map((p) => effectiveLaunchOptions(config, p));
+}
+
 /** Settings withPerf() changes; retries stay from the config (D-38). */
-function overriddenSettings(config: Config, kept: readonly Project[]): string[] {
+function overriddenSettings(
+  config: Config,
+  kept: readonly Project[],
+  slowMoOverridden: boolean,
+): string[] {
   const scopes: { use?: Use }[] = [config, ...kept];
   const repeatChanged = [config, ...kept].some(
     (scope) => scope.repeatEach !== undefined && scope.repeatEach !== 1,
@@ -150,6 +181,7 @@ function overriddenSettings(config: Config, kept: readonly Project[]): string[] 
       name,
       scopes.some((scope) => records(scope.use?.[name])),
     ]),
+    ['slowMo', slowMoOverridden],
   ];
   return changed.filter(([, value]) => value).map(([name]) => name);
 }
@@ -167,7 +199,7 @@ function slowMoWarnings(config: Config, kept: readonly Project[]): ConfigIssue[]
       code: 'CONFIG_SLOW_MO',
       path: 'use.launchOptions.slowMo',
       message: `use.launchOptions.slowMo: is greater than 0 in ${places.join(', ')}; it slows down every browser action and distorts the measured times`,
-      hint: 'Remove slowMo from the Playwright config for the measurement run.',
+      hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
     },
   ];
 }
@@ -176,7 +208,7 @@ function slowMoWarnings(config: Config, kept: readonly Project[]): ConfigIssue[]
  * The Playwright config of a perf mode run (01, chapter 4.4): every project (the test command
  * selects them, 04-REQ-18), one worker, every test once per pass (repeatEach 1, D-39), retries
  * from the config (D-38), artifacts off, no run limits, filtered reporters plus the package
- * reporter.
+ * reporter; with run.overrideSlowMo, slowMo 0 in every measured project (03-REQ-27).
  */
 export function planPerfRun<T extends PlaywrightTestConfig>(
   config: T,
@@ -197,20 +229,34 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
   };
   result.repeatEach = 1;
   const grep = input.grep ?? null;
+  const overrideSlowMo = input.overrideSlowMo ?? false;
   const kept = source.projects ?? [];
+  const measuredSet = new Set(measured);
   if (source.projects !== undefined) {
-    const measuredSet = new Set(measured);
     result.projects = kept.map((p) => {
       const project: Project = { ...p, repeatEach: 1, use: artifactsOff(p.use) };
+      const isMeasured = measuredSet.has(projectName(p));
       // run.grep only for measured projects; setup and teardown projects run in full.
-      if (grep !== null && measuredSet.has(projectName(p))) {
+      if (grep !== null && isMeasured) {
         project.grep = andGrep(grep, p.grep ?? source.grep);
+      }
+      if (overrideSlowMo && isMeasured) {
+        project.use = {
+          ...project.use,
+          launchOptions: { ...effectiveLaunchOptions(source, p), slowMo: 0 },
+        };
       }
       return project;
     });
-  } else if (grep !== null) {
-    result.grep = andGrep(grep, source.grep);
+  } else {
+    if (grep !== null) result.grep = andGrep(grep, source.grep);
+    if (overrideSlowMo) {
+      result.use = { ...result.use, launchOptions: { ...source.use?.launchOptions, slowMo: 0 } };
+    }
   }
+  const slowMoOverridden =
+    overrideSlowMo &&
+    measuredLaunchOptions(source, measuredSet).some((options) => positive(options?.slowMo));
 
   return {
     ok: true,
@@ -218,11 +264,11 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
       config: result as T,
       measuredProjects: measured,
       runConditions: {
-        overridden: overriddenSettings(source, kept),
+        overridden: overriddenSettings(source, kept, slowMoOverridden),
         removedReporters: removed,
         replacedReporters: replaced,
       },
-      warnings: slowMoWarnings(source, kept),
+      warnings: overrideSlowMo ? [] : slowMoWarnings(source, kept),
     },
   };
 }

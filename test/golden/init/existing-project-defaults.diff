@@ -52,7 +52,7 @@
 +}
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,358 @@
+@@ -0,0 +1,360 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
@@ -113,6 +113,8 @@
 +  //   // Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 'junit',
 +  //   // 'allure-playwright').
 +  //   keepReporters: [],
++  //   // Sets use.launchOptions.slowMo to 0 in every measured project in perf mode.
++  //   overrideSlowMo: false,
 +  // },
 +
 +  // What the collector measures.

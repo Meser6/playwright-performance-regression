@@ -71,6 +71,13 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   e.g. `2 tests in tests/api.spec.ts import test without withPerfFixtures() …`; a crashed worker
   is mentioned only when a worker actually crashed.
 
+### Added
+
+- `run.overrideSlowMo` (default `false`): when `true`, perf mode sets
+  `use.launchOptions.slowMo` to 0 in every measured project and lists `slowMo` in the
+  "perf mode overrides …" line. With `false`, the `CONFIG_SLOW_MO` warning stays and now points
+  to the option.
+
 ## [0.1.0-next.3] - 2026-11-21
 
 `0.1.0-next.2` was tagged but not published (the release stopped on the performance tests).

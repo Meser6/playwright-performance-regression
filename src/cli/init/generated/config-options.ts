@@ -43,6 +43,12 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     leaf: true,
     default: [],
   },
+  {
+    path: 'run.overrideSlowMo',
+    description: 'Sets use.launchOptions.slowMo to 0 in every measured project in perf mode.',
+    leaf: true,
+    default: false,
+  },
   { path: 'measure', description: 'What the collector measures.', leaf: false },
   {
     path: 'measure.resourceTypes',

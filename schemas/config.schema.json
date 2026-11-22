@@ -51,6 +51,11 @@
           "uniqueItems": true,
           "items": {"type": "string", "minLength": 1},
           "default": []
+        },
+        "overrideSlowMo": {
+          "description": "Sets use.launchOptions.slowMo to 0 in every measured project in perf mode (03-REQ-27, D-45). slowMo delays every browser action and distorts the measured times; off by default because some tests are unstable without it. false: slowMo stays and perf mode warns about it (CONFIG_SLOW_MO).",
+          "type": "boolean",
+          "default": false
         }
       }
     },
