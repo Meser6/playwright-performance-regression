@@ -273,11 +273,16 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
   );
 
   test(
-    '04-AC-40 --reporter=junit warns RUN_REPORTER_FLAG and writes no report',
+    '04-AC-40 --reporter=dot fails a test run before the tests, a check only warns',
     async () => {
       const run = await runPlaywright({ PW_PERF_MODE: 'test' }, ['--reporter=dot']);
-      expect(run.output).toContain('RUN_REPORTER_FLAG');
+      expect(run.status, run.output).toBe(1);
+      expect(run.output).toContain('--reporter replaces the pw-perf reporter');
       expect(run.report).toBeNull();
+      expect(run.outcome).toBeNull();
+      const check = await runPlaywright({ PW_PERF_MODE: 'check' }, ['--reporter=dot']);
+      expect(check.status, check.output).toBe(0);
+      expect(check.output).toContain('warning RUN_REPORTER_FLAG');
     },
     RUN_TIMEOUT,
   );

@@ -41,6 +41,11 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- **Breaking:** a `--reporter` option without the pw-perf reporter in the test command (also in
+  an npm script) now stops a `PW_PERF_MODE=test` or `thresholds` run before the tests with exit
+  code 1 (`RUN_REPORTER_FLAG`). It used to be a warning on stderr and the run ended with exit code
+  0 although nothing was measured. A check still only warns. Remove `--reporter` from the
+  measurement command or add `,playwright-performance-regression/reporter` to its value.
 - Wizard, step "What to measure": the `api` lesson says that it also covers `request` calls in
   API tests (all seven languages).
 - **Breaking:** the default `report.dir` is now `reports/pw-perf/` (was `pw-perf-results/`).
