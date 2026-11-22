@@ -121,6 +121,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   it has a row for API clients made with `request.newContext()` (`trackRequestContext()`). The
   note of the Endpoints tab in the HTML report mentions request calls, not only browser
   requests.
+- The wizard's check works on small test suites: with 2 passes its thresholds run often derived
+  nothing (`THRESHOLDS_NOTHING_TO_DERIVE`, "1 tool error") and the test run had nothing to
+  compare with. In the check, a key now needs 2 successful samples instead of
+  `checks.time.median.minSamples` (5 by default); real runs are unchanged.
 - The wizard's check no longer asks you to commit its temporary thresholds files: its
   thresholds run showed `Thresholds: ../../…/T/pw-perf-check-…/pw-perf-thresholds.json`,
   "Review the changes and commit the thresholds files" and `Next: commit …`. It now shows the

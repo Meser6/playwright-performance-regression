@@ -107,8 +107,8 @@ describe.each([
       const before = readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'));
       const contents = before.map((f) => readFileSync(join(dir, f), 'utf8'));
       try {
-        // 5 passes, not the 2 of the check: this small suite needs them to derive anything.
-        const env = { PW_PERF_PASSES: '5', PW_PERF_THRESHOLDS_DIR: tmp };
+        // The 2 passes of the check: PW_PERF_MIN_SAMPLES=2 lets this small suite derive (04-D-46).
+        const env = { PW_PERF_PASSES: '2', PW_PERF_THRESHOLDS_DIR: tmp, PW_PERF_MIN_SAMPLES: '2' };
         const thresholds = await harness.run(dir, {
           env: { ...env, PW_PERF_MODE: 'thresholds' },
         });

@@ -40,6 +40,8 @@ export function runCommands(command: string, platform: string): RunCommands {
 
 /** Passes of each run of the wizard's check (04-REQ-58, v4 D4b). */
 export const CHECK_PASSES = 2;
+/** Cap of checks.time.median.minSamples in the wizard's check, so 2 passes derive (04-D-46). */
+export const CHECK_MIN_SAMPLES = 2;
 
 /** One run of the wizard's check (04-REQ-58). */
 export interface CheckRun {
@@ -53,14 +55,20 @@ export interface CheckRun {
 /**
  * The two runs of the wizard's check (04-REQ-58, v4 D4b): C with PW_PERF_MODE=thresholds, then
  * with PW_PERF_MODE=test, both with PW_PERF_PASSES=2 and the internal PW_PERF_THRESHOLDS_DIR, so
- * the thresholds of the check stay in a temporary directory. The internal variable is not shown.
+ * the thresholds of the check stay in a temporary directory, and the internal
+ * PW_PERF_MIN_SAMPLES=2, so a small suite derives thresholds (04-D-46). Internal variables are not shown.
  */
 export function checkRuns(command: string, platform: string, thresholdsDir: string): CheckRun[] {
   const prefix = platform === 'win32' ? 'npx cross-env ' : '';
   const passes = String(CHECK_PASSES);
   return (['thresholds', 'test'] as const).map((mode) => ({
     mode,
-    env: writeModeState({ mode, passes: CHECK_PASSES, thresholdsDir }),
+    env: writeModeState({
+      mode,
+      passes: CHECK_PASSES,
+      thresholdsDir,
+      minSamples: CHECK_MIN_SAMPLES,
+    }),
     shown: `${prefix}PW_PERF_MODE=${mode} PW_PERF_PASSES=${passes} ${command}`,
   }));
 }

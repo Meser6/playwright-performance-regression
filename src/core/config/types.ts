@@ -100,6 +100,8 @@ export interface ConfigOverrides {
   mode?: 'test' | 'thresholds';
   /** From the internal PW_PERF_THRESHOLDS_DIR (the wizard's check, 04-REQ-58); replaces thresholds.dir. */
   thresholdsDir?: string;
+  /** From the internal PW_PERF_MIN_SAMPLES (the wizard's check, 04-D-46): caps checks.time.median.minSamples. */
+  minSamples?: number;
   /** Where the input came from; 'json' rejects keys.keyBuilder (03-REQ-10). Default 'code'. */
   source?: 'code' | 'json' | 'snapshot';
 }

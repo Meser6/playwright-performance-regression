@@ -16,6 +16,8 @@ export interface PerfModeState {
   runId?: string;
   /** Internal PW_PERF_THRESHOLDS_DIR: thresholds.dir of the wizard's check (04-REQ-58). */
   thresholdsDir?: string;
+  /** Internal PW_PERF_MIN_SAMPLES: cap of checks.time.median.minSamples in the wizard's check (04-D-46). */
+  minSamples?: number;
   prune?: boolean;
 }
 
@@ -29,6 +31,7 @@ const REPEAT = 'PW_PERF_REPEAT';
 const ENV = 'PW_PERF_ENV';
 const RUN_ID = 'PW_PERF_RUN_ID';
 const THRESHOLDS_DIR = 'PW_PERF_THRESHOLDS_DIR';
+const MIN_SAMPLES = 'PW_PERF_MIN_SAMPLES';
 const PRUNE = 'PW_PERF_PRUNE';
 const MAX_TESTS = 'PW_PERF_MAX_TESTS';
 /** Variables of the wizard (04, chapter 4.10; D-43). */
@@ -183,6 +186,10 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
   if (runId !== undefined) state.runId = runId;
   const thresholdsDir = read(env, THRESHOLDS_DIR);
   if (thresholdsDir !== undefined) state.thresholdsDir = thresholdsDir;
+  // Internal (04-D-46): only the wizard sets it, so a value that is not a positive integer is ignored.
+  const minSamples = read(env, MIN_SAMPLES);
+  const parsedMinSamples = minSamples === undefined ? null : parsePasses(minSamples);
+  if (parsedMinSamples !== null) state.minSamples = parsedMinSamples;
 
   const maxTests = read(env, MAX_TESTS);
   if (maxTests !== undefined) {
@@ -227,6 +234,7 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
   if (state.env !== undefined) env[ENV] = state.env;
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
   if (state.thresholdsDir !== undefined) env[THRESHOLDS_DIR] = state.thresholdsDir;
+  if (state.minSamples !== undefined) env[MIN_SAMPLES] = String(state.minSamples);
   if (state.prune === true) env[PRUNE] = '1';
   if (state.maxTests !== undefined) env[MAX_TESTS] = String(state.maxTests);
   return env;

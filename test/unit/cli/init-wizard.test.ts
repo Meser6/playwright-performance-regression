@@ -430,12 +430,14 @@ describe('init wizard', () => {
     expect(tmp).toBeDefined();
     expect(tmp?.startsWith(dir)).toBe(false);
     expect(fake.spawned.map((s) => s.options.env['PW_PERF_THRESHOLDS_DIR'])).toEqual([tmp, tmp]);
+    expect(fake.spawned.map((s) => s.options.env['PW_PERF_MIN_SAMPLES'])).toEqual(['2', '2']);
     expect(fake.removedDirs).toEqual([tmp]);
     expect(existsSync(tmp ?? '')).toBe(false);
     const out = fake.stdout.join('');
     expect(out).toContain('$ PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npx playwright test');
     expect(out).toContain('$ PW_PERF_MODE=test PW_PERF_PASSES=2 npx playwright test');
     expect(out).not.toContain('PW_PERF_THRESHOLDS_DIR');
+    expect(out).not.toContain('PW_PERF_MIN_SAMPLES');
     expect(out).toContain('The check with PW_PERF_MODE=thresholds ended with exit code 1.');
     expect(out).toContain('The check with PW_PERF_MODE=test ended with exit code 0.');
     // The check ran: no check step in the next steps.
