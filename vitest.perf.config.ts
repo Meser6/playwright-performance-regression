@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     include: ['test/perf/**/*.test.ts', 'test/stats/**/*.test.ts'],
     retry: 0,
+    setupFiles: ['test/setup/playwright-cache.ts'],
     fileParallelism: false,
     pool: 'forks',
     execArgv: ['--expose-gc'],

@@ -240,14 +240,22 @@ describe('host patterns in keys.origins (03-REQ-20, 07-REQ-25, 07-REQ-26)', () =
     ).toMatchObject({
       key: 'GET [::1]:3000/a',
     });
-    const start = performance.now();
-    for (let i = 0; i < 10_000; i++) {
-      build({
-        method: 'GET',
-        url: `https://p${String(i % 50)}-${String(i)}.ci.example.com/x`,
-        resourceType: 'fetch',
-      });
-    }
-    expect(performance.now() - start).toBeLessThan(500);
+    const batch = (): number => {
+      const start = performance.now();
+      for (let i = 0; i < 10_000; i++) {
+        build({
+          method: 'GET',
+          url: `https://p${String(i % 50)}-${String(i)}.ci.example.com/x`,
+          resourceType: 'fetch',
+        });
+      }
+      return performance.now() - start;
+    };
+    // One warm-up batch (JIT), then the best of 5 batches: a single cold batch measured mostly the
+    // compiler and the other workers on a busy runner (500–600 ms on Windows, 12-REQ-06: fixed,
+    // not retried). The best batch still grows with a slower matching algorithm.
+    batch();
+    const best = Math.min(...Array.from({ length: 5 }, batch));
+    expect(best).toBeLessThan(250);
   });
 });
