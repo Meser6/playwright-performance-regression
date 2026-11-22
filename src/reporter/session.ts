@@ -488,6 +488,8 @@ export class RunSession {
     const meta = this.passMeta(testMeta(test, result, relative(test.location.file)), test);
     // Steps come from the result, not from the batch, so they are read without it (06-REQ-16).
     this.steps.record(this.aggregator, test, result.steps, meta, relative);
+    // With measure.api off there are no request samples and no batch is expected (09-REQ-35).
+    if (!this.settings.config.measure.api) return;
     if (bodies.length === 0) {
       // Every test of a measured project has a batch, also an empty one (01-REQ-18).
       if (measured && result.status !== 'skipped') {
@@ -891,6 +893,7 @@ export class RunSession {
       filePrefix: cfg.thresholds.filePrefix,
       env: cfg.run.env,
       steps: cfg.measure.steps.enabled,
+      api: cfg.measure.api,
     };
     const loaded = await io.loadThresholds(location);
     const evaluation = evaluate(aggregates, loaded, cfg, {
@@ -1146,18 +1149,19 @@ export class RunSession {
       filePrefix: cfg.thresholds.filePrefix,
       env: cfg.run.env,
       steps: cfg.measure.steps.enabled,
+      api: cfg.measure.api,
     };
     const loaded = await this.host.io.loadThresholds(location);
     const kindsWithKeys = {
       api: Object.keys(aggregates.endpoints).length > 0,
       step: Object.keys(aggregates.steps).length > 0,
     };
+    const kindOn = { api: cfg.measure.api, step: cfg.measure.steps.enabled };
     const thresholdsFiles = (['api', 'step'] as const)
-      .filter((kind) => kind === 'api' || kindsWithKeys.step || !cfg.measure.steps.enabled)
+      .filter((kind) => kind === 'api' || kindsWithKeys.step || !kindOn.step)
       .map((kind) => {
         const file = loaded[kind];
-        if (kind === 'step' && !cfg.measure.steps.enabled)
-          return { kind, name: file.path, state: 'not used' };
+        if (!kindOn[kind]) return { kind, name: file.path, state: 'not used' };
         const state =
           file.status === 'loaded'
             ? `${String(Object.keys(file.file.entries).length)} entries`

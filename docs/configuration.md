@@ -56,6 +56,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   - [`run.keepReporters`](#runkeepreporters)
   - [`run.overrideSlowMo`](#runoverrideslowmo)
 - [`measure`](#measure)
+  - [`measure.api`](#measureapi)
   - [`measure.resourceTypes`](#measureresourcetypes)
   - [`measure.ignoreExtensions`](#measureignoreextensions)
   - [`measure.include`](#measureinclude)
@@ -241,7 +242,14 @@ Sets use.launchOptions.slowMo to 0 in every measured project in perf mode. slowM
 
 What the collector measures.
 
-Options: [`resourceTypes`](#measureresourcetypes), [`ignoreExtensions`](#measureignoreextensions), [`include`](#measureinclude), [`exclude`](#measureexclude), [`excludeKnownThirdParty`](#measureexcludeknownthirdparty), [`successStatuses`](#measuresuccessstatuses), [`steps`](#measuresteps), [`pendingTimeoutMs`](#measurependingtimeoutms).
+Options: [`api`](#measureapi), [`resourceTypes`](#measureresourcetypes), [`ignoreExtensions`](#measureignoreextensions), [`include`](#measureinclude), [`exclude`](#measureexclude), [`excludeKnownThirdParty`](#measureexcludeknownthirdparty), [`successStatuses`](#measuresuccessstatuses), [`steps`](#measuresteps), [`pendingTimeoutMs`](#measurependingtimeoutms).
+
+### `measure.api`
+
+Requests the browser makes to the backend, as keys of kind 'api'. false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
+
+- Type: boolean
+- Default: `true`
 
 ### `measure.resourceTypes`
 

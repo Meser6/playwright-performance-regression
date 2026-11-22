@@ -94,6 +94,27 @@ describe('steps project', () => {
     },
     RUN_TIMEOUT,
   );
+
+  test(
+    '03-AC-20 with measure.api off a thresholds run measures only steps',
+    async () => {
+      for (const name of ['pw-perf-thresholds.json', 'pw-perf-thresholds.steps.json']) {
+        rmSync(join(dir, name), { force: true });
+      }
+      const run = await harness.run(dir, {
+        env: { ...PERF, PW_PERF_MODE: 'thresholds', API_OFF: '1' },
+      });
+      expect(run.status, run.output).toBe(0);
+      expect(run.report?.config.measure?.api).toBe(false);
+      expect(run.report?.endpoints).toEqual({});
+      expect(Object.keys(run.report?.steps ?? {})).toContain('a › b');
+      expect(readdirSync(dir)).toContain('pw-perf-thresholds.steps.json');
+      expect(readdirSync(dir)).not.toContain('pw-perf-thresholds.json');
+      expect(warningCodes(run)).not.toContain('TESTS_NOT_INSTRUMENTED');
+      expect(warningCodes(run)).not.toContain('RUN_PROJECT_NO_REQUESTS');
+    },
+    RUN_TIMEOUT,
+  );
 });
 
 describe('playwright-bdd scenarios', () => {

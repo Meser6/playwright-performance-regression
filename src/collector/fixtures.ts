@@ -45,12 +45,16 @@ const PASSIVE_API: PerfApi = createPerfApi(() => {
 
 /**
  * The buffer of one test (05-REQ-21): a collector in measured projects, otherwise only the
- * passive perf API. Without withPerf() in this process the default config is used and every
- * project is measured (01-REQ-07; the reporter reports the missing withPerf()).
+ * passive perf API. With measure.api off there is no collector in any project (03-REQ-28).
+ * Without withPerf() in this process the default config is used and every project is measured
+ * (01-REQ-07; the reporter reports the missing withPerf()).
  */
 function openBuffer(browserName: string | null, testInfo: TestInfo): PerfBuffer {
   const state = getRegistered();
-  if (state !== undefined && !state.measuredProjects.includes(testInfo.project.name)) {
+  if (
+    state !== undefined &&
+    (!state.config.measure.api || !state.measuredProjects.includes(testInfo.project.name))
+  ) {
     return { collector: null, api: PASSIVE_API };
   }
   const collector = new TestCollector({

@@ -472,7 +472,8 @@ failures are expected.
 not measured. The message counts tests (not repetitions) and names up to three files, e.g.
 `2 tests in tests/api.spec.ts import test without withPerfFixtures() (e.g. straight from
 @playwright/test), so they were not measured.` Import `test` from a wrapped test object or from
-`playwright-performance-regression/test`; see [adoption.md](adoption.md). When a worker process
+`playwright-performance-regression/test`; see [adoption.md](adoption.md). To measure only `test.step`
+durations, set `measure.api: false`: the warning is then not reported. When a worker process
 crashed, the message also says which tests lost their measurement that way. The warning is shown in
 every mode, also when deriving thresholds: these tests get no thresholds.
 

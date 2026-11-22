@@ -532,9 +532,9 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     }
   });
 
-  test('02-AC-21 the v3 golden report loses config.run.projects, gets run.overrideSlowMo false, everything else unchanged', () => {
+  test('02-AC-21 the v3 golden report loses config.run.projects, gets run.overrideSlowMo false and measure.api true, everything else unchanged', () => {
     const text = raw('run-report', 'v3', 'full-run.json');
-    const before = JSON.parse(text) as Json & { config: { run: Json } };
+    const before = JSON.parse(text) as Json & { config: { run: Json; measure: Json } };
     expect(before.config.run['projects']).toBe('auto');
     const result = parseRunReport(text, 'v3.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
@@ -545,7 +545,11 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(migrated).toEqual({
       ...before,
       schemaVersion: 4,
-      config: { ...before.config, run: { ...run, overrideSlowMo: false } },
+      config: {
+        ...before.config,
+        run: { ...run, overrideSlowMo: false },
+        measure: { api: true, ...before.config.measure },
+      },
     });
   });
 

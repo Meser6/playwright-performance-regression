@@ -365,6 +365,20 @@ export function relationalIssues(
     );
   }
 
+  // At least one kind of measurement on (03-REQ-28, D-46).
+  const steps = valueAt(config, ['measure', 'steps']);
+  const stepsOff = steps === false || (isRecord(steps) && steps['enabled'] === false);
+  if (valueAt(config, ['measure', 'api']) === false && stepsOff) {
+    errors.push(
+      issue(
+        'CONFIG_INVALID_VALUE',
+        ['measure'],
+        'measure.api and measure.steps are both off, so nothing would be measured',
+        'Turn on at least one of them: measure.api (backend requests) or measure.steps (test.step durations).',
+      ),
+    );
+  }
+
   // Environment labels that collide with thresholds file names (03-REQ-22).
   const env = valueAt(config, ['run', 'env']);
   if (typeof env === 'string' && RESERVED_ENV_LABELS.includes(env)) {

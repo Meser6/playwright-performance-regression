@@ -99,6 +99,7 @@ export const packageConfig = obj({
     overrideSlowMo: bool,
   }),
   measure: obj({
+    api: bool,
     resourceTypes: arr(
       enumOf([
         'document',
