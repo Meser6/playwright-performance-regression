@@ -193,6 +193,10 @@ function overrideIssues(overrides: ConfigOverrides): ConfigIssue[] {
 function applyOverrides(config: ResolvedConfigJson, overrides: ConfigOverrides): void {
   if (overrides.env !== undefined) config.run.env = overrides.env;
   if (overrides.thresholdsDir !== undefined) config.thresholds.dir = overrides.thresholdsDir;
+  if (overrides.minSamples !== undefined) {
+    const median = config.checks.time.median;
+    median.minSamples = Math.min(median.minSamples, overrides.minSamples);
+  }
   if (overrides.passes !== undefined) {
     config.run.passes[overrides.mode === 'thresholds' ? 'thresholds' : 'test'] = overrides.passes;
   }

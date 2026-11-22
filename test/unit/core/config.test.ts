@@ -123,6 +123,16 @@ describe('defaults and merging (03-REQ-04 – 03-REQ-08)', () => {
     expect(resolved(input, {}).snapshot.thresholds.dir).toBe('perf');
   });
 
+  test('04-AC-38 the min samples of the wizard check cap only checks.time.median.minSamples', () => {
+    const capped = resolved({}, { minSamples: 2 }).snapshot.checks;
+    expect(capped.time.median.minSamples).toBe(2);
+    expect(capped.time.percentile.minSamples).toBe(20);
+    expect(capped.errors.minSamples).toBe(5);
+    const low = { checks: { time: { median: { minSamples: 1 } } } };
+    expect(resolved(low, { minSamples: 2 }).snapshot.checks.time.median.minSamples).toBe(1);
+    expect(resolved({}, {}).snapshot.checks.time.median.minSamples).toBe(5);
+  });
+
   test('invalid overrides are reported with the option they replace', () => {
     const list = issues({}, { env: 'Prod', passes: 0, mode: 'thresholds' });
     expect(list.map((i) => [i.code, i.path])).toEqual([

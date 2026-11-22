@@ -33,6 +33,7 @@ describe('readModeState', () => {
         PW_PERF_ENV: 'staging-2',
         PW_PERF_RUN_ID: '2026-11-18T10-00-00-a1b2',
         PW_PERF_THRESHOLDS_DIR: '/tmp/pw-perf-check-1',
+        PW_PERF_MIN_SAMPLES: '2',
         PW_PERF_PRUNE: '1',
       }),
     ).toEqual({
@@ -44,6 +45,7 @@ describe('readModeState', () => {
         env: 'staging-2',
         runId: '2026-11-18T10-00-00-a1b2',
         thresholdsDir: '/tmp/pw-perf-check-1',
+        minSamples: 2,
         prune: true,
       },
     });
@@ -66,9 +68,19 @@ describe('readModeState', () => {
         PW_PERF_ENV: '',
         PW_PERF_RUN_ID: '',
         PW_PERF_THRESHOLDS_DIR: '',
+        PW_PERF_MIN_SAMPLES: '',
         PW_PERF_PRUNE: '',
       }),
     ).toEqual({ ok: true, value: { mode: 'test' } });
+  });
+
+  test('04-D-46 an internal PW_PERF_MIN_SAMPLES that is not a positive integer is ignored', () => {
+    for (const value of ['0', '-1', 'two', '2.5']) {
+      expect(readModeState({ PW_PERF_MODE: 'test', PW_PERF_MIN_SAMPLES: value })).toEqual({
+        ok: true,
+        value: { mode: 'test' },
+      });
+    }
   });
 
   test('03-AC-03 MODE_INVALID_VALUE for an unknown PW_PERF_MODE is an error, not mode off', () => {
@@ -140,6 +152,7 @@ describe('writeModeState', () => {
       env: 'qa',
       runId: 'r1',
       thresholdsDir: '/tmp/t',
+      minSamples: 2,
       prune: true,
     };
     expect(writeModeState(full)).toEqual({
@@ -149,6 +162,7 @@ describe('writeModeState', () => {
       PW_PERF_ENV: 'qa',
       PW_PERF_RUN_ID: 'r1',
       PW_PERF_THRESHOLDS_DIR: '/tmp/t',
+      PW_PERF_MIN_SAMPLES: '2',
       PW_PERF_PRUNE: '1',
     });
     expect(readModeState(writeModeState(full))).toEqual({ ok: true, value: full });

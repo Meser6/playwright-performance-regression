@@ -39,6 +39,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
     ...passesOverride(state),
     ...(state.env === undefined ? {} : { env: state.env }),
     ...(state.thresholdsDir === undefined ? {} : { thresholdsDir: state.thresholdsDir }),
+    ...(state.minSamples === undefined ? {} : { minSamples: state.minSamples }),
   });
   if (!resolved.ok) throw new ConfigError(resolved.issues);
   const { config: perf, snapshot, warnings } = resolved.value;
