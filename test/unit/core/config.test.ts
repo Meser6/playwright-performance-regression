@@ -535,6 +535,26 @@ describe('step settings (03-REQ-18, 03-REQ-22)', () => {
     expect(perfDefaults.measure.steps.categories).toEqual(['test.step']);
   });
 
+  test('03-AC-12 steps input forms, invalid values and the default step limit', () => {
+    const defaults = resolved({}).snapshot.measure.steps;
+    expect(defaults.enabled).toBe(true);
+    for (const steps of [true, {}]) {
+      expect(resolved({ measure: { steps } }).snapshot.measure.steps).toEqual(defaults);
+    }
+    expect(resolved({ measure: { steps: { maxDepth: 2 } } }).snapshot.measure.steps).toEqual({
+      ...defaults,
+      maxDepth: 2,
+    });
+    for (const steps of [false, { enabled: false }]) {
+      expect(resolved({ measure: { steps } }).snapshot.measure.steps.enabled).toBe(false);
+    }
+    for (const steps of [{ maxDepth: 0 }, { categories: [] }, { categories: ['test.attach'] }]) {
+      expect(issues({ measure: { steps } }).map((i) => i.code)).toContain('CONFIG_INVALID_VALUE');
+    }
+    expect(resolved({}).snapshot.checks.time.median.limit.step).toBe(10000);
+    expect(perfDefaults.checks.time.median.limit.step).toBe(10000);
+  });
+
   test('03-AC-13 redactQuotedValues is false by default and keepQuotedValues was renamed', () => {
     expect(resolved({ measure: { steps: {} } }).snapshot.measure.steps.redactQuotedValues).toBe(
       false,
