@@ -105,6 +105,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- `request` calls of a browser context with its own `baseURL` (`browser.newContext({ baseURL })`
+  with `perf.track()` or `trackContext()`) get keys of that origin: relative URLs no longer
+  resolve against the test's `baseURL`; such calls take the URL of the response.
 - HTML report: long endpoint and step names no longer run into the next column. In the
   Endpoints and Steps tables the name wraps inside the Key cell; in the Overview cards it is cut
   with an ellipsis and the full name is shown on hover.

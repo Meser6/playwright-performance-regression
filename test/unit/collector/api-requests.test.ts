@@ -235,11 +235,33 @@ describe('TestCollector: API calls (15-REQ-05 – 15-REQ-09)', () => {
     const context = new FakeContext();
     const api = new FakeApi();
     Object.assign(context, { request: api });
-    c.track(context.asContext());
-    c.track(context.asContext());
+    c.track(context.asContext(), true);
+    c.track(context.asContext(), true);
     await api.post('/api/orders');
     await c.drain();
     expect(c.batch().apiRequests).toMatchObject([{ method: 'POST', source: 'context' }]);
+  });
+
+  test('15-REQ-05 a context with its own baseURL keys relative calls by the response URL', async () => {
+    const c = collector({ baseURL: 'http://app.test' });
+    const fixture = new FakeContext();
+    const fixtureApi = new FakeApi();
+    Object.assign(fixture, { request: fixtureApi });
+    c.track(fixture.asContext(), true);
+    // browser.newContext({ baseURL: 'http://admin.test' }) and perf.track(context).
+    const own = new FakeContext();
+    const ownApi = new FakeApi();
+    ownApi.next = (url) =>
+      Promise.resolve({ status: () => 200, url: () => new URL(url, 'http://admin.test').href });
+    Object.assign(own, { request: ownApi });
+    c.api.track(own.asContext());
+    await fixtureApi.get('/api/a');
+    await ownApi.get('/api/b');
+    await c.drain();
+    expect(c.batch().apiRequests.map((s) => [s.url, s.source])).toEqual([
+      ['http://app.test/api/a', 'context'],
+      ['http://admin.test/api/b', 'context'],
+    ]);
   });
 
   test('calls after the end-of-test wait started are not measured', async () => {

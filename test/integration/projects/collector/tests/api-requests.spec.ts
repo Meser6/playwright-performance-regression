@@ -1,6 +1,6 @@
 // APIRequestContext calls (15). The assertions on the samples are in
 // test/integration/collector.test.ts; the tests here only make the calls.
-import { DEMO_URL, expect, test } from './fixtures.ts';
+import { DEMO_API_URL, DEMO_URL, expect, test } from './fixtures.ts';
 
 /** Whether the methods of the request fixture are wrapped (15-AC-04), for the assertions. */
 function markWrapped(target: object): void {
@@ -28,6 +28,13 @@ test('api tracked context', async ({ playwright, perf }) => {
   perf.trackRequestContext({} as never);
   await own.get('/api/delay?ms=20');
   await own.dispose();
+});
+
+test('api context with its own baseURL', async ({ browser, perf }) => {
+  const own = await browser.newContext({ baseURL: DEMO_API_URL });
+  perf.track(own);
+  await own.request.get('/api/delay?ms=5');
+  await own.close();
 });
 
 test('api call that throws', async ({ request }) => {

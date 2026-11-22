@@ -94,13 +94,18 @@ export class TestCollector implements ApiRecorder {
     else this.#dropped += 1;
   }
 
-  /** Wraps an APIRequestContext of this test (15-REQ-03): the request fixture or context.request. */
-  wrapRequest(requestContext: object, source: ApiSource): void {
+  /**
+   * Wraps an APIRequestContext of this test (15-REQ-03): the request fixture or context.request.
+   * Relative URLs resolve against the test's baseURL only for the request fixture and the context
+   * of the context fixture, which Playwright creates with that baseURL; any other context may have
+   * its own baseURL, so its calls take response.url() (15-REQ-05).
+   */
+  wrapRequest(requestContext: object, source: ApiSource, testBaseURL = source === 'request'): void {
     try {
       wrapRequestContext(
         requestContext,
         source,
-        source === 'tracked' ? undefined : this.#opts.baseURL,
+        testBaseURL ? this.#opts.baseURL : undefined,
         currentRecorder,
       );
     } catch (error) {
@@ -217,9 +222,10 @@ export class TestCollector implements ApiRecorder {
 
   /**
    * Attaches a tracker to `context` unless it already has one in this test (05-REQ-04) or the
-   * test is draining. Returns true when a tracker was attached.
+   * test is draining. Returns true when a tracker was attached. `contextFixture`: the context of
+   * the context fixture, whose request calls resolve against the test's baseURL (15-REQ-05).
    */
-  track(context: BrowserContext): boolean {
+  track(context: BrowserContext, contextFixture = false): boolean {
     if (this.#draining !== undefined || this.#trackers.has(context)) return false;
     // page.request is context.request: one wrapper for both (15-REQ-03, 15-REQ-04).
     let requestContext: unknown;
@@ -230,7 +236,7 @@ export class TestCollector implements ApiRecorder {
     }
     // A context without request (e.g. a test double) is measured without API calls.
     if (typeof requestContext === 'object' && requestContext !== null) {
-      this.wrapRequest(requestContext, 'context');
+      this.wrapRequest(requestContext, 'context', contextFixture);
     }
     try {
       this.#trackers.set(
