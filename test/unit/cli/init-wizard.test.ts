@@ -117,7 +117,7 @@ describe('init wizard', () => {
       '10/11',
       '11/11',
     ]);
-    expect(out).toContain('[1/11] Package and project');
+    expect(out).toContain('[1/11] What it does and how to run it');
     expect(out).toContain('measures the response times of backend endpoints');
     expect(out).not.toMatch(/warn-only|several environments|Environment labels/u);
     expect(out).toContain(
@@ -131,6 +131,33 @@ describe('init wizard', () => {
     const config = readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8');
     expect(config).toContain('  //   origins: {},\n');
     expect(config).not.toContain("'https://api.example.com':");
+  });
+
+  test('04-AC-48 step 1 explains how to run, the other variables and the files, without the detection dump', async () => {
+    const dir = copyProject('init-esm-ts');
+    const fake = defaultsHost(dir);
+    expect(await main([], fake.host)).toBe(0);
+    const out = fake.stdout.join('');
+    const step1 = out.slice(out.indexOf('[1/11]'), out.indexOf('[2/11]'));
+    expect(step1).toContain('1. PW_PERF_MODE=thresholds <your test command>');
+    expect(step1).toContain('2. commit the thresholds files to the repository;');
+    expect(step1).toContain('3. PW_PERF_MODE=test <your test command>');
+    expect(step1).toContain('add --project <name> to measure one browser only');
+    for (const name of [
+      'PW_PERF_MODE=check',
+      'PW_PERF_MAX_TESTS=<n>',
+      'PW_PERF_ENV=<label>',
+      'PW_PERF_PASSES=<n>',
+      'PW_PERF_PRUNE=1',
+      'pw-perf.config.ts',
+      'pw-perf-thresholds*.json',
+      'pw-perf-results/',
+    ])
+      expect(step1).toContain(`    ${name}`);
+    expect(step1).toContain('do not commit (listed in .gitignore)');
+    expect(step1).not.toMatch(
+      /Playwright \d|Test directory|\.extend\(\)|baseURL|CI: |Already set up/u,
+    );
   });
 
   test('04-AC-19 the default answers in a terminal write the changes; a second run changes no file', async () => {
@@ -419,7 +446,7 @@ export default defineConfig({
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
-    expect(out).toContain('[1/11] Paczka i projekt');
+    expect(out).toContain('[1/11] Co robi paczka i jak ją uruchamiać');
     expect(out).toContain('Zastosować tę zmianę?');
     expect(out).toContain('Następne kroki:');
     expect(out).not.toContain('Apply this change?');
