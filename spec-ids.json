@@ -1,5 +1,5 @@
 {
-  "specCommit": "pw-benchmark-docs@c81af7d",
+  "specCommit": "pw-benchmark-docs@b94b492",
   "ids": [
     {"id":"01-AC-01","kind":"AC"},
     {"id":"01-AC-02","kind":"AC"},
@@ -158,6 +158,7 @@
     {"id":"03-AC-18","kind":"AC"},
     {"id":"03-AC-19","kind":"AC"},
     {"id":"03-AC-20","kind":"AC"},
+    {"id":"03-AC-21","kind":"AC"},
     {"id":"03-D-01","kind":"D"},
     {"id":"03-D-02","kind":"D"},
     {"id":"03-D-03","kind":"D"},
@@ -172,6 +173,7 @@
     {"id":"03-D-12","kind":"D"},
     {"id":"03-D-13","kind":"D"},
     {"id":"03-D-14","kind":"D"},
+    {"id":"03-D-15","kind":"D"},
     {"id":"03-REQ-01","kind":"REQ"},
     {"id":"03-REQ-02","kind":"REQ"},
     {"id":"03-REQ-03","kind":"REQ"},
@@ -200,6 +202,7 @@
     {"id":"03-REQ-26","kind":"REQ"},
     {"id":"03-REQ-27","kind":"REQ"},
     {"id":"03-REQ-28","kind":"REQ"},
+    {"id":"03-REQ-29","kind":"REQ"},
     {"id":"04-AC-01","kind":"AC"},
     {"id":"04-AC-02","kind":"AC","withdrawn":true},
     {"id":"04-AC-03","kind":"AC"},

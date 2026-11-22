@@ -119,6 +119,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Added
 
+- Warning `CONFIG_FILE_NOT_PASSED`: a `pw-perf.config.*` file next to the Playwright config is
+  no longer ignored silently when `withPerf(config)` gets no second argument; the run still uses
+  the defaults, and the hint shows how to pass the file.
 - Calls of Playwright's `request` fixture, `page.request` and `context.request` are measured
   (API tests and data setup in UI tests), with `measure.api` on (the default). They get their own
   keys with the prefix `request`, e.g. `request GET /api/orders/:id`, next to the browser's
