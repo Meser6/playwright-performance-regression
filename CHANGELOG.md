@@ -107,6 +107,8 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- The hint of `RUN_PROJECT_NO_REQUESTS` names `trackRequestContext()`: API tests that call only
+  their own clients from `request.newContext()` recorded nothing, and the hint did not say why.
 - `docs/adoption.md` no longer says that `request` calls in API-only tests are not measured;
   it has a row for API clients made with `request.newContext()` (`trackRequestContext()`). The
   note of the Endpoints tab in the HTML report mentions request calls, not only browser

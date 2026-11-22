@@ -851,10 +851,11 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     const report = JSON.parse(
       readFileSync(join(dir, 'reports/pw-perf', 'report.json'), 'utf8'),
     ) as {
-      warnings: { code: string; message: string }[];
+      warnings: { code: string; message: string; hint?: string }[];
     };
     const warning = report.warnings.find((w) => w.code === 'RUN_PROJECT_NO_REQUESTS');
     expect(warning?.message).toContain('chromium');
+    expect(warning?.hint).toContain('trackRequestContext()');
 
     const other = tempDir();
     const s2 = session(fakeHost(other), registered({}, { mode: 'test' }));
