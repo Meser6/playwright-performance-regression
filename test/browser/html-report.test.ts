@@ -512,6 +512,25 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await page.context().close();
   });
 
+  test('11-REQ-53 waterfall labels: monospace method in its colour, left of the separator', async () => {
+    const { page } = await open(fullRun());
+    await page.evaluate(`location.hash = '#tab=tests'`);
+    const labels = page.locator('svg.wf use');
+    expect(await labels.count()).toBeGreaterThan(0);
+    // The labels are <use> copies of <text> in <defs>: page styles reach them only through
+    // inheritance from <use> and selectors without an ancestor outside the copy.
+    const boxes = (await page.evaluate(`[...document.querySelectorAll('svg.wf use')].map((u) => {
+      const box = u.getBBox();
+      return { right: box.x + box.width, height: box.height, font: getComputedStyle(u).fontFamily };
+    })`)) as { right: number; height: number; font: string }[];
+    for (const b of boxes) {
+      expect(b.font).toMatch(/mono/iu);
+      expect(b.height).toBeLessThan(15);
+      expect(b.right).toBeLessThanOrEqual(340);
+    }
+    await page.context().close();
+  });
+
   test('11-REQ-15 dark theme follows prefers-color-scheme', async () => {
     const { page } = await open(fullRun(), { colorScheme: 'dark' });
     const background = await page.evaluate(
