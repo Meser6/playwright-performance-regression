@@ -16,7 +16,7 @@
         "tests/a11y.ts",
         "tests/fixtures.ts"
       ],
-      "importingFiles": 2
+      "importingFiles": 0
     }
   }
 }
