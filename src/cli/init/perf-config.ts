@@ -1,7 +1,8 @@
-// The pw-perf.config.ts written by the init wizard (04-REQ-38 step 7, 04-REQ-46): the answers
-// that differ from the defaults as active values, and every other option of the schema as a
-// comment with its default value and a one-sentence description, in schema order. The option
-// list is generated from the schema (generated/config-options.ts). The text is English and does
+// The pw-perf.config.ts written by the init wizard (04-REQ-38 step 7, 04-REQ-46, v4 D6): the
+// most important options only (CONFIG_FILE_OPTIONS), in schema order with a short comment each;
+// the answers that differ from the defaults as active values, the other options commented out
+// with their default value, and a link to the full option list in the docs. Defaults and order
+// come from the schema (generated/config-options.ts). The text is English and does
 // not depend on the wizard language (04-REQ-43). Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { MarginPreset } from '../../core/config/index.ts';
@@ -34,11 +35,6 @@ export const PERF_TAG = '@perf';
 
 /** Width of the written lines. */
 const WIDTH = 100;
-
-/** Shown for options without a default value. */
-const NO_DEFAULT: Record<string, string> = {
-  'keys.keyBuilder': '({ method, url, resourceType }) => undefined',
-};
 
 /** Package config values of the answers that differ from the defaults: option path → value. */
 export function activeValues(answers: InitAnswers): Map<string, unknown> {
@@ -109,6 +105,7 @@ class Renderer {
   constructor(active: Map<string, unknown>) {
     this.#active = active;
     for (const option of CONFIG_OPTIONS) {
+      if (!inFile(option.path)) continue;
       const parent = option.path.split('.').slice(0, -1).join('.');
       this.#children.set(parent, [...(this.#children.get(parent) ?? []), option]);
     }
@@ -129,13 +126,9 @@ class Renderer {
     const place: Place = outer.commented || active ? outer : { ...outer, commented: true };
     const name = option.path.split('.').at(-1) as string;
     const valueText =
-      option.leaf && active
-        ? ts(this.#active.get(option.path))
-        : (NO_DEFAULT[option.path] ?? ts(option.default));
-    const description =
-      option.leaf && active
-        ? `${option.description} Default: ${ts(option.default)}.`
-        : option.description;
+      option.leaf && active ? ts(this.#active.get(option.path)) : ts(option.default);
+    const text = FILE_TEXTS.get(option.path) ?? option.description;
+    const description = option.leaf && active ? `${text} Default: ${ts(option.default)}.` : text;
     // The description stays a plain comment where the option itself is commented out first.
     for (const l of wrap(description, WIDTH - prefixLength(outer) - 3))
       this.lines.push(lineAt(outer, `// ${l}`));
@@ -163,56 +156,80 @@ class Renderer {
 }
 
 /**
- * The "Most important settings" block at the top of the file (04-REQ-46, note #30): a short
- * paragraph per option with an example line. Every option named here exists in the schema (test).
+ * The options of the written file (04-REQ-46, v4 D6): the most important ones, in schema order,
+ * each with a short English comment. Every value the wizard answers set is among them (test);
+ * the full list is in the docs (DOCS_CONFIG_URL).
  */
-export const IMPORTANT_SETTINGS: readonly { option: string; text: string; example: string }[] = [
+export const CONFIG_FILE_OPTIONS: readonly { option: string; text: string }[] = [
   {
-    option: 'run.passes',
-    text: 'How many times your test command runs in one measurement run. More passes give more samples per endpoint and steadier thresholds, but the run takes longer (tests x passes on 1 worker).',
-    example: 'run: { passes: { test: 5, thresholds: 10 } },',
+    option: 'run.env',
+    text: 'Environment label: each label has its own thresholds files (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see docs/dynamic-environments.md.',
+  },
+  {
+    option: 'run.passes.test',
+    text: 'How many times your test command runs in a measurement run (PW_PERF_MODE=test). More passes give more samples per endpoint and steadier results, but the run takes longer (tests x passes on 1 worker).',
+  },
+  {
+    option: 'run.passes.thresholds',
+    text: 'Passes in a thresholds run (PW_PERF_MODE=thresholds): more passes give steadier thresholds.',
   },
   {
     option: 'run.grep',
-    text: 'Measure only the tests whose title or tags match, e.g. tests tagged @perf. Setup and teardown projects still run in full.',
-    example: "run: { grep: '@perf' },",
+    text: "Measure only the tests whose title or tags match this regular expression, e.g. '@perf'. Setup and teardown projects still run in full.",
+  },
+  {
+    option: 'run.overrideSlowMo',
+    text: 'true: slowMo is set to 0 in every measured project in perf mode, because it delays every browser action and distorts the times. false: slowMo stays and perf mode warns about it.',
+  },
+  {
+    option: 'measure.api',
+    text: 'The backend requests the browser makes are measured as endpoint keys. Set false to measure only test.step durations (api and steps cannot both be off).',
+  },
+  {
+    option: 'measure.include',
+    text: "When not empty, only requests whose URL matches at least one pattern are measured. A string matches as a substring of the URL; { regex: '...' } is a regular expression.",
+  },
+  {
+    option: 'measure.exclude',
+    text: 'Requests whose URL matches any pattern (same forms as include) are not measured. Applied after include.',
+  },
+  {
+    option: 'measure.steps',
+    text: 'The durations of your test.step blocks are measured too, with their own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not reach the keys. Set false to measure only the backend requests.',
+  },
+  {
+    option: 'keys.origins',
+    text: "Short labels for backend hosts in endpoint keys; the baseURL host has no label. Host patterns with * merge random CI hosts, e.g. { 'https://auth.example.com': 'auth', 'https://pr-*.ci.example.com': '' }.",
+  },
+  {
+    option: 'gate.tolerance',
+    text: "How many endpoints may exceed their thresholds before the run fails: a number, or a share of the measured keys like '5%'. 0: every violation fails the run.",
+  },
+  {
+    option: 'gate.hardLimitFactor',
+    text: 'A time above threshold x this factor fails the run regardless of tolerance. null turns hard limits off.',
   },
   {
     option: 'thresholds.preset',
     text: "Headroom added to the measured times when thresholds are derived. 'strict' catches smaller regressions but alarms more often on a noisy environment, 'loose' only flags clear regressions.",
-    example: "thresholds: { preset: 'normal' },",
   },
   {
-    option: 'run.env',
-    text: 'Environment label: each label has its own thresholds files (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see docs/dynamic-environments.md.',
-    example: "run: { env: 'staging' },",
+    option: 'thresholds.dir',
+    text: 'Directory of the thresholds files (commit them), relative to the Playwright config directory.',
   },
   {
-    option: 'keys.origins',
-    text: 'Short labels for backend hosts in endpoint keys; the baseURL host has no label. Host patterns with * merge random CI hosts, e.g. pr-123.ci.example.com.',
-    example:
-      "keys: { origins: { 'https://auth.example.com': 'auth', 'https://pr-*.ci.example.com': '' } },",
-  },
-  {
-    option: 'measure.steps',
-    text: 'The duration of your test.step blocks is measured too (on by default), with their own thresholds file (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets do not reach the keys. Set false to measure only the backend requests.',
-    example: 'measure: { steps: false },',
-  },
-  {
-    option: 'gate.tolerance',
-    text: 'How many endpoints may exceed their thresholds before the run fails (a number or a share like "5%"). Values far above a threshold (hardLimitFactor) fail the run anyway.',
-    example: 'gate: { tolerance: 0 },',
+    option: 'report.dir',
+    text: 'Directory of report.json and report.html (do not commit it), relative to the Playwright config directory.',
   },
 ];
 
-function importantSettings(): string[] {
-  const lines = ['// Most important settings', '//'];
-  IMPORTANT_SETTINGS.forEach((setting, i) => {
-    if (i > 0) lines.push('//');
-    const words = wrap(`${setting.option}: ${setting.text}`, WIDTH - 3);
-    lines.push(...words.map((l) => `// ${l}`), `//   ${setting.example}`);
-  });
-  return lines;
+const FILE_TEXTS = new Map(CONFIG_FILE_OPTIONS.map((o) => [o.option, o.text]));
+
+/** Whether the option or one of its children is written to the file. */
+function inFile(path: string): boolean {
+  for (const option of FILE_TEXTS.keys())
+    if (option === path || option.startsWith(`${path}.`)) return true;
+  return false;
 }
 
 /** Text of pw-perf.config.ts for the answers. */
@@ -225,12 +242,11 @@ export function renderPerfConfig(answers: InitAnswers): string {
   });
   return [
     `// Configuration of ${PACKAGE_NAME}, written by its guided setup.`,
-    '// Only the values that differ from the defaults are set. Every other option is commented out',
-    '// with its default value: uncomment a line (and its enclosing objects) to change it. Objects',
-    '// are merged with the defaults; an array you set replaces the default array. All options:',
+    '// It lists the most important options only; every option, with its default, is described at',
     `// ${DOCS_CONFIG_URL}`,
-    '//',
-    ...importantSettings(),
+    '// Only the values that differ from the defaults are set. The other options are commented out',
+    '// with their default value: uncomment a line (and its enclosing objects) to change it. Objects',
+    '// are merged with the defaults; an array you set replaces the default array.',
     `import { definePerfConfig } from '${PACKAGE_NAME}';`,
     '',
     'export default definePerfConfig({',

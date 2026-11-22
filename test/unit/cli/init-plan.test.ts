@@ -21,7 +21,7 @@ import { LANGUAGES } from '../../../src/cli/init/messages.ts';
 import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
 import {
   activeValues,
-  IMPORTANT_SETTINGS,
+  CONFIG_FILE_OPTIONS,
   renderPerfConfig,
   ts,
 } from '../../../src/cli/init/perf-config.ts';
@@ -220,25 +220,28 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(activeLines(renderPerfConfig({ ...ANSWERS, preset: 'normal' }))).toHaveLength(3);
   });
 
-  test('04-AC-48 04-REQ-46 the file starts with "Most important settings" and every option exists', () => {
+  test('04-AC-48 04-REQ-46 the file lists at most 15 important options and links the full list', () => {
     const config = renderPerfConfig(ANSWERS);
     const head = config.slice(0, config.indexOf('import { definePerfConfig }'));
-    expect(head).toContain('// Most important settings\n');
-    const paths = new Set(CONFIG_OPTIONS.map((o) => o.path));
-    expect(IMPORTANT_SETTINGS.map((s) => s.option)).toEqual([
-      'run.passes',
-      'run.grep',
-      'thresholds.preset',
-      'run.env',
-      'keys.origins',
-      'measure.steps',
-      'gate.tolerance',
-    ]);
-    for (const setting of IMPORTANT_SETTINGS) {
-      expect(paths, setting.option).toContain(setting.option);
-      expect(head, setting.option).toContain(`// ${setting.option}: `);
-      expect(head, setting.option).toContain(`//   ${setting.example}\n`);
-    }
+    expect(head).toContain('https://github.com/');
+    expect(head).toContain('/docs/configuration.md\n');
+    expect(head).not.toContain('Most important settings');
+    const leaves = new Set(CONFIG_OPTIONS.filter((o) => o.leaf).map((o) => o.path));
+    const listed = CONFIG_FILE_OPTIONS.map((o) => o.option);
+    expect(listed.length).toBeLessThanOrEqual(15);
+    for (const option of listed) expect(leaves, option).toContain(option);
+    // In schema order.
+    const order = CONFIG_OPTIONS.map((o) => o.path);
+    expect([...listed].sort((x, y) => order.indexOf(x) - order.indexOf(y))).toEqual(listed);
+    for (const option of ['measure.api', 'measure.steps', 'run.overrideSlowMo', 'keys.origins'])
+      expect(listed).toContain(option);
+    // Every value the answers can set is among them (04-REQ-38 steps 2-5).
+    const answers: InitAnswers[] = [
+      { ...ANSWERS, scope: 'tagged', passesTest: 3, measure: 'api', preset: 'strict' },
+      { ...ANSWERS, measure: 'steps', preset: 'loose' },
+    ];
+    for (const a of answers)
+      for (const path of activeValues(a).keys()) expect(listed, path).toContain(path);
   });
 
   test('04-AC-17 04-REQ-46 pw-perf.config.ts holds only values that differ from the defaults as active code', () => {
@@ -261,23 +264,24 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       '  },',
       '});',
     ]);
-    expect(other).toContain('      // Passes in a measurement run. Default: 5.\n');
+    expect(other).toMatch(/ passes on 1 worker\)\. Default: 5\.\n {6}test: 7,/u);
   });
 
-  test('04-REQ-46 every other option is a comment with its default and a description, in schema order', () => {
+  test('04-REQ-46 every listed option is a comment with its default and its text, in schema order', () => {
     const config = renderPerfConfig(ANSWERS);
     const lines = config.split('\n');
-    // After the "Most important settings" block, whose examples look like options.
+    const listed = new Set(CONFIG_FILE_OPTIONS.map((o) => o.option));
+    const shown = CONFIG_OPTIONS.filter(
+      (o) => listed.has(o.path) || [...listed].some((l) => l.startsWith(`${o.path}.`)),
+    );
     let at = lines.indexOf('export default definePerfConfig({');
-    for (const option of CONFIG_OPTIONS) {
+    for (const option of shown) {
       const name = option.path.split('.').at(-1) as string;
       const depth = option.path.split('.').length - 1;
-      const value =
-        option.default === undefined
-          ? '({ method, url, resourceType }) => undefined'
-          : ts(option.default);
       const code =
-        option.leaf && !Array.isArray(option.default) ? `${name}: ${value},` : `${name}: `;
+        option.leaf && !Array.isArray(option.default)
+          ? `${name}: ${ts(option.default)},`
+          : `${name}: `;
       const index = lines.findIndex(
         (l, i) =>
           i >= at &&
@@ -290,12 +294,17 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       // Nested as in the config object: two more spaces per level.
       // With the default answers every option is commented out.
       expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth + 3);
-      // The description comes right before, wrapped.
-      expect(lines.slice(0, index).join(' '), option.path).toContain(
-        option.description.split(' ').slice(0, 3).join(' '),
+      // The text comes right before, wrapped.
+      const text =
+        CONFIG_FILE_OPTIONS.find((o) => o.option === option.path)?.text ?? option.description;
+      expect(lines.slice(at, index).join(' '), option.path).toContain(
+        text.split(' ').slice(0, 3).join(' '),
       );
       at = index + 1;
     }
+    // Options outside the list are not in the file.
+    for (const name of ['keepReporters', 'resourceTypes', 'idPatterns', 'checks', 'advanced'])
+      expect(config, name).not.toContain(` ${name}: `);
     expect(CONFIG_OPTIONS.filter((o) => !o.path.includes('.')).map((o) => o.path)).toEqual([
       'run',
       'measure',
