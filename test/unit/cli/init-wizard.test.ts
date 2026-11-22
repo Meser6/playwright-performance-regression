@@ -556,7 +556,7 @@ describe('init wizard', () => {
       expect(out).toContain(
         "import { withPerfFixtures } from 'playwright-performance-regression/fixture';",
       );
-      expect(out).toContain('(3 files)');
+      expect(out).toContain('(files: 3)');
       if (env.TERM === 'dumb') {
         expect(out).toContain('+---');
         expect(out).not.toContain('╭');
