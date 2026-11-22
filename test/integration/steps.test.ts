@@ -43,7 +43,8 @@ describe('steps project', () => {
       expect(steps.skipped).toBeUndefined();
       expect(steps.caught).toMatchObject({ errorCount: 3, statuses: { error: 3 } });
       expect(steps['login in setup']).toBeUndefined();
-      expect(warningCodes(run)).toContain('STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS');
+      // The setup project is only a dependency: left out without a warning (08-REQ-31).
+      expect(warningCodes(run)).not.toContain('STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS');
       expect(steps['a › b']?.location?.file).toBe('tests/steps.spec.ts');
       expect(run.report?.stepNormalization).toMatch(/^[0-9a-f]{14}$/u);
       expect(run.output).toMatch(/│ +│ Endpoints │ Steps │/u);

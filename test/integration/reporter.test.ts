@@ -255,7 +255,7 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
       const seen = readFileSync(join(run.out, 'worker-run-id.txt'), 'utf8').trim().split('\n');
       expect(new Set(seen)).toEqual(new Set([runId]));
       expect(run.output).toContain(
-        `Outcome: performance passed · exit code 0 in ${join(run.out, 'reports/pw-perf', 'outcome.json')} (Playwright exits with 0)`,
+        `Outcome: Playwright exit code 0 · details: performance passed (code 0) in ${join(run.out, 'reports/pw-perf', 'outcome.json')}`,
       );
     },
     RUN_TIMEOUT,

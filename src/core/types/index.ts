@@ -55,6 +55,7 @@ export {
   diffValuesText,
   limitLabel,
   limitValueText,
+  skippedReasonText,
 } from './thresholds.ts';
 export type {
   CompleteEntry,
@@ -66,6 +67,7 @@ export type {
   KeyDiff,
   LimitChange,
   LimitName,
+  SkippedSamples,
   ThresholdsDiff,
 } from './thresholds.ts';
 export {

@@ -93,6 +93,20 @@ function laterPasses(
 }
 
 describe('passes of the first pass (04-REQ-64)', () => {
+  test('04-AC-64 the pass line shows the command as the user types it, without absolute paths', async () => {
+    const first = fakeHost(dir, {
+      runPass: laterPasses(),
+      argv: ['/usr/bin/node', '/app/node_modules/.bin/playwright', 'test', '--grep', '@cart smoke'],
+    });
+    const s = session(first, registered({ run: { passes: { test: 2 } } }, { mode: 'test' }));
+    s.begin(fakeConfig(dir), { allTests: () => [] });
+    runPass(s, 1);
+    await s.end({ status: 'passed' });
+    const out = first.stdout.map(stripAnsi).join('');
+    expect(out).toContain("pass 2/2: npx playwright test --grep '@cart smoke'\n");
+    expect(out).not.toContain('/usr/bin/node');
+  });
+
   test('09-AC-31 TESTS_NOT_INSTRUMENTED counts a test once over all passes', async () => {
     const unwrapped = (s: ReturnType<typeof session>): void => {
       s.testBegin();
@@ -318,7 +332,7 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       dependencies: [],
       tests: 4,
       passes: 10,
-      estimate: '≈ 20 min (30 s per test, no earlier run)',
+      estimate: 'unknown (run PW_PERF_MODE=check for an estimate)',
       report: 'reports/pw-perf/report.html',
       tip: false,
     };
@@ -368,7 +382,7 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
     ]);
   });
 
-  test('04-AC-45 the estimate comes from the last run report, else 30 s per test', async () => {
+  test('04-AC-45 the estimate comes from the last run report, else it is unknown', async () => {
     // 10 test runs in 100 s: 10 s per test, × 4 tests × 5 passes = 200 s.
     const earlier = session(fakeHost(dir), registered({}, { mode: 'test' }));
     earlier.begin(fakeConfig(dir), { allTests: () => [] });
@@ -391,6 +405,17 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
     };
     expect(banner()).toContain('Estimate  ≈ 4 min (from the last run)');
     rmSync(path);
-    expect(banner()).toContain('Estimate  ≈ 10 min (30 s per test, no earlier run)');
+    expect(banner()).toContain('Estimate  unknown (run PW_PERF_MODE=check for an estimate)');
+  });
+
+  test('04-AC-45 no Tip when run.grep selects the measured tests', () => {
+    const banner = (grep: string | null): string => {
+      const captured = fakeHost(dir);
+      const s = session(captured, registered({ run: { grep } }, { mode: 'test' }));
+      s.begin(fakeConfig(dir), { allTests: () => [fakeTest(dir)] });
+      return captured.stdout.join('');
+    };
+    expect(banner(null)).toContain('Tip       measure a subset');
+    expect(banner('@smoke')).not.toContain('Tip');
   });
 });

@@ -174,7 +174,7 @@ describe('reporter session in test mode', () => {
     expect(out).toContain('⏱️  pw-perf · measurement run');
     expect(out).toContain('Projects  chromium (setup: setup)');
     expect(out).toContain('Tests     2 tests × 5 passes = 10 test runs');
-    expect(out).toContain('Estimate  ≈ 5 min (30 s per test, no earlier run)');
+    expect(out).toContain('Estimate  unknown (run PW_PERF_MODE=check for an estimate)');
     expect(out).toContain('Report    reports/pw-perf/report.html');
     expect(out).toContain('Tip       measure a subset, e.g. --grep @perf');
     expect(out).toMatch(/^╭─+╮$/mu);
@@ -788,7 +788,7 @@ describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
     const outcome = readOutcome(outcomeJson());
     expect(outcome).toMatchObject({ runId: 'run-e', exitCode: 0 });
     expect(captured.stdout.join('')).toContain(
-      `Outcome: performance passed · exit code 0 in ${outcomeJson()} (Playwright exits with 0)\n`,
+      `Outcome: Playwright exit code 0 · details: performance passed (code 0) in ${outcomeJson()}\n`,
     );
   });
 

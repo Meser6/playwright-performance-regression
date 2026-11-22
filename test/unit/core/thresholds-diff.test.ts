@@ -171,6 +171,32 @@ describe('diffThresholds (10, chapter 9)', () => {
     expect(updated[0]?.fileStatus).toBe('updated');
   });
 
+  test('10-AC-21 skipped keys are listed with their reason: five in the console, all in thresholds-diff.md', () => {
+    const rare = Object.fromEntries(
+      [1, 2, 3, 4, 5].map((i) => [`GET /api/rare-${String(i)}`, { durations: [[1, 100]] }]),
+    ) as Record<string, ReportAggregateSpec>;
+    const d = diffs({
+      endpoints: {
+        k: FAST,
+        'GET /api/notes/does-not-exist': { other: 5 },
+        'GET /api/two': { durations: [[2, 100]] },
+        ...rare,
+      },
+    });
+    expect(d[0]?.counts.skipped).toBe(7);
+    const out = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a.json'] });
+    expect(out).toMatch(
+      /^ {2}\. GET \/api\/notes\/does-not-exist +no successful samples, 5 needed \(5 × 404\)$/mu,
+    );
+    expect(out.match(/^ {2}\. /gmu)).toHaveLength(5);
+    expect(out).toContain('  … and 2 more skipped (see thresholds-diff.md)');
+    expect(out).toMatch(/^ {2}\+ k +apdex T \d+ ms {2}median/mu);
+    const md = formatThresholdsDiffMarkdown(d, ['a.json']);
+    expect(md.match(/^- `GET \/api\//gmu)).toHaveLength(7);
+    expect(md).toContain('- `GET /api/two`: 2 successful samples, 5 needed');
+    expect(md).toContain('apdex T ');
+  });
+
   test('10-AC-13 the diff and thresholds-diff.md are produced also when no file changed', () => {
     const report = runReport({ endpoints: { k: FAST } });
     const first = deriveThresholds(report, cfg(), existing(), deriveOptions());
@@ -277,8 +303,8 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
     const d = diffs({ endpoints: { [key]: FAST } });
     const text = formatThresholdsDiff(d, { ...CONSOLE, width: 80, paths: ['a'] });
     const row = text.split('\n').find((l) => l.startsWith('  + '));
-    expect(row).toMatch(/^ {2}\+ GET \/api\/x+…x+\/end {2}t 500/u);
-    expect(row?.indexOf('t 500')).toBe(2 + 1 + 1 + 30 + 2);
+    expect(row).toMatch(/^ {2}\+ GET \/api\/x+…x+\/end {2}apdex T 500 ms/u);
+    expect(row?.indexOf('apdex T 500')).toBe(2 + 1 + 1 + 30 + 2);
   });
 
   test('the unseen hint names PW_PERF_PRUNE (04-REQ-70), or locked entries after pruning', () => {
@@ -333,7 +359,7 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
     const [api] = diffs({ endpoints: { k: slow } }, existing(absent('api')));
     const md = formatThresholdsDiffMarkdown(api === undefined ? [] : [api], ['a']);
     expect(md).toContain(
-      't null · median 3640 · p95 3640 · p99 4004 · apdex null · wilson null · errors 0.050',
+      'apdex T null · median 3640 · p95 3640 · p99 4004 · apdex null · wilson null · errors 0.050',
     );
   });
 });

@@ -5,6 +5,7 @@ import {
   diffChangeText,
   diffCountsText,
   diffMarker,
+  skippedReasonText,
 } from '../core/types/index.ts';
 import type { KeyDiff, ThresholdsDiff } from '../core/types/index.ts';
 import { painter } from './color.ts';
@@ -38,6 +39,8 @@ export interface ThresholdsDiffOptions {
 export const MAX_DIFF_ROWS = 30;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
+/** At most this many skipped keys per file; all are in thresholds-diff.md (10-D-21). */
+export const MAX_SKIPPED_ROWS = 5;
 
 type Style = Extract<ColorStyle, 'red' | 'yellow' | 'green'>;
 
@@ -60,32 +63,54 @@ function fileLines(
   const expired = diff.keys.filter((k) => k.muted?.expired === true);
   if (diff.fileStatus !== 'unchanged') lines.push(`  ${diffCountsText(diff)}`);
 
-  if (listed.length > 0) {
-    const shown = listed.slice(0, MAX_DIFF_ROWS);
-    const rows = shown.map((k) => ({
-      marker: diffMarker(k),
-      key: k.key,
-      change: diffChangeText(k, diff.level, '  ') + mutedSuffix(k),
-    }));
-    const markerWidth = Math.max(...rows.map((r) => textWidth(r.marker)));
-    const changeWidth = Math.max(...rows.map((r) => textWidth(r.change)));
-    const longest = Math.max(...rows.map((r) => textWidth(r.key)));
+  const shown = listed.slice(0, MAX_DIFF_ROWS);
+  const rows = shown.map((k) => ({
+    marker: diffMarker(k),
+    key: k.key,
+    change: diffChangeText(k, diff.level, '  ') + mutedSuffix(k),
+  }));
+  // Skipped keys with their reason (10, chapter 9.1, 10-D-21).
+  const skipped = diff.keys.filter((k) => k.category === 'skipped' && k.samples !== undefined);
+  const skippedRows = skipped.slice(0, MAX_SKIPPED_ROWS).map((k) => ({
+    marker: '.',
+    key: k.key,
+    change: k.samples === undefined ? '' : skippedReasonText(k.samples),
+  }));
+  const all = [...rows, ...skippedRows];
+  if (all.length > 0) {
+    const markerWidth = Math.max(...all.map((r) => textWidth(r.marker)));
+    const changeWidth = Math.max(...all.map((r) => textWidth(r.change)));
+    const longest = Math.max(...all.map((r) => textWidth(r.key)));
     // "  " + marker + " " + key + "  " + change.
     const rest = opts.width - 2 - markerWidth - 1 - 2 - changeWidth;
     const keyWidth = Math.max(MIN_KEY_WIDTH, Math.min(longest, rest));
-    lines.push('');
-    for (const r of rows) {
-      const head = r.marker.slice(0, 1);
-      const style = MARKER_STYLE[head] ?? 'yellow';
-      const marker =
-        paint(head, style) + (r.marker.length > 1 ? paint(r.marker.slice(1), 'red') : '');
+    const line = (r: { marker: string; key: string; change: string }, marker: string): string => {
       const pad = ' '.repeat(markerWidth - textWidth(r.marker));
-      lines.push(
-        `  ${marker}${pad} ${padEnd(truncateMiddle(r.key, keyWidth), keyWidth)}  ${r.change}`.trimEnd(),
-      );
+      return `  ${marker}${pad} ${padEnd(truncateMiddle(r.key, keyWidth), keyWidth)}  ${r.change}`.trimEnd();
+    };
+    if (rows.length > 0) {
+      lines.push('');
+      for (const r of rows) {
+        const head = r.marker.slice(0, 1);
+        const style = MARKER_STYLE[head] ?? 'yellow';
+        lines.push(
+          line(
+            r,
+            paint(head, style) + (r.marker.length > 1 ? paint(r.marker.slice(1), 'red') : ''),
+          ),
+        );
+      }
+      if (listed.length > shown.length) {
+        lines.push(`  … and ${listed.length - shown.length} more`);
+      }
     }
-    if (listed.length > shown.length) {
-      lines.push(`  … and ${listed.length - shown.length} more`);
+    if (skippedRows.length > 0) {
+      lines.push('');
+      for (const r of skippedRows) lines.push(line(r, r.marker));
+      if (skipped.length > skippedRows.length) {
+        const more = `  … and ${String(skipped.length - skippedRows.length)} more skipped`;
+        lines.push(opts.diffPath === null ? more : `${more} (see thresholds-diff.md)`);
+      }
     }
   }
   if (expired.length > 0) {

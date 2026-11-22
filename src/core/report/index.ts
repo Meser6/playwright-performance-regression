@@ -22,7 +22,9 @@ export {
   perfCommand,
   plainCommand,
   scriptCommand,
+  shellWord,
   suggestCommand,
+  userCommand,
 } from './next-hint.ts';
 export type {
   CommandContext,

@@ -27,8 +27,13 @@
       "fileStatus": "created",
       "level": "p95",
       "keys": [
-        {"key":"GET /api/always-failing","category":"skipped","changes":[]},
-        {"key":"GET /api/rare","category":"skipped","changes":[]},
+        {
+          "key": "GET /api/always-failing",
+          "category": "skipped",
+          "changes": [],
+          "samples": {"success":0,"count":12,"needed":5,"statuses":{"500":12}}
+        },
+        {"key":"GET /api/rare","category":"skipped","changes":[],"samples":{"success":3,"count":3,"needed":5,"statuses":{"200":3}}},
         {
           "key": "GET /api/search?q",
           "category": "added",

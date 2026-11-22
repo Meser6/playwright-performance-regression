@@ -1,6 +1,12 @@
 // thresholds-diff.md: the diff of every thresholds file for a PR description or a CI artifact
 // (10-REQ-19).
-import { LISTED_CATEGORIES, diffCountsText, diffMarker, diffValuesText } from '../types/index.ts';
+import {
+  LISTED_CATEGORIES,
+  diffCountsText,
+  diffMarker,
+  diffValuesText,
+  skippedReasonText,
+} from '../types/index.ts';
 import type { ThresholdsDiff } from './types.ts';
 
 /** Table cell text: "|" and line breaks would break the table. */
@@ -35,6 +41,15 @@ export function formatThresholdsDiffMarkdown(diffs: ThresholdsDiff[], paths: str
         const before = diffValuesText(k, 'before', diff.level, ' · ');
         const after = diffValuesText(k, 'after', diff.level, ' · ');
         lines.push(`| ${diffMarker(k)} | ${code(k.key)} | ${cell(before)} | ${cell(after)} |`);
+      }
+    }
+    // Every skipped key with its reason, no limit (10-REQ-19, 10-D-21).
+    const skipped = diff.keys.filter((k) => k.category === 'skipped' && k.samples !== undefined);
+    if (skipped.length > 0) {
+      lines.push('', 'Skipped (no entry derived):', '');
+      for (const k of skipped) {
+        if (k.samples !== undefined)
+          lines.push(`- ${code(k.key)}: ${skippedReasonText(k.samples)}`);
       }
     }
     const expired = diff.keys.filter((k) => k.muted?.expired === true);

@@ -10,9 +10,14 @@
 | ↑! | `GET /api/loosened-much` | median 120 · p95 200 · p99 300 | median 220 · p95 364 · p99 492 |
 | ± | `GET /api/mixed` | median 150 · errors 0.200 | median 220 · errors 0.050 |
 | ↓ | `GET /api/muted-expired` | median 400 | median 220 |
-| + | `GET /api/new` |  | t 500 · median 220 · p95 364 · p99 492 · apdex 0.947 · wilson 0.030 · errors 0.050 |
+| + | `GET /api/new` |  | apdex T 500 ms · median 220 · p95 364 · p99 492 · apdex 0.947 · wilson 0.030 · errors 0.050 |
 | ↓ | `GET /api/tightened` | p95 600 · p99 800 | p95 364 · p99 492 |
-| - | `GET /api/unseen` | t 500 · median 220 · p95 364 · p99 492 · apdex 0.947 · wilson 0.030 · errors 0.050 |  |
+| - | `GET /api/unseen` | apdex T 500 ms · median 220 · p95 364 · p99 492 · apdex 0.947 · wilson 0.030 · errors 0.050 |  |
+
+Skipped (no entry derived):
+
+- `GET /api/new-small-n`: 2 successful samples, 5 needed
+- `GET /api/small-n`: 3 successful samples, 5 needed
 
 - `GET /api/muted-expired` muted (expired 2026-11-15)
 

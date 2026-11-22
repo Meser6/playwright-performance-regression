@@ -30,9 +30,6 @@ export function estimateText(input: EstimateInput): string {
   return `measurement run ≈ ${formatDuration(run(input.passesTest))} (${String(input.tests)} tests × ${String(input.passesTest)} passes × ${seconds} s), thresholds run ≈ ${formatDuration(run(input.passesThresholds))} (× ${String(input.passesThresholds)} passes), 1 worker`;
 }
 
-/** Time per test execution without an earlier run (04-REQ-66). */
-export const DEFAULT_TEST_MS = 30_000;
-
 /**
  * Time per test execution from an earlier run report (04-REQ-66): its wall time over the executed
  * tests (expected, unexpected and flaky); null when the report has none.
@@ -46,13 +43,16 @@ export function msPerTest(
   return wall / executions;
 }
 
-/** The Estimate value of the start banner (04-REQ-66). */
+/**
+ * The Estimate value of the start banner (04-REQ-66, 04-D-51): from the last run, or "unknown"
+ * without one. A time under a minute is "< 1 min" without "≈".
+ */
 export function startEstimate(input: {
   tests: number;
   passes: number;
   msPerTest: number | null;
 }): string {
-  const ms = input.msPerTest ?? DEFAULT_TEST_MS;
-  const note = input.msPerTest === null ? '30 s per test, no earlier run' : 'from the last run';
-  return `≈ ${formatDuration(input.tests * input.passes * ms)} (${note})`;
+  if (input.msPerTest === null) return 'unknown (run PW_PERF_MODE=check for an estimate)';
+  const time = formatDuration(input.tests * input.passes * input.msPerTest);
+  return `${time.startsWith('<') ? '' : '≈ '}${time} (from the last run)`;
 }
