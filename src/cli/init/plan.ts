@@ -110,6 +110,35 @@ function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan, t: Translate): 
 const TEST_CALL =
   /^\s*(?:test|it)(?:\.(?:describe|only|skip|fixme|fail|serial|parallel|step)(?:\.\w+)?)?\s*\(\s*['"`]/mu;
 
+/** Named imports from @playwright/test: `import { … } from` or `const { … } = require(`. */
+const PLAYWRIGHT_TEST_NAMES =
+  /\bimport\s*\{([^}]*)\}\s*from\s*(['"])@playwright\/test\2|\{([^}]*)\}\s*=\s*require\s*\(\s*(['"])@playwright\/test\4\s*\)/gu;
+
+/**
+ * A test file that takes `test` from @playwright/test: it imports the value `test` (alone or
+ * renamed, e.g. `test as setup`) and is named `*.spec.*`/`*.test.*` or calls it with a title at
+ * the start of a line. Page objects (`type Page`, `test.step`) and fixtures modules are not
+ * counted (04-REQ-72).
+ */
+function isPlaywrightTestFile(path: string, source: string): boolean {
+  const aliases: string[] = [];
+  if (/\brequire\s*\(\s*(['"])@playwright\/test\1\s*\)\s*\.test\b/u.test(source))
+    aliases.push('test');
+  for (const m of source.matchAll(PLAYWRIGHT_TEST_NAMES)) {
+    for (const name of (m[1] ?? m[3] ?? '').split(',')) {
+      const alias = /^\s*test\s*(?:(?:as|:)\s*([A-Za-z_$][\w$]*))?\s*$/u.exec(name);
+      if (alias !== null) aliases.push(alias[1] ?? 'test');
+    }
+  }
+  if (aliases.length > 0 && /\.(?:spec|test)\.[cm]?[jt]sx?$/u.test(path)) return true;
+  return aliases.some((alias) =>
+    new RegExp(
+      String.raw`^\s*${alias.replaceAll('$', '\\$')}(?:\.\w+)*\s*\(\s*['"\x60]`,
+      'mu',
+    ).test(source),
+  );
+}
+
 function planTestObject(info: ProjectInfo, answers: InitAnswers, plan: InitPlan): void {
   if (info.existing.wrappedTest) return;
   const text = (path: string): string => info.files.get(path) ?? '';
@@ -133,7 +162,10 @@ function planTestObject(info: ProjectInfo, answers: InitAnswers, plan: InitPlan)
   if (answers.measure === 'steps') return;
   plan.testObject = {
     extendFiles: [...new Set([...extendFiles, ...merges])].sort(),
-    importingFiles: info.filesImportingPlaywrightTest.length,
+    // Test files only: page objects and fixtures modules import @playwright/test too (04-REQ-72).
+    importingFiles: info.filesImportingPlaywrightTest.filter((p) =>
+      isPlaywrightTestFile(p, text(p)),
+    ).length,
   };
 }
 
