@@ -1,0 +1,89 @@
+{
+  "name": "api request with an unknown source (02-AC-22)",
+  "input": {
+    "apiRequests": [
+      {
+        "duration": 204.7,
+        "method": "GET",
+        "source": "browser",
+        "startTime": 1763460000100,
+        "status": 200,
+        "url": "https://app.example/api/tickets/42"
+      },
+      {
+        "duration": 12.3,
+        "method": "POST",
+        "source": "context",
+        "startTime": 1763460000150,
+        "status": 201,
+        "url": "https://app.example/api/orders"
+      },
+      {
+        "duration": null,
+        "failureText": "apiRequestContext.get: Timeout 50ms exceeded.",
+        "method": "GET",
+        "source": "tracked",
+        "startTime": 1763460000300,
+        "status": "FAILED",
+        "url": "https://api.example/v1/slow"
+      },
+      {
+        "duration": null,
+        "method": "DELETE",
+        "source": "request",
+        "startTime": 1763460000400,
+        "status": "PENDING",
+        "url": "https://app.example/api/orders/7"
+      }
+    ],
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "0.1.0"
+    },
+    "diagnostics": [],
+    "requests": [
+      {
+        "duration": 182.4,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": 3.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 150.1,
+        "url": "https://app.example/api/tickets/42?search=abc"
+      },
+      {
+        "duration": null,
+        "failureText": "net::ERR_ABORTED",
+        "fromServiceWorker": false,
+        "method": "POST",
+        "requestStart": null,
+        "resourceType": "xhr",
+        "startTime": 1763460000200,
+        "status": "FAILED",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/orders"
+      },
+      {
+        "duration": null,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": null,
+        "resourceType": "fetch",
+        "startTime": 1763460000900,
+        "status": "PENDING",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/notifications/poll"
+      }
+    ],
+    "schemaVersion": 3
+  },
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED"
+  }
+}

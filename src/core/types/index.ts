@@ -20,6 +20,7 @@ import type {
   Entry,
   KeyEvaluation,
   OutcomeFile,
+  ApiRequestSample,
   RequestSample,
 } from './generated/formats.ts';
 
@@ -40,6 +41,7 @@ export type EvaluatedCheck = Omit<Check, 'usage'>;
 export type EvaluatedKey = Omit<KeyEvaluation, 'checks'> & { checks: EvaluatedCheck[] };
 export type ThresholdsEntry = Entry;
 export type RawRequestSample = RequestSample;
+export type RawApiRequestSample = ApiRequestSample;
 /** Kinds of keys, in the order of every list and file (06-REQ-15). */
 export type Kind = 'api' | 'step';
 export const KINDS: readonly Kind[] = ['api', 'step'];
@@ -75,6 +77,8 @@ export {
   PACKAGE_NAME,
   PRUNE_COMMAND,
   REPOSITORY_URL,
+  REQUEST_KEY_PREFIX,
   SAMPLES_ATTACHMENT_NAME,
   THRESHOLDS_COMMAND,
+  isRequestKey,
 } from './constants.ts';

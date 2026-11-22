@@ -1,6 +1,7 @@
 {
   "name": "PENDING request with a duration",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -21,7 +22,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

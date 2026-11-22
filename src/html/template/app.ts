@@ -413,7 +413,8 @@ function sortable(table: HTMLTableElement, items: SortRow[], parent: HTMLElement
   for (const th of headers) {
     const column = th.dataset['sort'] ?? '';
     th.querySelector('button')?.addEventListener('click', () => {
-      const textual = column === 'key' || column === 'title' || column === 'result';
+      const textual =
+        column === 'key' || column === 'title' || column === 'result' || column === 'source';
       const first: Direction = textual ? 'ascending' : 'descending';
       const direction: Direction =
         current?.column === column
@@ -526,7 +527,13 @@ for (const table of all<HTMLTableElement>('table.keys')) {
       value: (column: string): number | null =>
         column === 'result'
           ? Number(body.dataset['g'] ?? '3')
-          : keyValue(own(aggregates[kind], key) ? aggregates[kind][key] : undefined, column, level),
+          : column === 'source'
+            ? Number(key.startsWith('request '))
+            : keyValue(
+                own(aggregates[kind], key) ? aggregates[kind][key] : undefined,
+                column,
+                level,
+              ),
     };
   });
   sortable(table, items, table);

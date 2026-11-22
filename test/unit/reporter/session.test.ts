@@ -377,7 +377,7 @@ describe('reporter session in test mode', () => {
     s.testBegin();
     s.testEnd(
       fakeTest(dir, { title: 'broken' }),
-      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 3 as 2 }))]),
+      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 4 as 3 }))]),
     );
     await s.end({ status: 'passed' });
     const report = readReport();
@@ -844,6 +844,32 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
       warnings: { code: string }[];
     };
     expect(codes(report2.warnings)).not.toContain('RUN_PROJECT_NO_REQUESTS');
+  });
+
+  test('15-AC-01 API calls of a batch become request keys in endpoints and count as requests', async () => {
+    const outcomeFile = join(dir, 'run.outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    s.begin(fakeConfig(dir), ROOT);
+    s.testBegin();
+    const call = {
+      method: 'GET',
+      url: 'http://app.test/api/a',
+      status: 200 as const,
+      startTime: 1_763_460_000_000,
+      duration: 210.5,
+      source: 'request' as const,
+    };
+    s.testEnd(
+      fakeTest(dir, { title: 'api' }),
+      result([JSON.stringify(batch([], { apiRequests: [call, { ...call, duration: 190 }] }))]),
+    );
+    await s.end({ status: 'passed' });
+    const report = JSON.parse(
+      readFileSync(join(dir, 'reports/pw-perf', 'report.json'), 'utf8'),
+    ) as RunReport;
+    expect(Object.keys(report.endpoints)).toEqual(['request GET /api/a']);
+    expect(report.endpoints['request GET /api/a']).toMatchObject({ count: 2, successCount: 2 });
+    expect(codes(report.warnings)).not.toContain('RUN_PROJECT_NO_REQUESTS');
   });
 
   test('03-AC-15 an empty or "undefined" baseURL of a measured project warns, a dependency does not', async () => {

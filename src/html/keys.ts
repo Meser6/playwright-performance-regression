@@ -23,7 +23,7 @@ import type { HtmlValue, SafeHtml } from './escape.ts';
 import { formatDate, formatMs, formatPercent, formatRatio, plural, usageText } from './format.ts';
 import { hintText, ruleLabel } from './hints.ts';
 import { icon } from './icons.ts';
-import { stepDepth } from './keyview.ts';
+import { endpointSource, stepDepth } from './keyview.ts';
 
 export { KEY_COLUMN_MAX } from './context.ts';
 
@@ -285,19 +285,21 @@ function testRef(t: { project: string; file: string; line: number }): SafeHtml {
 }
 
 /** Statuses as tokens, then the facts of the key (11, chapter 6.5). */
-function statusesPart(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
+function statusesPart(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
+  const request = kind === 'api' && endpointSource(key) === 'request';
   const errors = ctx.report.config.checks?.errors?.statuses ?? DEFAULT_ERROR_STATUSES;
   const labels = Object.keys(agg.statuses).sort();
   const facts: HtmlValue[] = [
     html`<span>From failed tests: ${agg.fromFailedTests}</span>`,
-    agg.timeSources.node > 0
+    agg.timeSources.node > 0 && !request
       ? html`<span>Time sources: browser ${agg.timeSources.browser}, node ${agg.timeSources.node}</span>`
       : null,
     kind === 'step' ? html`<span>Defined at: <code>${locationText(agg)}</code></span>` : null,
     kind === 'step' && (agg.stepErrorsFromFailedTests ?? 0) > 0
       ? html`<span>Step errors in failed tests (not counted): ${agg.stepErrorsFromFailedTests ?? 0}</span>`
       : null,
-    kind === 'api'
+    request ? html`<span>Source: request (worker clock)</span>` : null,
+    kind === 'api' && !request
       ? html`<span>TTFB: ${agg.ttfb === null ? DASH : `p50 ${formatMs(agg.ttfb.p50)}, p95 ${formatMs(agg.ttfb.p95)}`}</span>`
       : null,
     html`<span>Retained samples: ${
@@ -332,7 +334,7 @@ export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggre
     distribution(ctx, agg),
     checksTable(ctx, agg),
     kind === 'api' ? ttfbSplit(agg) : null,
-    statusesPart(ctx, kind, agg),
+    statusesPart(ctx, kind, key, agg),
     agg.slowest.length === 0
       ? null
       : part(
@@ -411,6 +413,7 @@ function keyRow(
   return join(
     html`<tbody data-g="${group}" data-s="${ev.thresholdSource}"${muted ? html` data-m=""` : null}><tr class="${rowClass(ev)}">`,
     html`<th scope="row" class="k">${kind === 'step' ? stepDepth(key) : null}${keyLink(ctx, kind, key)}</th>`,
+    kind === 'api' ? html`<td class="src">${endpointSource(key)}</td>` : null,
     html`<td class="r">${resultPill(ev)}${sourceToken(ev.thresholdSource)}${mutedPill(ev.muted)}`,
     reason === null ? null : html`<small class="why">${reason}</small>`,
     html`</td>`,
@@ -471,6 +474,8 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
   const keys = ctx.order[kind];
   const cols: [column: string, label: string][] = [
     ['key', 'Key'],
+    // Browser traffic or APIRequestContext calls (15-REQ-15).
+    ...(kind === 'api' ? [['source', 'Source'] as [string, string]] : []),
     ['result', 'Result'],
     ['headroom', 'Headroom'],
     ['samples', 'Samples'],

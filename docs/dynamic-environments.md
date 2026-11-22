@@ -29,10 +29,8 @@ Things to know:
   `--reporter`: they change what is measured or replace the pw-perf reporter. The package warns
   about `--reporter` and `--ui` (see [troubleshooting](troubleshooting.md#run_reporter_flag)); prefer
   a separate measurement script.
-- Projects whose tests only use the `request` fixture (API tests) measure nothing: requests made
-  outside the browser are out of scope, and the run warns with
-  [`RUN_PROJECT_NO_REQUESTS`](troubleshooting.md#run_project_no_requests). Leave them out with
-  `--project` in the measurement command.
+- API tests (the `request` fixture) are measured when they import the wrapped `test`; their keys
+  have the prefix `request` (see [faq.md](faq.md#are-requests-from-the-request-fixture-measured)).
 - Run the measurement in its own CI job, not in the job of the functional tests: it runs the tests
   several times on one worker.
 

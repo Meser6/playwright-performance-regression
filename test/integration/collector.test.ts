@@ -166,7 +166,21 @@ function samplePath(b: SampleBatch, path: string): RawRequestSample {
   return found[0] as RawRequestSample;
 }
 
-const MAIN_FILES = ['basic.spec.ts', 'worker-context.spec.ts', 'custom-contexts.spec.ts'];
+const MAIN_FILES = [
+  'basic.spec.ts',
+  'worker-context.spec.ts',
+  'custom-contexts.spec.ts',
+  'api-requests.spec.ts',
+];
+
+/** The API call samples of a batch whose URL path is `path` (15-REQ-05). */
+function apiSamples(b: SampleBatch, path: string): SampleBatch['apiRequests'] {
+  return b.apiRequests.filter((s) => new URL(s.url).pathname === path);
+}
+
+function annotation(r: Result, type: string): string | undefined {
+  return r.annotations.find((a) => a.type === type)?.description;
+}
 
 describe('collector in Chromium (perf mode)', () => {
   let run: Run;
@@ -213,6 +227,52 @@ describe('collector in Chromium (perf mode)', () => {
     expect(b.collector.browserName).toBeNull();
     expect(b.requests).toEqual([]);
     expect(b).not.toHaveProperty('custom');
+  });
+
+  test('15-AC-01 calls of the request fixture are samples with the worker time and source request', () => {
+    const r = result(run, 'api request fixture');
+    expect(annotation(r, 'wrapped')).toBe('true');
+    const b = batch(run, 'api request fixture');
+    expect(b.collector.browserName).toBeNull();
+    expect(b.requests).toEqual([]);
+    const [delay] = apiSamples(b, '/api/delay');
+    expect(delay).toMatchObject({ method: 'GET', status: 200, source: 'request' });
+    expect(delay?.url).toBe(`${server.url}/api/delay?ms=200`);
+    expect(delay?.duration).toBeGreaterThanOrEqual(195);
+    expect(delay?.duration).toBeLessThan(2000);
+    // Parallel calls are measured separately; get() calling fetch() inside is one sample.
+    expect(b.apiRequests.map((s) => `${s.method} ${new URL(s.url).pathname}`).sort()).toEqual([
+      'GET /api/cart',
+      'GET /api/delay',
+      'POST /api/orders',
+    ]);
+  });
+
+  test('15-AC-02 page.request and context.request give one sample per call with source context', () => {
+    const b = batch(run, 'api page and context request');
+    expect(apiSamples(b, '/api/orders')).toMatchObject([{ method: 'POST', source: 'context' }]);
+    expect(apiSamples(b, '/api/delay')).toMatchObject([{ method: 'GET', source: 'context' }]);
+    expect(b.apiRequests).toHaveLength(2);
+  });
+
+  test('15-AC-07 a tracked context gives source tracked; another object a diagnostic', () => {
+    const b = batch(run, 'api tracked context');
+    expect(b.apiRequests).toMatchObject([{ method: 'GET', status: 200, source: 'tracked' }]);
+    expect(b.diagnostics.map((d) => d.code)).toEqual(['COLLECTOR_REQUEST_CONTEXT_NOT_TRACKED']);
+  });
+
+  test('15-AC-03 a call that throws is FAILED with the first line of the error; the test sees the error', () => {
+    expect(result(run, 'api call that throws').status).toBe('passed');
+    const b = batch(run, 'api call that throws');
+    expect(b.apiRequests).toEqual([
+      expect.objectContaining({
+        method: 'GET',
+        status: 'FAILED',
+        duration: null,
+        failureText: expect.stringContaining('Timeout 300ms exceeded'),
+      }),
+    ]);
+    expect(b.apiRequests[0]?.failureText).not.toContain('\n');
   });
 
   test('05-AC-03 requests from a popup and a second tab are measured', () => {
@@ -419,7 +479,7 @@ describe('collector in Chromium: requests in flight at test end', () => {
 
 describe('collector in Chromium: perf mode off', () => {
   test(
-    '05-AC-01 without perf mode the tests behave the same and have no attachment',
+    '05-AC-01 15-AC-04 without perf mode the tests behave the same and have no attachment',
     async () => {
       const run = await runPlaywright({}, MAIN_FILES);
       expect(run.status, run.output).toBe(0);
@@ -432,6 +492,8 @@ describe('collector in Chromium: perf mode off', () => {
         expect(r.status, r.title).toBe('passed');
       }
       expect(result(run, 'no browser').status).toBe('passed');
+      // 15-AC-04: the request fixture is the untouched Playwright object.
+      expect(annotation(result(run, 'api request fixture'), 'wrapped')).toBe('false');
     },
     RUN_TIMEOUT,
   );

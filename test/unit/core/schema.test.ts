@@ -45,8 +45,8 @@ const fakeFormat: VersionedFormat = {
 };
 
 describe('schemaVersion handling (02-REQ-10)', () => {
-  test('sample batch v2, run report v3, thresholds file v2, outcome file v1 (02-REQ-11, 02-REQ-33)', () => {
-    expect(SCHEMA_VERSIONS).toEqual({ samples: 2, runReport: 4, thresholds: 2, outcome: 1 });
+  test('sample batch v3, run report v4, thresholds file v2, outcome file v1 (02-REQ-11, 02-REQ-40)', () => {
+    expect(SCHEMA_VERSIONS).toEqual({ samples: 3, runReport: 4, thresholds: 2, outcome: 1 });
   });
 
   test('02-AC-03 a newer schemaVersion gives SCHEMA_VERSION_TOO_NEW for every migrating format', () => {
@@ -133,8 +133,8 @@ describe('schemaVersion handling (02-REQ-10)', () => {
 });
 
 describe('sample batch (02-REQ-13)', () => {
-  test('02-AC-13 schemaVersion 0 or 1 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
-    for (const version of [0, 1]) {
+  test('02-AC-13 02-AC-22 schemaVersion 0, 1 or 2 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
+    for (const version of [0, 1, 2]) {
       const result = parseSampleBatch(text({ ...batch, schemaVersion: version }), 'tickets › open');
       expect(result.ok).toBe(false);
       if (result.ok) continue;
@@ -146,7 +146,7 @@ describe('sample batch (02-REQ-13)', () => {
       const toolError = schemaIssueToIssue(issue);
       expect(toolError).toEqual({
         code: 'SCHEMA_VERSION_MISMATCH',
-        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 2`,
+        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 3`,
         hint: expect.stringContaining('one package version'),
       });
     }
@@ -598,7 +598,10 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(v1Input).toMatchObject({ schemaVersion: 1, custom: expect.any(Array) });
     const old = parseSampleBatch(text(v1Input), 'login');
     expect(!old.ok && old.issues[0]?.code).toBe('SCHEMA_VERSION_MISMATCH');
-    const withCustom = parseSampleBatch(text({ ...v1Input, schemaVersion: 2 }), 'login');
+    const withCustom = parseSampleBatch(
+      text({ ...v1Input, schemaVersion: 3, apiRequests: [] }),
+      'login',
+    );
     expect(!withCustom.ok && withCustom.issues[0]).toMatchObject({
       code: 'SCHEMA_VALIDATION_FAILED',
       problems: [{ pointer: '', message: expect.stringContaining('custom') }],

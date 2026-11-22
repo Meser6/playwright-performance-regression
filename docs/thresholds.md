@@ -21,7 +21,7 @@ There is one file per kind and environment, in `thresholds.dir` (default: next t
 
 | File                                  | Contents                                                         |
 | ------------------------------------- | ---------------------------------------------------------------- |
-| `pw-perf-thresholds.json`             | backend requests, one entry per endpoint key                     |
+| `pw-perf-thresholds.json`             | backend requests, one entry per endpoint key and source          |
 | `pw-perf-thresholds.<env>.json`       | the same for an environment label, e.g. `staging`                |
 | `pw-perf-thresholds.steps.json`       | `test.step` keys, with `measure.steps` on ([steps.md](steps.md)) |
 | `pw-perf-thresholds.steps.<env>.json` | the same for an environment label                                |
@@ -46,6 +46,11 @@ and `p99` are limits in milliseconds. `t` is the Apdex threshold used by `minApd
 `t`. `maxErrorRate` is the allowed share of errors. The `generated` block at the top of the file
 records which run the values came from (browser, Playwright version, machine, normalization). The
 reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the current run differs from it.
+
+Calls of Playwright's `request` fixture, `page.request` and `context.request` have keys with the
+prefix `request`, e.g. `request GET /api/orders/:id`. The same endpoint called by the page and by
+`request` has two entries, each with limits from its own measurements: the two are timed
+differently and are never compared with each other.
 
 ## Deriving thresholds: the recommended flow
 

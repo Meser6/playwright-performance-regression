@@ -1,6 +1,7 @@
 {
   "name": "failureText on a request with an HTTP status",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -22,7 +23,7 @@
         "url": "https://app.example/api/tickets/42?search=abc"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

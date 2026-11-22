@@ -108,9 +108,36 @@ const requestSample = obj(
   },
 );
 
+const apiRequestSample = obj(
+  {
+    method: str({ pattern: /^[A-Z]+$/u }),
+    url: nonEmpty,
+    status: oneOf(int({ minimum: 100, maximum: 599 }), constant('FAILED'), constant('PENDING')),
+    failureText: nonEmpty,
+    startTime: epochMs,
+    duration: msOrNull,
+    source: enumOf(['request', 'context', 'tracked']),
+  },
+  {
+    required: ['method', 'url', 'status', 'startTime', 'duration', 'source'],
+    refine(value, pointer, sink) {
+      const status = Object.hasOwn(value, 'status') ? value.status : 'FAILED';
+      if (status === 'FAILED' && !Object.hasOwn(value, 'failureText')) {
+        sink.add(pointer, "must have required property 'failureText' when status is FAILED");
+      }
+      if (status !== 'FAILED' && Object.hasOwn(value, 'failureText')) {
+        sink.add(`${pointer}/failureText`, 'must NOT be present unless status is FAILED');
+      }
+      if (status === 'FAILED' || status === 'PENDING' || !Object.hasOwn(value, 'status')) {
+        present(value, pointer, sink, { duration: nul });
+      }
+    },
+  },
+);
+
 export const sampleBatch = obj(
   {
-    schemaVersion: constant(2),
+    schemaVersion: constant(3),
     collector: obj(
       {
         name: str({ pattern: /^[a-z0-9-]+$/u }),
@@ -120,9 +147,10 @@ export const sampleBatch = obj(
       { required: ['name', 'version', 'browserName'] },
     ),
     requests: arr(requestSample),
+    apiRequests: arr(apiRequestSample),
     diagnostics: arr(issue),
   },
-  { required: ['schemaVersion', 'collector', 'requests', 'diagnostics'] },
+  { required: ['schemaVersion', 'collector', 'requests', 'apiRequests', 'diagnostics'] },
 );
 
 // ---- thresholds.schema.json -----------------------------------------------------------------

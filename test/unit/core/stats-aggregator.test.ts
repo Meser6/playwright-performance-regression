@@ -15,6 +15,7 @@ import { parseRunReport } from '../../../src/core/schema/index.ts';
 import {
   Aggregator,
   BottomK,
+  addKeyedApiRequest,
   addKeyedRequest,
   percentile,
   resultId,
@@ -513,6 +514,75 @@ describe('Aggregator: tests, slowest and origins (08, chapters 4 and 7)', () => 
     const result = agg.finalize();
     expect(Object.keys(result.endpoints)).toEqual(['GET /api/tickets/:id']);
     expect(result.origins).toEqual([{ origin: ORIGIN, label: '', requestCount: 1 }]);
+  });
+
+  test('15-AC-06 an API call gets its own key with the request prefix and usable worker time', () => {
+    const agg = new Aggregator(options());
+    const keyOf = createKeyBuilder(DEFAULTS.keys, { baseOrigins: [ORIGIN] });
+    addKeyedRequest(agg, keyOf, req(), 'chromium');
+    const call = {
+      method: 'GET',
+      url: 'https://app.example/api/tickets/2',
+      status: 200 as const,
+      startTime: START,
+      duration: 240,
+      source: 'request' as const,
+      test: meta(),
+      ordinal: 1,
+    };
+    const keyed = addKeyedApiRequest(agg, keyOf, call);
+    expect(keyed).toMatchObject({ ok: true, key: 'request GET /api/tickets/:id' });
+    addKeyedApiRequest(agg, keyOf, {
+      ...call,
+      status: 'FAILED',
+      failureText: 'timeout',
+      duration: null,
+      ordinal: 2,
+    });
+    const result = agg.finalize();
+    expect(Object.keys(result.endpoints)).toEqual([
+      'GET /api/tickets/:id',
+      'request GET /api/tickets/:id',
+    ]);
+    const api = result.endpoints['request GET /api/tickets/:id'];
+    expect(api).toMatchObject({
+      count: 2,
+      successCount: 1,
+      ttfb: null,
+      timeSources: { browser: 0, node: 2 },
+      statuses: { '200': 1, FAILED: 1 },
+    });
+    expect(api?.stats?.max).toBe(240);
+    expect(result.endpoints['GET /api/tickets/:id']?.stats?.max).toBe(100);
+    expect(result.issues.map((i) => i.code)).not.toContain('STATS_SAMPLES_WITHOUT_BROWSER_TIMING');
+    expect(result.origins).toEqual([{ origin: ORIGIN, label: '', requestCount: 3 }]);
+  });
+
+  test('15-REQ-02 keyBuilder gets resourceType "request" and the prefix is added after it', () => {
+    const agg = new Aggregator(options());
+    const seen: string[] = [];
+    const keyOf = createKeyBuilder(
+      {
+        ...DEFAULTS.keys,
+        keyBuilder: (req) => {
+          seen.push(req.resourceType);
+          return 'custom';
+        },
+      },
+      { baseOrigins: [ORIGIN] },
+    );
+    const keyed = addKeyedApiRequest(agg, keyOf, {
+      method: 'POST',
+      url: 'https://app.example/api/x',
+      status: 201,
+      startTime: START,
+      duration: 12,
+      source: 'context',
+      test: meta(),
+      ordinal: 0,
+    });
+    expect(keyed).toMatchObject({ ok: true, key: 'request custom' });
+    expect(seen).toEqual(['request']);
   });
 });
 

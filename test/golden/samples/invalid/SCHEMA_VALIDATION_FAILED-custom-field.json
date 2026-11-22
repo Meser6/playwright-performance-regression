@@ -1,6 +1,7 @@
 {
   "name": "sample batch v2 with the removed custom array (02-AC-18)",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -60,7 +61,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

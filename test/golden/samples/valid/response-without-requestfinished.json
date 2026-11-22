@@ -1,6 +1,7 @@
 {
   "name": "response without requestfinished: HTTP status, duration null, timing kept (05-REQ-31)",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -21,7 +22,7 @@
         "url": "https://app.example/api/tickets/42?search=abc"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

@@ -51,6 +51,39 @@ export type RequestSample = {
   fromServiceWorker: boolean;
 };
 /**
+ * One call of an APIRequestContext method, timed with the worker's clock (15-REQ-05).
+ */
+export type ApiRequestSample = {
+  /**
+   * HTTP method, uppercase (fetch without a method: GET).
+   */
+  method: string;
+  /**
+   * Called URL: absolute as given, a relative one resolved against the test's baseURL, otherwise response.url() or the text of the call (15-REQ-05). Never written to thresholds files (P-07).
+   */
+  url: string;
+  /**
+   * HTTP status code; FAILED when the call threw; PENDING when it was still running after the end-of-test wait (15-REQ-08).
+   */
+  status: number | 'FAILED' | 'PENDING';
+  /**
+   * First line of the error message of the call. Present only when status is FAILED.
+   */
+  failureText?: string;
+  /**
+   * Date.now() when the method was called, whole ms.
+   */
+  startTime: number;
+  /**
+   * From the call to the settled promise (performance.now() in the worker), including reading the whole body. Null for FAILED and PENDING.
+   */
+  duration: number | null;
+  /**
+   * request: the request fixture; context: page.request or context.request; tracked: a context passed to trackRequestContext(). Informational: all give keys with the same prefix (15-REQ-05).
+   */
+  source: 'request' | 'context' | 'tracked';
+};
+/**
  * Limits for one key. A complete entry has all seven limit fields; the generator always writes complete entries. t, minApdex and maxWilson may be null: the apdex and wilson rules do not apply to this key (10-REQ-06). Hand-written entries may omit fields (02-REQ-21): missing median, percentile, p99 and maxErrorRate come from checks.<group>.<rule>.limit of the current config; without t the apdex and wilson rules are off; with t, a missing minApdex or maxWilson comes from checks.slowShare.apdex.limit / wilson.limit. An entry may contain only muting (gate, note, until) without any limit (02-REQ-29). An entry with a missing field is never overwritten by the generator (10-REQ-08).
  */
 export type Entry = {
@@ -159,7 +192,7 @@ export interface PackageConfig {
    */
   measure?: {
     /**
-     * Requests the browser makes to the backend, as keys of kind 'api' (05, 03-REQ-28). false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
+     * Requests the browser makes to the backend and calls of the request fixture, page.request and context.request (keys with the prefix 'request '), as keys of kind 'api' (05, 15, 03-REQ-28). false: no request is measured, the api thresholds file is neither read nor written, and only test.step durations are measured; measure.api and measure.steps cannot both be off.
      */
     api?: boolean;
     /**
@@ -778,7 +811,7 @@ export interface PackageConfig {
  * Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
  */
 export interface SampleBatch {
-  schemaVersion: 2;
+  schemaVersion: 3;
   /**
    * Collector that produced the batch.
    */
@@ -800,6 +833,10 @@ export interface SampleBatch {
    * Request samples in the order they finished; requests still in flight when the end-of-test wait ran out come last, with status PENDING (05).
    */
   requests: RequestSample[];
+  /**
+   * Calls of APIRequestContext methods (request fixture, page.request, context.request, trackRequestContext; 15) in the order they finished; calls still running when the end-of-test wait ran out come last, with status PENDING. The reporter keys them with the prefix 'request ' (15-REQ-01).
+   */
+  apiRequests: ApiRequestSample[];
   /**
    * Collector diagnostics caught during the test (01-REQ-13, 05 §9). Repeated issues are collapsed using 'count'. The reporter turns every diagnostic into an entry in 'warnings' (09-REQ-23); none of them is a tool error.
    */

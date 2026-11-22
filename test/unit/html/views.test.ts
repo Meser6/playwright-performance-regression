@@ -481,7 +481,7 @@ describe('migrated reports and golden pages (11-REQ-44, 11-AC-28)', () => {
     // Headroom column: — for every key.
     const rows = [
       ...html.matchAll(
-        /<tbody data-g[^>]*><tr class="[^"]+"><th scope="row" class="k">.*?<\/th><td class="r">.*?<\/td><td class="z">(.*?)<\/td>/gsu,
+        /<tbody data-g[^>]*><tr class="[^"]+"><th scope="row" class="k">.*?<\/th>(?:<td class="src">[a-z]+<\/td>)?<td class="r">.*?<\/td><td class="z">(.*?)<\/td>/gsu,
       ),
     ];
     expect(rows.length).toBeGreaterThan(0);
@@ -615,5 +615,23 @@ describe('size budget (11-REQ-43)', () => {
       B(SCRIPT) -
       2 * B(stableJson(report.config, '  '));
     expect(rest).toBeLessThanOrEqual(BUDGET.rest);
+  });
+});
+
+describe('APIRequestContext keys (15-REQ-15)', () => {
+  test('15-AC-08 the Endpoints table has a Source column; request keys show a token without the prefix', () => {
+    const report = fullRun();
+    const [key, agg] = Object.entries(report.endpoints)[0] ?? [];
+    if (key === undefined || agg === undefined) throw new Error('no endpoint');
+    report.endpoints[`request ${key}`] = { ...agg, ttfb: null };
+    const html = page(report);
+    expect(html).toContain(
+      '<th scope="col" data-sort="source"><button type="button">Source</button></th>',
+    );
+    expect(html).toContain('<td class="src">request</td>');
+    expect(html).toContain('<td class="src">browser</td>');
+    expect(html).toContain('<span class="rq">request</span> <b class="m');
+    expect(html).toContain('Source: request (worker clock)');
+    expect(html).not.toMatch(/<span class="key"[^>]*>request /u);
   });
 });

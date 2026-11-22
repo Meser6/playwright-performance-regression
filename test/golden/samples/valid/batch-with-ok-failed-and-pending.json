@@ -1,6 +1,7 @@
 {
   "name": "ok, FAILED and PENDING requests (02, chapter 6)",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -46,7 +47,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

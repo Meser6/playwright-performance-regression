@@ -52,7 +52,8 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   { path: 'measure', description: 'What the collector measures.', leaf: false },
   {
     path: 'measure.api',
-    description: "Requests the browser makes to the backend, as keys of kind 'api'.",
+    description:
+      "Requests the browser makes to the backend and calls of the request fixture, page.request and context.request (keys with the prefix 'request '), as keys of kind 'api'.",
     leaf: true,
     default: true,
   },

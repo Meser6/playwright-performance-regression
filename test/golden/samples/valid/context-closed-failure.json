@@ -1,6 +1,7 @@
 {
   "name": "request in flight when the context was closed (05-REQ-30)",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -22,7 +23,7 @@
         "url": "https://app.example/api/orders"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

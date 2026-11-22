@@ -3,9 +3,11 @@ import { roundMs } from '../format/index.ts';
 import type { KeyResult, KeySample } from '../normalize/index.ts';
 import { hash53 } from '../random/index.ts';
 import type { ResolvedConfig } from '../config/index.ts';
+import { REQUEST_KEY_PREFIX } from '../types/index.ts';
 import type {
   AggregateStats,
   Issue,
+  RawApiRequestSample,
   RunReport,
   SlowSample,
   StepAggregateStats,
@@ -238,14 +240,15 @@ export class Aggregator {
 
     // FAILED and PENDING are never successful (08-REQ-01).
     const successful = typeof sample.status === 'number' && this.isSuccess(statusLabel);
-    if (successful && sample.timeSource === 'node') {
+    const apiCall = sample.apiCall === true;
+    if (successful && sample.timeSource === 'node' && !apiCall) {
       this.withoutBrowserTiming += 1;
       this.keysWithoutBrowserTiming.add(key);
     }
-    // Usable for time statistics (08-REQ-02).
+    // Usable for time statistics (08-REQ-02); API calls are timed in the worker (15-REQ-13).
     const usable =
       successful &&
-      sample.timeSource === 'browser' &&
+      (sample.timeSource === 'browser' || apiCall) &&
       !sample.fromServiceWorker &&
       sample.duration !== null;
     this.testBreakdown.addRequest(
@@ -516,4 +519,44 @@ export function addKeyedRequest(
     aggregator.addRequest(result.key, sample, result.origin, result.label, browserName);
   }
   return result;
+}
+
+/** An APIRequestContext call of a batch with the test metadata (15-REQ-05). */
+export interface EnrichedApiRequestSample extends RawApiRequestSample {
+  test: TestMeta;
+  /** Position after the browser samples of the same batch (08-REQ-08). */
+  ordinal: number;
+}
+
+/**
+ * Adds an APIRequestContext call under its own key: the normalization's key (keyBuilder gets
+ * resourceType "request") with REQUEST_KEY_PREFIX (15-REQ-01, 15-REQ-02). The returned
+ * KeyResult has the prefixed key.
+ */
+export function addKeyedApiRequest(
+  aggregator: Aggregator,
+  keyOf: (sample: KeySample) => KeyResult,
+  sample: EnrichedApiRequestSample,
+): KeyResult {
+  const result = keyOf({ method: sample.method, url: sample.url, resourceType: 'request' });
+  if (!result.ok) return result;
+  const key = `${REQUEST_KEY_PREFIX}${result.key}`;
+  const request: EnrichedRequestSample = {
+    method: sample.method,
+    url: sample.url,
+    resourceType: 'request',
+    status: sample.status,
+    ...(sample.failureText === undefined ? {} : { failureText: sample.failureText }),
+    startTime: sample.startTime,
+    duration: sample.duration,
+    requestStart: null,
+    ttfb: null,
+    timeSource: 'node',
+    fromServiceWorker: false,
+    test: sample.test,
+    ordinal: sample.ordinal,
+    apiCall: true,
+  };
+  aggregator.addRequest(key, request, result.origin, result.label, null);
+  return { ...result, key };
 }

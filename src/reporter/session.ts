@@ -28,7 +28,7 @@ import {
   parseSampleBatch,
   schemaIssueToIssue,
 } from '../core/schema/index.ts';
-import { addKeyedRequest, resultId } from '../core/stats/index.ts';
+import { addKeyedApiRequest, addKeyedRequest, resultId } from '../core/stats/index.ts';
 import type { TestMeta } from '../core/stats/index.ts';
 import type { Aggregates } from '../core/stats/index.ts';
 import {
@@ -38,7 +38,7 @@ import {
 } from '../core/thresholds/index.ts';
 import type { ThresholdsDiff } from '../core/thresholds/index.ts';
 import { PACKAGE_NAME, SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
-import type { Issue, Outcome, RunReport } from '../core/types/index.ts';
+import type { Issue, Outcome, RawRequestSample, RunReport } from '../core/types/index.ts';
 import { stringifyStable } from '../core/format/index.ts';
 import { colorEnabled } from '../console/color.ts';
 import { nextLine, outcomeLine } from '../console/outcome-line.ts';
@@ -519,22 +519,37 @@ export class RunSession {
       }
       const batch = parsed.value;
       this.warnings.push(...batch.diagnostics);
-      if (measured && batch.requests.length > 0) this.projectsWithRequests.add(project);
+      // Browser requests and APIRequestContext calls both count as requests (09-REQ-33, 15-REQ-13).
+      const requestCount = batch.requests.length + batch.apiRequests.length;
+      if (measured && requestCount > 0) this.projectsWithRequests.add(project);
       if (measured) {
         const n = this.checkRun.requests.get(project) ?? 0;
-        this.checkRun.requests.set(project, n + batch.requests.length);
+        this.checkRun.requests.set(project, n + requestCount);
       }
+      const keyed = (result: KeyResult, status: RawRequestSample['status']): void => {
+        this.warnings.push(...result.issues);
+        if (result.ok && status === 'PENDING' && measured) {
+          this.pending.set(result.key, (this.pending.get(result.key) ?? 0) + 1);
+        }
+      };
       batch.requests.forEach((sample, ordinal) => {
-        const keyed = addKeyedRequest(
+        const result = addKeyedRequest(
           this.aggregator,
           this.keyOf,
           { ...sample, test: meta, ordinal },
           batch.collector.browserName,
         );
-        this.warnings.push(...keyed.issues);
-        if (keyed.ok && sample.status === 'PENDING' && measured) {
-          this.pending.set(keyed.key, (this.pending.get(keyed.key) ?? 0) + 1);
-        }
+        keyed(result, sample.status);
+      });
+      // API calls follow the browser samples, so every sample of the result has its own ordinal.
+      const offset = batch.requests.length;
+      batch.apiRequests.forEach((sample, index) => {
+        const result = addKeyedApiRequest(this.aggregator, this.keyOf, {
+          ...sample,
+          test: meta,
+          ordinal: offset + index,
+        });
+        keyed(result, sample.status);
       });
     }
     // Closes the run for the per-test data and the waterfall, also after an empty batch; the
@@ -564,7 +579,7 @@ export class RunSession {
       issues.push({
         code: 'RUN_PROJECT_NO_REQUESTS',
         message: `Measured ${silent.length === 1 ? 'project' : 'projects'} ${silent.join(', ')} recorded no request sample.`,
-        hint: 'Tests that only use the request fixture (API tests) are not measured: requests made outside the browser are out of scope; leave such projects out of the measurement command (--project). Otherwise check use.baseURL, withPerfFixtures and measure.include/exclude.',
+        hint: 'Check use.baseURL, withPerfFixtures and measure.include/exclude; API tests are measured when they import test from the wrapped test object.',
       });
     }
     const notInstrumented = notInstrumentedWarning(this.notInstrumented, this.crashedTests);

@@ -1,6 +1,7 @@
 {
   "name": "node fallback timing and a service worker response",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",
@@ -33,7 +34,7 @@
         "url": "https://app.example/api/tickets/42?search=abc"
       }
     ],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

@@ -1,6 +1,7 @@
 {
   "name": "empty batch of a test without a browser (02-REQ-14)",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": null,
       "name": "playwright-js",
@@ -8,7 +9,7 @@
     },
     "diagnostics": [],
     "requests": [],
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

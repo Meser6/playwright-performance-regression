@@ -7,6 +7,18 @@
  */
 export const CONTEXT_CLOSED_FAILURE_TEXT = 'pw-perf: context closed';
 
+/**
+ * Prefix of the keys of APIRequestContext calls (15-REQ-01): `request GET /api/x` is the call,
+ * `GET /api/x` the same endpoint seen in the browser. Two keys, two thresholds entries, never
+ * shared statistics (P-04).
+ */
+export const REQUEST_KEY_PREFIX = 'request ';
+
+/** True for a key of an APIRequestContext call (source "request" in the report, 15-REQ-15). */
+export function isRequestKey(key: string): boolean {
+  return key.startsWith(REQUEST_KEY_PREFIX);
+}
+
 /** Name of the npm package (00). */
 export const PACKAGE_NAME = 'playwright-performance-regression';
 

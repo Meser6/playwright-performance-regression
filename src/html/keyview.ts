@@ -2,6 +2,7 @@
 // monospace path with the origin label as a small token and path parameters in the accent colour;
 // a step in the proportional font with the parent titles muted and the last title bold. Long keys
 // are shortened in the middle with the full key in `title` (11, chapter 6.4).
+import { REQUEST_KEY_PREFIX, isRequestKey } from '../core/types/index.ts';
 import type { LinkKind } from './context.ts';
 import { html } from './escape.ts';
 import type { SafeHtml } from './escape.ts';
@@ -13,15 +14,30 @@ const METHODS: ReadonlySet<string> = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DE
 /** Separator of the titles in a step key (06). */
 export const STEP_SEPARATOR = ' › ';
 
-/** Method, origin label and path of an endpoint key `METHOD [label]/path` (07). */
-export function splitEndpoint(key: string): { method: string; origin: string; path: string } {
-  const space = key.indexOf(' ');
-  if (space <= 0) return { method: '', origin: '', path: key };
-  const method = key.slice(0, space);
-  const rest = key.slice(space + 1);
+/** Where an endpoint key was measured (15-REQ-01): `request …` keys are APIRequestContext calls. */
+export function endpointSource(key: string): 'browser' | 'request' {
+  return isRequestKey(key) ? 'request' : 'browser';
+}
+
+/**
+ * Method, origin label and path of an endpoint key `METHOD [label]/path` (07); `request` is true
+ * for the key of an APIRequestContext call, whose prefix is left out of the parts (15-REQ-15).
+ */
+export function splitEndpoint(key: string): {
+  method: string;
+  origin: string;
+  path: string;
+  request: boolean;
+} {
+  const request = isRequestKey(key);
+  const text = request ? key.slice(REQUEST_KEY_PREFIX.length) : key;
+  const space = text.indexOf(' ');
+  if (space <= 0) return { method: '', origin: '', path: text, request };
+  const method = text.slice(0, space);
+  const rest = text.slice(space + 1);
   const slash = rest.indexOf('/');
-  if (slash <= 0) return { method, origin: '', path: rest };
-  return { method, origin: rest.slice(0, slash), path: rest.slice(slash) };
+  if (slash <= 0) return { method, origin: '', path: rest, request };
+  return { method, origin: rest.slice(0, slash), path: rest.slice(slash), request };
 }
 
 /** Path parameters (`:id`, `:email`, …) in the accent colour. */
@@ -39,10 +55,10 @@ export function methodBadge(method: string): SafeHtml {
 
 /** Key text of an endpoint: origin token and path, shortened to `max` code points. */
 function endpointView(key: string, max: number, full: boolean): SafeHtml {
-  const { method, origin, path } = splitEndpoint(key);
-  const room = Math.max(8, max - method.length - 1 - origin.length);
+  const { method, origin, path, request } = splitEndpoint(key);
+  const room = Math.max(8, max - method.length - 1 - origin.length - (request ? 8 : 0));
   const short = truncateMiddle(path, room);
-  return html`${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path && !full ? null : html` title="${key}"`}>${origin === '' ? null : html`<span class="o">${origin}</span>`}${pathView(short)}</span>`;
+  return html`${request ? html`<span class="rq">request</span> ` : null}${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path && !full ? null : html` title="${key}"`}>${origin === '' ? null : html`<span class="o">${origin}</span>`}${pathView(short)}</span>`;
 }
 
 /** Key text of a step: parent titles muted, the last title bold. */

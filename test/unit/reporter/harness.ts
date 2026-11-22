@@ -205,9 +205,10 @@ export function request(
 
 export function batch(requests: RawRequestSample[], extra: Partial<SampleBatch> = {}): SampleBatch {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     collector: { browserName: 'chromium', name: 'playwright-js', version: '0.0.0' },
     requests,
+    apiRequests: [],
     diagnostics: [],
     ...extra,
   };

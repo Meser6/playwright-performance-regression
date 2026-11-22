@@ -66,9 +66,23 @@ you nothing about behaviour under many concurrent users. Use a load-testing tool
 
 ## Are requests from the `request` fixture measured?
 
-No. Only requests made by the browser (pages, popups, frames and workers of measured contexts)
-are measured. Tests using only `request`, and calls through `page.request` or `context.request`,
-record nothing.
+Yes, when the test imports `test` from the wrapped test object (`withPerfFixtures()` or
+`playwright-performance-regression/test`). Calls of `request`, `page.request` and
+`context.request` get their own keys with the prefix `request`, e.g. `request GET /api/orders/:id`,
+next to `GET /api/orders/:id` for the same endpoint called by the page. Both live in
+`pw-perf-thresholds.json`, and the Endpoints table of the report shows the source of each key.
+
+They are separate keys on purpose: the browser times a request from sending it to the last byte,
+while a `request` call is timed in the worker from the call to the response, with its own
+connections, no CORS preflight and no browser cache. The difference is a few milliseconds and
+constant, so each source gets limits from its own measurements and a slower backend shows in both,
+but the numbers of the two sources must not be mixed.
+
+A context made with `playwright.request.newContext()` is measured after
+`perf.trackRequestContext(context)` (in a test) or `trackRequestContext(context)` from
+`playwright-performance-regression/fixture` (also in a worker fixture). Other HTTP clients (Node
+`fetch`, axios) are not measured. To skip data setup calls, exclude their URLs with
+`measure.exclude`.
 
 ## Does the package change my normal test runs?
 

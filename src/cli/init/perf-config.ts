@@ -183,7 +183,7 @@ export const CONFIG_FILE_OPTIONS: readonly { option: string; text: string }[] = 
   },
   {
     option: 'measure.api',
-    text: 'The backend requests the browser makes are measured as endpoint keys. Set false to measure only test.step durations (api and steps cannot both be off).',
+    text: 'The backend requests the browser makes and the calls of the request fixture (keys like "request GET /api/x") are measured as endpoint keys. Set false to measure only test.step durations (api and steps cannot both be off).',
   },
   {
     option: 'measure.include',

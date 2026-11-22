@@ -1,6 +1,7 @@
 {
   "name": "no schemaVersion",
   "input": {
+    "apiRequests": [],
     "collector": {
       "browserName": "chromium",
       "name": "playwright-js",

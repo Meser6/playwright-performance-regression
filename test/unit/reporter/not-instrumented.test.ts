@@ -31,7 +31,7 @@ describe('TESTS_NOT_INSTRUMENTED (09-REQ-34)', () => {
       code: 'TESTS_NOT_INSTRUMENTED',
       message:
         '1 test in tests/api.spec.ts imports test without withPerfFixtures() (e.g. straight from @playwright/test), so it was not measured. 1 test in tests/cart.spec.ts lost its measurement because the worker process exited unexpectedly.',
-      hint: 'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test"). Check the worker crash in the Playwright output above.',
+      hint: 'Import test from a test object wrapped with withPerfFixtures() (or from "playwright-performance-regression/test"), also in API tests that use the request fixture. Check the worker crash in the Playwright output above.',
     });
   });
 

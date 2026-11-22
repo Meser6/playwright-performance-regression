@@ -39,6 +39,10 @@ export interface RegisteredState {
 /** The collector of the test running in this worker, as trackContext() sees it (05-REQ-23). */
 export interface ActiveCollector {
   track(context: object): unknown;
+  /** Records an APIRequestContext call (15-REQ-03); returns the promise the caller gets. */
+  observeApiCall(call: unknown, source: string, result: Promise<unknown>): Promise<unknown>;
+  /** COLLECTOR_REQUEST_CONTEXT_NOT_TRACKED for trackRequestContext() with another object. */
+  requestContextNotTracked(): void;
 }
 
 interface RegistrySlot {
@@ -49,6 +53,8 @@ interface RegistrySlot {
   trackedContexts: Set<object>;
   /** Collector of the running test, so trackContext() during a test applies at once. */
   activeCollector: ActiveCollector | undefined;
+  /** APIRequestContext objects whose methods are wrapped (15-REQ-04). */
+  wrappedRequestContexts?: WeakSet<object>;
 }
 
 function slot(): RegistrySlot {
@@ -118,6 +124,12 @@ export function wrappedTests(): WeakSet<object> {
 
 export function trackedContexts(): Set<object> {
   return slot().trackedContexts;
+}
+
+export function wrappedRequestContexts(): WeakSet<object> {
+  const registry = slot();
+  registry.wrappedRequestContexts ??= new WeakSet();
+  return registry.wrappedRequestContexts;
 }
 
 export function activeCollector(): ActiveCollector | undefined {
