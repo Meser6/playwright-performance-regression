@@ -110,6 +110,8 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 - `CONFIG_SLOW_MO` warns only about projects measured in the run. A run with `--project=api`
   warned about the `slowMo` of an e2e project that did not run (and of setup projects), in every
   run.
+- The wizard no longer adds `reports/pw-perf/` to a `.gitignore` that already ignores it with a
+  glob such as `/reports/**/*` or `reports/*`.
 - A thresholds run that selects a subset of the tests (`--grep`, `--project`, file filters) no
   longer ends with "Run with PW_PERF_PRUNE=1 to remove them": pruning is ignored in such a run
   (`RUN_PRUNE_SKIPPED`). The line now says that the run selects a subset of the tests.

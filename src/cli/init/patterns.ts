@@ -65,12 +65,28 @@ export function wrapTestObject(text: string): string | null {
   ]);
 }
 
-/** Whether .gitignore already ignores `dir` or a folder that contains it (D-47). */
+// Trailing globs that match everything inside a folder: "/*", "/**" and "/**" + "/*".
+const FOLDER_GLOB = /\/(?:\*\*\/\*|\*\*|\*)$/u;
+
+/**
+ * Whether .gitignore already ignores `dir` or a folder that contains it (D-47, 04-AC-55), also
+ * with a trailing glob (reports/ followed by * or **), unless a `!` line re-includes something
+ * under it.
+ */
 export function ignores(gitignore: string, dir: string): boolean {
-  return gitignore
-    .split(/\r?\n/u)
-    .map((line) => line.trim().replace(/^\//u, '').replace(/\/$/u, ''))
-    .some((entry) => entry !== '' && (entry === dir || dir.startsWith(`${entry}/`)));
+  const lines = gitignore.split(/\r?\n/u).map((line) => line.trim());
+  const negated = lines
+    .filter((line) => line.startsWith('!'))
+    .map((line) => line.slice(1).replace(/^\//u, ''));
+  return lines.some((line) => {
+    if (line === '' || line.startsWith('#') || line.startsWith('!')) return false;
+    const path = line.replace(/^\//u, '');
+    const glob = FOLDER_GLOB.test(path);
+    const entry = path.replace(FOLDER_GLOB, '').replace(/\/$/u, '');
+    if (entry === '' || !(entry === dir || dir.startsWith(`${entry}/`))) return false;
+    // Git cannot re-include a file under an excluded folder, but it can under a glob.
+    return !glob || !negated.some((n) => n === entry || n.startsWith(`${entry}/`));
+  });
 }
 
 /** .gitignore with `dir/` appended. */
