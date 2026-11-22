@@ -587,7 +587,18 @@ describe('Aggregator: tests, slowest and origins (08, chapters 4 and 7)', () => 
 });
 
 describe('Aggregator: run-level warnings (08-REQ-31, 08-REQ-32)', () => {
-  test('08-AC-10 samples of dependency projects enter no aggregate and give one warning', () => {
+  test('08-AC-10 samples of a project that is only a dependency enter no aggregate and give no warning', () => {
+    const agg = new Aggregator(options({ dependencyProjects: new Set(['setup']) }));
+    add(agg, req({ test: meta({ project: 'setup', title: 'log in' }) }), 'POST /api/login');
+    add(agg, req({ ordinal: 1 }), KEY);
+    const result = agg.finalize();
+    expect(Object.keys(result.endpoints)).toEqual([KEY]);
+    expect(result.issues.map((i) => i.code)).not.toContain(
+      'STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS',
+    );
+  });
+
+  test('08-AC-10 samples of other projects that are not measured enter no aggregate and give one warning', () => {
     const agg = new Aggregator(options());
     const setup = meta({ project: 'setup', title: 'log in' });
     add(agg, req({ test: setup }), 'POST /api/login');

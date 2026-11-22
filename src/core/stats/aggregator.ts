@@ -33,6 +33,11 @@ export interface AggregatorOptions {
   errors: Pick<ResolvedConfig['checks']['errors'], 'statuses'>;
   /** Names of the projects with role 'measured' (08-REQ-31). */
   measuredProjects: ReadonlySet<string>;
+  /**
+   * Projects that are only dependencies or teardowns of other projects: their samples are left out
+   * without the warning (08-REQ-31, F2 decision 34). Default: none.
+   */
+  dependencyProjects?: ReadonlySet<string>;
   /** checks.time.percentile.level (08-REQ-10). */
   evaluatedPercentile: string;
   /** report.rawUrls: slowest[].url of endpoints (08-REQ-18). */
@@ -329,6 +334,7 @@ export class Aggregator {
   private accept(test: TestMeta): boolean {
     if (this.finalized) throw new Error('Aggregator: samples added after finalize().');
     if (this.opts.measuredProjects.has(test.project)) return true;
+    if (this.opts.dependencyProjects?.has(test.project) === true) return false;
     this.outsideSamples += 1;
     this.outsideProjects.add(test.project);
     return false;

@@ -31,12 +31,12 @@ export function performanceText(outcome: Outcome): string {
 }
 
 /**
- * `Outcome: performance failed · exit code 2 in <path> (Playwright exits with 1)` (04-REQ-62):
- * the exact exit code of the package next to the exit code Playwright ends with.
+ * `Outcome: Playwright exit code 1 · details: performance failed (code 2) in <path>` (04-REQ-62,
+ * 04-D-51): first the exit code the process ends with, then the exit code of the package.
  */
 export function outcomeLine(outcome: Outcome, path: string): string {
   const playwright = outcome.tests.status === 'passed' && outcome.exitCode === 0 ? 0 : 1;
-  return `Outcome: ${performanceText(outcome)} · exit code ${String(outcome.exitCode)} in ${path} (Playwright exits with ${String(playwright)})\n`;
+  return `Outcome: Playwright exit code ${String(playwright)} · details: ${performanceText(outcome)} (code ${String(outcome.exitCode)}) in ${path}\n`;
 }
 
 /** `Next: <text>` with `Next:` in bold (09-REQ-32). */

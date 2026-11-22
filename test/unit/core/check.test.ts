@@ -51,7 +51,7 @@ describe('04-AC-36 CHECK_RANDOM_HOST', () => {
 });
 
 describe('04-AC-45 estimate of the start banner (04-REQ-66)', () => {
-  test('10 test runs in 100 s give 10 s per test; without a report 30 s per test', () => {
+  test('10 test runs in 100 s give 10 s per test; without a report the estimate is unknown', () => {
     const report = {
       startedAt: '2026-11-21T10:00:00.000Z',
       finishedAt: '2026-11-21T10:01:40.000Z',
@@ -65,7 +65,10 @@ describe('04-AC-45 estimate of the start banner (04-REQ-66)', () => {
       '≈ 4 min (from the last run)',
     );
     expect(startEstimate({ tests: 4, passes: 5, msPerTest: null })).toBe(
-      '≈ 10 min (30 s per test, no earlier run)',
+      'unknown (run PW_PERF_MODE=check for an estimate)',
+    );
+    expect(startEstimate({ tests: 4, passes: 5, msPerTest: 100 })).toBe(
+      '< 1 min (from the last run)',
     );
   });
 

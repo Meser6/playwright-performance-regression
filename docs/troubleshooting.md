@@ -351,8 +351,10 @@ Usually only a few requests are affected and no action is needed.
 ### STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS
 
 **Warning.** Samples came from projects that are not measured (the message names them) and were
-not aggregated. Setup and teardown projects run once and are not measured; move the calls you
-want to measure into tests of a measured project.
+not aggregated. Projects that are only dependencies or teardowns of other projects (a usual
+`setup` project with `storageState`) are left out without this warning; it is about other
+projects that are not measured. Move the calls you want to measure into tests of a measured
+project.
 
 ### STATS_MULTIPLE_BROWSERS
 

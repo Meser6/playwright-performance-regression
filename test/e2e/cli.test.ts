@@ -187,7 +187,10 @@ describe('environment mode runs', () => {
       const run = await runMode('test', [], { env: { THRESHOLDS_DIR: tight } });
       expect(run.status, run.output).toBe(1);
       expect(outcomeCode(run)).toBe(2);
-      expect(run.stdout).toMatch(/Outcome: performance failed · exit code 2 in .+outcome\.json/u);
+      // 04-AC-64 the Playwright exit code first, then the code of the package.
+      expect(run.stdout).toMatch(
+        /Outcome: Playwright exit code 1 · details: performance failed \(code 2\) in .+outcome\.json/u,
+      );
     },
     RUN_TIMEOUT,
   );

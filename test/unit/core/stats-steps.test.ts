@@ -108,6 +108,11 @@ describe('06-AC-16 projects that are not measured', () => {
     const result = a.finalize();
     expect(result.steps).toEqual({});
     expect(result.issues.map((i) => i.code)).toContain('STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS');
+    const quiet = new Aggregator({ ...OPTIONS, dependencyProjects: new Set(['setup']) });
+    quiet.addStep({ ...sample('login', 'ok'), test: meta(0, false, 'setup', 'login'), ordinal: 0 });
+    const without = quiet.finalize();
+    expect(without.steps).toEqual({});
+    expect(without.issues).toEqual([]);
   });
 
   test('steps stay out of the test breakdown (08-D-18)', () => {

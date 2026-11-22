@@ -30,6 +30,24 @@ export function plainCommand(pm: PackageManager): string {
       : 'npx playwright test';
 }
 
+/** A word as typed in a shell: quoted when it has blanks or shell characters (display only). */
+export function shellWord(word: string): string {
+  return /^[\w@%+=:,./-]+$/u.test(word) ? word : `'${word.replace(/'/gu, `'\\''`)}'`;
+}
+
+/**
+ * The test command as the user types it (04-REQ-64, 04-D-51): `npm run <script>` (pnpm, yarn) or
+ * `npx playwright test` (…), then the words the user added; no absolute paths.
+ */
+export function userCommand(
+  pm: PackageManager,
+  script: string | null,
+  tail: readonly string[],
+): string {
+  const head = script === null ? plainCommand(pm) : scriptCommand(pm, script);
+  return [head, ...tail.map(shellWord)].join(' ');
+}
+
 export interface CommandContext {
   /** Environment label of the run. */
   env: string | null;

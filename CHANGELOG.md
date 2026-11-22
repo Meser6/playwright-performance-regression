@@ -41,6 +41,19 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The start banner no longer guesses 30 s per test before the first run: the estimate says
+  `unknown (run PW_PERF_MODE=check for an estimate)`. A time under a minute reads `< 1 min`
+  without `≈`, and there is no `Tip` when `run.grep` is set.
+- The line of a later pass shows your command (`pass 2/10: npx playwright test`,
+  `pass 2/10: npm run e2e -- --grep cart`) instead of the full paths of the process.
+- The `Outcome:` line starts with the exit code of the process: `Outcome: Playwright exit code 1 ·
+details: performance failed (code 2) in …/outcome.json`.
+- The thresholds diff lists the skipped keys with the reason (`no successful samples, 5 needed
+(5 × 404)`): up to 5 in the console, all in `thresholds-diff.md`. The Apdex T limit reads
+  `apdex T 500 ms` instead of `t 500`.
+- Samples from a project that is only a dependency or teardown of other projects (a usual
+  `setup` project) no longer give the `STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS` warning.
+
 - The wizard checks for `playwright.config` right after the language question. Without one, it
   lists the configs it finds in subfolders (up to 3 levels) with `cd <folder> && npx pw-perf`
   for each.

@@ -76,12 +76,7 @@ function addedArgs(argv: readonly string[], script: string | undefined): string[
   return args.slice(prefix ? own.length : Math.min(own.length, args.length));
 }
 
-/**
- * The command of the next pass (04-REQ-63): `<pm> run <script> [--] <added args>` when Playwright
- * runs from a package manager script that exists in the nearest package.json and names Playwright,
- * otherwise the Playwright command line itself.
- */
-export function passCommand(input: {
+interface PassInput {
   execPath: string;
   argv: readonly string[];
   env: Readonly<Record<string, string | undefined>>;
@@ -92,7 +87,20 @@ export function passCommand(input: {
    * is no script. npm_lifecycle_script is the fallback only without a readable package.json.
    */
   scripts?: Readonly<Record<string, string>> | null;
-}): PassCommand {
+}
+
+/**
+ * How the run was started (04-REQ-63): from a package manager script that names Playwright
+ * (`script` with the words after the script name, `--` first for npm), or not (`script: null`
+ * with the Playwright arguments).
+ */
+export interface RunShape {
+  script: { event: string; manager: string } | null;
+  /** Words the user added after the command. */
+  tail: string[];
+}
+
+export function runShape(input: PassInput): RunShape {
   const event = input.env['npm_lifecycle_event'];
   const manager = input.env['npm_execpath'];
   const scripts = input.scripts ?? null;
@@ -116,9 +124,23 @@ export function passCommand(input: {
     const added = addedArgs(input.argv, script);
     const npm = baseName(manager).toLowerCase().startsWith('npm');
     const tail = added.length === 0 ? [] : npm ? ['--', ...added] : added;
+    return { script: { event, manager }, tail };
+  }
+  return { script: null, tail: testArgsFromArgv(input.argv) };
+}
+
+/**
+ * The command of the next pass (04-REQ-63): `<pm> run <script> [--] <added args>` when Playwright
+ * runs from a package manager script that exists in the nearest package.json and names Playwright,
+ * otherwise the Playwright command line itself.
+ */
+export function passCommand(input: PassInput): PassCommand {
+  const shape = runShape(input);
+  if (shape.script !== null) {
+    const { event, manager } = shape.script;
     return SCRIPT_FILE.test(manager)
-      ? { file: input.execPath, args: [manager, 'run', event, ...tail] }
-      : { file: manager, args: ['run', event, ...tail] };
+      ? { file: input.execPath, args: [manager, 'run', event, ...shape.tail] }
+      : { file: manager, args: ['run', event, ...shape.tail] };
   }
   return { file: input.execPath, args: input.argv.slice(1) };
 }

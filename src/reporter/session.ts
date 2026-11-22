@@ -17,7 +17,14 @@ import {
   normalizationFingerprint,
 } from '../core/normalize/index.ts';
 import type { KeySample, KeyResult } from '../core/normalize/index.ts';
-import { buildRunReport, collapseIssues, nextHint, suggestCommand } from '../core/report/index.ts';
+import {
+  buildRunReport,
+  collapseIssues,
+  nextHint,
+  packageManager,
+  suggestCommand,
+  userCommand,
+} from '../core/report/index.ts';
 import { estimateText, msPerTest, randomHostIssue, startEstimate } from '../core/check/index.ts';
 import type { CommandContext, PerfMode, WrittenFile } from '../core/report/index.ts';
 import { StepRecorder } from './steps.ts';
@@ -59,6 +66,7 @@ import {
   generateRunId,
   passCommand,
   readModeState,
+  runShape,
   testArgsFromArgv,
   testFilters,
   writeModeState,
@@ -210,6 +218,8 @@ export class RunSession {
   private configDir: string;
   private maxFailures = 0;
   private measured: ReadonlySet<string> = new Set();
+  /** Projects that are only dependencies or teardowns of other projects (08-REQ-31). */
+  private dependencyOnly: ReadonlySet<string> = new Set();
   private conditions: RunConditionsReport;
   private normalization: string;
   private aggregator: JournalAggregator;
@@ -298,6 +308,7 @@ export class RunSession {
       successStatuses: cfg.measure.successStatuses,
       errors: cfg.checks.errors,
       measuredProjects: this.measured,
+      dependencyProjects: this.dependencyOnly,
       evaluatedPercentile: cfg.checks.time.percentile.level,
       rawUrls: cfg.report.rawUrls,
     });
@@ -343,6 +354,12 @@ export class RunSession {
     this.maxFailures = config.maxFailures;
     const names = this.settings.measuredProjects ?? config.projects.map((p) => p.name);
     this.measured = new Set(names.filter((name) => inRun.has(name)));
+    this.dependencyOnly = new Set(
+      config.projects.flatMap((p) => [
+        ...p.dependencies,
+        ...(p.teardown === undefined ? [] : [p.teardown]),
+      ]),
+    );
     this.checkRun.selected = suite
       .allTests()
       .filter((t) => this.measured.has(projectName(t))).length;
@@ -455,7 +472,8 @@ export class RunSession {
         report: this.check
           ? null
           : io.relativeSlashPath(this.host.cwd, io.resolvePath(this.reportDir(), file)),
-        tip: testFilters(testArgsFromArgv(this.host.argv)).length === 0,
+        // run.grep already selects the measured subset (04-REQ-65, 04-D-51).
+        tip: cfg.run.grep === null && testFilters(testArgsFromArgv(this.host.argv)).length === 0,
       },
       { width, color, ascii: asciiTerminal(this.host.env) },
     );
@@ -808,16 +826,24 @@ export class RunSession {
     }
     this.aggregator.journal = null;
     const total = this.passes;
-    const command = passCommand({
+    const info = io.readPackageInfo(this.host.cwd);
+    const passInput = {
       execPath: this.host.execPath,
       argv: this.host.argv,
       env: this.host.env,
-      scripts: io.readPackageInfo(this.host.cwd).scripts,
+      scripts: info.scripts,
+    };
+    const command = passCommand(passInput);
+    // The command as the user types it, without absolute paths (04-REQ-64, 04-D-51).
+    const shape = runShape(passInput);
+    const pm = packageManager({
+      userAgent: this.host.env['npm_config_user_agent'] ?? null,
+      lockFiles: info.lockFiles,
     });
-    const shown = [command.file, ...command.args].join(' ');
+    const shown = userCommand(pm, shape.script?.event ?? null, shape.tail);
     for (let index = 2; index <= total; index += 1) {
       const label = `pass ${String(index)}/${String(total)}`;
-      this.info(`${label}: starting ${shown}`);
+      this.info(`${label}: ${shown}`);
       const env = {
         ...this.host.env,
         ...writeModeState({ ...this.settings.mode, runId: this.runId, pass: { index, total } }),
@@ -826,7 +852,7 @@ export class RunSession {
       if (exit.error !== undefined) {
         this.toolErrors.push({
           code: 'RUN_PASS_SPAWN_FAILED',
-          message: `${label} could not be started (${shown}): ${exit.error}`,
+          message: `${label} could not be started (${[command.file, ...command.args].join(' ')}): ${exit.error}`,
           hint: 'Check that the test command runs on its own; set run.passes to 1 to measure in one pass.',
         });
         break;

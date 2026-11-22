@@ -6,7 +6,7 @@ import { dayOf, keyMuting } from '../evaluate/muting.ts';
 import type { AggregateStats, RunReport, ThresholdsEntry } from '../types/index.ts';
 import { aggregatesOf } from './derive.ts';
 import { changeDirection, grewMuch, isComplete, limitsOf } from './entries.ts';
-import { deriveEntry, isDerivable } from './formulas.ts';
+import { deriveEntry, isDerivable, minDeriveSamples } from './formulas.ts';
 import { DIFF_CATEGORIES, LIMIT_NAMES } from './types.ts';
 import type { DerivedFile, DiffCategory, KeyDiff, LimitChange, ThresholdsDiff } from './types.ts';
 
@@ -30,6 +30,22 @@ function limitChanges(
   return changes;
 }
 
+/** A skipped key with why no entry was derived (10, chapter 9.1, 10-D-21). */
+function skipped(key: string, stats: AggregateStats | undefined, cfg: DiffConfig): KeyDiff {
+  if (stats === undefined) return { key, category: 'skipped', changes: [] };
+  return {
+    key,
+    category: 'skipped',
+    changes: [],
+    samples: {
+      success: stats.successCount,
+      count: stats.count,
+      needed: minDeriveSamples(cfg.checks),
+      statuses: { ...stats.statuses },
+    },
+  };
+}
+
 /** Category of a key present in both versions of the file (10-REQ-16). */
 function keptKey(
   key: string,
@@ -48,7 +64,7 @@ function keptKey(
       ...(isComplete(before) ? {} : { incomplete: true as const }),
     };
   }
-  if (!isDerivable(stats, cfg.checks)) return { key, category: 'skipped', changes: [] };
+  if (!isDerivable(stats, cfg.checks)) return skipped(key, stats, cfg);
   const changes = limitChanges(before, after, cfg.thresholds.loosenWarnRelative);
   if (changes.length > 0) {
     const looser = changes.some((c) => c.direction === 'looser');
@@ -98,7 +114,7 @@ export function diffThresholds(
     } else if (b !== undefined) {
       diff = { key, category: 'removed', changes: [], limits: limitsOf(b) };
     } else {
-      diff = { key, category: 'skipped', changes: [] };
+      diff = skipped(key, stats, cfg);
     }
     const entry = a ?? b;
     const muting = entry === undefined ? null : keyMuting(entry, runDay);

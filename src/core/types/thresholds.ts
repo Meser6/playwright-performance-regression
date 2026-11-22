@@ -104,6 +104,42 @@ export interface KeyDiff {
   withinHysteresis?: true;
   /** 10-REQ-21: muting of the entry; expired relative to the source report's startedAt. */
   muted?: { until: string; expired: boolean };
+  /** Skipped keys of the run: why no entry was derived (10, chapter 9.1, 10-D-21). */
+  samples?: SkippedSamples;
+}
+
+export interface SkippedSamples {
+  /** Successful samples of the key. */
+  success: number;
+  /** All samples of the key. */
+  count: number;
+  /** Successful samples a derived entry needs (checks.time.median.minSamples). */
+  needed: number;
+  /** Samples per status. */
+  statuses: Record<string, number>;
+}
+
+/** Statuses shown in the reason of a skipped key. */
+const SKIPPED_STATUSES = 3;
+
+/**
+ * Why a key was skipped (10, chapter 9.1): `2 successful samples, 5 needed`, with the statuses
+ * when some samples were not successful: `no successful samples, 5 needed (5 × 404)`.
+ */
+export function skippedReasonText(samples: SkippedSamples): string {
+  const success =
+    samples.success === 0
+      ? 'no successful samples'
+      : `${String(samples.success)} successful sample${samples.success === 1 ? '' : 's'}`;
+  let text = `${success}, ${String(samples.needed)} needed`;
+  if (samples.count > samples.success) {
+    const statuses = Object.entries(samples.statuses)
+      .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      .slice(0, SKIPPED_STATUSES)
+      .map(([status, n]) => `${String(n)} × ${status}`);
+    if (statuses.length > 0) text += ` (${statuses.join(', ')})`;
+  }
+  return text;
 }
 
 export interface ThresholdsDiff {
@@ -124,6 +160,8 @@ export function limitLabel(limit: LimitName, level: string): string {
   switch (limit) {
     case 'percentile':
       return level;
+    case 't':
+      return 'apdex T';
     case 'minApdex':
       return 'apdex';
     case 'maxWilson':
@@ -138,7 +176,8 @@ export function limitLabel(limit: LimitName, level: string): string {
 /** A limit value in the diff output: ms as integers, ratios with 3 places, null as "null". */
 export function limitValueText(limit: LimitName, value: number | null): string {
   if (value === null) return 'null';
-  return limit === 't' || limit === 'median' || limit === 'percentile' || limit === 'p99'
+  if (limit === 't') return `${String(value)} ms`;
+  return limit === 'median' || limit === 'percentile' || limit === 'p99'
     ? String(value)
     : value.toFixed(3);
 }

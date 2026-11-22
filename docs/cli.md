@@ -75,8 +75,8 @@ result. Every test runs once per pass, and so does everything the script does be
 ## Start banner
 
 At the start the reporter shows a frame with the mode, the measured projects, tests × passes, an
-estimate of the run time (from the last `report.json`, else 30 s per test) and where the report
-goes. The frame is information only: the run starts right away, in a terminal and in CI. To stop
+estimate of the run time (from the last `report.json`; before the first run it says `unknown`,
+and `PW_PERF_MODE=check` gives an estimate) and where the report goes. The frame is information only: the run starts right away, in a terminal and in CI. To stop
 a run, press Ctrl+C. The frame comes after `globalSetup` and the `webServer` start, because only
 then the number of tests is known.
 
@@ -110,8 +110,8 @@ The exact result is in `reports/pw-perf/outcome.json` (`exitCode` 0, 2 or 3, see
 [Exit codes](#exit-codes)), written next to `report.json` and removed at the start of every run,
 so a CI job never reads an old one. Read it with
 `node -p "require('./reports/pw-perf/outcome.json').exitCode"` or `jq .exitCode`. The summary ends
-with a line like `Outcome: performance failed · exit code 2 in …/outcome.json (Playwright exits
-with 1)`.
+with a line like `Outcome: Playwright exit code 1 · details: performance failed (code 2) in
+…/outcome.json`.
 
 A script that runs Playwright more than once overwrites the report and `outcome.json`; the last
 run counts. Steps after Playwright in the script (`&& node upload.js`) run only when Playwright
