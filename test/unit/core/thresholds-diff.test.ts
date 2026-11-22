@@ -293,6 +293,16 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
     );
   });
 
+  test('a run of a subset of the tests does not advise PW_PERF_PRUNE (04-REQ-35)', () => {
+    const files = existing(file('api', { gone: { ...FRESH }, kept: { ...FRESH, locked: true } }));
+    const d = diffs({ endpoints: { k: FAST } }, files);
+    const text = formatThresholdsDiff(d, { ...CONSOLE, subset: true, paths: ['a'] });
+    expect(text).toContain(
+      '  2 entries were not seen in this run (it selects a subset of the tests) and were kept.',
+    );
+    expect(text).not.toContain('PW_PERF_PRUNE');
+  });
+
   test("the wizard's check: its temporary files are not to be committed (04-REQ-58)", () => {
     const d = diffs({ endpoints: { k: FAST } });
     const text = formatThresholdsDiff(d, { ...CONSOLE, temporary: true, paths: ['/tmp/x/a.json'] });

@@ -1011,6 +1011,7 @@ export class RunSession {
           width,
           color,
           prune: this.pruned,
+          subset: testFilters(testArgsFromArgv(this.host.argv)).length > 0,
           // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
           diffPath: paths.thresholdsDiff,
           temporary,
