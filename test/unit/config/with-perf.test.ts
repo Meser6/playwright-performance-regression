@@ -121,15 +121,13 @@ describe('withPerf in perf mode', () => {
     expect((result.reporter as [string][])[0]).toEqual(['dot']);
   });
 
-  test('keeps resolveConfig and run condition warnings in the registry for the reporter', () => {
+  test('keeps resolveConfig warnings in the registry; slowMo is left to the reporter', () => {
     withPerf(
       { use: { launchOptions: { slowMo: 50 } } },
       { checks: { time: { percentile: { level: 'p99' } } } },
     );
-    expect(getRegistered()?.warnings.map((w) => w.code)).toEqual([
-      'CONFIG_PERCENTILE_IS_P99',
-      'CONFIG_SLOW_MO',
-    ]);
+    // CONFIG_SLOW_MO needs the projects of the run, which only the reporter knows (03-REQ-27).
+    expect(getRegistered()?.warnings.map((w) => w.code)).toEqual(['CONFIG_PERCENTILE_IS_P99']);
   });
 
   test('03-AC-19 run.overrideSlowMo sets slowMo to 0 without a warning', () => {

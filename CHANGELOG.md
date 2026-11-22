@@ -107,6 +107,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- `CONFIG_SLOW_MO` warns only about projects measured in the run. A run with `--project=api`
+  warned about the `slowMo` of an e2e project that did not run (and of setup projects), in every
+  run.
 - A thresholds run that selects a subset of the tests (`--grep`, `--project`, file filters) no
   longer ends with "Run with PW_PERF_PRUNE=1 to remove them": pruning is ignored in such a run
   (`RUN_PRUNE_SKIPPED`). The line now says that the run selects a subset of the tests.

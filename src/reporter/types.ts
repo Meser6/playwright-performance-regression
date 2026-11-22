@@ -20,6 +20,7 @@ export type ProjectLike = Pick<FullProject, 'name' | 'repeatEach' | 'retries' | 
     browserName?: string | undefined;
     defaultBrowserType?: string | undefined;
     baseURL?: string | undefined;
+    launchOptions?: { slowMo?: number | undefined } | undefined;
   };
 };
 

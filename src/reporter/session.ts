@@ -74,6 +74,7 @@ import {
   projectsInRun,
   readRunConditions,
   runConditionsWarning,
+  slowMoWarning,
 } from './begin.ts';
 import {
   JournalAggregator,
@@ -365,6 +366,8 @@ export class RunSession {
     if (this.settings.registered) {
       const changed = runConditionsWarning(this.conditions);
       if (changed !== null) this.warnings.push(changed);
+      const slowMo = slowMoWarning(config, this.measured);
+      if (slowMo !== null) this.warnings.push(slowMo);
     }
     const duplicate = duplicateBaseUrlLabels(this.conditions, config, keys);
     if (duplicate !== null) this.warnings.push(duplicate);

@@ -1,6 +1,7 @@
 // What the reporter derives from FullConfig in onBegin (01, chapter 4.6): the run conditions of
 // the report, deviations from the conditions withPerf() set (04-REQ-19), duplicate origin labels
-// of baseURL (03-REQ-11) and the info lines of 01-REQ-37 and 04-REQ-20.
+// of baseURL (03-REQ-11), slowMo in measured projects (03-REQ-27) and the info lines of
+// 01-REQ-37 and 04-REQ-20.
 import type { ResolvedConfig } from '../core/config/index.ts';
 import { canonicalOrigin, measuredBaseOrigins } from '../core/normalize/index.ts';
 import type { Issue, RunReport } from '../core/types/index.ts';
@@ -49,6 +50,27 @@ export function noMeasuredProjectError(inRun: ReadonlySet<string>): Issue {
     code: 'CONFIG_NO_MEASURED_PROJECT',
     message: `No project is measured: the test command runs only setup or teardown projects${names === '' ? '' : ` (${names})`}, which are not measured.`,
     hint: 'Select the projects with the tests to measure (--project), not their setup projects; without --project every project that is not a setup or teardown project is measured.',
+  };
+}
+
+/**
+ * CONFIG_SLOW_MO (03-REQ-27, D-45): slowMo above 0 in a project measured in this run. Read from
+ * FullConfig (global use merged into each project), because withPerf() does not know which
+ * projects the test command selects; dependencies, teardowns and projects outside the run do not
+ * count. With run.overrideSlowMo the measured projects already have slowMo 0.
+ */
+export function slowMoWarning(config: ConfigLike, measured: ReadonlySet<string>): Issue | null {
+  const slow = config.projects.filter(
+    (p) => measured.has(p.name) && (p.use.launchOptions?.slowMo ?? 0) > 0,
+  );
+  if (slow.length === 0) return null;
+  const places = slow.map((p) =>
+    p.name === '' ? 'the global config' : `project ${JSON.stringify(p.name)}`,
+  );
+  return {
+    code: 'CONFIG_SLOW_MO',
+    message: `use.launchOptions.slowMo: is greater than 0 in ${places.join(', ')}; it slows down every browser action and distorts the measured times`,
+    hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
   };
 }
 

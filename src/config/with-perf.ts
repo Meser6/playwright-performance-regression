@@ -58,7 +58,7 @@ export function withPerf<T extends PlaywrightTestConfig>(
     packageVersion: version,
     measuredProjects: plan.value.measuredProjects,
     runConditions: plan.value.runConditions,
-    warnings: [...warnings, ...plan.value.warnings, ...argvIssues],
+    warnings: [...warnings, ...argvIssues],
     perfConfigPassed: perfConfig !== undefined,
   });
   return plan.value.config;

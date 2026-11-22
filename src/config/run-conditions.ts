@@ -26,7 +26,6 @@ export interface PerfRunPlan<T> {
    */
   measuredProjects: string[];
   runConditions: RunConditions;
-  warnings: ConfigIssue[];
 }
 
 type Config = PlaywrightTestConfig;
@@ -186,24 +185,6 @@ function overriddenSettings(
   return changed.filter(([, value]) => value).map(([name]) => name);
 }
 
-function slowMoWarnings(config: Config, kept: readonly Project[]): ConfigIssue[] {
-  const places = [
-    ...(positive(config.use?.launchOptions?.slowMo) ? ['the global config'] : []),
-    ...kept
-      .filter((p) => positive(p.use?.launchOptions?.slowMo))
-      .map((p) => `project ${JSON.stringify(projectName(p))}`),
-  ];
-  if (places.length === 0) return [];
-  return [
-    {
-      code: 'CONFIG_SLOW_MO',
-      path: 'use.launchOptions.slowMo',
-      message: `use.launchOptions.slowMo: is greater than 0 in ${places.join(', ')}; it slows down every browser action and distorts the measured times`,
-      hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
-    },
-  ];
-}
-
 /**
  * The Playwright config of a perf mode run (01, chapter 4.4): every project (the test command
  * selects them, 04-REQ-18), one worker, every test once per pass (repeatEach 1, D-39), retries
@@ -268,7 +249,6 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
         removedReporters: removed,
         replacedReporters: replaced,
       },
-      warnings: overrideSlowMo ? [] : slowMoWarnings(source, kept),
     },
   };
 }
