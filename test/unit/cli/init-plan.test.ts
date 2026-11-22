@@ -582,6 +582,17 @@ describe('recognized layouts (04-REQ-39)', () => {
     for (const line of ['reports/pw', 'reports/pw-perf-old/', 'pw-perf/', ''])
       expect(ignores(`node_modules\n${line}\n`, dir), line).toBe(false);
   });
+
+  test('04-AC-55 a glob that covers reports/ already ignores the report folder', () => {
+    const dir = DEFAULT_CONFIG.report.dir;
+    const covered = ['reports/pw-perf', '/reports/', 'reports', 'reports/*', '/reports/**'];
+    for (const line of [...covered, '/reports/**/*'])
+      expect(ignores(`node_modules\n${line}\n`, dir), line).toBe(true);
+    for (const text of ['/reports/**/*\n!reports/keep.txt\n', 'reports-old/\n', '# reports/\n'])
+      expect(ignores(`node_modules\n${text}`, dir), text).toBe(false);
+    // A negation cannot re-include a file under an excluded folder (no glob).
+    expect(ignores('reports/\n!reports/keep.txt\n', dir)).toBe(true);
+  });
 });
 
 describe('CI templates', () => {

@@ -216,7 +216,8 @@ What it can change:
   tests): wrapped in `withPerfFixtures()`. Test files are never changed; in every other layout
   the wizard shows a red box with the code to paste
   ([`INIT_TEST_OBJECT_MANUAL`](troubleshooting.md#init_test_object_manual));
-- `.gitignore`: `reports/pw-perf/`;
+- `.gitignore`: `reports/pw-perf/`, unless it is already ignored (also by `reports/` or a glob
+  such as `reports/**/*`);
 - a CI file from the [CI recipes](ci.md) with a manual thresholds job and a weekly measurement
   job that run your test command.
 
