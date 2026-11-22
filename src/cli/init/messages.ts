@@ -54,7 +54,7 @@ const en = {
   passesQuestion: 'Passes of the test command in measurement runs?',
   stepMeasure: 'What to measure',
   measureApi:
-    'api: response times of the backend requests your pages send, grouped into endpoint keys such as "GET /api/users/:id".',
+    'api: response times of the backend requests your pages send and of request calls in API tests, grouped into endpoint keys such as "GET /api/users/:id".',
   measureSteps:
     'steps: durations of your test.step blocks, without changing the tests; each step becomes a key such as "checkout › pay", with its own thresholds file.',
   stepsPrivacy:
@@ -227,7 +227,7 @@ const pl: Messages = {
   passesQuestion: 'Ile przebiegów polecenia testów w pomiarze?',
   stepMeasure: 'Co mierzyć',
   measureApi:
-    'api: czasy odpowiedzi requestów backendu wysyłanych przez strony, pogrupowane w klucze endpointów, np. "GET /api/users/:id".',
+    'api: czasy odpowiedzi requestów backendu wysyłanych przez strony i wywołań request w testach API, pogrupowane w klucze endpointów, np. "GET /api/users/:id".',
   measureSteps:
     'steps: czasy Twoich bloków test.step, bez zmian w testach; każdy krok staje się kluczem, np. "checkout › pay", z własnym plikiem progów.',
   stepsPrivacy:
@@ -398,7 +398,7 @@ const es: Messages = {
   passesQuestion: '¿Pasadas del comando de tests en las mediciones?',
   stepMeasure: 'Qué medir',
   measureApi:
-    'api: tiempos de respuesta de las peticiones al backend que envían tus páginas, agrupadas en claves de endpoint como "GET /api/users/:id".',
+    'api: tiempos de respuesta de las peticiones al backend que envían tus páginas y de las llamadas request en los tests de API, agrupados en claves de endpoint como "GET /api/users/:id".',
   measureSteps:
     'steps: duración de tus bloques test.step, sin cambiar los tests; cada paso se convierte en una clave como "checkout › pay", con su propio archivo de umbrales.',
   stepsPrivacy:
@@ -575,7 +575,7 @@ const fr: Messages = {
   passesQuestion: 'Passes de la commande de tests dans les mesures ?',
   stepMeasure: 'Que mesurer',
   measureApi:
-    'api : temps de réponse des requêtes backend envoyées par vos pages, regroupées en clés d’endpoint comme "GET /api/users/:id".',
+    'api : temps de réponse des requêtes backend envoyées par vos pages et des appels request dans les tests d’API, regroupés en clés d’endpoint comme "GET /api/users/:id".',
   measureSteps:
     'steps : durée de vos blocs test.step, sans modifier les tests ; chaque étape devient une clé comme "checkout › pay", avec son propre fichier de seuils.',
   stepsPrivacy:
@@ -756,7 +756,7 @@ const it: Messages = {
   passesQuestion: 'Passaggi del comando dei test nelle misurazioni?',
   stepMeasure: 'Cosa misurare',
   measureApi:
-    'api: tempi di risposta delle richieste al backend inviate dalle pagine, raggruppate in chiavi di endpoint come "GET /api/users/:id".',
+    'api: tempi di risposta delle richieste al backend inviate dalle pagine e delle chiamate request nei test API, raggruppati in chiavi di endpoint come "GET /api/users/:id".',
   measureSteps:
     'steps: durata dei blocchi test.step, senza modificare i test; ogni step diventa una chiave come "checkout › pay", con il proprio file di soglie.',
   stepsPrivacy:
@@ -934,7 +934,7 @@ const uk: Messages = {
   passesQuestion: 'Скільки проходів команди тестів під час вимірювання?',
   stepMeasure: 'Що вимірювати',
   measureApi:
-    'api: час відповіді запитів до бекенду, які надсилають сторінки, згрупованих у ключі endpoint, наприклад "GET /api/users/:id".',
+    'api: час відповіді запитів до бекенду, які надсилають сторінки, і викликів request в API-тестах, згрупований у ключі endpoint, наприклад "GET /api/users/:id".',
   measureSteps:
     'steps: тривалість ваших блоків test.step без змін у тестах; кожен крок стає ключем, наприклад "checkout › pay", з власним файлом порогів.',
   stepsPrivacy:
@@ -1106,7 +1106,7 @@ const ru: Messages = {
   passesQuestion: 'Сколько проходов команды тестов при измерении?',
   stepMeasure: 'Что измерять',
   measureApi:
-    'api: время ответа запросов к бэкенду, которые отправляют страницы, сгруппированных в ключи endpoint, например "GET /api/users/:id".',
+    'api: время ответа запросов к бэкенду, которые отправляют страницы, и вызовов request в API-тестах, сгруппированное в ключи endpoint, например "GET /api/users/:id".',
   measureSteps:
     'steps: длительность ваших блоков test.step без изменений в тестах; каждый шаг становится ключом, например "checkout › pay", с собственным файлом порогов.',
   stepsPrivacy:

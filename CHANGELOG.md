@@ -41,6 +41,8 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- Wizard, step "What to measure": the `api` lesson says that it also covers `request` calls in
+  API tests (all seven languages).
 - **Breaking:** the default `report.dir` is now `reports/pw-perf/` (was `pw-perf-results/`).
   `report.html`, `report.json`, `outcome.json`, `pass-<k>.json` and `thresholds-diff.md` are
   written directly into it. Only `reports/pw-perf/` is emptied when a run starts; the parent
