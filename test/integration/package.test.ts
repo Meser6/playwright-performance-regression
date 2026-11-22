@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import typescript from 'typescript';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
   checkPackContents,
@@ -149,6 +150,48 @@ describe('published packages', () => {
       expect(out['schema']).toEqual(expect.stringContaining('config.schema.json'));
       expect(out['version']).toBe(readPackage(ROOT)['version']);
       expect(out['reporterFile']).toMatch(/reporter\.cjs$/u);
+    },
+    TIMEOUT,
+  );
+
+  test(
+    '01-AC-04 subpath types resolve with moduleResolution node10 (typesVersions, 01-REQ-34)',
+    () => {
+      const dir = existsSync(join(consumers, 'commonjs'))
+        ? join(consumers, 'commonjs')
+        : consumer('commonjs');
+      // TypeScript's default for "module": "commonjs" without moduleResolution: no exports map.
+      const file = join(dir, 'node10.ts');
+      writeFileSync(
+        file,
+        [
+          `import { defineConfig } from '@playwright/test';`,
+          `import { definePerfConfig } from '${NAME}';`,
+          `import { withPerf } from '${NAME}/config';`,
+          `import { withPerfFixtures } from '${NAME}/fixture';`,
+          `import { test as base } from '${NAME}/test';`,
+          `import PerfReporter from '${NAME}/reporter';`,
+          `export const config = withPerf(defineConfig({}), definePerfConfig({}));`,
+          `export const test = withPerfFixtures(base.extend<{ n: number }>({ n: async ({}, use) => use(1) }));`,
+          `test('typed', async ({ n }) => { const x: number = n; void x; });`,
+          `export const reporter: unknown = PerfReporter;`,
+        ].join('\n'),
+      );
+      const ts = typescript;
+      const program = ts.createProgram([file], {
+        module: ts.ModuleKind.CommonJS,
+        moduleResolution: ts.ModuleResolutionKind.Node10,
+        ignoreDeprecations: '6.0',
+        target: ts.ScriptTarget.ES2022,
+        strict: true,
+        noEmit: true,
+        skipLibCheck: true,
+        types: [],
+      });
+      const errors = ts
+        .getPreEmitDiagnostics(program, program.getSourceFile(file))
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+      expect(errors).toEqual([]);
     },
     TIMEOUT,
   );

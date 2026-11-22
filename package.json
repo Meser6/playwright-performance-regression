@@ -83,6 +83,22 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.cts",
+  "typesVersions": {
+    "*": {
+      "config": [
+        "./dist/config.d.cts"
+      ],
+      "fixture": [
+        "./dist/fixture.d.cts"
+      ],
+      "test": [
+        "./dist/test.d.cts"
+      ],
+      "reporter": [
+        "./dist/reporter.d.cts"
+      ]
+    }
+  },
   "bin": {
     "playwright-performance-regression": "dist/cli.js",
     "pw-perf": "dist/cli.js"

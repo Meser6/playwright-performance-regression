@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- Types of `playwright-performance-regression/config`, `/fixture`, `/test` and `/reporter`
+  resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
+  `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
+  wrapped `test` keeps its fixture types instead of `any`.
 - Collector: with Playwright 1.57 (Chromium) a `fetch` answered with `204 No Content` was
   recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
   measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
