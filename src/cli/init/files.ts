@@ -14,6 +14,7 @@ import {
 
 const ROOT_FILES = new Set([
   'package.json',
+  'tsconfig.json',
   '.gitignore',
   '.gitlab-ci.yml',
   'Jenkinsfile',

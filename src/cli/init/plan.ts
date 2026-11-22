@@ -12,8 +12,15 @@ import type { ProjectInfo } from './detect.ts';
 import { translator } from './messages.ts';
 import type { Translate, WizardLanguage } from './messages.ts';
 import { activeValues, renderPerfConfig, ts } from './perf-config.ts';
-import type { InitAnswers } from './perf-config.ts';
-import { addIgnore, ignores, wrapPlaywrightConfig, wrapTestObject } from './patterns.ts';
+import type { InitAnswers, PerfConfigFormat } from './perf-config.ts';
+import {
+  addIgnore,
+  ignores,
+  perfConfigRef,
+  wrapPlaywrightConfig,
+  wrapTestObject,
+} from './patterns.ts';
+import type { PerfConfigRef } from './patterns.ts';
 
 export interface FileChange {
   path: string;
@@ -42,8 +49,25 @@ export interface InitPlan {
   testObject: TestObjectBox | null;
 }
 
-/** The package config file the wizard writes. */
-export const PERF_CONFIG_FILE = 'pw-perf.config.ts';
+/**
+ * The package config file the wizard writes (04-REQ-46, 04-D-48): pw-perf.config.ts in a
+ * TypeScript project; in a JavaScript project a file in the module system of playwright.config,
+ * `.js` when that system is the package default, else `.mjs`/`.cjs`.
+ */
+export function perfConfigFile(info: ProjectInfo): { path: string; format: PerfConfigFormat } {
+  if (info.typescript) return { path: 'pw-perf.config.ts', format: 'ts' };
+  const format = info.moduleType;
+  const ext = format === info.packageModule ? 'js' : format === 'esm' ? 'mjs' : 'cjs';
+  return { path: `pw-perf.config.${ext}`, format };
+}
+
+/** The package config file playwright.config refers to: the existing one, else the new one. */
+function perfConfigReference(info: ProjectInfo, answers: InitAnswers): PerfConfigRef {
+  const existing = info.existing.perfConfig;
+  if (existing !== null) return perfConfigRef(existing, info.files.get(existing) ?? null);
+  const file = perfConfigFile(info);
+  return perfConfigRef(file.path, renderPerfConfig(answers, file.format));
+}
 
 function manual(message: string, hint: string): CliIssue {
   return { code: 'INIT_MANUAL_STEP', message, hint };
@@ -55,13 +79,13 @@ function change(info: ProjectInfo, path: string, after: string): FileChange | nu
   return { path, kind: before === null ? 'create' : 'modify', before, after };
 }
 
-const CONFIG_HINT = (t: Translate, path: string): string =>
+const CONFIG_HINT = (t: Translate, path: string, perf: PerfConfigRef): string =>
   [
     t('configHintIntro'),
     `  import { withPerf } from '${PACKAGE_NAME}/config';`,
-    `  import perfConfig from './pw-perf.config';`,
+    `  import perfConfig from '${perf.import}';`,
     `  export default withPerf(otherWrapper(defineConfig({ ... })), perfConfig);`,
-    t('configHintCjs', { path, call: "withPerf(config, require('./pw-perf.config').default)" }),
+    t('configHintCjs', { path, call: `withPerf(config, ${perf.require})` }),
   ].join('\n');
 
 function planPerfConfig(
@@ -71,8 +95,9 @@ function planPerfConfig(
   t: Translate,
 ): void {
   const existing = info.existing.perfConfig;
-  if (existing === null || existing === PERF_CONFIG_FILE) {
-    const c = change(info, PERF_CONFIG_FILE, renderPerfConfig(answers));
+  const file = perfConfigFile(info);
+  if (existing === null || existing === file.path) {
+    const c = change(info, file.path, renderPerfConfig(answers, file.format));
     if (c !== null) plan.changes.push(c);
     return;
   }
@@ -88,23 +113,30 @@ function planPerfConfig(
   }
 }
 
-function planPlaywrightConfig(info: ProjectInfo, plan: InitPlan, t: Translate): void {
+function planPlaywrightConfig(
+  info: ProjectInfo,
+  answers: InitAnswers,
+  plan: InitPlan,
+  t: Translate,
+): void {
   const config = info.playwrightConfig;
   if (config === null || info.existing.wrappedConfig) return;
   const existing = info.existing.perfConfig;
   if (existing !== null && existing.endsWith('.json')) {
+    const json = `./${existing}`;
     plan.manualSteps.push(
       manual(
         t('manualConfigJson', { config: config.path, file: existing }),
-        CONFIG_HINT(t, config.path).replaceAll("'./pw-perf.config'", `'./${existing}'`),
+        CONFIG_HINT(t, config.path, { import: json, require: `require('${json}')` }),
       ),
     );
     return;
   }
-  const after = wrapPlaywrightConfig(config.text, './pw-perf.config');
+  const perf = perfConfigReference(info, answers);
+  const after = wrapPlaywrightConfig(config.text, perf);
   if (after === null) {
     plan.manualSteps.push(
-      manual(t('manualConfigPattern', { config: config.path }), CONFIG_HINT(t, config.path)),
+      manual(t('manualConfigPattern', { config: config.path }), CONFIG_HINT(t, config.path, perf)),
     );
     return;
   }
@@ -233,7 +265,7 @@ export function planInitChanges(
   const t = translator(lang);
   const plan: InitPlan = { changes: [], manualSteps: [], testObject: null };
   planPerfConfig(info, answers, plan, t);
-  planPlaywrightConfig(info, plan, t);
+  planPlaywrightConfig(info, answers, plan, t);
   planTestObject(info, answers, plan);
   planGitignore(info, plan);
   planCi(info, answers, plan, t);

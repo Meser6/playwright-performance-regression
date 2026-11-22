@@ -15,6 +15,10 @@ export interface ProjectInfo {
   playwrightVersion: string | null;
   packageManager: PackageManager;
   moduleType: 'esm' | 'cjs';
+  /** The module system of a `.js` file in the package ("type" in package.json). */
+  packageModule: 'esm' | 'cjs';
+  /** playwright.config is TypeScript or tsconfig.json lies next to it (04-REQ-46). */
+  typescript: boolean;
   testDir: string;
   filesImportingPlaywrightTest: string[];
   filesWithExtend: string[];
@@ -173,6 +177,7 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
           ? 'esm'
           : 'cjs';
 
+  const packageModule: 'esm' | 'cjs' = pkg?.['type'] === 'module' ? 'esm' : 'cjs';
   const scripts = pkg?.['scripts'];
   const paths = [...files.keys()];
   return {
@@ -180,6 +185,8 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     playwrightVersion: playwrightVersion(files, pkg),
     packageManager: packageManagerOf(files, pkg),
     moduleType,
+    packageModule,
+    typescript: configPath === null || /\.[cm]?ts$/u.test(configPath) || files.has('tsconfig.json'),
     testDir: testDirsOf(configText)[0] as string,
     filesImportingPlaywrightTest: sources.filter((p) => IMPORTS_PLAYWRIGHT_TEST.test(text(p))),
     filesWithExtend: sources.filter(

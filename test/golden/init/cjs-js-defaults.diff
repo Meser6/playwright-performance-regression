@@ -69,19 +69,20 @@
    reporter: 'dot',
    use: { baseURL: process.env.DEMO_URL },
 -});
-+}), require('./pw-perf.config').default);
++}), require('./pw-perf.config'));
 --- /dev/null
-+++ b/pw-perf.config.ts
-@@ -0,0 +1,88 @@
++++ b/pw-perf.config.js
+@@ -0,0 +1,89 @@
++// @ts-check
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// It lists the most important options only; every option, with its default, is described at
 +// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
 +// Only the values that differ from the defaults are set. The other options are commented out
 +// with their default value: uncomment a line (and its enclosing objects) to change it. Objects
 +// are merged with the defaults; an array you set replaces the default array.
-+import { definePerfConfig } from 'playwright-performance-regression';
++const { definePerfConfig } = require('playwright-performance-regression');
 +
-+export default definePerfConfig({
++module.exports = definePerfConfig({
 +  // How the measurement run is executed.
 +  // run: {
 +  //   // Environment label: each label has its own thresholds files

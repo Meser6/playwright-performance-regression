@@ -41,6 +41,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The wizard writes `pw-perf.config.js` in a JavaScript project (a `playwright.config.js`,
+  `.mjs` or `.cjs` without `tsconfig.json`): an ES module or CommonJS like the Playwright config,
+  with `// @ts-check`. A CommonJS config requires it without `.default`. TypeScript projects keep
+  `pw-perf.config.ts`.
 - **Breaking:** a `--reporter` option without the pw-perf reporter in the test command (also in
   an npm script) now stops a `PW_PERF_MODE=test` or `thresholds` run before the tests with exit
   code 1 (`RUN_REPORTER_FLAG`). It used to be a warning on stderr and the run ended with exit code

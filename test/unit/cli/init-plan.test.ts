@@ -19,6 +19,7 @@ import type { InitAnswers } from '../../../src/cli/init/index.ts';
 import {
   addIgnore,
   ignores,
+  perfConfigRef,
   wrapPlaywrightConfig,
   wrapTestObject,
 } from '../../../src/cli/init/patterns.ts';
@@ -35,6 +36,7 @@ import { DEFAULT_CONFIG, resolveConfig } from '../../../src/core/config/index.ts
 import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
 import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
 
+const TS_REF = perfConfigRef('pw-perf.config.ts', null);
 const update = process.env['GOLDEN_UPDATE'] === '1';
 const ROOT = join(import.meta.dirname, '../../..');
 
@@ -366,6 +368,65 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     }
   });
 
+  test('04-AC-56 a JavaScript project gets pw-perf.config.js in the module system of playwright.config', () => {
+    const cjsConfig =
+      "const { defineConfig } = require('@playwright/test');\nmodule.exports = defineConfig({});\n";
+    const esmConfig =
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});\n";
+    const plan = (entries: Record<string, string>): Map<string, string> =>
+      new Map(
+        planInitChanges(detectProject(files(entries)), ANSWERS).changes.map((c) => [
+          c.path,
+          c.after,
+        ]),
+      );
+    const cjs = plan({ 'package.json': '{}', 'playwright.config.js': cjsConfig });
+    expect(cjs.get('pw-perf.config.js')).toContain(
+      '// @ts-check\n// Configuration of playwright-performance-regression',
+    );
+    expect(cjs.get('pw-perf.config.js')).toContain(
+      "const { definePerfConfig } = require('playwright-performance-regression');\n\nmodule.exports = definePerfConfig({",
+    );
+    expect(cjs.get('playwright.config.js')).toContain(
+      "module.exports = withPerf(defineConfig({}), require('./pw-perf.config'));",
+    );
+    const mjs = plan({ 'package.json': '{}', 'playwright.config.mjs': esmConfig });
+    expect(mjs.get('pw-perf.config.mjs')).toContain(
+      "import { definePerfConfig } from 'playwright-performance-regression';\n\nexport default definePerfConfig({",
+    );
+    expect(mjs.get('playwright.config.mjs')).toContain(
+      "import perfConfig from './pw-perf.config.mjs';",
+    );
+    const esm = plan({ 'package.json': '{"type":"module"}', 'playwright.config.js': esmConfig });
+    expect(esm.get('playwright.config.js')).toContain(
+      "import perfConfig from './pw-perf.config.js';",
+    );
+    expect(esm.get('pw-perf.config.js')).toContain('export default definePerfConfig({');
+    const cjsInEsm = plan({
+      'package.json': '{"type":"module"}',
+      'playwright.config.cjs': cjsConfig,
+    });
+    expect(cjsInEsm.get('playwright.config.cjs')).toContain("require('./pw-perf.config.cjs'))");
+    expect(cjsInEsm.get('pw-perf.config.cjs')).toContain('module.exports = definePerfConfig({');
+    const withTsconfig = plan({
+      'package.json': '{}',
+      'tsconfig.json': '{}',
+      'playwright.config.js': cjsConfig,
+    });
+    expect([...withTsconfig.keys()]).toContain('pw-perf.config.ts');
+    expect(withTsconfig.get('playwright.config.js')).toContain(
+      "require('./pw-perf.config').default)",
+    );
+    // A pw-perf.config.ts of an earlier wizard is kept and referred to as before.
+    const earlier = plan({
+      'package.json': '{}',
+      'pw-perf.config.ts': 'export default {};\n',
+      'playwright.config.js': cjsConfig,
+    });
+    expect([...earlier.keys()]).not.toContain('pw-perf.config.js');
+    expect(earlier.get('playwright.config.js')).toContain("require('./pw-perf.config').default)");
+  });
+
   test('another package config format is never rewritten; the answers become a manual step', () => {
     const info = detectProject(
       files({
@@ -389,24 +450,16 @@ describe('recognized layouts (04-REQ-39)', () => {
     expect(
       wrapPlaywrightConfig(
         "import { defineConfig } from '@playwright/test';\n\nexport default defineConfig({ a: ')' });\n",
-        './pw-perf.config',
+        TS_REF,
       ),
     ).toBe(
       "import { defineConfig } from '@playwright/test';\nimport { withPerf } from 'playwright-performance-regression/config';\nimport perfConfig from './pw-perf.config';\n\nexport default withPerf(defineConfig({ a: ')' }), perfConfig);\n",
     );
-    expect(
-      wrapPlaywrightConfig(
-        '// header\nexport default {\n  testDir: `t`,\n};\n',
-        './pw-perf.config',
-      ),
-    ).toBe(
+    expect(wrapPlaywrightConfig('// header\nexport default {\n  testDir: `t`,\n};\n', TS_REF)).toBe(
       "// header\nimport { withPerf } from 'playwright-performance-regression/config';\nimport perfConfig from './pw-perf.config';\nexport default withPerf({\n  testDir: `t`,\n}, perfConfig);\n",
     );
     expect(
-      wrapPlaywrightConfig(
-        "'use strict';\nmodule.exports = { retries: 0 } // done\n",
-        './pw-perf.config',
-      ),
+      wrapPlaywrightConfig("'use strict';\nmodule.exports = { retries: 0 } // done\n", TS_REF),
     ).toBe(
       "'use strict';\nconst { withPerf } = require('playwright-performance-regression/config');\nmodule.exports = withPerf({ retries: 0 }, require('./pw-perf.config').default) // done\n",
     );
@@ -417,7 +470,7 @@ describe('recognized layouts (04-REQ-39)', () => {
       'export default defineConfig({});\nexport const other = 1;\n',
       'export default defineConfig({ a: (1 }));\n',
     ]) {
-      expect(wrapPlaywrightConfig(text, './pw-perf.config'), text).toBeNull();
+      expect(wrapPlaywrightConfig(text, TS_REF), text).toBeNull();
     }
   });
 
