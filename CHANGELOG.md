@@ -41,6 +41,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- `pw-perf.config.ts` written by the wizard is short: the 15 most important options (including
+  `measure.api`, `measure.steps` and `run.overrideSlowMo`), each with a short comment, and a link
+  to the full option list in `docs/configuration.md`. The "Most important settings" block and the
+  comments for every other option are gone.
 - The check at the end of the wizard runs your test command like the real runs: first with
   `PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`, instead
   of once with `PW_PERF_MODE=check`. The thresholds of the check go to a temporary folder that is
