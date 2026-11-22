@@ -2322,7 +2322,7 @@ export interface HostFingerprint {
   cpuModel: string;
 }
 /**
- * Small file the reporter writes at the end of onEnd to the path from PW_PERF_OUTCOME_FILE (ADR-0009). Read and deleted by the CLI. Not written when the run was started without the CLI.
+ * Small file the reporter writes at the end of onEnd to <report.dir>/outcome.json in test and thresholds modes (04-REQ-62); a CI job reads it. Removed at the start of a run.
  */
 export interface OutcomeFile {
   schemaVersion: 1;

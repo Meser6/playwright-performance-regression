@@ -219,7 +219,7 @@ describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
     process.argv = argv;
   });
 
-  test('04-AC-40 sets PW_PERF_RUN_ID for the workers once, and not through the CLI', () => {
+  test('04-AC-40 sets PW_PERF_RUN_ID for the workers once, and not in a worker', () => {
     process.argv = ['node', 'playwright', 'test'];
     withPerf(EMPTY);
     const runId = process.env.PW_PERF_RUN_ID;
@@ -230,7 +230,7 @@ describe('main process of the environment mode (04-REQ-60, 04-REQ-61)', () => {
 
     clearRegistry();
     vi.stubEnv('PW_PERF_RUN_ID', undefined);
-    vi.stubEnv('PW_PERF_OUTCOME_FILE', '/tmp/x.json');
+    vi.stubEnv('TEST_WORKER_INDEX', '0');
     withPerf(EMPTY);
     expect(process.env.PW_PERF_RUN_ID).toBeUndefined();
   });

@@ -32,7 +32,6 @@ describe('readModeState', () => {
         PW_PERF_PASS: '2/7',
         PW_PERF_ENV: 'staging-2',
         PW_PERF_RUN_ID: '2026-11-18T10-00-00-a1b2',
-        PW_PERF_OUTCOME_FILE: '/tmp/x.outcome.json',
         PW_PERF_THRESHOLDS_DIR: '/tmp/pw-perf-check-1',
         PW_PERF_PRUNE: '1',
       }),
@@ -44,12 +43,17 @@ describe('readModeState', () => {
         pass: { index: 2, total: 7 },
         env: 'staging-2',
         runId: '2026-11-18T10-00-00-a1b2',
-        outcomeFile: '/tmp/x.outcome.json',
         thresholdsDir: '/tmp/pw-perf-check-1',
         prune: true,
       },
     });
     expect(readModeState({ PW_PERF_MODE: 'test' })).toEqual({ ok: true, value: { mode: 'test' } });
+  });
+
+  test('the removed internal PW_PERF_OUTCOME_FILE is ignored', () => {
+    expect(
+      readModeState({ PW_PERF_MODE: 'test', PW_PERF_OUTCOME_FILE: '/tmp/x.outcome.json' }),
+    ).toEqual({ ok: true, value: { mode: 'test' } });
   });
 
   test('empty optional variables count as unset', () => {
@@ -61,7 +65,6 @@ describe('readModeState', () => {
         PW_PERF_REPEAT: '',
         PW_PERF_ENV: '',
         PW_PERF_RUN_ID: '',
-        PW_PERF_OUTCOME_FILE: '',
         PW_PERF_THRESHOLDS_DIR: '',
         PW_PERF_PRUNE: '',
       }),
@@ -136,7 +139,6 @@ describe('writeModeState', () => {
       pass: { index: 2, total: 3 },
       env: 'qa',
       runId: 'r1',
-      outcomeFile: '/tmp/o.json',
       thresholdsDir: '/tmp/t',
       prune: true,
     };
@@ -146,7 +148,6 @@ describe('writeModeState', () => {
       PW_PERF_PASS: '2/3',
       PW_PERF_ENV: 'qa',
       PW_PERF_RUN_ID: 'r1',
-      PW_PERF_OUTCOME_FILE: '/tmp/o.json',
       PW_PERF_THRESHOLDS_DIR: '/tmp/t',
       PW_PERF_PRUNE: '1',
     });

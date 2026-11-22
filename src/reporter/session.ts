@@ -322,10 +322,9 @@ export class RunSession {
     this.rootDir = config.rootDir;
     // The outcome of an earlier run must never be read by a CI job (04-REQ-62); pass files of an
     // earlier run must never be merged (02-REQ-36). Passes 2…N leave both alone.
-    const outcomeFile = this.outcomePath();
-    if (this.passIndex === 1 && this.environmentMode && outcomeFile !== null) {
+    if (this.passIndex === 1) {
       try {
-        io.removeFileSync(outcomeFile);
+        io.removeFileSync(this.outcomePath());
       } catch {
         // A file that cannot be removed is overwritten in onEnd.
       }
@@ -715,7 +714,7 @@ export class RunSession {
       }
     }
     const written = await this.writeOutcome(outcome);
-    if (this.environmentMode && written !== null) {
+    if (written !== null) {
       this.host.stdout.write(outcomeLine(outcome, written));
     }
     // The last line of the output (09-REQ-32).
@@ -723,7 +722,7 @@ export class RunSession {
       this.host.stdout.write(nextLine(this.next, this.terminal().color));
     }
     // A failed test in a later pass fails the command like in one run (04-REQ-64).
-    const testsFailed = status === 'failed' && result.status === 'passed' && this.environmentMode;
+    const testsFailed = status === 'failed' && result.status === 'passed';
     return outcome.exitCode === 0 && !testsFailed ? undefined : { status: 'failed' };
   }
 
@@ -1025,7 +1024,7 @@ export class RunSession {
     c.tests.set(project, (c.tests.get(project) ?? 0) + 1);
   }
 
-  /** onEnd of a check (04-REQ-50, 04-REQ-53): output, no report, no files; outcome.json only with the internal PW_PERF_OUTCOME_FILE. */
+  /** onEnd of a check (04-REQ-50, 04-REQ-53): output, no report, no files, no outcome.json. */
   private async endCheck(
     result: FullResultLike,
   ): Promise<{ status?: FullResultLike['status'] } | undefined> {
@@ -1040,7 +1039,6 @@ export class RunSession {
         evaluation: { status: 'error', gateEnabled: false },
       };
     }
-    if (!this.environmentMode) await this.writeOutcome(outcome);
     // The state file of the test selection (04-REQ-49).
     if (this.settings.mode.runId !== undefined) {
       try {
@@ -1413,7 +1411,7 @@ export class RunSession {
    */
   private prune(warnings: Issue[]): boolean {
     if (this.settings.mode.prune !== true) return false;
-    const filters = this.environmentMode ? testFilters(testArgsFromArgv(this.host.argv)) : [];
+    const filters = testFilters(testArgsFromArgv(this.host.argv));
     if (filters.length > 0) {
       warnings.push({
         code: 'RUN_PRUNE_SKIPPED',
@@ -1426,18 +1424,8 @@ export class RunSession {
     return true;
   }
 
-  /**
-   * Environment mode: without the internal PW_PERF_OUTCOME_FILE, which only the package tests set
-   * since the CLI was removed (04-REQ-62, D-43).
-   */
-  private get environmentMode(): boolean {
-    return this.settings.mode.outcomeFile === undefined;
-  }
-
-  /** PW_PERF_OUTCOME_FILE, else <report.dir>/outcome.json (02-REQ-27, 04-REQ-62). */
-  private outcomePath(): string | null {
-    const file = this.settings.mode.outcomeFile;
-    if (file !== undefined) return file;
+  /** <report.dir>/outcome.json (02-REQ-27, 04-REQ-62). */
+  private outcomePath(): string {
     const io = this.host.io;
     return io.resolvePath(
       io.resolvePath(this.configDir, this.settings.config.report.dir),
@@ -1448,7 +1436,6 @@ export class RunSession {
   /** Last step of onEnd (02-REQ-27); returns the path written, or null. */
   private async writeOutcome(outcome: Outcome): Promise<string | null> {
     const file = this.outcomePath();
-    if (file === null) return null;
     try {
       await this.host.io.writeJsonStable(file, outcome);
       return file;

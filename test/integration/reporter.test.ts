@@ -41,7 +41,6 @@ interface Run {
   status: number | null;
   output: string;
   out: string;
-  outcomeFile: string;
   /** null when no report was written. */
   report: RunReport | null;
   /** null when no outcome file was written. */
@@ -67,15 +66,10 @@ function readOutcome(path: string): Outcome | null {
 }
 
 /** Runs Playwright asynchronously (the demo server lives in this process). */
-function runPlaywright(
-  env: Record<string, string>,
-  args: string[] = [],
-  environmentMode = false,
-): Promise<Run> {
+function runPlaywright(env: Record<string, string>, args: string[] = []): Promise<Run> {
   const id = ++runs;
   const out = join(scratch, `run-${id}`);
   mkdirSync(out);
-  const outcomeFile = join(out, 'outcome', 'run.outcome.json');
   const clean = Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith('PW_PERF_')),
   );
@@ -88,10 +82,6 @@ function runPlaywright(
         NO_COLOR: '1',
         INTEGRATION_OUT: out,
         DEMO_URL: server.url,
-        // Without them the run is in the environment mode, as without the CLI (04-REQ-60).
-        ...(environmentMode
-          ? {}
-          : { PW_PERF_RUN_ID: `run-${id}`, PW_PERF_OUTCOME_FILE: outcomeFile }),
         ...env,
       },
     });
@@ -105,11 +95,8 @@ function runPlaywright(
           status,
           output,
           out,
-          outcomeFile,
           report: readReport(join(out, 'reports/pw-perf', 'report.json')),
-          outcome: readOutcome(
-            environmentMode ? join(out, 'reports/pw-perf', 'outcome.json') : outcomeFile,
-          ),
+          outcome: readOutcome(join(out, 'reports/pw-perf', 'outcome.json')),
         });
       } catch (error) {
         reject(error instanceof Error ? error : new Error(String(error)));
@@ -128,7 +115,7 @@ describe('reporter with real Playwright', () => {
       expect(run.status, run.output).toBe(0);
       const report = run.report;
       if (report === null) throw new Error(run.output);
-      expect(report).toMatchObject({ runId: 'run-1', mode: 'test', configDir: project });
+      expect(report).toMatchObject({ mode: 'test', configDir: project });
       expect(report.tests).toEqual({
         status: 'passed',
         expected: 20,
@@ -146,7 +133,7 @@ describe('reporter with real Playwright', () => {
       expect(report.passes).toEqual({ planned: 5, completed: 5, failed: [] });
       expect(codes(report.warnings)).toEqual(expect.arrayContaining(['THRESHOLDS_FILE_MISSING']));
       expect(report.toolErrors).toEqual([]);
-      expect(run.outcome).toMatchObject({ runId: 'run-1', exitCode: 0 });
+      expect(run.outcome).toMatchObject({ runId: report.runId, exitCode: 0 });
       expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'reports/pw-perf', 'report.json'));
       expect(run.output).toContain('Tests     4 tests × 5 passes = 20 test runs');
       expect(run.output).toContain('playwright-performance-regression: pass 5/5 done: 4 tests');
@@ -241,7 +228,7 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
   test(
     '04-AC-39 04-AC-40 outcome.json in report.dir, the Outcome line and the run id of the workers',
     async () => {
-      const run = await runPlaywright({ PW_PERF_MODE: 'test', RECORD_RUN_ID: '1' }, [], true);
+      const run = await runPlaywright({ PW_PERF_MODE: 'test', RECORD_RUN_ID: '1' });
       expect(run.status, run.output).toBe(0);
       expect(run.outcome?.exitCode).toBe(0);
       const runId = run.report?.runId ?? '';
@@ -259,7 +246,7 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
   test(
     '04-AC-39 a failed test without violations: Playwright 1, outcome exit code 0',
     async () => {
-      const run = await runPlaywright({ PW_PERF_MODE: 'test', FAIL_REPEATS: '1' }, [], true);
+      const run = await runPlaywright({ PW_PERF_MODE: 'test', FAIL_REPEATS: '1' });
       expect(run.status, run.output).toBe(1);
       expect(run.outcome?.exitCode).toBe(0);
       expect(codes(run.report?.warnings ?? [])).toContain('TESTS_FAILED');
@@ -270,7 +257,7 @@ describe('environment mode with real Playwright (04-REQ-60 – 04-REQ-62)', () =
   test(
     '04-AC-40 --reporter=junit warns RUN_REPORTER_FLAG and writes no report',
     async () => {
-      const run = await runPlaywright({ PW_PERF_MODE: 'test' }, ['--reporter=dot'], true);
+      const run = await runPlaywright({ PW_PERF_MODE: 'test' }, ['--reporter=dot']);
       expect(run.output).toContain('RUN_REPORTER_FLAG');
       expect(run.report).toBeNull();
     },

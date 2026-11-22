@@ -32,7 +32,6 @@ describe('check', () => {
       const before = stateFiles();
       const run = await harness.run(dir, {
         env: { PW_PERF_MODE: 'check', PW_PERF_MAX_TESTS: '2' },
-        environmentMode: true,
       });
       expect(run.status, run.output).toBe(0);
       expect(run.output).toContain(
@@ -72,7 +71,6 @@ describe('check', () => {
     async () => {
       const run = await harness.run(shared, {
         env: { PW_PERF_MODE: 'check' },
-        environmentMode: true,
         args: ['--shard', '1/2'],
       });
       expect(run.status, run.output).toBe(1);

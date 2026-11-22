@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pkg.invalid/schemas/outcome.schema.json",
   "title": "Outcome file",
-  "description": "Small file the reporter writes at the end of onEnd to the path from PW_PERF_OUTCOME_FILE (ADR-0009). Read and deleted by the CLI. Not written when the run was started without the CLI.",
+  "description": "Small file the reporter writes at the end of onEnd to <report.dir>/outcome.json in test and thresholds modes (04-REQ-62); a CI job reads it. Removed at the start of a run.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "runId", "mode", "exitCode", "tests", "evaluation", "toolErrors", "paths"],

@@ -59,9 +59,9 @@ const codes = (issues: { code: string }[]): string[] => issues.map((i) => i.code
 
 describe('reporter session in test mode', () => {
   test('writes report.json, the outcome file and the summary without thresholds files', async () => {
-    const outcomeFile = join(dir, 'tmp', 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const captured = fakeHost(dir);
-    const s = session(captured, registered({}, { mode: 'test', runId: 'run-1', outcomeFile }));
+    const s = session(captured, registered({}, { mode: 'test', runId: 'run-1' }));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 20, PATHS, steady);
     expect(await s.end({ status: 'passed' })).toBeUndefined();
@@ -182,9 +182,9 @@ describe('reporter session in test mode', () => {
   });
 
   test('01-REQ-40 a run without started tests (--list) writes nothing and keeps the status', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const captured = fakeHost(dir);
-    const s = session(captured, registered({}, { mode: 'test', outcomeFile }));
+    const s = session(captured, registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     const printed = captured.stdout.length;
     expect(await s.end({ status: 'passed' })).toBeUndefined();
@@ -222,9 +222,9 @@ describe('reporter session in test mode', () => {
         entries: { 'GET /api/cart': { median: 10, percentile: 20, p99: 30 } },
       }),
     );
-    const outcomeFile = join(dir, 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const captured = fakeHost(dir);
-    const s = session(captured, registered({}, { mode: 'test', outcomeFile }));
+    const s = session(captured, registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 25, PATHS, steady);
     expect(await s.end({ status: 'passed' })).toEqual({ status: 'failed' });
@@ -234,8 +234,8 @@ describe('reporter session in test mode', () => {
 
   test('an invalid thresholds file is a tool error: exit code 3, never default thresholds', async () => {
     writeFileSync(join(dir, 'pw-perf-thresholds.json'), '{ not json');
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 25, PATHS, steady);
     expect(await s.end({ status: 'passed' })).toEqual({ status: 'failed' });
@@ -270,8 +270,8 @@ describe('reporter session in test mode', () => {
       [1, 0, 'TESTS_FAILED'],
       [3, 3, 'TESTS_FAILED_TOO_MANY'],
     ] as const) {
-      const outcomeFile = join(dir, `run-${failed}.outcome.json`);
-      const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+      const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+      const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
       s.begin(fakeConfig(dir), ROOT);
       runTests(s, dir, 20 - failed, PATHS, steady);
       for (let i = 0; i < failed; i++) {
@@ -293,8 +293,8 @@ describe('reporter session in test mode', () => {
   });
 
   test('RUN_INCOMPLETE for an interrupted run; RUN_SHARDED in onBegin', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir, { shard: { current: 1, total: 2 } }), ROOT);
     runTests(s, dir, 3, PATHS, steady);
     expect(await s.end({ status: 'interrupted' })).toEqual({ status: 'failed' });
@@ -320,8 +320,8 @@ describe('reporter session in test mode', () => {
     });
     expect(firefox.stdout.join('')).toContain('Projects  firefox (setup: setup)');
     // --project setup: nothing is measured.
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const only = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }, measured));
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const only = session(fakeHost(dir), registered({}, { mode: 'test' }, measured));
     only.begin(fakeConfig(dir, { projects }), { allTests: () => [], suites: suites(['setup']) });
     runTests(only, dir, 1, PATHS, steady);
     await only.end({ status: 'passed' });
@@ -354,8 +354,8 @@ describe('reporter session in test mode', () => {
   });
 
   test('attachments: missing, duplicate, invalid and the collector diagnostics', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir, { projects: [project('setup'), project('chromium')] }), ROOT);
     // A measured test without the attachment, a skipped one, and a setup test.
     s.testBegin();
@@ -492,8 +492,8 @@ describe('reporter session in test mode', () => {
   });
 
   test('01-REQ-16 errors in hooks are tool errors in the report and the outcome', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     s.testBegin();
     s.recordInternalError('onTestEnd', new Error('kaboom'));
@@ -507,12 +507,8 @@ describe('reporter session in test mode', () => {
   test('REPORT_WRITE_FAILED and OUTCOME_WRITE_FAILED', async () => {
     mkdirSync(join(dir, 'reports'));
     writeFileSync(join(dir, 'reports/pw-perf'), 'a file, not a directory');
-    mkdirSync(join(dir, 'outcome-dir'));
     const captured = fakeHost(dir);
-    const s = session(
-      captured,
-      registered({}, { mode: 'test', outcomeFile: join(dir, 'outcome-dir') }),
-    );
+    const s = session(captured, registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 1, ['/x'], () => 1);
     expect(await s.end({ status: 'passed' })).toEqual({ status: 'failed' });
@@ -570,9 +566,9 @@ describe('reporter session: HTML report', () => {
     input: Parameters<typeof registered>[0],
     options: Parameters<typeof session>[2] = {},
   ): Promise<{ outcome: Outcome; out: string }> {
-    const outcomeFile = join(dir, 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const captured = fakeHost(dir);
-    const s = session(captured, registered(input, { mode: 'test', outcomeFile }), options);
+    const s = session(captured, registered(input, { mode: 'test' }), options);
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 20, PATHS, steady);
     await s.end({ status: 'passed' });
@@ -642,10 +638,10 @@ describe('reporter session in thresholds mode', () => {
       paths?: string[];
     } = {},
   ): Promise<{ outcome: Outcome; stdout: string }> {
-    const outcomeFile = join(dir, 'run.outcome.json');
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const captured = fakeHost(dir);
     if (options.cpu !== undefined) captured.host.host.cpuModel = options.cpu;
-    const mode = { mode: 'thresholds' as const, outcomeFile, runId: 'run-t', prune: options.prune };
+    const mode = { mode: 'thresholds' as const, runId: 'run-t', prune: options.prune };
     const s = session(captured, registered({}, mode));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 30, options.paths ?? PATHS, steady);
@@ -732,8 +728,8 @@ describe('reporter session in thresholds mode', () => {
 
   test('THRESHOLDS_WRITE_FAILED when thresholds.dir cannot be created', async () => {
     writeFileSync(join(dir, 'blocked'), 'a file');
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const mode = { mode: 'thresholds' as const, outcomeFile };
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const mode = { mode: 'thresholds' as const };
     const s = session(fakeHost(dir), registered({ thresholds: { dir: 'blocked' } }, mode));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 30, PATHS, steady);
@@ -762,18 +758,6 @@ describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
     expect(captured.stdout.join('')).toContain(
       `Outcome: performance passed · exit code 0 in ${outcomeJson()} (Playwright exits with 0)\n`,
     );
-  });
-
-  test('through the CLI (PW_PERF_OUTCOME_FILE) nothing is written in report.dir and no Outcome line', async () => {
-    const captured = fakeHost(dir);
-    const outcomeFile = join(dir, 'tmp', 'run.outcome.json');
-    const s = session(captured, registered({}, { mode: 'test', outcomeFile }));
-    s.begin(fakeConfig(dir), ROOT);
-    runTests(s, dir, 10, PATHS, steady);
-    await s.end({ status: 'passed' });
-    expect(existsSync(outcomeFile)).toBe(true);
-    expect(existsSync(outcomeJson())).toBe(false);
-    expect(captured.stdout.join('')).not.toContain('Outcome:');
   });
 
   test('04-REQ-35 PW_PERF_PRUNE with a test filter keeps the entries and warns RUN_PRUNE_SKIPPED', async () => {
@@ -817,8 +801,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
   });
 
   test('09-AC-28 a measured project with batches but no requests gives RUN_PROJECT_NO_REQUESTS', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 5, [], steady);
     await s.end({ status: 'passed' });
@@ -831,10 +814,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     expect(warning?.message).toContain('chromium');
 
     const other = tempDir();
-    const s2 = session(
-      fakeHost(other),
-      registered({}, { mode: 'test', outcomeFile: join(other, 'o.json') }),
-    );
+    const s2 = session(fakeHost(other), registered({}, { mode: 'test' }));
     s2.begin(fakeConfig(other), ROOT);
     runTests(s2, other, 5, PATHS, steady);
     await s2.end({ status: 'passed' });
@@ -847,8 +827,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
   });
 
   test('15-AC-01 API calls of a batch become request keys in endpoints and count as requests', async () => {
-    const outcomeFile = join(dir, 'run.outcome.json');
-    const s = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }));
+    const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(fakeConfig(dir), ROOT);
     s.testBegin();
     const call = {
@@ -875,10 +854,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
   test('03-AC-15 an empty or "undefined" baseURL of a measured project warns, a dependency does not', async () => {
     for (const baseURL of ['', 'https://undefined.example.com']) {
       const d = tempDir();
-      const s = session(
-        fakeHost(d),
-        registered({}, { mode: 'test', outcomeFile: join(d, 'o.json') }),
-      );
+      const s = session(fakeHost(d), registered({}, { mode: 'test' }));
       s.begin(
         fakeConfig(d, {
           projects: [project('setup', { use: {} }), project('chromium', { use: { baseURL } })],
