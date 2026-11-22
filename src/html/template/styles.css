@@ -910,6 +910,12 @@ main.wrap {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
+/* Source column of the Endpoints table: browser or request (15-REQ-15). */
+.es {
+  font: 500 11px var(--mono);
+  color: var(--fg-3);
+}
+
 .kind {
   display: inline-block;
   font: 500 11px/18px var(--sans);
