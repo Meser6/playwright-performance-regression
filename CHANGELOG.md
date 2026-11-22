@@ -41,6 +41,11 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- Step 1 of the wizard no longer lists what it detected (files, `baseURL`, projects, CI). It
+  says what the package does, how to run it (`PW_PERF_MODE=thresholds <your test command>`,
+  commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally and in CI,
+  with `--project <name>` to measure one browser), the other `PW_PERF_*` variables and which
+  files to commit. The Playwright version shows up only as an error when it is too old.
 - Every `test` and `thresholds` run empties `report.dir` (default `pw-perf-results/`) when its
   first test starts, so reports of earlier runs never stay next to the new ones. A guard keeps
   the folder when it is the project directory, the `playwright.config` directory, the home

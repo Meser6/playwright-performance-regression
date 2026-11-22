@@ -39,15 +39,6 @@ const en = {
   no: 'no',
   yesShort: 'y',
   noShort: 'n',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'version unknown',
-  testDirLine:
-    'Test directory "{dir}" · files importing @playwright/test: {imports} · files calling .extend(): {extend}',
-  projectsPart: 'projects {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'none found',
-  alreadySetUp: 'Already set up: {items}',
-  measuredTestObject: 'measured test object',
   stepTests: 'Which tests',
   testsLesson:
     'A measurement run takes about (tests × passes) test runs on 1 worker, so measure the tests that call the important backend endpoints.',
@@ -117,13 +108,28 @@ const en = {
 
   declinedRun:
     'Run your test command with PW_PERF_MODE=thresholds and commit the pw-perf-thresholds*.json files, then PW_PERF_MODE=test runs the measurement (e.g. {example}).',
-  stepProject: 'Package and project',
   about1:
     '{pkg} measures the response times of backend endpoints (and optionally your test.step blocks) in the e2e tests you already have, without changing them.',
+  stepProject: 'What it does and how to run it',
   about2:
-    'A measurement run is your usual test command with PW_PERF_MODE set, run several times on 1 worker.',
-  about3: 'It derives thresholds itself and writes them to files you commit to the repository.',
-  about4: 'A run fails on a performance regression and leaves an HTML report.',
+    'It derives thresholds from your own runs, fails a run on a performance regression and leaves an HTML report.',
+  usageTitle: 'How to run it:',
+  usageCommandPlaceholder: '<your test command>',
+  usageThresholds: 'runs your tests several times on 1 worker and writes the thresholds files;',
+  usageCommit: 'commit the thresholds files to the repository;',
+  usageTest: 'measures again and fails on a regression; use it locally and in CI.',
+  usageCommand:
+    'Your test command is the one you already use (e.g. npm run e2e or npx playwright test). Every project of playwright.config it runs is measured: add --project <name> to measure one browser only.',
+  variablesTitle: 'Other variables:',
+  varCheck: 'a quick check of the setup on a few tests, without thresholds files',
+  varMaxTests: 'tests run by a check (default 10)',
+  varEnv: 'environment label: separate thresholds files for each environment',
+  varPasses: 'passes of the test command in this run',
+  varPrune: 'in a thresholds run: remove entries of endpoints this run did not see',
+  filesTitle: 'Files:',
+  fileConfig: 'settings of the package; commit it',
+  fileThresholds: 'thresholds (test steps in .steps.json); commit them',
+  fileReport: 'HTML report and data of the last run; do not commit (listed in .gitignore)',
   stepScript: 'Test command',
   scriptLesson:
     'A measurement uses your own test command, so its setup steps, variables and flags work as they are. Scripts that run playwright test:',
@@ -209,15 +215,6 @@ const pl: Messages = {
   no: 'nie',
   yesShort: 't',
   noShort: 'n',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'wersja nieznana',
-  testDirLine:
-    'Katalog testów "{dir}" · pliki z importem @playwright/test: {imports} · pliki z wywołaniem .extend(): {extend}',
-  projectsPart: 'projekty {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'nie znaleziono',
-  alreadySetUp: 'Już skonfigurowane: {items}',
-  measuredTestObject: 'mierzony obiekt test',
   stepTests: 'Które testy',
   testsLesson:
     'Pomiar trwa mniej więcej tyle, co (testy × przebiegi) uruchomień testów na 1 workerze, więc mierz testy, które wywołują ważne endpointy backendu.',
@@ -287,13 +284,28 @@ const pl: Messages = {
 
   declinedRun:
     'Uruchom swoje polecenie testów z PW_PERF_MODE=thresholds i zacommituj pliki pw-perf-thresholds*.json, potem PW_PERF_MODE=test wykonuje pomiar (np. {example}).',
-  stepProject: 'Paczka i projekt',
   about1:
     '{pkg} mierzy czasy odpowiedzi endpointów backendu (i opcjonalnie bloków test.step) w Twoich istniejących testach e2e, bez zmian w testach.',
+  stepProject: 'Co robi paczka i jak ją uruchamiać',
   about2:
-    'Run pomiarowy to Twoje zwykłe polecenie testów z ustawionym PW_PERF_MODE, wykonane kilka razy na 1 workerze.',
-  about3: 'Paczka sama wyznacza progi i zapisuje je do plików, które commitujesz do repozytorium.',
-  about4: 'Przy regresji wydajności run się oblewa i zostawia raport HTML.',
+    'Progi wyznacza sama z Twoich runów, oblewa run przy regresji wydajności i zostawia raport HTML.',
+  usageTitle: 'Jak uruchamiać:',
+  usageCommandPlaceholder: '<twoje polecenie testów>',
+  usageThresholds: 'wykonuje testy kilka razy na 1 workerze i zapisuje pliki progów;',
+  usageCommit: 'zacommituj pliki progów do repozytorium;',
+  usageTest: 'mierzy ponownie i oblewa się przy regresji; lokalnie i w CI.',
+  usageCommand:
+    'Polecenie testów to to, którego już używasz (np. npm run e2e albo npx playwright test). Mierzony jest każdy projekt playwright.config, który ono uruchamia: dodaj --project <nazwa>, aby mierzyć tylko jedną przeglądarkę.',
+  variablesTitle: 'Pozostałe zmienne:',
+  varCheck: 'szybkie sprawdzenie konfiguracji na kilku testach, bez plików progów',
+  varMaxTests: 'liczba testów w sprawdzeniu (domyślnie 10)',
+  varEnv: 'etykieta środowiska: osobne pliki progów dla każdego środowiska',
+  varPasses: 'liczba przebiegów polecenia testów w tym runie',
+  varPrune: 'w runie progów: usuwa wpisy endpointów, których ten run nie widział',
+  filesTitle: 'Pliki:',
+  fileConfig: 'ustawienia paczki; commituj',
+  fileThresholds: 'progi (kroki testów w .steps.json); commituj',
+  fileReport: 'raport HTML i dane ostatniego runu; nie commituj (wpis w .gitignore)',
   stepScript: 'Polecenie testów',
   scriptLesson:
     'Pomiar używa Twojego polecenia testów, więc jego kroki przygotowania, zmienne i flagi działają bez zmian. Skrypty uruchamiające playwright test:',
@@ -377,15 +389,6 @@ const es: Messages = {
   no: 'no',
   yesShort: 's',
   noShort: 'n',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'versión desconocida',
-  testDirLine:
-    'Directorio de tests "{dir}" · archivos que importan @playwright/test: {imports} · archivos que llaman a .extend(): {extend}',
-  projectsPart: 'proyectos {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'no encontrado',
-  alreadySetUp: 'Ya configurado: {items}',
-  measuredTestObject: 'objeto test medido',
   stepTests: 'Qué tests',
   testsLesson:
     'Una medición dura unas (tests × pasadas) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
@@ -456,13 +459,30 @@ const es: Messages = {
 
   declinedRun:
     'Ejecuta tu comando de tests con PW_PERF_MODE=thresholds y haz commit de los archivos pw-perf-thresholds*.json; después PW_PERF_MODE=test ejecuta la medición (p. ej. {example}).',
-  stepProject: 'Paquete y proyecto',
   about1:
     '{pkg} mide los tiempos de respuesta de los endpoints del backend (y opcionalmente tus bloques test.step) en los tests e2e que ya tienes, sin cambiarlos.',
+  stepProject: 'Qué hace y cómo ejecutarlo',
   about2:
-    'Una ejecución de medición es tu comando de tests habitual con PW_PERF_MODE, repetido varias veces en 1 worker.',
-  about3: 'Calcula los umbrales por sí mismo y los escribe en archivos que subes al repositorio.',
-  about4: 'La ejecución falla ante una regresión de rendimiento y deja un informe HTML.',
+    'Calcula los umbrales a partir de tus propias ejecuciones, hace fallar la ejecución ante una regresión de rendimiento y deja un informe HTML.',
+  usageTitle: 'Cómo ejecutarlo:',
+  usageCommandPlaceholder: '<tu comando de tests>',
+  usageThresholds: 'ejecuta tus tests varias veces en 1 worker y escribe los archivos de umbrales;',
+  usageCommit: 'haz commit de los archivos de umbrales en el repositorio;',
+  usageTest: 'vuelve a medir y falla ante una regresión; en local y en CI.',
+  usageCommand:
+    'Tu comando de tests es el que ya usas (p. ej. npm run e2e o npx playwright test). Se mide cada proyecto de playwright.config que ejecuta: añade --project <nombre> para medir un solo navegador.',
+  variablesTitle: 'Otras variables:',
+  varCheck:
+    'una comprobación rápida de la configuración con unos pocos tests, sin archivos de umbrales',
+  varMaxTests: 'tests que ejecuta una comprobación (por defecto 10)',
+  varEnv: 'etiqueta de entorno: archivos de umbrales separados para cada entorno',
+  varPasses: 'pasadas del comando de tests en esta ejecución',
+  varPrune:
+    'en una ejecución de umbrales: elimina las entradas de endpoints que esta ejecución no vio',
+  filesTitle: 'Archivos:',
+  fileConfig: 'ajustes del paquete; haz commit',
+  fileThresholds: 'umbrales (los pasos de test en .steps.json); haz commit',
+  fileReport: 'informe HTML y datos de la última ejecución; sin commit (está en .gitignore)',
   stepScript: 'Comando de tests',
   scriptLesson:
     'La medición usa tu propio comando de tests, así que sus pasos de preparación, variables y flags funcionan tal cual. Scripts que ejecutan playwright test:',
@@ -549,15 +569,6 @@ const fr: Messages = {
   no: 'non',
   yesShort: 'o',
   noShort: 'n',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'version inconnue',
-  testDirLine:
-    'Répertoire des tests "{dir}" · fichiers qui importent @playwright/test : {imports} · fichiers qui appellent .extend() : {extend}',
-  projectsPart: 'projets {names}',
-  ciLine: 'CI : {platform}',
-  ciNone: 'aucune trouvée',
-  alreadySetUp: 'Déjà configuré : {items}',
-  measuredTestObject: 'objet test mesuré',
   stepTests: 'Quels tests',
   testsLesson:
     'Une mesure prend environ (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
@@ -627,14 +638,31 @@ const fr: Messages = {
 
   declinedRun:
     'Lancez votre commande de tests avec PW_PERF_MODE=thresholds et commitez les fichiers pw-perf-thresholds*.json, puis PW_PERF_MODE=test lance la mesure (par ex. {example}).',
-  stepProject: 'Paquet et projet',
   about1:
     '{pkg} mesure les temps de réponse des endpoints du backend (et, en option, vos blocs test.step) dans les tests e2e que vous avez déjà, sans les modifier.',
+  stepProject: 'Ce qu’il fait et comment le lancer',
   about2:
-    'Une exécution de mesure est votre commande de tests habituelle avec PW_PERF_MODE, lancée plusieurs fois sur 1 worker.',
-  about3:
-    'Il calcule lui-même les seuils et les écrit dans des fichiers que vous commitez dans le dépôt.',
-  about4: 'L’exécution échoue en cas de régression de performance et laisse un rapport HTML.',
+    'Il calcule les seuils à partir de vos propres exécutions, fait échouer l’exécution en cas de régression de performance et laisse un rapport HTML.',
+  usageTitle: 'Comment le lancer :',
+  usageCommandPlaceholder: '<votre commande de tests>',
+  usageThresholds: 'lance vos tests plusieurs fois sur 1 worker et écrit les fichiers de seuils ;',
+  usageCommit: 'commitez les fichiers de seuils dans le dépôt ;',
+  usageTest: 'mesure à nouveau et échoue en cas de régression ; en local et en CI.',
+  usageCommand:
+    'Votre commande de tests est celle que vous utilisez déjà (par ex. npm run e2e ou npx playwright test). Chaque projet de playwright.config qu’elle lance est mesuré : ajoutez --project <nom> pour ne mesurer qu’un navigateur.',
+  variablesTitle: 'Autres variables :',
+  varCheck:
+    'une vérification rapide de la configuration sur quelques tests, sans fichiers de seuils',
+  varMaxTests: 'tests lancés par une vérification (10 par défaut)',
+  varEnv: 'étiquette d’environnement : des fichiers de seuils séparés pour chaque environnement',
+  varPasses: 'passes de la commande de tests dans cette exécution',
+  varPrune:
+    'dans une exécution de seuils : supprime les entrées des endpoints que cette exécution n’a pas vus',
+  filesTitle: 'Fichiers :',
+  fileConfig: 'réglages du paquet ; à commiter',
+  fileThresholds: 'seuils (étapes de test dans .steps.json) ; à commiter',
+  fileReport:
+    'rapport HTML et données de la dernière exécution ; à ne pas commiter (dans .gitignore)',
   stepScript: 'Commande de tests',
   scriptLesson:
     'La mesure utilise votre propre commande de tests : ses étapes de préparation, variables et options fonctionnent telles quelles. Scripts qui lancent playwright test :',
@@ -724,15 +752,6 @@ const it: Messages = {
   no: 'no',
   yesShort: 's',
   noShort: 'n',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'versione sconosciuta',
-  testDirLine:
-    'Cartella dei test "{dir}" · file che importano @playwright/test: {imports} · file che chiamano .extend(): {extend}',
-  projectsPart: 'progetti {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'non trovata',
-  alreadySetUp: 'Già configurato: {items}',
-  measuredTestObject: 'oggetto test misurato',
   stepTests: 'Quali test',
   testsLesson:
     'Una misurazione richiede circa (test × passaggi) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
@@ -802,13 +821,29 @@ const it: Messages = {
 
   declinedRun:
     'Esegui il tuo comando di test con PW_PERF_MODE=thresholds e fai commit dei file pw-perf-thresholds*.json, poi PW_PERF_MODE=test esegue la misurazione (es. {example}).',
-  stepProject: 'Pacchetto e progetto',
   about1:
     '{pkg} misura i tempi di risposta degli endpoint del backend (e, se vuoi, i tuoi blocchi test.step) nei test e2e che hai già, senza modificarli.',
+  stepProject: 'Cosa fa e come eseguirlo',
   about2:
-    'Un’esecuzione di misura è il tuo solito comando di test con PW_PERF_MODE, ripetuto più volte su 1 worker.',
-  about3: 'Calcola da solo le soglie e le scrive in file da committare nel repository.',
-  about4: 'L’esecuzione fallisce in caso di regressione delle prestazioni e lascia un report HTML.',
+    'Calcola le soglie dalle tue esecuzioni, fa fallire l’esecuzione in caso di regressione delle prestazioni e lascia un report HTML.',
+  usageTitle: 'Come eseguirlo:',
+  usageCommandPlaceholder: '<il tuo comando di test>',
+  usageThresholds: 'esegue i test più volte su 1 worker e scrive i file delle soglie;',
+  usageCommit: 'fai commit dei file delle soglie nel repository;',
+  usageTest: 'misura di nuovo e fallisce in caso di regressione; in locale e in CI.',
+  usageCommand:
+    'Il comando di test è quello che usi già (es. npm run e2e o npx playwright test). Viene misurato ogni progetto di playwright.config che esegue: aggiungi --project <nome> per misurare un solo browser.',
+  variablesTitle: 'Altre variabili:',
+  varCheck: 'un controllo rapido della configurazione su pochi test, senza file delle soglie',
+  varMaxTests: 'test eseguiti da un controllo (predefinito 10)',
+  varEnv: 'etichetta di ambiente: file delle soglie separati per ogni ambiente',
+  varPasses: 'passaggi del comando di test in questa esecuzione',
+  varPrune:
+    'in un’esecuzione delle soglie: rimuove le voci degli endpoint che questa esecuzione non ha visto',
+  filesTitle: 'File:',
+  fileConfig: 'impostazioni del pacchetto; da committare',
+  fileThresholds: 'soglie (passi di test in .steps.json); da committare',
+  fileReport: 'report HTML e dati dell’ultima esecuzione; da non committare (in .gitignore)',
   stepScript: 'Comando di test',
   scriptLesson:
     'La misura usa il tuo comando di test, quindi passi di preparazione, variabili e flag funzionano così come sono. Script che eseguono playwright test:',
@@ -898,15 +933,6 @@ const uk: Messages = {
   no: 'ні',
   yesShort: 'т',
   noShort: 'н',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'версія невідома',
-  testDirLine:
-    'Каталог тестів "{dir}" · файли, що імпортують @playwright/test: {imports} · файли, що викликають .extend(): {extend}',
-  projectsPart: 'проєкти {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'не знайдено',
-  alreadySetUp: 'Уже налаштовано: {items}',
-  measuredTestObject: 'вимірюваний об’єкт test',
   stepTests: 'Які тести',
   testsLesson:
     'Вимірювання триває приблизно (тести × проходи) запусків тестів на 1 worker, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
@@ -976,13 +1002,28 @@ const uk: Messages = {
 
   declinedRun:
     'Запустіть свою команду тестів з PW_PERF_MODE=thresholds і закомітьте файли pw-perf-thresholds*.json, потім PW_PERF_MODE=test виконує вимірювання (напр. {example}).',
-  stepProject: 'Пакет і проєкт',
   about1:
     '{pkg} вимірює час відповіді ендпоінтів бекенду (і за бажанням ваших блоків test.step) у наявних e2e-тестах, без змін у тестах.',
+  stepProject: 'Що робить пакет і як його запускати',
   about2:
-    'Вимірювальний запуск — це ваша звичайна команда тестів із PW_PERF_MODE, виконана кілька разів на 1 воркері.',
-  about3: 'Пакет сам обчислює пороги й записує їх у файли, які ви комітите в репозиторій.',
-  about4: 'Запуск падає при регресії продуктивності й залишає HTML-звіт.',
+    'Пакет сам обчислює пороги з ваших запусків, валить запуск при регресії продуктивності й залишає HTML-звіт.',
+  usageTitle: 'Як запускати:',
+  usageCommandPlaceholder: '<ваша команда тестів>',
+  usageThresholds: 'виконує тести кілька разів на 1 воркері й записує файли порогів;',
+  usageCommit: 'закомітьте файли порогів у репозиторій;',
+  usageTest: 'вимірює знову й падає при регресії; локально і в CI.',
+  usageCommand:
+    'Команда тестів — та, якою ви вже користуєтеся (напр. npm run e2e або npx playwright test). Вимірюється кожен проєкт playwright.config, який вона запускає: додайте --project <назва>, щоб вимірювати лише один браузер.',
+  variablesTitle: 'Інші змінні:',
+  varCheck: 'швидка перевірка налаштування на кількох тестах, без файлів порогів',
+  varMaxTests: 'кількість тестів у перевірці (типово 10)',
+  varEnv: 'мітка середовища: окремі файли порогів для кожного середовища',
+  varPasses: 'кількість проходів команди тестів у цьому запуску',
+  varPrune: 'у запуску порогів: видаляє записи ендпоінтів, яких цей запуск не бачив',
+  filesTitle: 'Файли:',
+  fileConfig: 'налаштування пакета; комітьте',
+  fileThresholds: 'пороги (кроки тестів у .steps.json); комітьте',
+  fileReport: 'HTML-звіт і дані останнього запуску; не комітьте (є в .gitignore)',
   stepScript: 'Команда тестів',
   scriptLesson:
     'Вимірювання використовує вашу власну команду тестів, тож її кроки підготовки, змінні й прапорці працюють як є. Скрипти, що запускають playwright test:',
@@ -1067,15 +1108,6 @@ const ru: Messages = {
   no: 'нет',
   yesShort: 'д',
   noShort: 'н',
-  projectLine: '{config} · Playwright {version} · {manager} · {modules}',
-  versionUnknown: 'версия неизвестна',
-  testDirLine:
-    'Каталог тестов "{dir}" · файлы, импортирующие @playwright/test: {imports} · файлы, вызывающие .extend(): {extend}',
-  projectsPart: 'проекты {names}',
-  ciLine: 'CI: {platform}',
-  ciNone: 'не найдено',
-  alreadySetUp: 'Уже настроено: {items}',
-  measuredTestObject: 'измеряемый объект test',
   stepTests: 'Какие тесты',
   testsLesson:
     'Измерение занимает примерно (тесты × проходы) запусков тестов на 1 worker, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
@@ -1145,13 +1177,28 @@ const ru: Messages = {
 
   declinedRun:
     'Запустите свою команду тестов с PW_PERF_MODE=thresholds и закоммитьте файлы pw-perf-thresholds*.json, затем PW_PERF_MODE=test выполняет измерение (напр. {example}).',
-  stepProject: 'Пакет и проект',
   about1:
     '{pkg} измеряет время ответа эндпоинтов бэкенда (и по желанию ваших блоков test.step) в уже существующих e2e-тестах, без изменений в тестах.',
+  stepProject: 'Что делает пакет и как его запускать',
   about2:
-    'Измерительный запуск — это ваша обычная команда тестов с PW_PERF_MODE, выполненная несколько раз на 1 воркере.',
-  about3: 'Пакет сам вычисляет пороги и записывает их в файлы, которые вы коммитите в репозиторий.',
-  about4: 'Запуск падает при регрессии производительности и оставляет HTML-отчёт.',
+    'Пакет сам вычисляет пороги по вашим запускам, валит запуск при регрессии производительности и оставляет HTML-отчёт.',
+  usageTitle: 'Как запускать:',
+  usageCommandPlaceholder: '<ваша команда тестов>',
+  usageThresholds: 'выполняет тесты несколько раз на 1 воркере и записывает файлы порогов;',
+  usageCommit: 'закоммитьте файлы порогов в репозиторий;',
+  usageTest: 'измеряет снова и падает при регрессии; локально и в CI.',
+  usageCommand:
+    'Команда тестов — та, которой вы уже пользуетесь (напр. npm run e2e или npx playwright test). Измеряется каждый проект playwright.config, который она запускает: добавьте --project <имя>, чтобы измерять только один браузер.',
+  variablesTitle: 'Другие переменные:',
+  varCheck: 'быстрая проверка настройки на нескольких тестах, без файлов порогов',
+  varMaxTests: 'число тестов в проверке (по умолчанию 10)',
+  varEnv: 'метка окружения: отдельные файлы порогов для каждого окружения',
+  varPasses: 'число проходов команды тестов в этом запуске',
+  varPrune: 'в запуске порогов: удаляет записи эндпоинтов, которых этот запуск не видел',
+  filesTitle: 'Файлы:',
+  fileConfig: 'настройки пакета; коммитьте',
+  fileThresholds: 'пороги (шаги тестов в .steps.json); коммитьте',
+  fileReport: 'HTML-отчёт и данные последнего запуска; не коммитьте (есть в .gitignore)',
   stepScript: 'Команда тестов',
   scriptLesson:
     'Измерение использует вашу собственную команду тестов, поэтому её шаги подготовки, переменные и флаги работают как есть. Скрипты, запускающие playwright test:',

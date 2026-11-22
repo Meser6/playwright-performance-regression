@@ -177,56 +177,42 @@ class Dialog {
   }
 }
 
-function describeProject(info: ProjectInfo, t: Translate): string[] {
-  const config = info.playwrightConfig;
-  const lines = [
-    t('projectLine', {
-      config: config?.path ?? '-',
-      version: info.playwrightVersion ?? t('versionUnknown'),
-      manager: info.packageManager,
-      modules: info.moduleType === 'esm' ? 'ES modules' : 'CommonJS',
-    }),
-    t('testDirLine', {
-      dir: info.testDir,
-      imports: info.filesImportingPlaywrightTest.length,
-      extend: info.filesWithExtend.length,
-    }),
-  ];
-  if (info.baseUrls.length > 0 || info.projectNames.length > 0) {
-    lines.push(
-      [
-        info.baseUrls.length > 0 ? `baseURL ${info.baseUrls.join(', ')}` : null,
-        info.projectNames.length > 0
-          ? t('projectsPart', { names: info.projectNames.join(', ') })
-          : null,
-      ]
-        .filter((part) => part !== null)
-        .join(' · '),
-    );
-  }
-  lines.push(
-    t('ciLine', {
-      platform: info.ciPlatform === null ? t('ciNone') : PLATFORM_NAMES[info.ciPlatform],
-    }),
+/** Step 1 after the two sentences: how to run, the other variables and the files (04-REQ-38). */
+function printUsage(dialog: Dialog, platform: string): void {
+  const { t, paint } = dialog;
+  const prefix = platform === 'win32' ? 'npx cross-env ' : '';
+  const command = t('usageCommandPlaceholder');
+  const mode = (m: string): string => paint(`${prefix}PW_PERF_MODE=${m} ${command}`, 'cyan');
+  const table = (rows: readonly (readonly [string, string])[]): string[] => {
+    const width = Math.max(...rows.map(([name]) => name.length));
+    return rows.map(([name, text]) => `    ${paint(name.padEnd(width), 'cyan')}  ${text}`);
+  };
+  const prefixFile = DEFAULT_CONFIG.thresholds.filePrefix;
+  dialog.say(
+    `  ${paint(t('usageTitle'), 'bold')}`,
+    `    1. ${mode('thresholds')}`,
+    `       ${t('usageThresholds')}`,
+    `    2. ${t('usageCommit')}`,
+    `    3. ${mode('test')}`,
+    `       ${t('usageTest')}`,
   );
-  if (
-    info.existing.wrappedConfig ||
-    info.existing.wrappedTest ||
-    info.existing.perfConfig !== null
-  ) {
-    lines.push(
-      t('alreadySetUp', {
-        items: [
-          info.existing.wrappedConfig ? 'withPerf()' : null,
-          info.existing.wrappedTest ? t('measuredTestObject') : null,
-          info.existing.perfConfig,
-        ]
-          .filter((part) => part !== null)
-          .join(', '),
-      }),
-    );
-  }
-  return lines;
+  dialog.line(t('usageCommand'), 'dim');
+  dialog.say(
+    `  ${paint(t('variablesTitle'), 'bold')}`,
+    ...table([
+      ['PW_PERF_MODE=check', t('varCheck')],
+      ['PW_PERF_MAX_TESTS=<n>', t('varMaxTests')],
+      ['PW_PERF_ENV=<label>', t('varEnv')],
+      ['PW_PERF_PASSES=<n>', t('varPasses')],
+      ['PW_PERF_PRUNE=1', t('varPrune')],
+    ]),
+    `  ${paint(t('filesTitle'), 'bold')}`,
+    ...table([
+      ['pw-perf.config.ts', t('fileConfig')],
+      [`${prefixFile}*.json`, t('fileThresholds')],
+      [`${DEFAULT_CONFIG.report.dir}/`, t('fileReport')],
+    ]),
+  );
 }
 
 /** Step 0a declined or PW_PERF_NO_TUTORIAL=1: the manual setup, no changes (04-REQ-45). */
@@ -643,16 +629,10 @@ export async function runInit(
 
     if (!write) host.stderr.write(infoLine(t(cmd.dryRun ? 'dryRun' : 'noTerminal')));
     const info = detectProject(await readProjectFiles(host, host.cwd));
-    // Step 1: the package in four sentences, then the project (04-REQ-38, note #23).
-    dialog.step(
-      1,
-      t('stepProject'),
-      t('about1', { pkg: PACKAGE_NAME }),
-      t('about2'),
-      t('about3'),
-      t('about4'),
-    );
-    dialog.say(...describeProject(info, t).map((line) => `  ${line}`));
+    // Step 1: what the package does and how to run it; the detection stays silent and only a
+    // missing playwright.config or a too old Playwright stops here (04-REQ-38).
+    dialog.step(1, t('stepProject'), t('about1', { pkg: PACKAGE_NAME }), t('about2'));
+    printUsage(dialog, host.platform);
     if (info.playwrightConfig === null) {
       // Before any question and without writing anything (04-REQ-41).
       return dialog.error('INIT_NO_PLAYWRIGHT_CONFIG', 'noConfigMessage', 'noConfigHint', {
