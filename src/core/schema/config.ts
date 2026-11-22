@@ -96,6 +96,7 @@ export const packageConfig = obj({
     }),
     grep: nullable(str({ minLength: 1 })),
     keepReporters: uniqueStrings(1),
+    overrideSlowMo: bool,
   }),
   measure: obj({
     resourceTypes: arr(

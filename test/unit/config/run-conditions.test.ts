@@ -124,6 +124,66 @@ describe('planPerfRun: run limits and artifacts', () => {
   });
 });
 
+describe('planPerfRun: run.overrideSlowMo (03-REQ-27, D-45)', () => {
+  const slow: PlaywrightTestConfig = {
+    use: { launchOptions: { slowMo: 100, headless: true } },
+    projects: [
+      { name: 'setup', testMatch: /.*\.setup\.ts/ },
+      { name: 'E2E', dependencies: ['setup'] },
+      {
+        name: 'own',
+        use: { launchOptions: { slowMo: 50, args: ['--a'] } },
+        dependencies: ['setup'],
+      },
+    ],
+  };
+
+  test('03-AC-19 true sets slowMo to 0 in every measured project and lists it as overridden', () => {
+    const result = plan(slow, { overrideSlowMo: true });
+    const use = (name: string) => result.config.projects?.find((p) => p.name === name)?.use;
+    expect(use('E2E')?.launchOptions).toEqual({ slowMo: 0, headless: true });
+    expect(use('own')?.launchOptions).toEqual({ slowMo: 0, args: ['--a'] });
+    expect(use('setup')?.launchOptions).toBeUndefined();
+    expect(result.config.use?.launchOptions).toEqual({ slowMo: 100, headless: true });
+    expect(result.runConditions.overridden).toContain('slowMo');
+    expect(result.warnings).toEqual([]);
+  });
+
+  test('03-AC-19 true without projects sets slowMo to 0 in the global use', () => {
+    const result = plan({ use: { launchOptions: { slowMo: 100 } } }, { overrideSlowMo: true });
+    expect(result.config.use?.launchOptions).toEqual({ slowMo: 0 });
+    expect(result.runConditions.overridden).toContain('slowMo');
+  });
+
+  test('03-AC-19 true without a positive slowMo does not list slowMo', () => {
+    const result = plan(
+      {
+        use: { launchOptions: { slowMo: 100 } },
+        projects: [{ name: 'a', use: { launchOptions: {} } }],
+      },
+      { overrideSlowMo: true },
+    );
+    expect(result.config.projects?.[0]?.use?.launchOptions).toEqual({ slowMo: 0 });
+    expect(result.runConditions.overridden).not.toContain('slowMo');
+    expect(plan({}, { overrideSlowMo: true }).runConditions.overridden).not.toContain('slowMo');
+  });
+
+  test('03-AC-19 false keeps slowMo and the warning hints at run.overrideSlowMo', () => {
+    const result = plan(slow, { overrideSlowMo: false });
+    expect(
+      result.config.projects?.find((p) => p.name === 'E2E')?.use?.launchOptions,
+    ).toBeUndefined();
+    expect(result.config.use?.launchOptions).toEqual({ slowMo: 100, headless: true });
+    expect(result.runConditions.overridden).not.toContain('slowMo');
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: 'CONFIG_SLOW_MO',
+        hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
+      }),
+    ]);
+  });
+});
+
 describe('planPerfRun: measured projects (04-REQ-18, D-44)', () => {
   test('04-AC-12 every project but setup and teardown projects may be measured, whatever the browser; no project is removed', () => {
     const result = plan(browsers);

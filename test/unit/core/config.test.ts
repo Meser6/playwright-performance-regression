@@ -632,3 +632,11 @@ describe('run.grep (03-REQ-25)', () => {
     expect(codes(issues({ run: { grep: '' } }))).toEqual(['CONFIG_INVALID_VALUE']);
   });
 });
+
+describe('run.overrideSlowMo (03-REQ-27, D-45)', () => {
+  test('03-AC-19 run.overrideSlowMo is false by default and must be a boolean', () => {
+    expect(DEFAULT_CONFIG.run.overrideSlowMo).toBe(false);
+    expect(resolved({ run: { overrideSlowMo: true } }).snapshot.run.overrideSlowMo).toBe(true);
+    expect(codes(issues({ run: { overrideSlowMo: 'yes' } }))).toEqual(['CONFIG_INVALID_TYPE']);
+  });
+});

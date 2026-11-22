@@ -54,6 +54,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
     - [`run.passes.thresholds`](#runpassesthresholds)
   - [`run.grep`](#rungrep)
   - [`run.keepReporters`](#runkeepreporters)
+  - [`run.overrideSlowMo`](#runoverrideslowmo)
 - [`measure`](#measure)
   - [`measure.resourceTypes`](#measureresourcetypes)
   - [`measure.ignoreExtensions`](#measureignoreextensions)
@@ -186,7 +187,7 @@ Optional, for editor support in a JSON config file: `"./node_modules/playwright-
 
 How the measurement run is executed.
 
-Options: [`env`](#runenv), [`passes`](#runpasses), [`grep`](#rungrep), [`keepReporters`](#runkeepreporters).
+Options: [`env`](#runenv), [`passes`](#runpasses), [`grep`](#rungrep), [`keepReporters`](#runkeepreporters), [`overrideSlowMo`](#runoverrideslowmo).
 
 ### `run.env`
 
@@ -228,6 +229,13 @@ Reporters kept in perf mode by name, as in the Playwright reporter config (e.g. 
 
 - Type: array of string (at least 1 character); no duplicates
 - Default: `[]`
+
+### `run.overrideSlowMo`
+
+Sets use.launchOptions.slowMo to 0 in every measured project in perf mode. slowMo delays every browser action and distorts the measured times; off by default because some tests are unstable without it. false: slowMo stays and perf mode warns about it (CONFIG_SLOW_MO).
+
+- Type: boolean
+- Default: `false`
 
 ## `measure`
 

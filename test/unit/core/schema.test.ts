@@ -532,7 +532,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     }
   });
 
-  test('02-AC-21 the v3 golden report loses config.run.projects, everything else unchanged', () => {
+  test('02-AC-21 the v3 golden report loses config.run.projects, gets run.overrideSlowMo false, everything else unchanged', () => {
     const text = raw('run-report', 'v3', 'full-run.json');
     const before = JSON.parse(text) as Json & { config: { run: Json } };
     expect(before.config.run['projects']).toBe('auto');
@@ -542,7 +542,11 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(migrated['schemaVersion']).toBe(4);
     expect(migrated.config.run).not.toHaveProperty('projects');
     const { projects: _projects, ...run } = before.config.run;
-    expect(migrated).toEqual({ ...before, schemaVersion: 4, config: { ...before.config, run } });
+    expect(migrated).toEqual({
+      ...before,
+      schemaVersion: 4,
+      config: { ...before.config, run: { ...run, overrideSlowMo: false } },
+    });
   });
 
   test('02-AC-19 v1 and v2 reports migrate to one pass and run.passes from run.repeat', () => {
