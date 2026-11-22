@@ -28,6 +28,11 @@ export interface TestObjectBox {
   extendFiles: string[];
   /** Number of files that import from @playwright/test. */
   importingFiles: number;
+  /**
+   * test.step durations are measured without the fixture (answer all, test.step found): the box
+   * says endpoints are not measured yet, and the check step is shown (04-D-47).
+   */
+  stepsMeasured: boolean;
 }
 
 export interface InitPlan {
@@ -166,6 +171,7 @@ function planTestObject(info: ProjectInfo, answers: InitAnswers, plan: InitPlan)
     importingFiles: info.filesImportingPlaywrightTest.filter((p) =>
       isPlaywrightTestFile(p, text(p)),
     ).length,
+    stepsMeasured: answers.measure === 'all' && info.stepFiles > 0,
   };
 }
 

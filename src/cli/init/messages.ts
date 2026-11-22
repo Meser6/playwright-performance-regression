@@ -170,6 +170,9 @@ const en = {
   boxTitle: 'Action needed: nothing is measured yet',
   boxWhy:
     'Without the perf fixture the package measures no request. The wizard does not change your test files; add one of these by hand:',
+  boxTitleSteps: 'Action needed: endpoints are not measured yet',
+  boxWhySteps:
+    'Without the perf fixture the package measures no request (test.step durations are measured). The wizard does not change your test files; add one of these by hand:',
   boxFixtures: 'If you have a fixtures file that exports test:',
   boxFixturesFiles: 'Files with .extend(): {files}',
   boxImports:
@@ -343,6 +346,9 @@ const pl: Messages = {
   boxTitle: 'Wymagane działanie: na razie nic nie jest mierzone',
   boxWhy:
     "Bez fixture'u perf paczka nie mierzy żadnego requestu. Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
+  boxTitleSteps: 'Wymagane działanie: endpointy nie są jeszcze mierzone',
+  boxWhySteps:
+    "Bez fixture'u perf paczka nie mierzy żadnego requestu (czasy test.step są mierzone). Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
   boxFixtures: "Jeśli masz plik fixture'ów, który eksportuje test:",
   boxFixturesFiles: 'Pliki z .extend(): {files}',
   boxImports:
@@ -518,6 +524,9 @@ const es: Messages = {
   boxTitle: 'Acción necesaria: todavía no se mide nada',
   boxWhy:
     'Sin el fixture perf el paquete no mide ninguna petición. El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
+  boxTitleSteps: 'Acción necesaria: los endpoints todavía no se miden',
+  boxWhySteps:
+    'Sin el fixture perf el paquete no mide ninguna petición (las duraciones de test.step sí se miden). El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
   boxFixtures: 'Si tienes un archivo de fixtures que exporta test:',
   boxFixturesFiles: 'Archivos con .extend(): {files}',
   boxImports:
@@ -698,6 +707,9 @@ const fr: Messages = {
   boxTitle: 'Action requise : rien n’est encore mesuré',
   boxWhy:
     'Sans la fixture perf, le paquet ne mesure aucune requête. L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
+  boxTitleSteps: 'Action requise : les endpoints ne sont pas encore mesurés',
+  boxWhySteps:
+    'Sans la fixture perf, le paquet ne mesure aucune requête (les durées des test.step sont mesurées). L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
   boxFixtures: 'Si vous avez un fichier de fixtures qui exporte test :',
   boxFixturesFiles: 'Fichiers avec .extend() : {files}',
   boxImports:
@@ -877,6 +889,9 @@ const it: Messages = {
   boxTitle: 'Azione richiesta: per ora non si misura nulla',
   boxWhy:
     'Senza la fixture perf il pacchetto non misura alcuna richiesta. La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
+  boxTitleSteps: 'Azione richiesta: gli endpoint non sono ancora misurati',
+  boxWhySteps:
+    'Senza la fixture perf il pacchetto non misura alcuna richiesta (le durate dei test.step sono misurate). La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
   boxFixtures: 'Se hai un file di fixture che esporta test:',
   boxFixturesFiles: 'File con .extend(): {files}',
   boxImports:
@@ -1051,6 +1066,9 @@ const uk: Messages = {
   boxTitle: 'Потрібна дія: поки що нічого не вимірюється',
   boxWhy:
     'Без фікстури perf пакет не вимірює жодного запиту. Майстер не змінює ваші файли тестів; додайте вручну один із варіантів:',
+  boxTitleSteps: 'Потрібна дія: ендпоінти поки що не вимірюються',
+  boxWhySteps:
+    'Без фікстури perf пакет не вимірює жодного запиту (тривалість test.step вимірюється). Майстер не змінює ваші файли тестів; додайте вручну один із варіантів:',
   boxFixtures: 'Якщо у вас є файл фікстур, що експортує test:',
   boxFixturesFiles: 'Файли з .extend(): {files}',
   boxImports:
@@ -1222,6 +1240,9 @@ const ru: Messages = {
   boxTitle: 'Требуется действие: пока ничего не измеряется',
   boxWhy:
     'Без фикстуры perf пакет не измеряет ни одного запроса. Мастер не меняет ваши файлы тестов; добавьте вручную один из вариантов:',
+  boxTitleSteps: 'Требуется действие: эндпоинты пока не измеряются',
+  boxWhySteps:
+    'Без фикстуры perf пакет не измеряет ни одного запроса (длительность test.step измеряется). Мастер не меняет ваши файлы тестов; добавьте вручную один из вариантов:',
   boxFixtures: 'Если у вас есть файл фикстур, который экспортирует test:',
   boxFixturesFiles: 'Файлы с .extend(): {files}',
   boxImports:
