@@ -107,21 +107,6 @@ describe('planPerfRun: run limits and artifacts', () => {
       }).runConditions.overridden,
     ).toEqual([]);
   });
-
-  test('warns about slowMo, which slows every browser action', () => {
-    const { warnings } = plan({
-      use: { launchOptions: { slowMo: 0 } },
-      projects: [{ name: 'a', use: { launchOptions: { slowMo: 250 } } }],
-    });
-    expect(warnings).toEqual([
-      expect.objectContaining({
-        code: 'CONFIG_SLOW_MO',
-        message:
-          'use.launchOptions.slowMo: is greater than 0 in project "a"; it slows down every browser action and distorts the measured times',
-      }),
-    ]);
-    expect(plan({ use: { launchOptions: { slowMo: 0 } } }).warnings).toEqual([]);
-  });
 });
 
 describe('planPerfRun: run.overrideSlowMo (03-REQ-27, D-45)', () => {
@@ -146,7 +131,6 @@ describe('planPerfRun: run.overrideSlowMo (03-REQ-27, D-45)', () => {
     expect(use('setup')?.launchOptions).toBeUndefined();
     expect(result.config.use?.launchOptions).toEqual({ slowMo: 100, headless: true });
     expect(result.runConditions.overridden).toContain('slowMo');
-    expect(result.warnings).toEqual([]);
   });
 
   test('03-AC-19 true without projects sets slowMo to 0 in the global use', () => {
@@ -175,12 +159,6 @@ describe('planPerfRun: run.overrideSlowMo (03-REQ-27, D-45)', () => {
     ).toBeUndefined();
     expect(result.config.use?.launchOptions).toEqual({ slowMo: 100, headless: true });
     expect(result.runConditions.overridden).not.toContain('slowMo');
-    expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'CONFIG_SLOW_MO',
-        hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
-      }),
-    ]);
   });
 });
 
@@ -195,7 +173,6 @@ describe('planPerfRun: measured projects (04-REQ-18, D-44)', () => {
       ['firefox', 1],
       ['webkit', 1],
     ]);
-    expect(result.warnings).toEqual([]);
   });
 
   test('04-AC-09 direct and indirect dependencies and teardowns are not measured; every project runs once per pass (D-39)', () => {

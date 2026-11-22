@@ -330,6 +330,38 @@ describe('reporter session in test mode', () => {
     expect(outcome.exitCode).toBe(3);
   });
 
+  test('03-AC-22 CONFIG_SLOW_MO only for projects measured in the run', async () => {
+    const slow = { baseURL: 'http://app.test', launchOptions: { slowMo: 50 } };
+    const projects = [
+      project('setup', { use: slow }),
+      project('api', { dependencies: ['setup'] }),
+      project('e2e', { dependencies: ['setup'], use: slow }),
+    ];
+    const suites = (names: string[]) => names.map((name) => ({ project: () => ({ name }) }));
+    const slowMoWarnings = async (inRun: string[]): Promise<Issue[]> => {
+      const s = session(fakeHost(dir), registered({}, { mode: 'test' }, ['api', 'e2e']));
+      s.begin(fakeConfig(dir, { projects }), { allTests: () => [], suites: suites(inRun) });
+      runTests(s, dir, 1, PATHS, steady);
+      await s.end({ status: 'passed' });
+      return readReport().warnings.filter((w) => w.code === 'CONFIG_SLOW_MO');
+    };
+    // --project=api: e2e is outside the run, setup is a dependency.
+    expect(await slowMoWarnings(['setup', 'api'])).toEqual([]);
+    // --project=e2e, or no --project.
+    for (const inRun of [
+      ['setup', 'e2e'],
+      ['setup', 'api', 'e2e'],
+    ]) {
+      expect(await slowMoWarnings(inRun)).toEqual([
+        expect.objectContaining({
+          message:
+            'use.launchOptions.slowMo: is greater than 0 in project "e2e"; it slows down every browser action and distorts the measured times',
+          hint: 'Remove slowMo from the Playwright config for the measurement run, or set run.overrideSlowMo: true in the package config.',
+        }),
+      ]);
+    }
+  });
+
   test('04-AC-16 RUN_CONDITIONS_CHANGED for flags in onBegin and traces in onTestEnd, not for retries', async () => {
     const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
     s.begin(

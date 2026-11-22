@@ -128,7 +128,8 @@ measured.
 
 ### CONFIG_SLOW_MO
 
-**Warning.** `use.launchOptions.slowMo` is greater than 0 in the Playwright config. It delays
+**Warning.** `use.launchOptions.slowMo` is greater than 0 in a project measured in this run
+(projects outside the run and setup projects do not count). It delays
 every browser action and distorts the measured times. Remove `slowMo` for perf-mode runs, or set
 `run: { overrideSlowMo: true }` in the package config: perf mode then sets `slowMo` to 0 in every
 measured project (setup projects keep it). `slowMo` set with `test.use()` in a test file is not
