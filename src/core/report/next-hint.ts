@@ -61,6 +61,17 @@ export interface CommandContext {
   /** `scripts` of the nearest package.json, or null. */
   scripts: Readonly<Record<string, string>> | null;
   platform: string;
+  /**
+   * How the run was started (04-REQ-63): from a script that names Playwright, and the words the
+   * user added (after `--` for npm), or the Playwright arguments (09-REQ-32, 09-D-20). Absent: no
+   * arguments are added.
+   */
+  run?: { script: boolean; tail: readonly string[] };
+  /**
+   * The test directory relative to the directory the package manager was called from
+   * (INIT_CWD), or null when they are the same (09-REQ-32, 09-D-20).
+   */
+  directory?: string | null;
 }
 
 /** Package manager from the user agent, else from the lock file, default npm. */
@@ -110,6 +121,18 @@ function modeScript(
  * `playwright test` with the variable.
  */
 export function suggestCommand(mode: PerfMode, ctx: CommandContext): string {
+  const dir = ctx.directory ?? null;
+  return `${dir === null ? '' : `cd ${shellWord(dir)} && `}${modeCommand(mode, ctx)}`;
+}
+
+/** The words the run added, for `test` and `check` only (09-REQ-32, 09-D-20). */
+function tail(mode: PerfMode, ctx: CommandContext, script: boolean): string {
+  const run = ctx.run;
+  if (mode === 'thresholds' || run === undefined || run.script !== script) return '';
+  return run.tail.map((word) => ` ${shellWord(word)}`).join('');
+}
+
+function modeCommand(mode: PerfMode, ctx: CommandContext): string {
   const pm = packageManager(ctx);
   const event = ctx.lifecycleEvent;
   // `npx playwright test` sets npm_lifecycle_event to `npx`: only a script of the project counts
@@ -118,14 +141,15 @@ export function suggestCommand(mode: PerfMode, ctx: CommandContext): string {
     event !== null && event !== '' && (ctx.scripts === null || Object.hasOwn(ctx.scripts, event));
   if (event !== null && isScript) {
     const script = ctx.lifecycleScript ?? '';
+    const added = tail(mode, ctx, true);
     if (!setsMode(script)) {
-      return perfCommand(mode, ctx.env, scriptCommand(pm, event), ctx.platform);
+      return perfCommand(mode, ctx.env, scriptCommand(pm, event) + added, ctx.platform);
     }
     const own = ctx.scripts === null ? null : modeScript(ctx.scripts, mode, ctx.env);
     if (own !== null) return scriptCommand(pm, own);
-    return perfCommand(mode, ctx.env, scriptCommand(pm, event), ctx.platform);
+    return perfCommand(mode, ctx.env, scriptCommand(pm, event) + added, ctx.platform);
   }
-  return perfCommand(mode, ctx.env, plainCommand(pm), ctx.platform);
+  return perfCommand(mode, ctx.env, plainCommand(pm) + tail(mode, ctx, false), ctx.platform);
 }
 
 export interface WrittenFile {

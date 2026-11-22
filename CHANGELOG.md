@@ -41,6 +41,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- `Next:` after a `test` or `check` run repeats the arguments you added (`PW_PERF_MODE=test npm
+run e2e -- --project=desktop`); the thresholds command stays without them, so thresholds come
+  from the whole suite. When the package manager was called from a parent directory (e.g. the
+  root of a monorepo), the command starts with `cd <directory> && `.
 - The start banner no longer guesses 30 s per test before the first run: the estimate says
   `unknown (run PW_PERF_MODE=check for an estimate)`. A time under a minute reads `< 1 min`
   without `≈`, and there is no `Tip` when `run.grep` is set.

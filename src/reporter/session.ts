@@ -1311,6 +1311,32 @@ export class RunSession {
     };
   }
 
+  /** The words the run added to the test command, as for the next pass (09-REQ-32, 04-REQ-63). */
+  private runArgs(): { script: boolean; tail: string[] } {
+    const shape = runShape({
+      execPath: this.host.execPath,
+      argv: this.host.argv,
+      env: this.host.env,
+      scripts: this.host.io.readPackageInfo(this.host.cwd).scripts,
+    });
+    return { script: shape.script !== null, tail: shape.tail };
+  }
+
+  /**
+   * The test directory relative to INIT_CWD, the directory the package manager was called from
+   * (e.g. the root of a monorepo), or null when it is the same or not below it: an INIT_CWD
+   * inherited from an unrelated outer script must not send the user elsewhere (09-REQ-32, 09-D-20).
+   */
+  private calledFrom(): string | null {
+    const { INIT_CWD: from } = this.host.env;
+    if (from === undefined || from === '') return null;
+    const io = this.host.io;
+    const dir = io.relativeSlashPath(io.resolvePath(this.host.cwd, from), this.host.cwd);
+    return dir === '.' || dir === '..' || dir.startsWith('../') || /^([A-Za-z]:)?\//u.test(dir)
+      ? null
+      : dir;
+  }
+
   /** Commands of the project for each mode, for the Next: hint (09-REQ-32). */
   private commands(): Record<PerfMode, string> {
     const env = this.host.env;
@@ -1323,6 +1349,8 @@ export class RunSession {
       lockFiles: info.lockFiles,
       scripts: info.scripts,
       platform: this.host.host.platform,
+      run: this.runArgs(),
+      directory: this.calledFrom(),
     };
     return {
       test: suggestCommand('test', ctx),
