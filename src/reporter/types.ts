@@ -122,8 +122,4 @@ export interface ReporterHost {
     command: { file: string; args: readonly string[] },
     env: Readonly<Record<string, string | undefined>>,
   ): Promise<PassExitLike>;
-  /** Asks on the terminal; null when there is none (04-REQ-65). */
-  ask(question: string): string | null;
-  /** Ends the process, e.g. after "n" to the Continue? question (04-REQ-65). */
-  exit(code: number): void;
 }

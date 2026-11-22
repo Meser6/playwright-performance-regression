@@ -24,6 +24,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `PW_PERF_NO_TUTORIAL=1` instead of `--no-tutorial`. `--yes` has no replacement: the wizard
   writes changes only in a terminal (press Enter for each default); without one it shows the
   plan.
+- The `Continue? (Y/n)` question under the start banner is gone, and so is `PW_PERF_YES`: the
+  banner only informs and the run starts right away in every mode (press Ctrl+C to stop it). A
+  set `PW_PERF_YES` is ignored.
 
 ### Changed
 

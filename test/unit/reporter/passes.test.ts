@@ -1,5 +1,5 @@
 // Passes of a perf-mode run (D-39, 04 chapter 4.12): pass files, the pass loop of the first pass,
-// merging, the start banner and the Continue? question. Later passes are reporter sessions of
+// merging and the start banner (no question, v4 B3). Later passes are reporter sessions of
 // their own, started by the fake host instead of a process.
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -309,7 +309,7 @@ describe('passes of the first pass (04-REQ-64)', () => {
   });
 });
 
-describe('start banner and Continue? (04-REQ-65, 04-REQ-66)', () => {
+describe('start banner (04-REQ-65, 04-REQ-66)', () => {
   test('04-AC-44 NO_COLOR has no ANSI sequences; TERM=dumb gives an ASCII frame without emoji', () => {
     const input = {
       packageName: 'pw-perf',
@@ -343,37 +343,17 @@ describe('start banner and Continue? (04-REQ-65, 04-REQ-66)', () => {
     expect(check).not.toContain('Estimate');
   });
 
-  test('04-AC-44 the question only in a terminal outside CI without PW_PERF_YES; "n" exits with 130', async () => {
-    const ask = (
-      options: Parameters<typeof fakeHost>[1],
-      mode: Parameters<typeof registered>[1] = { mode: 'test' },
-    ) => {
-      const captured = fakeHost(dir, options);
-      const s = session(captured, registered({}, mode));
-      s.begin(fakeConfig(dir), { allTests: () => [fakeTest(dir)] });
-      return { captured, s };
-    };
-    expect(ask({ tty: 80, answers: [''] }).captured.questions).toEqual(['Continue? (Y/n) ']);
-    expect(ask({}).captured.questions).toEqual([]);
-    expect(ask({ tty: 80, env: { CI: 'true' } }).captured.questions).toEqual([]);
-    expect(ask({ tty: 80 }, { mode: 'test', yes: true }).captured.questions).toEqual([]);
-    expect(ask({ tty: 80 }, { mode: 'check' }).captured.questions).toEqual([]);
-    expect(
-      ask({ tty: 80 }, { mode: 'test', pass: { index: 2, total: 3 } }).captured.questions,
-    ).toEqual([]);
-
-    const again = ask({ tty: 80, answers: ['maybe', 'Y'] });
-    expect(again.captured.questions).toHaveLength(2);
-    expect(again.captured.exits).toEqual([]);
-
-    const no = ask({ tty: 80, answers: ['n'] });
-    expect(no.captured.exits).toEqual([130]);
-    expect(no.captured.stdout.join('')).toContain('playwright-performance-regression: cancelled');
-    expect(await no.s.end({ status: 'interrupted' })).toBeUndefined();
-    expect(existsSync(join(dir, RESULTS, 'report.json'))).toBe(false);
-
-    const noTerminal = ask({ tty: 80, answers: [null] });
-    expect(noTerminal.captured.exits).toEqual([]);
+  test('04-AC-44 no question in a terminal outside CI: the banner only informs and the run goes on', async () => {
+    const captured = fakeHost(dir, { tty: 80 });
+    const s = session(captured, registered({}, { mode: 'test' }));
+    s.begin(fakeConfig(dir), { allTests: () => [fakeTest(dir)] });
+    const out = captured.stdout.join('');
+    expect(out).toContain('pw-perf · measurement run');
+    expect(out).not.toContain('Continue?');
+    expect(out).not.toContain('cancelled');
+    s.testBegin();
+    await s.end({ status: 'passed' });
+    expect(existsSync(join(dir, RESULTS, 'report.json'))).toBe(true);
   });
 
   test('04-AC-44 a later pass prints one line instead of the banner', () => {

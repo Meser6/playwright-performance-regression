@@ -178,8 +178,7 @@ describe('reporter session in test mode', () => {
     expect(out).toContain('Report    pw-perf-results/report.html');
     expect(out).toContain('Tip       measure a subset, e.g. --grep @perf');
     expect(out).toMatch(/^╭─+╮$/mu);
-    // Not a terminal: no question.
-    expect(captured.questions).toEqual([]);
+    expect(out).not.toContain('Continue?');
   });
 
   test('01-REQ-40 a run without started tests (--list) writes nothing and keeps the status', async () => {

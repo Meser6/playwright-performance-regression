@@ -19,7 +19,6 @@ const HELP = [
   '  PW_PERF_PASSES=<n>     Passes of the test command (each test runs once per pass)',
   '  PW_PERF_PRUNE=1        (thresholds) Remove unlocked entries of keys not seen in this run',
   '  PW_PERF_MAX_TESTS=<n>  (check) At most n measured tests, the first of each file (default 10)',
-  '  PW_PERF_YES=1          Skip the "Continue?" question of the start banner',
   '',
   `Setup: ${INIT_COMMAND} (guided; changes nothing without asking). Wizard variables:`,
   `  PW_PERF_LANG=<code>    Wizard language (${LANGUAGES.join(', ')}) without the question`,

@@ -1,7 +1,6 @@
-// Processes and the terminal for the reporter (01-REQ-43, 04-REQ-64, 04-REQ-65): the reporter
-// session stays free of node:* imports, so starting a pass and asking a question live here.
+// Processes for the reporter (01-REQ-43, 04-REQ-64): the reporter session stays free of node:*
+// imports, so starting a pass lives here.
 import { spawn } from 'node:child_process';
-import { closeSync, openSync, readSync, writeSync } from 'node:fs';
 
 export interface PassExit {
   /** Exit code, or null when the process ended by a signal or did not start. */
@@ -59,49 +58,4 @@ export function runPass(
       });
     }
   });
-}
-
-/**
- * Asks `question` on the terminal and returns the answer line, read synchronously from /dev/tty
- * (Windows: CONIN$/CONOUT$), because reading stdin of a terminal gives EAGAIN (V-15). Null when
- * the terminal cannot be opened.
- */
-export function askTerminal(question: string, platform: string = process.platform): string | null {
-  const input = platform === 'win32' ? 'CONIN$' : '/dev/tty';
-  const output = platform === 'win32' ? 'CONOUT$' : '/dev/tty';
-  let inFd: number;
-  try {
-    inFd = openSync(input, 'r');
-  } catch {
-    return null;
-  }
-  try {
-    try {
-      const outFd = openSync(output, 'w');
-      try {
-        writeSync(outFd, question);
-      } finally {
-        closeSync(outFd);
-      }
-    } catch {
-      process.stdout.write(question);
-    }
-    const buffer = Buffer.alloc(256);
-    let line = '';
-    for (;;) {
-      let n: number;
-      try {
-        n = readSync(inFd, buffer, 0, buffer.length, null);
-      } catch (error) {
-        if ((error as { code?: string }).code === 'EAGAIN') continue;
-        return line === '' ? null : line;
-      }
-      if (n === 0) return line;
-      line += buffer.toString('utf8', 0, n);
-      const end = line.search(/\r?\n/u);
-      if (end >= 0) return line.slice(0, end);
-    }
-  } finally {
-    closeSync(inFd);
-  }
 }

@@ -10,7 +10,6 @@ import type {
   TestResult,
 } from '@playwright/test/reporter';
 import {
-  askTerminal,
   directoryOf,
   listDirSync,
   readCiInfo,
@@ -61,8 +60,6 @@ function processHost(): ReporterHost {
     host: readHostInfo(env),
     execPath: process.execPath,
     runPass: (command, passEnv) => runPass(command, passEnv, process.cwd()),
-    ask: (question) => askTerminal(question),
-    exit: (code) => process.exit(code),
   };
 }
 
