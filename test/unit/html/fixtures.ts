@@ -221,3 +221,29 @@ export function stepsRun(): RunReport {
   report.evaluation.counts.step = { ...report.evaluation.counts.api, keys: 2 };
   return report;
 }
+
+/**
+ * stepsRun() with every endpoint and step key longer than 200 characters (11-AC-37): a path of
+ * long segments, a path without breaks, a step path of five long titles and a step title without
+ * spaces. The keys are renamed everywhere in the report.
+ */
+export function longNamesRun(): RunReport {
+  const report = stepsRun();
+  const segment = 'very-long-segment-name-without-any-breaks';
+  const [first, second] = Object.keys(report.endpoints);
+  if (first === undefined || second === undefined) throw new Error('fullRun needs two endpoints');
+  const names: [string, string][] = [
+    [first, `GET /api/${[0, 1, 2, 3, 4, 5].map((i) => `${segment}${String(i)}`).join('/')}/:id`],
+    [second, `POST /api/${'x'.repeat(220)}`],
+    [
+      'login › submit',
+      [0, 1, 2, 3, 4]
+        .map((i) => `a rather long step title ${String(i)} that keeps going`)
+        .join(' › '),
+    ],
+    ['<img src=x onerror=alert(1)>', 'B'.repeat(230)],
+  ];
+  let text = JSON.stringify(report);
+  for (const [from, to] of names) text = text.split(JSON.stringify(from)).join(JSON.stringify(to));
+  return JSON.parse(text) as RunReport;
+}

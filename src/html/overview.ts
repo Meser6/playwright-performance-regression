@@ -5,6 +5,7 @@ import {
   KIND_COLUMN,
   KIND_NAME,
   KIND_ORDER,
+  KEY_COLUMN_MAX,
   LINK_KINDS,
   aggregatesOf,
   compareText,
@@ -387,7 +388,7 @@ function violationCard(ctx: Ctx, e: Entry): SafeHtml {
   const muted = ev.muted !== null && !ev.muted.expired;
   return join(
     html`<article class="card vio${muted ? ' mu' : ''}"><p class="top">${resultPill(ev)}${mutedPill(ev.muted)}${kindToken(e.kind)}${sourceToken(ev.thresholdSource)}</p>`,
-    keyLink(ctx, e.kind, e.key),
+    keyLink(ctx, e.kind, e.key, KEY_COLUMN_MAX, true),
     top === undefined
       ? null
       : html`<p class="rule"><span>${ruleLabel(top.rule, ctx.level)} <b>${checkValue(top, top.actual)}</b> · limit ${checkValue(top, top.limit)}</span>${ctx.migrated ? null : usageMeter(top.usage, !top.passed)}</p>`,
@@ -533,7 +534,7 @@ function rankingCard(ctx: Ctx, ranking: Ranking): SafeHtml {
   const item = (e: Entry, i: number): SafeHtml => {
     const top = first.get(e.kind) ?? 0;
     const tone = ranking.tone(e);
-    return html`<li data-k="${e.kind}"${i >= RANKING_SIZE ? html` hidden` : null}>${keyLink(ctx, e.kind, e.key, LIST_KEY_MAX)}<span class="tb${tone === '' ? '' : ` ${tone}`}"><span class="${widthClass(top > 0 && Number.isFinite(top) ? ranking.size(e) / top : 1)}"></span></span><span class="v">${ranking.value(e)}</span></li>`;
+    return html`<li data-k="${e.kind}"${i >= RANKING_SIZE ? html` hidden` : null}>${keyLink(ctx, e.kind, e.key, LIST_KEY_MAX, true)}<span class="tb${tone === '' ? '' : ` ${tone}`}"><span class="${widthClass(top > 0 && Number.isFinite(top) ? ranking.size(e) / top : 1)}"></span></span><span class="v">${ranking.value(e)}</span></li>`;
   };
   return join(
     html`<section class="card" aria-labelledby="rank-${ranking.id}"><div class="card-h"><h4 id="rank-${ranking.id}">${ranking.title}</h4><span class="sub">${ranking.note}</span></div>`,
@@ -599,7 +600,7 @@ function mutedSection(ctx: Ctx): SafeHtml | null {
       if (evaluation === undefined || muted === null) continue;
       if (!muted.expired) active++;
       rows.push(
-        html`<li><span class="tt">${keyLink(ctx, kind, key, LIST_KEY_MAX)}<span class="sub">${KIND_COLUMN[kind]} · until ${muted.until} · ${muted.note}</span></span><span class="num">${muted.expired ? pill('w', 'mute expired') : null}${evaluation.result === 'fail' ? pill('f', 'has violation') : pill('p', 'no violation')}</span></li>`,
+        html`<li><span class="tt">${keyLink(ctx, kind, key, LIST_KEY_MAX, true)}<span class="sub">${KIND_COLUMN[kind]} · until ${muted.until} · ${muted.note}</span></span><span class="num">${muted.expired ? pill('w', 'mute expired') : null}${evaluation.result === 'fail' ? pill('f', 'has violation') : pill('p', 'no violation')}</span></li>`,
       );
     }
   }

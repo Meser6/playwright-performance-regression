@@ -38,24 +38,27 @@ export function methodBadge(method: string): SafeHtml {
 }
 
 /** Key text of an endpoint: origin token and path, shortened to `max` code points. */
-function endpointView(key: string, max: number): SafeHtml {
+function endpointView(key: string, max: number, full: boolean): SafeHtml {
   const { method, origin, path } = splitEndpoint(key);
   const room = Math.max(8, max - method.length - 1 - origin.length);
   const short = truncateMiddle(path, room);
-  return html`${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path ? null : html` title="${key}"`}>${origin === '' ? null : html`<span class="o">${origin}</span>`}${pathView(short)}</span>`;
+  return html`${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path && !full ? null : html` title="${key}"`}>${origin === '' ? null : html`<span class="o">${origin}</span>`}${pathView(short)}</span>`;
 }
 
 /** Key text of a step: parent titles muted, the last title bold. */
-function stepView(key: string, max: number): SafeHtml {
+function stepView(key: string, max: number, full: boolean): SafeHtml {
   const short = truncateMiddle(key, max);
   const titles = short.split(STEP_SEPARATOR);
   const last = titles.pop() ?? '';
-  return html`<span class="key st"${short === key ? null : html` title="${key}"`}>${titles.map((t) => html`<s>${t}${STEP_SEPARATOR}</s>`)}<b>${last}</b></span>`;
+  return html`<span class="key st"${short === key && !full ? null : html` title="${key}"`}>${titles.map((t) => html`<s>${t}${STEP_SEPARATOR}</s>`)}<b>${last}</b></span>`;
 }
 
-/** The view of a key of a kind (11-REQ-53). */
-export function keyView(kind: LinkKind, key: string, max: number): SafeHtml {
-  return kind === 'step' ? stepView(key, max) : endpointView(key, max);
+/**
+ * The view of a key of a kind (11-REQ-53). The full key goes to `title` when it is shortened, and
+ * always with `full` (cards, where the line itself is cut with an ellipsis).
+ */
+export function keyView(kind: LinkKind, key: string, max: number, full = false): SafeHtml {
+  return kind === 'step' ? stepView(key, max, full) : endpointView(key, max, full);
 }
 
 /** Depth marker of a step key in the Steps table: up to 3 dots filled to the depth. */

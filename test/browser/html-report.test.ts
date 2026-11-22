@@ -13,6 +13,7 @@ import { defaultOrder } from '../../src/html/render.ts';
 import {
   fullRun,
   largeReport,
+  longNamesRun,
   markupCase,
   referenceReport,
   stepsRun,
@@ -622,5 +623,77 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     await pw(card.getByText('No keys match the filters')).toBeHidden();
     await pw(card.getByRole('status')).toHaveText('showing 2 of 2');
     await page.context().close();
+  });
+
+  test('11-AC-37 names over 200 characters stay inside their table cell, card and dialog', async () => {
+    const report = longNamesRun();
+    const keys = [...Object.keys(report.endpoints), ...Object.keys(report.steps ?? {})];
+    expect(Math.min(...keys.map((k) => k.length))).toBeGreaterThan(200);
+    for (const width of [1280, 360]) {
+      const { page } = await open(report, { viewport: { width, height: 900 } });
+      for (const kind of ['api', 'step']) {
+        await page.evaluate(`location.hash = '#tab=${kind === 'api' ? 'endpoints' : 'steps'}'`);
+        // Key cell content inside the cell; the cell ends where the Result cell starts.
+        const rows = await page
+          .locator(`#table-${kind} > tbody > tr:first-child`)
+          .evaluateAll((trs) =>
+            trs.map((tr) => {
+              const cell = tr.querySelector('th.k');
+              const box = (e: typeof cell) => {
+                const r = e?.getBoundingClientRect();
+                return { left: r?.left ?? NaN, right: r?.right ?? NaN };
+              };
+              return {
+                c: box(cell),
+                k: box(cell?.querySelector('.kl') ?? null),
+                n: box(cell?.nextElementSibling ?? null),
+              };
+            }),
+          );
+        expect(rows, `${kind} ${String(width)}`).toHaveLength(2);
+        for (const { c, k, n } of rows) {
+          expect(k.left, `${kind} ${String(width)}`).toBeGreaterThanOrEqual(c.left);
+          expect(k.right, `${kind} ${String(width)}`).toBeLessThanOrEqual(c.right + 0.5);
+          expect(c.right, `${kind} ${String(width)}`).toBeLessThanOrEqual(n.left + 0.5);
+        }
+      }
+      // Cards: violations, rankings and muted keys; the key never leaves its card and carries the
+      // full key in title.
+      await page.evaluate(`location.hash = '#tab=overview'`);
+      const cards = await page.locator('#tab-overview .card .key').evaluateAll((els) =>
+        els
+          .filter((e) => e.getClientRects().length > 0)
+          .map((e) => ({
+            title: e.getAttribute('title'),
+            right: e.getBoundingClientRect().right,
+            cardRight: e.closest('.card')?.getBoundingClientRect().right ?? NaN,
+          })),
+      );
+      expect(cards.length, String(width)).toBeGreaterThanOrEqual(6);
+      for (const card of cards) {
+        expect(card.right, String(width)).toBeLessThanOrEqual(card.cardRight + 0.5);
+        expect(keys, String(width)).toContain(card.title);
+      }
+      // Key view: the full key wraps inside the dialog.
+      for (const hash of ['#key-api-1', '#key-api-2', '#key-step-1', '#key-step-2']) {
+        // A fresh load per key: no race with the close handler of the previous dialog.
+        await page.goto('about:blank');
+        await page.goto(URL + hash);
+        await pw(dialog(page), `${hash} ${String(width)}`).toBeVisible();
+        const fit = await dialog(page).evaluate((d) => {
+          const key = d.querySelector('#dlg-title');
+          return {
+            text: key?.textContent,
+            wide: d.scrollWidth - d.clientWidth,
+            right: key?.getBoundingClientRect().right ?? NaN,
+            dialogRight: d.getBoundingClientRect().right,
+          };
+        });
+        expect(keys, hash).toContain(fit.text);
+        expect(fit.wide, hash).toBeLessThanOrEqual(0);
+        expect(fit.right, hash).toBeLessThanOrEqual(fit.dialogRight);
+      }
+      await page.context().close();
+    }
   });
 });
