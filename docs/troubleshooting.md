@@ -150,8 +150,8 @@ default package config is used and every project is treated as measured. Wrap th
 **Error.** A `PW_PERF_*` environment variable has an invalid value: `PW_PERF_MODE` other than
 `test`, `thresholds` or `check`, `PW_PERF_PASSES` that is not a positive integer, `PW_PERF_PASS`
 that is not `k/N` with 2 ≤ k ≤ N (the package sets it for passes 2 to N), `PW_PERF_ENV` that is
-not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, `PW_PERF_PRUNE` or
-`PW_PERF_YES` other than `1`, or, in the guided setup, `PW_PERF_DRY_RUN` or `PW_PERF_NO_TUTORIAL`
+not a valid environment label, `PW_PERF_MAX_TESTS` outside 1–1000, `PW_PERF_PRUNE`
+other than `1`, or, in the guided setup, `PW_PERF_DRY_RUN` or `PW_PERF_NO_TUTORIAL`
 other than `1` and `PW_PERF_LANG` that is not one of `en`, `es`, `fr`, `pl`, `it`, `uk`, `ru`
 (the setup then stops with exit code 3 before its first question). `PW_PERF_REPEAT` was renamed to `PW_PERF_PASSES`: a set
 `PW_PERF_REPEAT` is an error with that hint. An invalid value never silently turns perf mode off. Fix or unset the variable,

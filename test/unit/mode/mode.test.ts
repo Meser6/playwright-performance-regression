@@ -30,7 +30,6 @@ describe('readModeState', () => {
         PW_PERF_MODE: 'thresholds',
         PW_PERF_PASSES: '7',
         PW_PERF_PASS: '2/7',
-        PW_PERF_YES: '1',
         PW_PERF_ENV: 'staging-2',
         PW_PERF_RUN_ID: '2026-11-18T10-00-00-a1b2',
         PW_PERF_OUTCOME_FILE: '/tmp/x.outcome.json',
@@ -42,7 +41,6 @@ describe('readModeState', () => {
         mode: 'thresholds',
         passes: 7,
         pass: { index: 2, total: 7 },
-        yes: true,
         env: 'staging-2',
         runId: '2026-11-18T10-00-00-a1b2',
         outcomeFile: '/tmp/x.outcome.json',
@@ -58,7 +56,6 @@ describe('readModeState', () => {
         PW_PERF_MODE: 'test',
         PW_PERF_PASSES: '',
         PW_PERF_PASS: '',
-        PW_PERF_YES: '',
         PW_PERF_REPEAT: '',
         PW_PERF_ENV: '',
         PW_PERF_RUN_ID: '',
@@ -116,9 +113,15 @@ describe('passes in the mode contract (03-REQ-07, 03-REQ-23)', () => {
         'MODE_INVALID_VALUE',
       );
     }
-    expect(issuesOf({ PW_PERF_MODE: 'test', PW_PERF_YES: 'true' })[0]?.code).toBe(
-      'MODE_INVALID_VALUE',
-    );
+  });
+
+  test('04-AC-44 PW_PERF_YES is no longer read: any value is ignored, never an error', () => {
+    for (const yes of ['1', 'true']) {
+      expect(readModeState({ PW_PERF_MODE: 'test', PW_PERF_YES: yes })).toEqual({
+        ok: true,
+        value: { mode: 'test' },
+      });
+    }
   });
 });
 
@@ -128,7 +131,6 @@ describe('writeModeState', () => {
       mode: 'thresholds',
       passes: 3,
       pass: { index: 2, total: 3 },
-      yes: true,
       env: 'qa',
       runId: 'r1',
       outcomeFile: '/tmp/o.json',
@@ -138,7 +140,6 @@ describe('writeModeState', () => {
       PW_PERF_MODE: 'thresholds',
       PW_PERF_PASSES: '3',
       PW_PERF_PASS: '2/3',
-      PW_PERF_YES: '1',
       PW_PERF_ENV: 'qa',
       PW_PERF_RUN_ID: 'r1',
       PW_PERF_OUTCOME_FILE: '/tmp/o.json',

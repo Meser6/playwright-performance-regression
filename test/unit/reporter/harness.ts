@@ -39,10 +39,6 @@ export interface Captured {
     command: { file: string; args: readonly string[] };
     env: Record<string, string | undefined>;
   }[];
-  /** Questions asked through host.ask. */
-  questions: string[];
-  /** Codes given to host.exit. */
-  exits: number[];
 }
 
 export function tempDir(): string {
@@ -57,8 +53,6 @@ export function fakeHost(
     env?: Record<string, string>;
     tty?: number;
     argv?: string[];
-    /** Answers of host.ask in order; null: no terminal. */
-    answers?: (string | null)[];
     /** What a started pass does; by default it exits with 0 and writes nothing. */
     runPass?: ReporterHost['runPass'];
   } = {},
@@ -66,16 +60,11 @@ export function fakeHost(
   const stdout: string[] = [];
   const stderr: string[] = [];
   const passes: Captured['passes'] = [];
-  const questions: string[] = [];
-  const exits: number[] = [];
-  const answers = [...(options.answers ?? [])];
   let time = options.start ?? Date.UTC(2026, 10, 18, 10, 0, 0);
   return {
     stdout,
     stderr,
     passes,
-    questions,
-    exits,
     host: {
       env: options.env ?? {},
       argv: options.argv ?? ['node', 'playwright', 'test'],
@@ -97,13 +86,6 @@ export function fakeHost(
         return options.runPass === undefined
           ? { code: 0, signal: null }
           : options.runPass(command, env);
-      },
-      ask: (question) => {
-        questions.push(question);
-        return answers.length === 0 ? '' : (answers.shift() ?? null);
-      },
-      exit: (code) => {
-        exits.push(code);
       },
     },
   };

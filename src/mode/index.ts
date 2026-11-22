@@ -11,8 +11,6 @@ export interface PerfModeState {
   passes?: number;
   /** PW_PERF_PASS=k/N: set by the first pass for passes 2…N (04-REQ-64). */
   pass?: { index: number; total: number };
-  /** PW_PERF_YES=1: skip the Continue? question of the start banner (04-REQ-65). */
-  yes?: boolean;
   env?: string;
   runId?: string;
   outcomeFile?: string;
@@ -24,7 +22,6 @@ export type ModeEnv = Readonly<Record<string, string | undefined>>;
 const MODE = 'PW_PERF_MODE';
 const PASSES = 'PW_PERF_PASSES';
 const PASS = 'PW_PERF_PASS';
-const YES = 'PW_PERF_YES';
 /** Replaced by PW_PERF_PASSES (D-39); a set value is an error with a hint. */
 const REPEAT = 'PW_PERF_REPEAT';
 const ENV = 'PW_PERF_ENV';
@@ -165,16 +162,6 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
     }
   }
 
-  const yes = read(env, YES);
-  if (yes !== undefined) {
-    if (yes === '1') state.yes = true;
-    else {
-      issues.push(
-        invalid(YES, '"1"', yes, `Set ${YES}=1 to skip the Continue? question, or unset it.`),
-      );
-    }
-  }
-
   const label = read(env, ENV);
   if (label !== undefined) {
     if (isEnvLabel(label)) state.env = label;
@@ -235,7 +222,6 @@ export function writeModeState(state: PerfModeState): Record<string, string> {
   if (state.passes !== undefined) env[PASSES] = String(state.passes);
   if (state.pass !== undefined)
     env[PASS] = `${String(state.pass.index)}/${String(state.pass.total)}`;
-  if (state.yes === true) env[YES] = '1';
   if (state.env !== undefined) env[ENV] = state.env;
   if (state.runId !== undefined) env[RUN_ID] = state.runId;
   if (state.outcomeFile !== undefined) env[OUTCOME_FILE] = state.outcomeFile;

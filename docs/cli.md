@@ -28,7 +28,6 @@ To set the package up, run `npm init playwright-performance-regression` (see
 | `PW_PERF_PASSES`    | passes of the test command for this run (1 to 1000); overrides `run.passes.test` or `run.passes.thresholds`  |
 | `PW_PERF_PRUNE`     | `1` in a thresholds run: remove unlocked entries of keys that were not seen in this run                      |
 | `PW_PERF_MAX_TESTS` | in a check: measured tests to run, 1 to 1000 (default 10)                                                    |
-| `PW_PERF_YES`       | `1` skips the `Continue? (Y/n)` question of the start banner                                                 |
 | `PW_PERF_PASS`      | `k/N`, set by the package for passes 2 to N; do not set it yourself                                          |
 | `PW_PERF_RUN_ID`    | id of the run, set by the package; do not set it yourself                                                    |
 
@@ -72,9 +71,9 @@ result. Every test runs once per pass, and so does everything the script does be
 
 At the start the reporter shows a frame with the mode, the measured projects, tests × passes, an
 estimate of the run time (from the last `report.json`, else 30 s per test) and where the report
-goes. In a terminal outside CI it asks `Continue? (Y/n)`; `n` stops before any test runs.
-`PW_PERF_YES=1` skips the question. The question comes after `globalSetup` and the `webServer`
-start, because only then the number of tests is known.
+goes. The frame is information only: the run starts right away, in a terminal and in CI. To stop
+a run, press Ctrl+C. The frame comes after `globalSetup` and the `webServer` start, because only
+then the number of tests is known.
 
 ## Dry run (check)
 

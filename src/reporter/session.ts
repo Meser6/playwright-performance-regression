@@ -52,7 +52,6 @@ import {
   DEFAULT_MAX_TESTS,
   checkStateFileName,
   generateRunId,
-  isCiEnv,
   passCommand,
   readModeState,
   testArgsFromArgv,
@@ -219,8 +218,6 @@ export class RunSession {
   /** Warnings and tool errors before onBegin ended: the same in every pass. */
   private beginWarnings = 0;
   private beginToolErrors = 0;
-  /** "n" to the Continue? question (04-REQ-65): the run ends without output. */
-  private cancelled = false;
   private readonly pending = new Map<string, number>();
   /** Check (04, chapter 4.11): counters for the output and the estimate. */
   private readonly checkRun = {
@@ -373,7 +370,6 @@ export class RunSession {
     const overridden = overriddenLine(this.settings.runConditions);
     if (overridden !== null) this.info(overridden);
     this.host.stdout.write(this.startBanner(suite));
-    this.confirm();
   }
 
   /** report.dir as an absolute path. */
@@ -433,27 +429,6 @@ export class RunSession {
       },
       { width, color, ascii: asciiTerminal(this.host.env) },
     );
-  }
-
-  /**
-   * "Continue? (Y/n)" in a terminal outside CI, without PW_PERF_YES=1 (04-REQ-65). "n" ends the
-   * process with 130.
-   */
-  private confirm(): void {
-    if (this.check || this.settings.mode.yes === true) return;
-    if (this.host.stdout.isTTY !== true || this.host.ci !== null || isCiEnv(this.host.env)) return;
-    for (;;) {
-      const answer = this.host.ask('Continue? (Y/n) ');
-      if (answer === null) return;
-      const text = answer.trim().toLowerCase();
-      if (text === '' || text === 'y' || text === 'yes') return;
-      if (text === 'n' || text === 'no') {
-        this.cancelled = true;
-        this.info('cancelled');
-        this.host.exit(130);
-        return;
-      }
-    }
   }
 
   testBegin(): void {
@@ -662,7 +637,6 @@ export class RunSession {
    * outcome exit code is not 0, otherwise nothing, so Playwright keeps its own (01-REQ-17).
    */
   async end(result: FullResultLike): Promise<{ status?: FullResultLike['status'] } | undefined> {
-    if (this.cancelled) return undefined;
     // Passes 2…N only write their data for the first pass (04-REQ-64).
     if (this.passIndex > 1) return this.endLaterPass(result);
     // --list, or a filter that selected no test: no report, no outcome, no status (01-REQ-40).
