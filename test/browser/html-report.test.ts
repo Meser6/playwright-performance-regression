@@ -676,8 +676,10 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
       }
       // Key view: the full key wraps inside the dialog.
       for (const hash of ['#key-api-1', '#key-api-2', '#key-step-1', '#key-step-2']) {
-        await page.evaluate(`location.hash = '${hash}'`);
-        await pw(dialog(page)).toBeVisible();
+        // A fresh load per key: no race with the close handler of the previous dialog.
+        await page.goto('about:blank');
+        await page.goto(URL + hash);
+        await pw(dialog(page), `${hash} ${String(width)}`).toBeVisible();
         const fit = await dialog(page).evaluate((d) => {
           const key = d.querySelector('#dlg-title');
           return {
@@ -690,7 +692,6 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
         expect(keys, hash).toContain(fit.text);
         expect(fit.wide, hash).toBeLessThanOrEqual(0);
         expect(fit.right, hash).toBeLessThanOrEqual(fit.dialogRight);
-        await page.keyboard.press('Escape');
       }
       await page.context().close();
     }
