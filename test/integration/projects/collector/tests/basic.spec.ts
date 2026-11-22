@@ -70,6 +70,21 @@ test('unread body', async ({ page }) => {
   bodyEnd();
 });
 
+test('navigation after a response', async ({ page }) => {
+  for (const url of ['/api/session?k=login', '/api/stream?ms=2000&k=nav-stream']) {
+    await page.goto('/page');
+    const response = page.waitForResponse((r) => r.url().includes('k='));
+    // A login form: the page navigates as soon as the response headers arrive.
+    await page.evaluate((target) => {
+      void fetch(target, { method: 'POST' }).then(() => {
+        location.href = '/page?after=login';
+      });
+    }, url);
+    await response;
+    await page.waitForURL(/after=login/);
+  }
+});
+
 test('closed page', async ({ page, context }) => {
   await page.goto('/page');
   const second = await context.newPage();

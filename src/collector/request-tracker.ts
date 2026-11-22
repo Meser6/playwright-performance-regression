@@ -2,7 +2,7 @@
 // during one test into request samples.
 import type { BrowserContext, Page, Request, Response } from '@playwright/test';
 import type { ResolvedConfig } from '../core/config/index.ts';
-import { CONTEXT_CLOSED_FAILURE_TEXT } from '../core/types/index.ts';
+import { ABORT_FAILURE_TEXTS, CONTEXT_CLOSED_FAILURE_TEXT } from '../core/types/index.ts';
 import type { Diagnostics, RawRequestSample } from '../core/types/index.ts';
 import { errorText } from './diagnostics.ts';
 import { shouldTrack } from './filters.ts';
@@ -45,6 +45,11 @@ const NO_TIMING: RequestTimingInput = {
 
 /** Statuses without a response body (05-REQ-33). */
 const BODYLESS: ReadonlySet<number> = new Set([204, 205, 304]);
+
+/** Abort texts that, after a response, still make a sample (05-REQ-33 (b)). */
+const ABORTED_AFTER_RESPONSE: ReadonlySet<string> = new Set(
+  ABORT_FAILURE_TEXTS.filter((text) => text !== CONTEXT_CLOSED_FAILURE_TEXT),
+);
 
 export class RequestTracker {
   readonly context: BrowserContext;
@@ -174,15 +179,15 @@ export class RequestTracker {
     entry: InFlight,
     response: Response | null,
     finishedAtNode: number,
-    bodyless = false,
+    headersEnd = false,
   ): void {
     if (this.#inflight.get(request) !== entry) return;
     try {
       if (response === null) throw new Error('the request finished without a response');
       const raw = request.timing();
-      // Without a body the response ends with its headers (05-REQ-33).
+      // Without a (fully read) body the response ends with its headers (05-REQ-33).
       const ended =
-        bodyless && raw.responseEnd < 0 ? { ...raw, responseEnd: raw.responseStart } : raw;
+        headersEnd && raw.responseEnd < 0 ? { ...raw, responseEnd: raw.responseStart } : raw;
       const timing = computeTiming(ended, {
         startedAtNode: entry.startedAtNode,
         finishedAtNode,
@@ -213,14 +218,19 @@ export class RequestTracker {
   #onFailed(request: Request): void {
     const entry = this.#inflight.get(request);
     if (entry === undefined) return;
-    // A bodyless response followed by requestfailed is a finished request (05-REQ-33): Chromium
-    // of Playwright 1.57 reports net::ERR_ABORTED after a 204 response to fetch.
-    if (entry.response !== null && !entry.settling && BODYLESS.has(entry.response.status())) {
+    const text = request.failure()?.errorText ?? '';
+    // After a response, requestfailed is a request the backend answered (05-REQ-33) when the
+    // status has no body (Chromium of Playwright 1.57 reports net::ERR_ABORTED after a 204 to
+    // fetch) or when the body was aborted, e.g. by a navigation right after a login response.
+    if (
+      entry.response !== null &&
+      !entry.settling &&
+      (BODYLESS.has(entry.response.status()) || ABORTED_AFTER_RESPONSE.has(text))
+    ) {
       entry.settling = true;
       this.#complete(request, entry, entry.response, this.#opts.now(), true);
       return;
     }
-    const text = request.failure()?.errorText ?? '';
     this.#settle(request);
     this.#sink.finished(
       failed(request, entry, text === '' ? 'unknown' : text, safeTiming(request)),

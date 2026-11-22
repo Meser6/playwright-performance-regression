@@ -348,6 +348,15 @@ describe('collector in Chromium (perf mode)', () => {
     expect(teardownMs(r)).toBeGreaterThanOrEqual(1900);
   });
 
+  test('05-AC-24 a response aborted by a navigation keeps its status and a duration', () => {
+    const b = batch(run, 'navigation after a response');
+    for (const k of ['k=login', 'k=nav-stream']) {
+      const s = sample(b, k);
+      expect(s, k).toMatchObject({ status: 200, timeSource: 'browser' });
+      expect(s.duration, k).not.toBeNull();
+    }
+  });
+
   test('05-AC-20 closing a page or a context fails its requests at once, without waiting', () => {
     for (const [title, k] of [
       ['closed page', 'k=page-close'],

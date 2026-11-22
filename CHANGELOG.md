@@ -140,6 +140,12 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
   measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
   and time.
+- Collector: a request whose response arrived but whose body was then aborted (typically a
+  login or form `fetch` followed at once by `location.href = …`) was recorded as `ABORTED`, so
+  successful logins were never measured and the key kept only the failed attempts. A response
+  followed by an abort (`net::ERR_ABORTED`, `NS_BINDING_ABORTED`, …) is now a sample with its
+  status and time (up to the end of the body, or to the headers when the body was cut off);
+  other failures after a response stay `FAILED`.
 - Setup wizard: project detection reads the whole project, not only `testDir`, so fixtures
   modules and page objects next to the test directory (e.g. `testDir: './tests/specs'` with
   `tests/fixtures/`) are found: a single fixtures module there is wrapped, and the "nothing is

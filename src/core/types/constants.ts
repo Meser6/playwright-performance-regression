@@ -8,6 +8,20 @@
 export const CONTEXT_CLOSED_FAILURE_TEXT = 'pw-perf: context closed';
 
 /**
+ * failureText values of requests cancelled by the browser, per engine, plus the collector's
+ * context-closed text (08-REQ-05, 08-D-15, P-13). "Blocked by Web Inspector" is deliberately
+ * absent: WebKit uses it for every route.abort(), so it does not tell an abort from a failure.
+ * Defined here because the collector uses it too (05-REQ-33).
+ */
+export const ABORT_FAILURE_TEXTS: readonly string[] = Object.freeze([
+  'net::ERR_ABORTED',
+  'NS_BINDING_ABORTED',
+  'NS_ERROR_ABORT',
+  'cancelled',
+  CONTEXT_CLOSED_FAILURE_TEXT,
+]);
+
+/**
  * Prefix of the keys of APIRequestContext calls (15-REQ-01): `request GET /api/x` is the call,
  * `GET /api/x` the same endpoint seen in the browser. Two keys, two thresholds entries, never
  * shared statistics (P-04).

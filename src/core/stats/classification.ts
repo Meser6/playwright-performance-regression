@@ -1,19 +1,8 @@
 // Classification of samples: status labels, successful and error samples (08, chapter 3).
 import type { RawRequestSample } from '../types/index.ts';
-import { CONTEXT_CLOSED_FAILURE_TEXT } from '../types/index.ts';
+import { ABORT_FAILURE_TEXTS } from '../types/index.ts';
 
-/**
- * failureText values of requests cancelled by the browser, per engine, plus the collector's
- * context-closed text (08-REQ-05, 08-D-15, P-13). "Blocked by Web Inspector" is deliberately
- * absent: WebKit uses it for every route.abort(), so it does not tell an abort from a failure.
- */
-export const ABORT_FAILURE_TEXTS: readonly string[] = Object.freeze([
-  'net::ERR_ABORTED',
-  'NS_BINDING_ABORTED',
-  'NS_ERROR_ABORT',
-  'cancelled',
-  CONTEXT_CLOSED_FAILURE_TEXT,
-]);
+export { ABORT_FAILURE_TEXTS };
 
 const ABORT_TEXTS = new Set(ABORT_FAILURE_TEXTS);
 
