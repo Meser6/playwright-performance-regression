@@ -2277,37 +2277,39 @@ svg.bar .bar-limit-text {
   stroke: var(--line);
 }
 
-.wf .wl {
+/* Key labels are <use> copies of <text> in <defs>: their copies live in a shadow tree, so they
+   take styles only by inheritance from <use> and from selectors without an ancestor outside the
+   copy (Chromium; 11-REQ-43, 11-REQ-53). */
+.wf use {
   font: 10.5px var(--mono);
   fill: var(--fg-2);
 }
 
-.wf .mt {
+.wkm {
   font-weight: 700;
-  fill: var(--fg-2);
 }
 
-.wf .mGET {
+.wkm.mGET {
   fill: var(--get);
 }
 
-.wf .mPOST {
+.wkm.mPOST {
   fill: var(--post);
 }
 
-.wf .mPUT {
+.wkm.mPUT {
   fill: var(--put);
 }
 
-.wf .mPATCH {
+.wkm.mPATCH {
   fill: var(--patch);
 }
 
-.wf .mDELETE {
+.wkm.mDELETE {
   fill: var(--del);
 }
 
-.wf .p {
+.wkp {
   fill: var(--accent);
 }
 
@@ -2338,7 +2340,7 @@ svg.bar .bar-limit-text {
   font-size: 10px;
 }
 
-.wf g:hover .wl,
+.wf g:hover use,
 .wf g:hover text {
   fill: var(--fg);
 }

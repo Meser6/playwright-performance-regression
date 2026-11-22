@@ -111,6 +111,9 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.
 - The wizard's red box (`INIT_TEST_OBJECT_MANUAL`) is full width in a pseudo-terminal that reports
   0 columns (e.g. `expect`, `docker -t`) instead of being cut to 40 columns.
+- HTML report: the key labels of a waterfall (Tests tab) are monospace with the method in its
+  colour again; in Chromium they were unstyled and a long method such as `DELETE` overlapped the
+  path.
 - `request` calls of a browser context with its own `baseURL` (`browser.newContext({ baseURL })`
   with `perf.track()` or `trackContext()`) get keys of that origin: relative URLs no longer
   resolve against the test's `baseURL`; such calls take the URL of the response.

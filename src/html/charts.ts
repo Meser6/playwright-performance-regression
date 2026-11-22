@@ -257,7 +257,7 @@ export function waterfallSvg(waterfall: Waterfall, id: string): SafeHtml {
     const ref = `${id}-${String(labels.size)}`;
     labels.set(req.key, {
       ref,
-      svg: html`<text id="${ref}" class="wl"><tspan class="mt m${method}">${method}</tspan><tspan x="${W_PATH}">${parts.map((p, i) => (i % 2 === 1 ? html`<tspan class="p">${p}</tspan>` : p))}</tspan></text>`,
+      svg: html`<text id="${ref}"><tspan class="wkm m${method}">${method}</tspan><tspan x="${W_PATH}">${parts.map((p, i) => (i % 2 === 1 ? html`<tspan class="wkp">${p}</tspan>` : p))}</tspan></text>`,
     });
   }
   const defs = html`<defs>${[...labels.values()].map((l) => l.svg)}</defs>`;
