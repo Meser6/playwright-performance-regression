@@ -43,7 +43,6 @@ function files(entries: Record<string, string>): Map<string, string> {
 }
 
 const ANSWERS: InitAnswers = {
-  script: null,
   scope: 'all',
   passesTest: 5,
   steps: true,
@@ -67,8 +66,6 @@ describe('detectProject', () => {
     expect(info.filesImportingPlaywrightTest).toEqual(['tests/fixtures.ts']);
     expect(info.filesWithExtend).toEqual(['tests/fixtures.ts']);
     expect(info.taggedPerfTestFiles).toBe(0);
-    expect(info.baseUrls).toEqual(['https://api.example.com']);
-    expect(info.projectNames).toEqual(['chromium']);
     expect(info.ciPlatform).toBe('github');
     expect(info.existing).toEqual({
       perfConfig: null,
@@ -182,7 +179,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
         'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a @perf', () => {});\n",
       }),
     );
-    const plan = planInitChanges(info, { ...ANSWERS, script: 'e2e', scope: 'tagged' });
+    const plan = planInitChanges(info, { ...ANSWERS, scope: 'tagged' });
     expect(plan.changes.map((c) => c.path)).not.toContain('package.json');
     const config = plan.changes.find((c) => c.path === 'pw-perf.config.ts')?.after ?? '';
     expect(activeLines(config)).toEqual([
@@ -525,14 +522,14 @@ describe('CI templates', () => {
       expect(qa.text).toBe(CI_TEMPLATES[platform].replaceAll(CI_COMMAND, 'npm run e2e:qa'));
     }
     const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
-    const plan = planInitChanges(info, { ...defaultAnswers(info), script: null });
+    const plan = planInitChanges(info, defaultAnswers(info));
     expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
       CI_TEMPLATES.github.replaceAll(CI_COMMAND, 'npx playwright test'),
     );
   });
 });
 
-describe('04-REQ-47 step 6', () => {
+describe('04-REQ-47 step 4', () => {
   test('04-AC-28 counts the source files with test.step( and answers yes by default', () => {
     const files = new Map([
       ['playwright.config.ts', "export default defineConfig({ testDir: 'tests' });"],

@@ -3,15 +3,12 @@
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { ProjectInfo } from './detect.ts';
 import type { InitAnswers } from './perf-config.ts';
-import { defaultScript } from './scripts.ts';
 
 /** Default of the passes step: the default of run.passes.test. */
 export const DEFAULT_ANSWERS_PASSES: number = DEFAULT_CONFIG.run.passes.test;
 
 export function defaultAnswers(info: ProjectInfo): InitAnswers {
-  const script = defaultScript(info.testScripts);
   return {
-    script,
     // All tests, also when some tests are tagged @perf.
     scope: 'all',
     passesTest: DEFAULT_ANSWERS_PASSES,

@@ -3,7 +3,6 @@
   "input": {
     "project": "init-esm-ts",
     "answers": {
-      "script": null,
       "scope": "tagged",
       "passesTest": 3,
       "steps": true,

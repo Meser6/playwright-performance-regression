@@ -1,4 +1,4 @@
-// CI jobs of the init wizard (04-REQ-38 step 8, 04-REQ-69): the recipes of examples/ci/ (embedded
+// CI jobs of the init wizard (04-REQ-38 step 6, 04-REQ-69): the recipes of examples/ci/ (embedded
 // in generated/ci-templates.ts, 13-AC-11) with only the test command replaced by the project's
 // command C (04-REQ-55). Every recipe has a manual thresholds job and a weekly measurement job
 // that set PW_PERF_MODE (13-REQ-16). Pure.

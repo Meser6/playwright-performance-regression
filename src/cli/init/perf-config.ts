@@ -1,4 +1,4 @@
-// The pw-perf.config.ts written by the init wizard (04-REQ-38 step 9, 04-REQ-46): the answers
+// The pw-perf.config.ts written by the init wizard (04-REQ-38 step 7, 04-REQ-46): the answers
 // that differ from the defaults as active values, and every other option of the schema as a
 // comment with its default value and a one-sentence description, in schema order. The option
 // list is generated from the schema (generated/config-options.ts). The text is English and does
@@ -10,23 +10,21 @@ import { CONFIG_OPTIONS } from './generated/config-options.ts';
 import type { TemplateOption } from './generated/config-options.ts';
 
 export interface InitAnswers {
-  /** Step 2: the test script; null = plain `playwright test` (04-REQ-54). */
-  script: string | null;
-  /** Step 4: 'tagged' → run.grep '@perf' (03-REQ-25). */
+  /** Step 2: 'tagged' → run.grep '@perf' (03-REQ-25). */
   scope: 'all' | 'tagged';
-  /** Step 5: run.passes.test (D-39). */
+  /** Step 3: run.passes.test (D-39). */
   passesTest: number;
-  /** Step 6: measure.steps (04-REQ-47). */
+  /** Step 4: measure.steps (04-REQ-47). */
   steps: boolean;
-  /** Step 7: thresholds.preset (D-41). */
+  /** Step 5: thresholds.preset (D-41). */
   preset: MarginPreset;
-  /** Step 8: write the CI jobs. */
+  /** Step 6: write the CI jobs. */
   addCi: boolean;
-  /** Step 10: run a check (04-REQ-58). */
+  /** Step 8: run a check (04-REQ-58). */
   runCheck: boolean;
 }
 
-/** The tag of step 4 written to run.grep (03-REQ-25). */
+/** The tag of step 2 written to run.grep (03-REQ-25). */
 export const PERF_TAG = '@perf';
 
 /** Width of the written lines. */
