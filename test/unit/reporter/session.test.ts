@@ -348,7 +348,10 @@ describe('reporter session in test mode', () => {
     // --project=api: e2e is outside the run, setup is a dependency.
     expect(await slowMoWarnings(['setup', 'api'])).toEqual([]);
     // --project=e2e, or no --project.
-    for (const inRun of [['setup', 'e2e'], ['setup', 'api', 'e2e']]) {
+    for (const inRun of [
+      ['setup', 'e2e'],
+      ['setup', 'api', 'e2e'],
+    ]) {
       expect(await slowMoWarnings(inRun)).toEqual([
         expect.objectContaining({
           message:
