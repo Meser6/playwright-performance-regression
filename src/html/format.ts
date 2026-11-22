@@ -78,9 +78,17 @@ export function overPercent(usage: number): number {
 /**
  * Headroom of a check or key (11-REQ-30): `87%` within the limit, `+35% over` for a failed check,
  * `over (limit 0)` for null and `>999%` from 1000%. A failed check at a rounded usage of 1 is
- * `+1% over`. `long` adds "of limit" to the first form.
+ * `+1% over`. `long` adds "of limit" to the first form. `points`: the excess of a failed share rule
+ * in percentage points, shown as `+81 pp over`.
  */
-export function usageText(usage: number | null, failed: boolean, long = false): string {
+export function usageText(
+  usage: number | null,
+  failed: boolean,
+  long = false,
+  points?: number,
+): string {
+  // A failed share rule: the excess in percentage points (11-REQ-30, 09-REQ-19).
+  if (failed && points !== undefined) return `+${String(points)} pp over`;
   if (usage === null) return 'over (limit 0)';
   const suffix = long ? ' of limit' : '';
   if (basisPoints(usage) >= 100_000) return `>999%${suffix}`;

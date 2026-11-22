@@ -41,6 +41,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- Violations are counted the same way in the console and the HTML report: failed checks with
+  the number of keys (`8 blocking violations in 7 keys`); the Violations tile counts failed checks
+  too. Apdex, slow share (wilson) and error rate over the limit read in percentage points
+  (`+81 pp`) instead of a relative percent that showed `>999%`.
 - `Next:` after a `test` or `check` run repeats the arguments you added (`PW_PERF_MODE=test npm
 run e2e -- --project=desktop`); the thresholds command stays without them, so thresholds come
   from the whole suite. When the package manager was called from a parent directory (e.g. the

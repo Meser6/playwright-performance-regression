@@ -90,14 +90,34 @@ function usageClass(usage: number | null, failed: boolean): string {
   return usage >= NEAR_LIMIT ? 'nr' : '';
 }
 
+/** Rules on shares: a failed check shows the excess in percentage points (11-REQ-30). */
+const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
+  'apdex',
+  'wilson',
+  'errors',
+]);
+
+/** Percentage points over the limit of a failed share rule, at least 1; undefined otherwise. */
+export function pointsOver(
+  check: Pick<Check, 'rule' | 'actual' | 'limit' | 'passed'>,
+): number | undefined {
+  if (check.passed || !SHARE_RULES.has(check.rule)) return undefined;
+  return Math.max(1, Math.round(Math.abs(check.actual - check.limit) * 100));
+}
+
 /**
- * `<meter>` of a usage with its text (11-REQ-30). The meter is inside a <label> with the text,
- * which gives it its accessible name without an id per check.
+ * `<meter>` of a check's usage with its text (11-REQ-30). The meter is inside a <label> with the
+ * text, which gives it its accessible name without an id per check.
  */
-export function usageMeter(usage: number | null, failed: boolean, long = false): SafeHtml {
+export function usageMeter(
+  check: Pick<Check, 'usage' | 'rule' | 'actual' | 'limit' | 'passed'>,
+  long = false,
+): SafeHtml {
+  const usage = check.usage;
+  const failed = !check.passed;
   const value = usage === null ? 1.25 : Math.min(usage, 1.25);
   const cls = usageClass(usage, failed);
-  return html`<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="${value}"></meter><b${cls === '' ? null : html` class="${cls}"`}>${usageText(usage, failed, long)}</b></label>`;
+  return html`<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="${value}"></meter><b${cls === '' ? null : html` class="${cls}"`}>${usageText(usage, failed, long, pointsOver(check))}</b></label>`;
 }
 
 /**
@@ -168,7 +188,7 @@ function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
       html`<td>${checkValue(c, c.actual)}</td>`,
       observed ? html`<td>${c.observed === null ? null : checkValue(c, c.observed)}</td>` : null,
       html`<td>${checkValue(c, c.limit)}</td><td>`,
-      ctx.migrated ? DASH : usageMeter(c.usage, !c.passed, true),
+      ctx.migrated ? DASH : usageMeter(c, true),
       html`</td><td>${checkPill(c)}</td></tr>`,
     );
   return part(
@@ -394,7 +414,7 @@ function limitCell(value: number | undefined, limit: number | null): SafeHtml {
 function headroomCell(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   const top = ctx.migrated ? undefined : topCheck(agg.evaluation.checks);
   if (top === undefined) return html`<td class="z">${DASH}</td>`;
-  return html`<td>${usageMeter(top.usage, !top.passed)}</td>`;
+  return html`<td>${usageMeter(top)}</td>`;
 }
 
 function keyRow(

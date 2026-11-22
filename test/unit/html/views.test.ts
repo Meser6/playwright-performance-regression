@@ -9,6 +9,7 @@ import { histogramX, waterfallSvg } from '../../../src/html/charts.ts';
 import { toHtmlReportData, stableJson } from '../../../src/html/data.ts';
 import { escapeHtml } from '../../../src/html/escape.ts';
 import { formatMs, formatPercent, usageText } from '../../../src/html/format.ts';
+import { pointsOver } from '../../../src/html/keys.ts';
 import { hintText } from '../../../src/html/hints.ts';
 import { renderHtmlReport } from '../../../src/html/index.ts';
 import { banner } from '../../../src/html/render.ts';
@@ -66,7 +67,12 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
     cases.push(['blocking', fullRun(), 'FAILED', '1 blocking violation in 1 key: the run fails.']);
     const warned = fullRun();
     warned.evaluation.status = 'warned';
-    cases.push(['non-blocking', warned, 'PASSED WITH WARNINGS', '1 violation, none blocking.']);
+    cases.push([
+      'non-blocking',
+      warned,
+      'PASSED WITH WARNINGS',
+      '1 violation in 1 key, none blocking.',
+    ]);
     const warning = noThresholds();
     warning.warnings = [{ code: 'TESTS_NOT_INSTRUMENTED', message: 'm', hint: 'h' }];
     cases.push(['warning', warning, 'PASSED WITH WARNINGS', 'No violations; 1 warning to review.']);
@@ -85,7 +91,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
       'thresholds mode',
       thresholdsMode,
       'PASSED WITH WARNINGS',
-      'Gate off (thresholds mode): 1 violation would fail a test run.',
+      'Gate off (thresholds mode): 1 violation in 1 key would fail a test run.',
     ]);
     cases.push([
       'nothing',
@@ -146,7 +152,8 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
         `${api.fromFile + api.fromDefaults} evaluated · ${api.tooFewSamples} too few`,
       ],
       ['Tests', '3', '0 failed · 0 flaky · 0 skipped'],
-      ['Violations', '1', '1 blocking · 1 muted'],
+      // Failed checks, with their keys; muted counts failed checks of muted keys (11-AC-40).
+      ['Violations', '1', 'in 1 key · 1 blocking · 0 muted'],
       ['Error rate', formatPercent(errors / requests), `${errors} of ${requests} requests`],
       ['Duration', '1 h 02 min', '10:00 → 11:02 UTC'],
       ['Passes', '4 of 5', '2 measured projects'],
@@ -261,7 +268,41 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     expect(usageText(60, true, true)).toBe('>999% of limit');
     const html = page(fullRun());
     expect(html).toContain(
-      '<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="1.25"></meter><b class="ov">&gt;999%</b></label>',
+      '<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="1.25"></meter><b class="ov">+59 pp over</b></label>',
+    );
+  });
+
+  test('11-AC-40 violations are failed checks with their keys; share rules over the limit in points', () => {
+    expect(pointsOver({ rule: 'wilson', actual: 0.839, limit: 0.03, passed: false })).toBe(81);
+    expect(usageText(28, true, false, 81)).toBe('+81 pp over');
+    expect(pointsOver({ rule: 'wilson', actual: 0.02, limit: 0.03, passed: true })).toBeUndefined();
+    expect(pointsOver({ rule: 'p99', actual: 900, limit: 800, passed: false })).toBeUndefined();
+    // 8 blocking failed checks in 7 keys.
+    const report = fullRun();
+    const [key, agg] = Object.entries(report.endpoints).find(([, a]) =>
+      a.evaluation.checks.some((c) => !c.passed && c.blocking),
+    ) ?? ['', undefined];
+    if (agg === undefined) throw new Error('no failed key');
+    const failed = agg.evaluation.checks.find((c) => !c.passed && c.blocking);
+    if (failed === undefined) throw new Error('no failed check');
+    agg.evaluation.checks = [...agg.evaluation.checks, { ...failed, rule: 'median' }];
+    const extra = Object.fromEntries(
+      [1, 2, 3, 4, 5, 6].map((i) => [`${key}-${String(i)}`, structuredClone(agg)]),
+    );
+    report.endpoints = { ...report.endpoints, ...extra };
+    const api = report.evaluation.counts.api;
+    report.evaluation.counts.api = {
+      ...api,
+      violations: api.violations + 6,
+      blockingViolations: api.blockingViolations + 6,
+    };
+    const checks = Object.values(report.endpoints).flatMap((a) =>
+      a.evaluation.checks.filter((c) => !c.passed),
+    ).length;
+    expect(checks).toBe(14);
+    expect(banner(report).sentence).toBe('14 blocking violations in 7 keys: the run fails.');
+    expect(page(report)).toMatch(
+      /<dt>Violations<\/dt><dd class="kv">14<\/dd>.*?<dd class="ks">in 7 keys · 14 blocking · 0 muted<\/dd>/u,
     );
   });
 
@@ -269,11 +310,11 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
     const html = page(fullRun());
     const list = section(html, 'viol-h');
     expect(list.replace(/<[^>]+>/gu, '|').replace(/\|+/gu, '|')).toContain(
-      '|fail · blocking|endpoint|default|POST| |/api/orders|error rate |60.0%| · limit 1.0%|&gt;999%|Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).|',
+      '|fail · blocking|endpoint|default|POST| |/api/orders|error rate |60.0%| · limit 1.0%|+59 pp over|Error rate 100.0% is above the limit of 1.0%, mostly FAILED (5 of 5 errors).|',
     );
     expect(list).toContain('<article class="card vio">');
     expect(list).toContain(
-      '<a class="more" href="#tab-endpoints" data-show-violations="">All 1 violation →</a>',
+      '<a class="more" href="#tab-endpoints" data-show-violations="">All 1 violation in 1 key →</a>',
     );
     expect(page(noThresholds())).not.toContain('id="viol-h"');
   });

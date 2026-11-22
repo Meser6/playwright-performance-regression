@@ -63,15 +63,29 @@ function sum(report: RunReport, field: keyof RunReport['evaluation']['counts']['
   return LINK_KINDS.reduce((total, kind) => total + report.evaluation.counts[kind][field], 0);
 }
 
-/** Failed checks that block, over all keys. */
-function blockingChecks(report: RunReport): number {
+/**
+ * Failed checks over all keys (violations, 09-D-20): every one, the blocking ones, or those of
+ * actively muted keys.
+ */
+function failedChecks(report: RunReport, which: 'all' | 'blocking' | 'muted' = 'all'): number {
   let n = 0;
   for (const kind of [report.endpoints, report.steps]) {
     for (const agg of Object.values(kind)) {
-      n += agg.evaluation.checks.filter((c) => !c.passed && c.blocking).length;
+      const ev = agg.evaluation;
+      if (which === 'muted' && (ev.muted === null || ev.muted.expired)) continue;
+      n += ev.checks.filter((c) => !c.passed && (which !== 'blocking' || c.blocking)).length;
     }
   }
   return n;
+}
+
+function blockingChecks(report: RunReport): number {
+  return failedChecks(report, 'blocking');
+}
+
+/** "8 violations in 7 keys" (09-REQ-29, 11-REQ-27). */
+function violationsText(report: RunReport): string {
+  return `${plural(failedChecks(report), 'violation')} in ${plural(sum(report, 'violations'), 'key')}`;
 }
 
 /** Status and sentence of the verdict card: the first matching row of 11-REQ-27. */
@@ -93,7 +107,6 @@ export function banner(report: RunReport): Banner {
         : `The tool reported ${plural(errors.length, 'error')}: ${first.code} — ${first.message}`,
     );
   }
-  const violations = sum(report, 'violations');
   if (ev.status === 'failed' && ev.gateEnabled && report.mode === 'test') {
     return result(
       'FAILED',
@@ -101,12 +114,12 @@ export function banner(report: RunReport): Banner {
     );
   }
   if (ev.status === 'warned') {
-    return result('PASSED WITH WARNINGS', `${plural(violations, 'violation')}, none blocking.`);
+    return result('PASSED WITH WARNINGS', `${violationsText(report)}, none blocking.`);
   }
   if (ev.status === 'failed') {
     return result(
       'PASSED WITH WARNINGS',
-      `Gate off (thresholds mode): ${plural(violations, 'violation')} would fail a test run.`,
+      `Gate off (thresholds mode): ${violationsText(report)} would fail a test run.`,
     );
   }
   if (report.warnings.length > 0) {
@@ -276,9 +289,11 @@ export function kpis(ctx: Ctx): SafeHtml {
   const measured = r.runConditions.projects.filter((p) => p.role === 'measured');
   const passes = r.passes;
   const t = r.tests;
-  const violations = sum(r, 'violations');
-  const blocking = sum(r, 'blockingViolations');
-  const muted = sum(r, 'muted');
+  // Violations are failed checks, with the number of keys in the caption (11-REQ-28, 09-D-20).
+  const keys = sum(r, 'violations');
+  const violations = failedChecks(r);
+  const blocking = failedChecks(r, 'blocking');
+  const muted = failedChecks(r, 'muted');
   const other = Math.max(0, violations - blocking - muted);
   const share = (n: number) => widthClass(violations === 0 ? 0 : n / violations);
   const split =
@@ -320,7 +335,7 @@ export function kpis(ctx: Ctx): SafeHtml {
     field(
       'Violations',
       violations,
-      `${String(blocking)} blocking · ${String(muted)} muted`,
+      `${keys === 0 ? '' : `in ${plural(keys, 'key')} · `}${String(blocking)} blocking · ${String(muted)} muted`,
       split,
       violations > 0 ? ' bad' : '',
     ),
@@ -391,7 +406,7 @@ function violationCard(ctx: Ctx, e: Entry): SafeHtml {
     keyLink(ctx, e.kind, e.key, KEY_COLUMN_MAX, true),
     top === undefined
       ? null
-      : html`<p class="rule"><span>${ruleLabel(top.rule, ctx.level)} <b>${checkValue(top, top.actual)}</b> · limit ${checkValue(top, top.limit)}</span>${ctx.migrated ? null : usageMeter(top.usage, !top.passed)}</p>`,
+      : html`<p class="rule"><span>${ruleLabel(top.rule, ctx.level)} <b>${checkValue(top, top.actual)}</b> · limit ${checkValue(top, top.limit)}</span>${ctx.migrated ? null : usageMeter(top)}</p>`,
     hint === undefined
       ? null
       : html`<p class="hint">${icon('bulb')}<span>${hintText(hint, ctx.level, ev.muted)}</span></p>`,
@@ -418,8 +433,8 @@ function violations(ctx: Ctx): SafeHtml | null {
     heading(
       'viol-h',
       'Violations',
-      badge(failed.length, 'bad'),
-      html`<a class="more" href="#tab-endpoints" data-show-violations="">All ${plural(failed.length, 'violation')} →</a>`,
+      badge(failedChecks(ctx.report), 'bad'),
+      html`<a class="more" href="#tab-endpoints" data-show-violations="">All ${violationsText(ctx.report)} →</a>`,
     ),
     html`<div class="vlist">${failed.slice(0, RANKING_SIZE).map((e) => violationCard(ctx, e))}</div></section>`,
   );
