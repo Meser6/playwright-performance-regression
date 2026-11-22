@@ -114,7 +114,6 @@ export function registered(
     measuredProjects: measured,
     runConditions: {
       overridden: ['trace'],
-      removedProjects: ['firefox'],
       removedReporters: [],
       replacedReporters: ['list'],
     },

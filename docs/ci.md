@@ -35,6 +35,8 @@ changes; review the diff before committing.
 - **Sets `PW_PERF_MODE`** in the job environment and runs your usual test command, so its setup
   steps, variables and flags work as they are.
 - **Installs Chromium** with its system libraries (`npx playwright install --with-deps chromium`).
+  The measured projects are the ones your test command selects: if your config also has Firefox or
+  WebKit projects, add `--project <name>` for the Chromium projects to the measurement command.
 - **Reads the exit code from `pw-perf-results/outcome.json`**: Playwright itself exits with 0 or 1,
   so the run step removes the file first, runs the command and exits with `exitCode` from the
   file (3 when it is missing: the measurement did not run).

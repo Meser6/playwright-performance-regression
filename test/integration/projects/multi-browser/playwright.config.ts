@@ -1,6 +1,6 @@
 // Integration project "multi-browser": Chromium, Firefox and WebKit projects with the same
-// tests. By default perf mode measures Chromium only and removes the other projects from the
-// run; PERF_PROJECTS=firefox measures Firefox instead (best effort).
+// tests. Perf mode measures the projects the test command selects: --project chromium, or
+// --project firefox (best effort, 04-REQ-18).
 import { defineConfig, devices } from '@playwright/test';
 import { withPerf } from 'playwright-performance-regression/config';
 import perfConfig from './pw-perf.config.ts';

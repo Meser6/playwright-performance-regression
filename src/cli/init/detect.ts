@@ -6,8 +6,6 @@ import {
   CONFIG_FILE_EXTENSIONS,
   PACKAGE_NAME,
 } from '../../core/types/index.ts';
-import { literalProjects } from './projects.ts';
-import type { LiteralProject } from './projects.ts';
 import { detectTestScripts } from './scripts.ts';
 import type { DetectedScript } from './scripts.ts';
 
@@ -27,8 +25,6 @@ export interface ProjectInfo {
   stepFiles: number;
   baseUrls: string[];
   projectNames: string[];
-  /** 04-REQ-57: literal projects; null when the projects array cannot be read as text. */
-  projects: LiteralProject[] | null;
   /** 04-REQ-54: scripts that run playwright test, in package.json order. */
   testScripts: DetectedScript[];
   ciPlatform: CiPlatform | null;
@@ -213,7 +209,6 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
     baseUrls,
     projectNames,
-    projects: configPath === null ? null : literalProjects(configText),
     testScripts: detectTestScripts(scriptMap),
     ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
     existing: {

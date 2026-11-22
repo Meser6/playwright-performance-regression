@@ -363,7 +363,7 @@ describe('init wizard', () => {
     }
   });
 
-  test('04-AC-33 the projects question selects the --project projects and keeps them', async () => {
+  test('04-REQ-18 several projects give no projects question and no run.projects (D-44)', async () => {
     const dir = copyProject('init-esm-ts');
     writeFileSync(
       join(dir, 'playwright.config.ts'),
@@ -383,30 +383,10 @@ export default defineConfig({
       join(dir, 'package.json'),
       JSON.stringify({ type: 'module', scripts: { e2e: 'playwright test --project=E2E' } }),
     );
-    // tutorial, language, Enter, script, projects: "3" without E2E (asked again), then "1,3".
-    const script = scriptedPrompt(['', '', '', '', '3', '1,3']);
-    const fake = fakeCliHost({
-      cwd: dir,
-      playwright: null,
-      prompt: script.prompt,
-      env: { NO_COLOR: '1' },
-    });
+    const fake = defaultsHost(dir);
     expect(await main([], fake.host)).toBe(0);
-    const out = fake.stdout.join('');
-    expect(out).toContain('1. [x] E2E');
-    expect(out).toContain('2. [ ] API (looks like API tests');
-    expect(out).toContain('setup: setup/teardown, runs as a dependency');
-    expect(out).toContain('The script runs --project E2E: keep these projects selected.');
-    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toContain(
-      "    projects: ['E2E', 'smoke-eu'],",
-    );
-    const yes = copyProject('init-esm-ts');
-    for (const name of ['playwright.config.ts', 'package.json'])
-      writeFileSync(join(yes, name), readFileSync(join(dir, name), 'utf8'));
-    expect(await main([], defaultsHost(yes).host)).toBe(0);
-    expect(readFileSync(join(yes, 'pw-perf.config.ts'), 'utf8')).toContain(
-      "    projects: ['E2E'],",
-    );
+    expect(fake.stdout.join('')).not.toContain('Which projects');
+    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).not.toMatch(/^\s*projects:/mu);
   });
 
   test('04-AC-41 04-AC-46 without playwright.config the wizard stops before any question', async () => {

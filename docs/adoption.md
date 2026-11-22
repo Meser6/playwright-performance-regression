@@ -68,7 +68,7 @@ The second argument of `withPerf()` is optional; see [Configuration](configurati
 | Login (`setup`) project used as a dependency                                         | Nothing. Dependencies and teardown projects run once and are not measured.                                                                                                                                                                         |
 | Another wrapper around the Playwright config                                         | Make `withPerf()` the outermost call: `withPerf(otherWrapper(defineConfig({...})), perfConfig)`. If the other wrapper must be outside and changes workers, retries or repetitions, the run still measures and warns with `RUN_CONDITIONS_CHANGED`. |
 | Own reporters (TestRail, Xray, Allure, Slack, JUnit)                                 | They are switched off in measurement runs. Keep the ones you need with `run.keepReporters`, e.g. `['junit']`.                                                                                                                                      |
-| Firefox and WebKit projects in the config                                            | By default only Chromium projects are measured; the others are left out of the measurement run. Choose projects with `run.projects`.                                                                                                               |
+| Firefox and WebKit projects in the config                                            | The projects your test command selects are measured (all without `--project`), so select one engine with `--project`, e.g. `--project chromium`.                                                                                                   |
 | `page.route()` mocks                                                                 | Mocked requests are measured like real ones. Exclude them with `measure.exclude` (see [Mocked routes](#mocked-routes)).                                                                                                                            |
 | Tests that create data                                                               | Repeated runs may collide; see [Tests that create data](#tests-that-create-data).                                                                                                                                                                  |
 
@@ -108,7 +108,8 @@ A measurement run executes every measured test several times in one worker, so i
 than your normal suite. `init` measures all tests by default; to measure a subset, tag a few representative tests with
 `@perf` and set `run: { grep: '@perf' }` in `pw-perf.config.ts` (answering `@perf` in `init` does
 this); it applies only in perf mode, to the measured projects, so setup projects still run in
-full. You can also select projects with `run.projects`. Good candidates load the main
+full. You can also select projects with `--project` in the measurement command: setup and
+teardown projects are never measured. Good candidates load the main
 pages and call the endpoints you care about; tests that mostly wait for timers or animations add
 time without useful samples.
 

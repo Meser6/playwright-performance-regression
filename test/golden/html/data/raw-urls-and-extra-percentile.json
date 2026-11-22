@@ -196,8 +196,7 @@
         "passes": {
           "test": 5,
           "thresholds": 10
-        },
-        "projects": "auto"
+        }
       },
       "thresholds": {
         "dir": ".",
@@ -423,7 +422,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},
@@ -773,8 +772,7 @@
         "passes": {
           "test": 5,
           "thresholds": 10
-        },
-        "projects": "auto"
+        }
       },
       "thresholds": {
         "dir": ".",
@@ -1011,7 +1009,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},

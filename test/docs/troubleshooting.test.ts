@@ -70,7 +70,7 @@ describe('docs', () => {
   test('13-AC-06 every code emitted by src/ has a section in docs/troubleshooting.md', () => {
     const codes = codesInSource();
     // Guards the extraction itself: about a hundred codes exist today.
-    expect(codes.size).toBeGreaterThanOrEqual(90);
+    expect(codes.size).toBeGreaterThanOrEqual(85);
     for (const known of [
       'CONFIG_INVALID_VALUE',
       'COLLECTOR_ATTACH_FAILED',

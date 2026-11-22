@@ -32,7 +32,7 @@ Things to know:
 - Projects whose tests only use the `request` fixture (API tests) measure nothing: requests made
   outside the browser are out of scope, and the run warns with
   [`RUN_PROJECT_NO_REQUESTS`](troubleshooting.md#run_project_no_requests). Leave them out with
-  `run.projects`.
+  `--project` in the measurement command.
 - Run the measurement in its own CI job, not in the job of the functional tests: it runs the tests
   several times on one worker.
 

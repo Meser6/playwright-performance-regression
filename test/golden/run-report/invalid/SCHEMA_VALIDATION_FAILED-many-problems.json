@@ -9,7 +9,6 @@
           "test": 5,
           "thresholds": 10
         },
-        "projects": "auto",
         "grep": null,
         "keepReporters": []
       },
@@ -279,7 +278,7 @@
       "workers": 1
     },
     "runId": "",
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "startedAt": "x",
     "thresholdFiles": [],
     "toolErrors": [],

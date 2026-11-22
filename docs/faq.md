@@ -51,11 +51,12 @@ the measured subset. See [Mocked routes](adoption.md#mocked-routes).
 
 ## Can I measure Firefox or WebKit?
 
-Measured projects are Chromium projects by default; other browser projects are left out of the
-measurement run. You can choose a Firefox or WebKit project with `run.projects`, but the timing
-data those browsers report differs and this is best effort, not tested on every release. One run
-measures one browser engine: measured projects of different engines give the warning
-`CONFIG_MULTIPLE_ENGINES`.
+The measured projects are the ones your test command selects: all projects without `--project`,
+except setup and teardown projects (dependencies and teardowns of other projects). So a Firefox or
+WebKit project is measured when the command runs it, but the timing data those browsers report
+differs and this is best effort, not tested on every release. Measure one browser engine per run,
+e.g. `PW_PERF_MODE=test npx playwright test --project chromium`: samples of different engines go
+into the same keys and give the warning `STATS_MULTIPLE_BROWSERS`.
 
 ## Is this a load test?
 

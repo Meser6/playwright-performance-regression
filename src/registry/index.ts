@@ -11,8 +11,6 @@ export const REGISTRY_KEY: unique symbol = Symbol.for('pw-perf.registry');
 export interface RunConditions {
   /** Settings withPerf() changed from the user's values, e.g. "workers", "retries", "trace". */
   overridden: string[];
-  /** Projects removed from the run (04-REQ-18). */
-  removedProjects: string[];
   /** Reporters removed from the run (04-REQ-32). */
   removedReporters: string[];
   /** Console reporters replaced with dot (04-REQ-32): ["list"] or []. */
@@ -25,7 +23,10 @@ export interface RegisteredState {
   snapshot: ResolvedConfigJson;
   mode: PerfModeState;
   packageVersion: string;
-  /** Names of measured projects (04-REQ-18); fixtures do not collect in other projects (05-REQ-21). */
+  /**
+   * Projects that may be measured (04-REQ-18): all but setup and teardown projects; fixtures do not
+   * collect in other projects (05-REQ-21). The reporter measures those of them in the run.
+   */
   measuredProjects: string[];
   runConditions: RunConditions;
   /**

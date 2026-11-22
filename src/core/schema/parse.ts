@@ -43,7 +43,7 @@ export const MAX_PROBLEMS = 5;
  */
 export const SCHEMA_VERSIONS = {
   samples: 2,
-  runReport: 3,
+  runReport: 4,
   thresholds: 2,
   outcome: 1,
 } as const;
@@ -481,11 +481,22 @@ export function checkRunReport(document: JsonObject, sink: Sink): void {
   });
 }
 
+/**
+ * Run report v3 → v4 (02-REQ-39, D-44): run.projects was removed, so the config snapshot loses
+ * it without a warning; everything else stays.
+ */
+export function migrateRunReportV3(document: JsonObject): JsonObject {
+  const config = document.config;
+  if (!isRecord(config) || !isRecord(config.run)) return document;
+  const { projects: _projects, ...run } = config.run;
+  return { ...document, config: { ...config, run } };
+}
+
 export const RUN_REPORT_FORMAT: VersionedFormat = {
   name: 'run report',
   schemaFile: 'run-report.schema.json',
   current: SCHEMA_VERSIONS.runReport,
-  migrations: { 1: migrateRunReportV1, 2: migrateRunReportV2 },
+  migrations: { 1: migrateRunReportV1, 2: migrateRunReportV2, 3: migrateRunReportV3 },
   schema: runReport,
   extraChecks: checkRunReport,
 };

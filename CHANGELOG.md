@@ -27,6 +27,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The `Continue? (Y/n)` question under the start banner is gone, and so is `PW_PERF_YES`: the
   banner only informs and the run starts right away in every mode (press Ctrl+C to stop it). A
   set `PW_PERF_YES` is ignored.
+- **Breaking:** `run.projects` is gone. The measured projects are the ones your test command
+  selects (`--project`; all projects without it), except setup and teardown projects (named in
+  `dependencies` or `teardown` of another project), which run once per pass and are not measured.
+  `withPerf()` no longer removes projects from the run and the browser engine no longer decides:
+  select one engine with `--project`, e.g. `PW_PERF_MODE=test npx playwright test --project
+chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.projects` in the
+  config is `CONFIG_UNKNOWN_OPTION`; `CONFIG_UNKNOWN_PROJECT` and `CONFIG_MULTIPLE_ENGINES` are
+  removed, and `CONFIG_NO_MEASURED_PROJECT` now comes from the reporter when the command runs only
+  setup or teardown projects. The wizard no longer asks which projects to measure. Run reports
+  have `schemaVersion` 4; version 3 reports are migrated (their `config.run.projects` is
+  dropped).
 
 ### Changed
 
