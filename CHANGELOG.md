@@ -111,6 +111,16 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
   resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
   `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
   wrapped `test` keeps its fixture types instead of `any`.
+- Collector: with Playwright 1.57 (Chromium) a `fetch` answered with `204 No Content` was
+  recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
+  measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
+  and time.
+- Setup wizard: project detection reads the whole project, not only `testDir`, so fixtures
+  modules and page objects next to the test directory (e.g. `testDir: './tests/specs'` with
+  `tests/fixtures/`) are found: a single fixtures module there is wrapped, and the "nothing is
+  measured yet" box lists the files with `.extend(`. `.extend(` in application code (e.g. zod
+  schemas) no longer counts as a fixtures module, and the box counts only test files that import
+  `test` from `@playwright/test`, not page objects or fixtures modules.
 - `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
 - HTML report: the Source column of the Endpoints table (`browser`, `request`) is an ordinary
   cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.

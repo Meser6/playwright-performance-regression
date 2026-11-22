@@ -43,6 +43,9 @@ const NO_TIMING: RequestTimingInput = {
   responseEnd: -1,
 };
 
+/** Statuses without a response body (05-REQ-33). */
+const BODYLESS: ReadonlySet<number> = new Set([204, 205, 304]);
+
 export class RequestTracker {
   readonly context: BrowserContext;
   readonly #opts: CollectorOptions;
@@ -171,11 +174,16 @@ export class RequestTracker {
     entry: InFlight,
     response: Response | null,
     finishedAtNode: number,
+    bodyless = false,
   ): void {
     if (this.#inflight.get(request) !== entry) return;
     try {
       if (response === null) throw new Error('the request finished without a response');
-      const timing = computeTiming(request.timing(), {
+      const raw = request.timing();
+      // Without a body the response ends with its headers (05-REQ-33).
+      const ended =
+        bodyless && raw.responseEnd < 0 ? { ...raw, responseEnd: raw.responseStart } : raw;
+      const timing = computeTiming(ended, {
         startedAtNode: entry.startedAtNode,
         finishedAtNode,
       });
@@ -205,6 +213,13 @@ export class RequestTracker {
   #onFailed(request: Request): void {
     const entry = this.#inflight.get(request);
     if (entry === undefined) return;
+    // A bodyless response followed by requestfailed is a finished request (05-REQ-33): Chromium
+    // of Playwright 1.57 reports net::ERR_ABORTED after a 204 response to fetch.
+    if (entry.response !== null && !entry.settling && BODYLESS.has(entry.response.status())) {
+      entry.settling = true;
+      this.#complete(request, entry, entry.response, this.#opts.now(), true);
+      return;
+    }
     const text = request.failure()?.errorText ?? '';
     this.#settle(request);
     this.#sink.finished(

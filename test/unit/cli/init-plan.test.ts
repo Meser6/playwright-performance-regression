@@ -1,7 +1,8 @@
 // Init wizard, pure parts (04, chapter 4.10): detection, change plan with golden diffs (12,
 // chapter 8: test/golden/init/), recognized layouts and the CI templates (13-AC-11).
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import typescript from 'typescript';
 import { describe, expect, test } from 'vitest';
 import {
@@ -180,7 +181,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     // Several test objects: the red box instead of a change (04-REQ-67).
     expect(plan.testObject).toEqual({
       extendFiles: ['tests/a11y.ts', 'tests/fixtures.ts'],
-      importingFiles: info.filesImportingPlaywrightTest.length,
+      importingFiles: 0,
     });
     // The instruction of 03, chapter 3.4 (other config wrapper).
     const hints = plan.manualSteps.map((s) => s.hint).join('\n');
@@ -467,6 +468,55 @@ describe('recognized layouts (04-REQ-39)', () => {
     );
     expect(imports.changes.map((c) => c.path).filter((p) => p.startsWith('tests/'))).toEqual([]);
     expect(imports.testObject).toEqual({ extendFiles: [], importingFiles: 2 });
+  });
+
+  test('04-AC-54 detection reads fixtures and page objects outside testDir', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pw-perf-ac54-'));
+    const write = (path: string, text: string): void => {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    };
+    try {
+      write('package.json', '{}');
+      write(
+        'playwright.config.ts',
+        "import { defineConfig } from '@playwright/test';\nexport default defineConfig({ testDir: './tests/specs' });\n",
+      );
+      write(
+        'tests/fixtures/pages.fixture.ts',
+        "import { test as base } from '@playwright/test';\nexport const test = base.extend<{ a: number }>({ a: async ({}, use) => use(1) });\n",
+      );
+      write(
+        'tests/fixtures/api.fixture.ts',
+        "import { type APIRequestContext } from '@playwright/test';\nimport { test as pagesTest } from './pages.fixture';\nexport const test = pagesTest.extend<{ b: number }>({ b: async ({ a }, use) => use(a) });\n",
+      );
+      write(
+        'tests/fixtures/index.ts',
+        "import { test as apiTest } from './api.fixture';\nexport const test = apiTest.extend<{ c: string }>({ c: ['x', { option: true }] });\n",
+      );
+      write(
+        'tests/pages/CartPage.ts',
+        "import { type Locator, test } from '@playwright/test';\nexport class CartPage { async open() { await test.step('open', async () => {}); } }\n",
+      );
+      write('src/schema.ts', 'export const user = base.extend({ name: z.string() });\n');
+      write(
+        'tests/specs/cart.spec.ts',
+        "import { test, expect } from '@fixtures';\ntest('cart', async ({ c }) => { expect(c).toBe('x'); });\n",
+      );
+      const info = await detectDir(dir);
+      expect(info.filesWithExtend).toEqual([
+        'tests/fixtures/api.fixture.ts',
+        'tests/fixtures/index.ts',
+        'tests/fixtures/pages.fixture.ts',
+      ]);
+      expect(info.stepFiles).toBe(1);
+      expect(planInitChanges(info, ANSWERS).testObject).toEqual({
+        extendFiles: info.filesWithExtend,
+        importingFiles: 0,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('04-AC-53 only steps measured: no red box, the fixtures module is still wrapped', () => {

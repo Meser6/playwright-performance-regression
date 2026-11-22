@@ -1,5 +1,6 @@
 // Reads the project files the init detection needs (04-REQ-38 step 1): root files, CI files and
-// the source files of the test directories, as text. Nothing is imported or executed (04-D-18).
+// the source files of the whole project, not only testDir (04-REQ-72): fixtures modules and page
+// objects often sit next to the test directory. Nothing is imported or executed (04-D-18).
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { CliHost } from '../host.ts';
 import {
@@ -80,6 +81,8 @@ export async function readProjectFiles(host: CliHost, root: string): Promise<Map
       }
     }
   };
+  // The test directories first, so the file limit never hides them in a large project.
   for (const dir of testDirsOf(files.get(config) as string)) await walk(dir, 0);
+  await walk('.', 0);
   return files;
 }
