@@ -564,6 +564,28 @@ describe('init wizard', () => {
     }
   });
 
+  test('09-REQ-22 the red box takes the terminal width, and 100 when the terminal reports 0 columns', async () => {
+    const boxWidth = async (columns?: number): Promise<number> => {
+      const fake = fakeCliHost({
+        cwd: copyProject('init-import-swap'),
+        playwright: null,
+        env: { NO_COLOR: '1' },
+        ...(columns === undefined ? {} : { columns }),
+      });
+      expect(await main([], fake.host)).toBe(0);
+      const top = fake.stdout
+        .join('')
+        .split('\n')
+        .find((line) => line.startsWith('╭'));
+      return [...(top ?? '')].length;
+    };
+    const unknown = await boxWidth();
+    expect(await boxWidth(0)).toBe(unknown);
+    expect(unknown).toBeGreaterThan(90);
+    expect(await boxWidth(72)).toBe(72);
+    expect(await boxWidth(20)).toBe(40);
+  });
+
   test('04-AC-53 with the red box there is no check step; the answer steps gives no red box and a check step', async () => {
     const wizard = async (measure: string): Promise<{ out: string; asked: string[] }> => {
       const asked: string[] = [];

@@ -53,6 +53,8 @@ export interface FakeHostOptions {
   platform?: string;
   /** Terminal questions (init); without it the host has no terminal. */
   prompt?: () => Prompt;
+  /** process.stdout.columns of the host (unset: not reported). */
+  columns?: number;
 }
 
 export function fakeCliHost(options: FakeHostOptions): FakeHost {
@@ -78,7 +80,11 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     platform: options.platform ?? 'linux',
     execPath: '/usr/bin/node',
     stdin: { isTTY: options.prompt !== undefined },
-    stdout: { write: (t: string) => fake.stdout.push(t), isTTY: options.prompt !== undefined },
+    stdout: {
+      write: (t: string) => fake.stdout.push(t),
+      isTTY: options.prompt !== undefined,
+      ...(options.columns === undefined ? {} : { columns: options.columns }),
+    },
     stderr: { write: (t: string) => fake.stderr.push(t) },
     minPlaywrightVersion: '1.57.0',
     resolvePlaywright: (dir) => {
