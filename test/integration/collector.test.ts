@@ -255,6 +255,12 @@ describe('collector in Chromium (perf mode)', () => {
     expect(b.apiRequests).toHaveLength(2);
   });
 
+  test('15-REQ-05 a relative call of a context with its own baseURL is keyed by that origin', () => {
+    const b = batch(run, 'api context with its own baseURL');
+    expect(b.apiRequests).toMatchObject([{ method: 'GET', status: 200, source: 'context' }]);
+    expect(b.apiRequests[0]?.url).toBe(`${server.apiUrl}/api/delay?ms=5`);
+  });
+
   test('15-AC-07 a tracked context gives source tracked; another object a diagnostic', () => {
     const b = batch(run, 'api tracked context');
     expect(b.apiRequests).toMatchObject([{ method: 'GET', status: 200, source: 'tracked' }]);

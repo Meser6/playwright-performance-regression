@@ -123,7 +123,7 @@ const perfFixtures = {
     { context, _perfBuffer }: { context: BrowserContext; _perfBuffer: PerfBuffer },
     use: (context: BrowserContext) => Promise<void>,
   ): Promise<void> => {
-    _perfBuffer.collector?.track(context);
+    _perfBuffer.collector?.track(context, true);
     await use(context);
     // First teardown of the collector: drain before the base context closes (05-REQ-02, V-09).
     await _perfBuffer.collector?.drain();
