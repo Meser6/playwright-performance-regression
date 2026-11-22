@@ -9,13 +9,16 @@ import { DOCS_CONFIG_URL, PACKAGE_NAME } from '../../core/types/index.ts';
 import { CONFIG_OPTIONS } from './generated/config-options.ts';
 import type { TemplateOption } from './generated/config-options.ts';
 
+/** Answer of step 4 (04-REQ-47): what to measure. */
+export type MeasureAnswer = 'all' | 'api' | 'steps';
+
 export interface InitAnswers {
   /** Step 2: 'tagged' → run.grep '@perf' (03-REQ-25). */
   scope: 'all' | 'tagged';
   /** Step 3: run.passes.test (D-39). */
   passesTest: number;
-  /** Step 4: measure.steps (04-REQ-47). */
-  steps: boolean;
+  /** Step 4: 'api' → measure.steps false, 'steps' → measure.api false (04-REQ-47). */
+  measure: MeasureAnswer;
   /** Step 5: thresholds.preset (D-41). */
   preset: MarginPreset;
   /** Step 6: write the CI jobs. */
@@ -41,7 +44,9 @@ export function activeValues(answers: InitAnswers): Map<string, unknown> {
   if (answers.passesTest !== DEFAULT_CONFIG.run.passes.test)
     values.set('run.passes.test', answers.passesTest);
   if (answers.scope === 'tagged') values.set('run.grep', PERF_TAG);
-  if (answers.steps !== DEFAULT_CONFIG.measure.steps) values.set('measure.steps', answers.steps);
+  // Only the kind turned off differs from the defaults (both on, 03-REQ-28).
+  if (answers.measure === 'steps') values.set('measure.api', false);
+  if (answers.measure === 'api') values.set('measure.steps', false);
   if (answers.preset !== DEFAULT_CONFIG.thresholds.preset)
     values.set('thresholds.preset', answers.preset);
   return values;

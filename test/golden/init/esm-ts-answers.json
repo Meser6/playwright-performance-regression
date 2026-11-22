@@ -5,7 +5,7 @@
     "answers": {
       "scope": "tagged",
       "passesTest": 3,
-      "steps": true,
+      "measure": "all",
       "preset": "loose",
       "addCi": true,
       "runCheck": false

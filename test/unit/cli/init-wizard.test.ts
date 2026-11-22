@@ -104,8 +104,7 @@ describe('init wizard', () => {
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
-    // 4 (no test.step) is skipped.
-    expect(steps).toEqual(['0/9', '1/9', '2/9', '3/9', '5/9', '6/9', '7/9', '8/9', '9/9']);
+    expect(steps).toEqual(['0/9', '1/9', '2/9', '3/9', '4/9', '5/9', '6/9', '7/9', '8/9', '9/9']);
     expect(out).toContain('[1/9] What it does and how to run it');
     expect(out).toContain('[2/9] Which tests');
     expect(out).not.toMatch(/Test command|Which command runs|Which projects/u);
@@ -122,6 +121,62 @@ describe('init wizard', () => {
     const config = readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8');
     expect(config).toContain('  //   origins: {},\n');
     expect(config).not.toContain("'https://api.example.com':");
+  });
+
+  test('04-AC-28 step 4 is asked without test.step: all by default, api and steps write the other kind off', async () => {
+    const measured = async (
+      answer: string,
+    ): Promise<{ out: string; config: string; asked: string[] }> => {
+      const dir = copyProject('init-esm-ts');
+      const asked: string[] = [];
+      const fake: FakeHost = fakeCliHost({
+        cwd: dir,
+        playwright: null,
+        env: { NO_COLOR: '1' },
+        prompt: () => ({
+          ask: async (question) => {
+            asked.push(question);
+            fake.stdout.push(`${question}\n`);
+            if (/What to measure\?/u.test(question)) return answer;
+            return /Run a check now\?/u.test(question) ? 'n' : '';
+          },
+          close: () => undefined,
+        }),
+      });
+      expect(await main([], fake.host)).toBe(0);
+      return {
+        out: fake.stdout.join(''),
+        // The active lines only: commented-out options sit between them.
+        config: readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')
+          .split('\n')
+          .filter((l) => !/^\s*(\/\/|$)/u.test(l))
+          .join('\n'),
+        asked,
+      };
+    };
+    const all = await measured('');
+    expect(all.out).toContain('[4/9] What to measure');
+    expect(all.out).toContain('api: response times of the backend requests');
+    expect(all.out).toContain('steps: durations of your test.step blocks');
+    expect(all.out).toContain('Step titles are sanitized');
+    expect(all.out).toContain('Files with test.step: 0.');
+    expect(all.out).toContain('No test.step found yet');
+    expect(all.asked).toContain('  What to measure? [all/api/steps] (all) ');
+    expect(all.config).not.toMatch(/^\s*measure: \{/mu);
+    const commit = (out: string): string | undefined => /Commit (.*)\./u.exec(out)?.[1];
+    expect(commit(all.out)).toBe('pw-perf-thresholds.json');
+    expect(all.out).not.toContain('Only steps');
+
+    const api = await measured('api');
+    expect(api.config).toContain('  measure: {\n    steps: false,\n  },');
+    expect(commit(api.out)).toBe('pw-perf-thresholds.json');
+
+    const steps = await measured('steps');
+    expect(steps.config).toContain('  measure: {\n    api: false,\n  },');
+    expect(steps.out).toContain(
+      '⚠ Only steps, but no test.step was found: nothing is measured until you add test.step blocks.',
+    );
+    expect(commit(steps.out)).toBe('pw-perf-thresholds.steps.json');
   });
 
   test('04-AC-48 step 1 explains how to run, the other variables and the files, without the detection dump', async () => {
@@ -222,6 +277,8 @@ describe('init wizard', () => {
       '@perf', // scope
       '0', // invalid passes, asked again
       '3',
+      'everything', // invalid measure answer, asked again
+      'all',
       'tight', // invalid preset, asked again
       'loose',
       'yes', // CI
@@ -285,7 +342,7 @@ describe('init wizard', () => {
     expect(noTty.stdout.join('')).toContain('pw-perf.config.ts exists and is kept.');
 
     // Interactive: every default, then "y" to the overwrite question.
-    const script = scriptedPrompt(['', '', '', '', '', '', '', 'y']);
+    const script = scriptedPrompt(['', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
     expect(await main([], tty.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toContain(
