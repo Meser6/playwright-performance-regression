@@ -173,6 +173,24 @@ describe('reporter with real Playwright', () => {
   );
 
   test(
+    "the wizard's check (PW_PERF_THRESHOLDS_DIR): absolute path, no commit hints (04-REQ-58)",
+    async () => {
+      const dir = join(scratch, 'check-thresholds');
+      const run = await runPlaywright({
+        PW_PERF_MODE: 'thresholds',
+        PW_PERF_THRESHOLDS_DIR: dir,
+      });
+      expect(run.status, run.output).toBe(0);
+      expect(readdirSync(dir)).toContain('pw-perf-thresholds.json');
+      expect(run.output).toContain(`Thresholds: ${join(dir, 'pw-perf-thresholds.json')} (`);
+      expect(run.output).toContain('there is nothing to commit');
+      expect(run.output).not.toContain('commit the thresholds files');
+      expect(run.output).not.toContain('Next: commit');
+    },
+    RUN_TIMEOUT,
+  );
+
+  test(
     '01-AC-07 --list in perf mode writes no report and no outcome and keeps the exit code',
     async () => {
       const run = await runPlaywright({ PW_PERF_MODE: 'test' }, ['--list']);

@@ -103,6 +103,13 @@ describe('09-AC-26 nextHint', () => {
     );
   });
 
+  test("the wizard's check: no commit hint for its temporary thresholds files (04-REQ-58)", () => {
+    const written = [{ name: '/tmp/pw-perf-check-x/pw-perf-thresholds.json', entries: 4 }];
+    expect(
+      nextHint({ report: report({ mode: 'thresholds' }), commands, written, temporary: true }),
+    ).toBeNull();
+  });
+
   test('nothing measured, tool errors, failed and passed runs', () => {
     expect(hint({ endpoints: {} })).toBe(
       'nothing was measured: check use.baseURL and the projects of the test command, then run PW_PERF_MODE=check npm run e2e:qa',

@@ -293,6 +293,16 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
     );
   });
 
+  test("the wizard's check: its temporary files are not to be committed (04-REQ-58)", () => {
+    const d = diffs({ endpoints: { k: FAST } });
+    const text = formatThresholdsDiff(d, { ...CONSOLE, temporary: true, paths: ['/tmp/x/a.json'] });
+    expect(text).toContain('Thresholds: /tmp/x/a.json (created)');
+    expect(text).toContain(
+      'These thresholds are temporary (the setup check deletes them); there is nothing to commit.',
+    );
+    expect(text).not.toContain('commit the thresholds files');
+  });
+
   test('colors only when requested', () => {
     const d = diffs({ endpoints: { k: FAST } });
     expect(formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] })).not.toContain('\u001b[');

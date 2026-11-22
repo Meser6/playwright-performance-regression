@@ -107,6 +107,10 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Fixed
 
+- The wizard's check no longer asks you to commit its temporary thresholds files: its
+  thresholds run showed `Thresholds: ../../…/T/pw-perf-check-…/pw-perf-thresholds.json`,
+  "Review the changes and commit the thresholds files" and `Next: commit …`. It now shows the
+  absolute path, says the files are temporary and has no `Next:` line.
 - Types of `playwright-performance-regression/config`, `/fixture`, `/test` and `/reporter`
   resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
   `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
