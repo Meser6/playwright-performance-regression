@@ -64,7 +64,9 @@ import type { RegisteredState, RunConditions } from '../registry/index.ts';
 import {
   duplicateBaseUrlLabels,
   measuredTestCount,
+  noMeasuredProjectError,
   overriddenLine,
+  projectsInRun,
   readRunConditions,
   runConditionsWarning,
 } from './begin.ts';
@@ -158,7 +160,6 @@ export function runSettings(
     measuredProjects: null,
     runConditions: {
       overridden: [],
-      removedProjects: [],
       removedReporters: [],
       replacedReporters: [],
     },
@@ -298,8 +299,14 @@ export class RunSession {
     if (where === 'onBegin') this.fatal = true;
   }
 
-  begin(config: ConfigLike, suite: RootSuiteLike): void {
-    this.playwrightVersion = config.version;
+  begin(fullConfig: ConfigLike, suite: RootSuiteLike): void {
+    this.playwrightVersion = fullConfig.version;
+    // Only the projects of this run count: the test command selects them (04-REQ-18, D-44).
+    const inRun = projectsInRun(fullConfig, suite);
+    const config: ConfigLike = {
+      ...fullConfig,
+      projects: fullConfig.projects.filter((p) => inRun.has(p.name)),
+    };
     this.configLike = config;
     this.startedAt = this.host.now();
     if (this.settings.mode.runId === undefined) {
@@ -321,7 +328,7 @@ export class RunSession {
     if (this.passIndex === 1 && !this.check) this.removePassFiles();
     this.maxFailures = config.maxFailures;
     const names = this.settings.measuredProjects ?? config.projects.map((p) => p.name);
-    this.measured = new Set(names);
+    this.measured = new Set(names.filter((name) => inRun.has(name)));
     this.checkRun.selected = suite
       .allTests()
       .filter((t) => this.measured.has(projectName(t))).length;
@@ -351,6 +358,9 @@ export class RunSession {
     if (duplicate !== null) this.warnings.push(duplicate);
     const empty = emptyBaseUrlWarning(this.conditions, config);
     if (empty !== null) this.warnings.push(empty);
+    if (this.settings.registered && this.measured.size === 0) {
+      this.toolErrors.push(noMeasuredProjectError(inRun));
+    }
     if (config.shard !== null) {
       // 04-REQ-34: each shard would evaluate part of the keys and write partial thresholds.
       this.toolErrors.push({
@@ -519,7 +529,7 @@ export class RunSession {
       issues.push({
         code: 'RUN_PROJECT_NO_REQUESTS',
         message: `Measured ${silent.length === 1 ? 'project' : 'projects'} ${silent.join(', ')} recorded no request sample.`,
-        hint: 'Tests that only use the request fixture (API tests) are not measured: requests made outside the browser are out of scope; remove such projects from run.projects. Otherwise check use.baseURL, withPerfFixtures and measure.include/exclude.',
+        hint: 'Tests that only use the request fixture (API tests) are not measured: requests made outside the browser are out of scope; leave such projects out of the measurement command (--project). Otherwise check use.baseURL, withPerfFixtures and measure.include/exclude.',
       });
     }
     const notInstrumented = notInstrumentedWarning(this.notInstrumented, this.crashedTests);
@@ -1154,7 +1164,6 @@ export class RunSession {
             requests: c.requests.get(p.name) ?? 0,
             tests: c.tests.get(p.name) ?? 0,
           })),
-          removedProjects: this.settings.runConditions.removedProjects,
           reporters: {
             kept: reporters,
             replaced: this.settings.runConditions.replacedReporters,
@@ -1184,7 +1193,7 @@ export class RunSession {
       toolErrors.length > 0
         ? null
         : !kindsWithKeys.api && !kindsWithKeys.step
-          ? `nothing was measured: check use.baseURL and run.projects, then run ${commands.check}`
+          ? `nothing was measured: check use.baseURL and the projects of the test command, then run ${commands.check}`
           : missingFile
             ? `derive thresholds on the CI machines: ${commands.thresholds}`
             : `run the measurement: ${commands.test}`;

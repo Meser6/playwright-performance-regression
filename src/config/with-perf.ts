@@ -44,7 +44,6 @@ export function withPerf<T extends PlaywrightTestConfig>(
   const { config: perf, snapshot, warnings } = resolved.value;
 
   const plan = planPerfRun(config, {
-    projects: perf.run.projects,
     keepReporters: perf.run.keepReporters,
     grep: perf.run.grep,
     reporterPath: reporterEntryPath(),

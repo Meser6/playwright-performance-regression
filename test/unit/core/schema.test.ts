@@ -46,12 +46,12 @@ const fakeFormat: VersionedFormat = {
 
 describe('schemaVersion handling (02-REQ-10)', () => {
   test('sample batch v2, run report v3, thresholds file v2, outcome file v1 (02-REQ-11, 02-REQ-33)', () => {
-    expect(SCHEMA_VERSIONS).toEqual({ samples: 2, runReport: 3, thresholds: 2, outcome: 1 });
+    expect(SCHEMA_VERSIONS).toEqual({ samples: 2, runReport: 4, thresholds: 2, outcome: 1 });
   });
 
   test('02-AC-03 a newer schemaVersion gives SCHEMA_VERSION_TOO_NEW for every migrating format', () => {
     const results = [
-      parseRunReport(text({ ...report, schemaVersion: 4 }), 'report.json'),
+      parseRunReport(text({ ...report, schemaVersion: 5 }), 'report.json'),
       parseThresholdsFile(text({ ...thresholds, schemaVersion: 3 }), 't.json', 'api'),
       parseOutcome(text({ ...outcome, schemaVersion: 2 }), 'outcome.json'),
     ];
@@ -478,7 +478,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     thresholdFiles: { kind: string }[];
   };
 
-  test('02-AC-18 the v2 golden report with custom keys migrates to a valid v3 report without them', () => {
+  test('02-AC-18 the v2 golden report with custom keys migrates to a valid current report without them', () => {
     // The golden really has what the migration removes.
     expect(reportV2['schemaVersion']).toBe(2);
     expect(Object.keys(reportV2.custom).length).toBeGreaterThan(0);
@@ -489,7 +489,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const result = parseRunReport(reportV2Text, 'v2.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     const migrated = result.value as unknown as Json & typeof reportV2;
-    expect(migrated['schemaVersion']).toBe(3);
+    expect(migrated['schemaVersion']).toBe(4);
     expect(migrated).not.toHaveProperty('custom');
     expect(migrated.evaluation.counts).not.toHaveProperty('custom');
     expect(migrated.thresholdFiles.map((f) => f.kind)).toEqual(
@@ -503,11 +503,11 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     expect(migrated['testBreakdown']).toEqual(reportV2['testBreakdown']);
   });
 
-  test('02-AC-18 the v1 golden report migrates through v2 to a valid v3 report', () => {
+  test('02-AC-18 the v1 golden report migrates through v2 and v3 to a valid current report', () => {
     const result = parseRunReport(raw('run-report', 'v1', 'full-run.json'), 'v1.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     const migrated = result.value as unknown as Json & { evaluation: { counts: Json } };
-    expect(migrated['schemaVersion']).toBe(3);
+    expect(migrated['schemaVersion']).toBe(4);
     expect(migrated).not.toHaveProperty('custom');
     expect(migrated.evaluation.counts).not.toHaveProperty('custom');
     expect(JSON.stringify(migrated)).not.toMatch(/"kind":"custom"/u);
@@ -530,6 +530,19 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
       expect(config.thresholds['preset'], version).toBe('normal');
       expect(config.run['grep'], version).toBeNull();
     }
+  });
+
+  test('02-AC-21 the v3 golden report loses config.run.projects, everything else unchanged', () => {
+    const text = raw('run-report', 'v3', 'full-run.json');
+    const before = JSON.parse(text) as Json & { config: { run: Json } };
+    expect(before.config.run['projects']).toBe('auto');
+    const result = parseRunReport(text, 'v3.json');
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    const migrated = result.value as unknown as Json & { config: { run: Json } };
+    expect(migrated['schemaVersion']).toBe(4);
+    expect(migrated.config.run).not.toHaveProperty('projects');
+    const { projects: _projects, ...run } = before.config.run;
+    expect(migrated).toEqual({ ...before, schemaVersion: 4, config: { ...before.config, run } });
   });
 
   test('02-AC-19 v1 and v2 reports migrate to one pass and run.passes from run.repeat', () => {

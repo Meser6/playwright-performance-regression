@@ -5,7 +5,7 @@ import type { ResolvedConfig } from '../core/config/index.ts';
 import { canonicalOrigin, measuredBaseOrigins } from '../core/normalize/index.ts';
 import type { Issue, RunReport } from '../core/types/index.ts';
 import type { RunConditions } from '../registry/index.ts';
-import type { ConfigLike, ProjectLike, TestLike } from './types.ts';
+import type { ConfigLike, ProjectLike, RootSuiteLike, TestLike } from './types.ts';
 
 export type RunConditionsReport = RunReport['runConditions'];
 type Role = RunConditionsReport['projects'][number]['role'];
@@ -22,6 +22,34 @@ function roleOf(
 ): Role {
   if (measured.has(project.name)) return 'measured';
   return all.some((p) => p.teardown === project.name) ? 'teardown' : 'dependency';
+}
+
+/**
+ * Names of the projects in the run (04-REQ-18, D-44): the project suites of the root suite, i.e.
+ * the projects the test command selects (--project) and their dependencies and teardowns. Without
+ * project suites (unit tests) every config project.
+ */
+export function projectsInRun(config: ConfigLike, suite: RootSuiteLike): Set<string> {
+  if (suite.suites === undefined) return new Set(config.projects.map((p) => p.name));
+  return new Set(
+    suite.suites.flatMap((s) => {
+      const project = s.project();
+      return project === undefined ? [] : [project.name];
+    }),
+  );
+}
+
+/**
+ * CONFIG_NO_MEASURED_PROJECT (03-REQ-11): the test command selects only setup or teardown
+ * projects, so nothing is measured.
+ */
+export function noMeasuredProjectError(inRun: ReadonlySet<string>): Issue {
+  const names = [...inRun].map((n) => (n === '' ? '(default)' : n)).join(', ');
+  return {
+    code: 'CONFIG_NO_MEASURED_PROJECT',
+    message: `No project is measured: the test command runs only setup or teardown projects${names === '' ? '' : ` (${names})`}, which are not measured.`,
+    hint: 'Select the projects with the tests to measure (--project), not their setup projects; without --project every project that is not a setup or teardown project is measured.',
+  };
 }
 
 /** runConditions of the report: effective values read from FullConfig (ADR-0006). */
@@ -106,9 +134,6 @@ export function overriddenLine(conditions: RunConditions): string | null {
   const parts: string[] = [];
   if (conditions.overridden.length > 0) {
     parts.push(`perf mode overrides ${conditions.overridden.join(', ')}`);
-  }
-  if (conditions.removedProjects.length > 0) {
-    parts.push(`removed projects ${list(conditions.removedProjects)}`);
   }
   if (conditions.removedReporters.length > 0) {
     parts.push(`removed reporters ${list(conditions.removedReporters)}`);

@@ -103,7 +103,7 @@ describe('reporter session in test mode', () => {
 
     const out = captured.stdout.join('');
     expect(out).toContain(
-      'playwright-performance-regression: perf mode overrides trace; removed projects firefox; reporter list replaced with dot.\n',
+      'playwright-performance-regression: perf mode overrides trace; reporter list replaced with dot.\n',
     );
     expect(out).toContain('PASSED');
     // One absolute Report path (09-REQ-30).
@@ -301,6 +301,33 @@ describe('reporter session in test mode', () => {
     const outcome = readOutcome(outcomeFile);
     expect(outcome.exitCode).toBe(3);
     expect(codes(outcome.toolErrors)).toEqual(['RUN_SHARDED', 'RUN_INCOMPLETE']);
+  });
+
+  test('04-AC-12 only the projects of the run count; a run of setup projects only is CONFIG_NO_MEASURED_PROJECT', async () => {
+    const projects = [
+      project('setup'),
+      project('chromium', { dependencies: ['setup'] }),
+      project('firefox', { dependencies: ['setup'], use: { browserName: 'firefox' } }),
+    ];
+    const suites = (names: string[]) => names.map((name) => ({ project: () => ({ name }) }));
+    const measured = ['chromium', 'firefox'];
+    // --project firefox: Playwright runs firefox and its setup project.
+    const firefox = fakeHost(dir, { env: { NO_COLOR: '1' } });
+    const s = session(firefox, registered({}, { mode: 'test' }, measured));
+    s.begin(fakeConfig(dir, { projects }), {
+      allTests: () => [],
+      suites: suites(['setup', 'firefox']),
+    });
+    expect(firefox.stdout.join('')).toContain('Projects  firefox (setup: setup)');
+    // --project setup: nothing is measured.
+    const outcomeFile = join(dir, 'run.outcome.json');
+    const only = session(fakeHost(dir), registered({}, { mode: 'test', outcomeFile }, measured));
+    only.begin(fakeConfig(dir, { projects }), { allTests: () => [], suites: suites(['setup']) });
+    runTests(only, dir, 1, PATHS, steady);
+    await only.end({ status: 'passed' });
+    const outcome = readOutcome(outcomeFile);
+    expect(codes(outcome.toolErrors)).toContain('CONFIG_NO_MEASURED_PROJECT');
+    expect(outcome.exitCode).toBe(3);
   });
 
   test('04-AC-16 RUN_CONDITIONS_CHANGED for flags in onBegin and traces in onTestEnd, not for retries', async () => {

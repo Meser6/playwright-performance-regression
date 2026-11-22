@@ -33,7 +33,7 @@
     "testBreakdown"
   ],
   "properties": {
-    "schemaVersion": {"const": 3},
+    "schemaVersion": {"const": 4},
     "tool": {"$ref": "common.schema.json#/$defs/tool"},
     "runId": {"$ref": "common.schema.json#/$defs/runId"},
     "mode": {"$ref": "common.schema.json#/$defs/mode"},

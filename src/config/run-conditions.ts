@@ -7,8 +7,6 @@ import { PACKAGE_NAME } from '../core/types/index.ts';
 import type { RunConditions } from '../registry/index.ts';
 
 export interface PerfRunInput {
-  /** run.projects of the resolved package config. */
-  projects: 'auto' | string[];
   /** run.keepReporters of the resolved package config. */
   keepReporters: string[];
   /** Absolute path of the package reporter entry point. */
@@ -19,6 +17,10 @@ export interface PerfRunInput {
 
 export interface PerfRunPlan<T> {
   config: T;
+  /**
+   * Projects that may be measured (04-REQ-18, D-44): all but setup and teardown projects. The test
+   * command selects which of them run (--project); the reporter measures those in the run.
+   */
   measuredProjects: string[];
   runConditions: RunConditions;
   warnings: ConfigIssue[];
@@ -34,21 +36,6 @@ const PACKAGE_REPORTER = `${PACKAGE_NAME}/reporter`;
 
 function projectName(project: Project): string {
   return project.name ?? '';
-}
-
-/** use.browserName of the project, else the global one, else defaultBrowserType, else chromium. */
-function browserOf(project: Project | undefined, config: Config): string {
-  return (
-    project?.use?.browserName ??
-    config.use?.browserName ??
-    project?.use?.defaultBrowserType ??
-    config.use?.defaultBrowserType ??
-    'chromium'
-  );
-}
-
-function quoted(names: readonly string[]): string {
-  return names.map((name) => JSON.stringify(name)).join(', ');
 }
 
 /** An artifact setting that records something: anything but 'off' or { mode: 'off' }. */
@@ -85,70 +72,19 @@ export function andGrep(extra: string, own: Grep | undefined): RegExp {
   );
 }
 
-/** Names of the measured projects (04-REQ-18) or the issues that prevent a run (03-REQ-11). */
-function measuredNames(
-  config: Config,
-  projects: readonly Project[],
-  option: PerfRunInput['projects'],
-): Result<string[], ConfigIssue> {
-  const names = projects.map(projectName);
-  if (option !== 'auto') {
-    const known = new Set(names);
-    const unknown = option.filter((name) => !known.has(name));
-    if (unknown.length > 0) {
-      const available =
-        names.length === 0 || config.projects === undefined
-          ? 'it has no projects, only the default one'
-          : `its projects are ${quoted(names)}`;
-      return {
-        ok: false,
-        issues: unknown.map((name) => ({
-          code: 'CONFIG_UNKNOWN_PROJECT',
-          path: 'run.projects',
-          message: `run.projects: project ${JSON.stringify(name)} is not in the Playwright config; ${available}`,
-          hint: 'Use project names from the Playwright config, or "auto".',
-        })),
-      };
-    }
-    return { ok: true, value: names.filter((name) => option.includes(name)) };
-  }
+/**
+ * Projects that may be measured (04-REQ-18, D-44): every project whose name is not in the
+ * dependencies or the teardown of another project. Setup and teardown projects run once per pass
+ * and collect nothing (05-REQ-21).
+ */
+export function measurableProjects(projects: readonly Project[]): string[] {
   const supporting = new Set(
     projects.flatMap((p) => [
       ...(p.dependencies ?? []),
       ...(p.teardown === undefined ? [] : [p.teardown]),
     ]),
   );
-  const measured = projects
-    .filter((p) => !supporting.has(projectName(p)) && browserOf(p, config) === 'chromium')
-    .map(projectName);
-  if (measured.length > 0) return { ok: true, value: measured };
-  return {
-    ok: false,
-    issues: [
-      {
-        code: 'CONFIG_NO_MEASURED_PROJECT',
-        path: 'run.projects',
-        message:
-          'run.projects: no project is measured; "auto" measures Chromium projects that are not a dependency or teardown of another project, and the Playwright config has none',
-        hint: 'List the projects to measure in run.projects, e.g. ["firefox"].',
-      },
-    ],
-  };
-}
-
-/** Measured projects with all their (also indirect) dependencies and teardowns. */
-function projectsToKeep(projects: readonly Project[], measured: readonly string[]): Set<string> {
-  const byName = new Map(projects.map((p) => [projectName(p), p]));
-  const keep = new Set<string>();
-  const visit = (name: string): void => {
-    const project = byName.get(name);
-    if (project === undefined || keep.has(name)) return;
-    keep.add(name);
-    for (const dependency of project.dependencies ?? []) visit(dependency);
-    if (project.teardown !== undefined) visit(project.teardown);
-  };
-  for (const name of measured) visit(name);
-  return keep;
+  return projects.map(projectName).filter((name) => !supporting.has(name));
 }
 
 type Entry = [string, unknown?];
@@ -236,27 +172,9 @@ function slowMoWarnings(config: Config, kept: readonly Project[]): ConfigIssue[]
   ];
 }
 
-function enginesWarnings(
-  config: Config,
-  projects: readonly Project[],
-  measured: readonly string[],
-): ConfigIssue[] {
-  const byName = new Map(projects.map((p) => [projectName(p), p]));
-  const engines = [...new Set(measured.map((name) => browserOf(byName.get(name), config)))];
-  if (engines.length < 2) return [];
-  return [
-    {
-      code: 'CONFIG_MULTIPLE_ENGINES',
-      path: 'run.projects',
-      message: `run.projects: the measured projects use more than one browser engine (${engines.join(', ')}); their samples go to the same keys`,
-      hint: 'Measure one browser engine per run: list projects of one engine in run.projects.',
-    },
-  ];
-}
-
 /**
- * The Playwright config of a perf mode run (01, chapter 4.4): measured projects, their
- * dependencies and teardowns, one worker, every test once per pass (repeatEach 1, D-39), retries
+ * The Playwright config of a perf mode run (01, chapter 4.4): every project (the test command
+ * selects them, 04-REQ-18), one worker, every test once per pass (repeatEach 1, D-39), retries
  * from the config (D-38), artifacts off, no run limits, filtered reporters plus the package
  * reporter.
  */
@@ -266,16 +184,7 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
 ): Result<PerfRunPlan<T>, ConfigIssue> {
   const source: Config = config;
   const projects: readonly Project[] = source.projects ?? [{}];
-  const measured = measuredNames(source, projects, input.projects);
-  if (!measured.ok) return measured;
-
-  const keep = projectsToKeep(projects, measured.value);
-  const kept =
-    source.projects === undefined ? [] : projects.filter((p) => keep.has(projectName(p)));
-  const removedProjects =
-    source.projects === undefined
-      ? []
-      : projects.filter((p) => !keep.has(projectName(p))).map(projectName);
+  const measured = measurableProjects(projects);
   const { reporters, removed, replaced } = planReporters(source.reporter, input);
 
   const result: Config = {
@@ -288,8 +197,9 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
   };
   result.repeatEach = 1;
   const grep = input.grep ?? null;
+  const kept = source.projects ?? [];
   if (source.projects !== undefined) {
-    const measuredSet = new Set(measured.value);
+    const measuredSet = new Set(measured);
     result.projects = kept.map((p) => {
       const project: Project = { ...p, repeatEach: 1, use: artifactsOff(p.use) };
       // run.grep only for measured projects; setup and teardown projects run in full.
@@ -306,17 +216,13 @@ export function planPerfRun<T extends PlaywrightTestConfig>(
     ok: true,
     value: {
       config: result as T,
-      measuredProjects: measured.value,
+      measuredProjects: measured,
       runConditions: {
         overridden: overriddenSettings(source, kept),
-        removedProjects,
         removedReporters: removed,
         replacedReporters: replaced,
       },
-      warnings: [
-        ...enginesWarnings(source, projects, measured.value),
-        ...slowMoWarnings(source, kept),
-      ],
+      warnings: slowMoWarnings(source, kept),
     },
   };
 }

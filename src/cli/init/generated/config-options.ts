@@ -30,12 +30,6 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: 10,
   },
   {
-    path: 'run.projects',
-    description: 'Which Playwright projects are measured in perf mode.',
-    leaf: true,
-    default: 'auto',
-  },
-  {
     path: 'run.grep',
     description:
       "Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'.",

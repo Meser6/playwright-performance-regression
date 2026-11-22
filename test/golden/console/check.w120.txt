@@ -4,7 +4,6 @@ pw-perf · check · 10 of 214 tests run (10 passed) · 204 skipped by check
 Projects:
   measured    E2E (chromium) · baseURL https://pr-4821.ci.example.com · 312 requests in 10 tests
   dependency  setup · runs once, not measured
-  not run     API, smoke-eu, smoke-us (not in run.projects)
 Reporters:    kept dot, pw-perf (list replaced) · removed html, junit
 Requests:     312 requests · 17 api keys · 0 step keys · 2 origins
   (main)                     https://pr-4821.ci.example.com        214  baseURL

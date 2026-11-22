@@ -105,7 +105,7 @@ describe('09-AC-26 nextHint', () => {
 
   test('nothing measured, tool errors, failed and passed runs', () => {
     expect(hint({ endpoints: {} })).toBe(
-      'nothing was measured: check use.baseURL and run.projects, then run PW_PERF_MODE=check npm run e2e:qa',
+      'nothing was measured: check use.baseURL and the projects of the test command, then run PW_PERF_MODE=check npm run e2e:qa',
     );
     expect(hint({ toolErrors: [{ code: 'X', message: '', hint: '' }] })).toBeNull();
     expect(hint({ evaluation: { status: 'failed', gateEnabled: true, counts: {} as never } })).toBe(

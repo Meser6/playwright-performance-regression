@@ -122,7 +122,6 @@ describe('04-AC-35 estimate and output', () => {
           tests: 0,
         },
       ],
-      removedProjects: ['API', 'smoke-eu', 'smoke-us'],
       reporters: { kept: ['dot', 'pw-perf'], replaced: ['list'], removed: ['html', 'junit'] },
       requests: 312,
       apiKeys: 17,

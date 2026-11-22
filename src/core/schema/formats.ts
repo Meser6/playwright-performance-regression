@@ -532,7 +532,7 @@ const stepAggregate = obj(
 
 export const runReport = obj(
   {
-    schemaVersion: constant(3),
+    schemaVersion: constant(4),
     tool,
     runId,
     mode,

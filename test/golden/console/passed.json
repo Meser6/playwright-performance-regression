@@ -188,7 +188,6 @@
       "run": {
         "env": null,
         "keepReporters": [],
-        "projects": "auto",
         "grep": null,
         "passes": {
           "test": 5,
@@ -482,7 +481,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 10,

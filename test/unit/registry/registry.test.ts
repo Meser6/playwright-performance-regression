@@ -22,7 +22,6 @@ function state(input: PerfConfigInput = {}, measuredProjects = ['chromium']): Re
     measuredProjects,
     runConditions: {
       overridden: [],
-      removedProjects: [],
       removedReporters: [],
       replacedReporters: [],
     },

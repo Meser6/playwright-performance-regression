@@ -105,7 +105,7 @@
 +}), perfConfig);
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,364 @@
+@@ -0,0 +1,358 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// Only the values that differ from the defaults are set. Every other option is commented out
 +// with its default value: uncomment a line (and its enclosing objects) to change it. Objects
@@ -122,10 +122,6 @@
 +// run.grep: Measure only the tests whose title or tags match, e.g. tests tagged @perf. Setup and
 +// teardown projects still run in full.
 +//   run: { grep: '@perf' },
-+//
-+// run.projects: Which Playwright projects are measured. 'auto' measures the Chromium projects that
-+// are not setup or teardown projects; tests that only use the request fixture measure nothing.
-+//   run: { projects: ['chromium'] },
 +//
 +// thresholds.preset: Headroom added to the measured times when thresholds are derived. 'strict'
 +// catches smaller regressions but alarms more often on a noisy environment, 'loose' only flags
@@ -164,8 +160,6 @@
 +      // Passes in a thresholds derivation run.
 +      // thresholds: 10,
 +    },
-+    // Which Playwright projects are measured in perf mode.
-+    // projects: 'auto',
 +    // Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'.
 +    // Default: null.
 +    grep: '@perf',

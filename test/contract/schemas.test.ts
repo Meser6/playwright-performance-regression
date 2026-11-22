@@ -87,7 +87,7 @@ const counts = {
 };
 function runReport(): { [key: string]: Json } {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     tool,
     runId: 'run-1',
     mode: 'test',

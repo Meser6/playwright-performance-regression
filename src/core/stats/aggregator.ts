@@ -493,7 +493,7 @@ export class Aggregator {
       issues.push({
         code: 'STATS_MULTIPLE_BROWSERS',
         message: `Request samples come from more than one browser (${names}); timings of different engines are mixed in the same keys.`,
-        hint: 'Measure one browser engine per run (option run.projects).',
+        hint: 'Measure one browser engine per run: select projects of one engine with --project in the measurement command.',
       });
     }
     return issues;

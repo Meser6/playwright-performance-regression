@@ -6,9 +6,6 @@ export default definePerfConfig({
   run: {
     passes: { test: 2 },
     keepReporters: keep,
-    projects: process.env.INTEGRATION_PROJECTS
-      ? process.env.INTEGRATION_PROJECTS.split(',')
-      : 'auto',
     grep: process.env.INTEGRATION_GREP ?? null,
   },
   keys: { origins: { 'https://api.example.com': 'ts' } },

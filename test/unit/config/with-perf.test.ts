@@ -76,6 +76,7 @@ describe('withPerf in perf mode', () => {
     expect(result.projects?.map((p) => [p.name, p.repeatEach])).toEqual([
       ['setup', 1],
       ['chromium', 1],
+      ['firefox', 1],
     ]);
     const reporter = result.reporter as [string][];
     expect(reporter[0]).toEqual(['dot']);
@@ -83,13 +84,12 @@ describe('withPerf in perf mode', () => {
 
     const state = getRegistered();
     expect(state?.mode).toEqual({ mode: 'test' });
-    expect(state?.measuredProjects).toEqual(['chromium']);
+    expect(state?.measuredProjects).toEqual(['chromium', 'firefox']);
     expect(state?.packageVersion).toBe(packageJson.version);
     expect(state?.config.run.passes.test).toBe(3);
     expect(state?.snapshot.run.passes.test).toBe(3);
     expect(state?.runConditions).toEqual({
       overridden: ['workers'],
-      removedProjects: ['firefox'],
       removedReporters: [],
       replacedReporters: [],
     });
@@ -175,14 +175,11 @@ describe('withPerf in perf mode', () => {
     expect(getRegistered()).toBeUndefined();
   });
 
-  test('throws ConfigError for project problems (03-REQ-11)', () => {
-    expect(thrown(() => withPerf({ use: { browserName: 'webkit' } })).issues[0]?.code).toBe(
-      'CONFIG_NO_MEASURED_PROJECT',
+  test('03-AC-11 run.projects is an unknown option (03-REQ-11, D-44)', () => {
+    const error = thrown(() =>
+      withPerf({ projects: [{ name: 'a' }] }, { run: { projects: ['a'] } } as never),
     );
-    expect(
-      thrown(() => withPerf({ projects: [{ name: 'a' }] }, { run: { projects: ['b'] } })).issues[0]
-        ?.code,
-    ).toBe('CONFIG_UNKNOWN_PROJECT');
+    expect(error.issues[0]).toMatchObject({ code: 'CONFIG_UNKNOWN_OPTION', path: 'run.projects' });
   });
 
   test('a passes override above the maximum is a config error', () => {

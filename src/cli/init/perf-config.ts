@@ -12,8 +12,6 @@ import type { TemplateOption } from './generated/config-options.ts';
 export interface InitAnswers {
   /** Step 2: the test script; null = plain `playwright test` (04-REQ-54). */
   script: string | null;
-  /** Step 3: run.projects (04-REQ-57). */
-  projects: string[] | 'auto';
   /** Step 4: 'tagged' → run.grep '@perf' (03-REQ-25). */
   scope: 'all' | 'tagged';
   /** Step 5: run.passes.test (D-39). */
@@ -44,7 +42,6 @@ export function activeValues(answers: InitAnswers): Map<string, unknown> {
   const values = new Map<string, unknown>();
   if (answers.passesTest !== DEFAULT_CONFIG.run.passes.test)
     values.set('run.passes.test', answers.passesTest);
-  if (answers.projects !== 'auto') values.set('run.projects', answers.projects);
   if (answers.scope === 'tagged') values.set('run.grep', PERF_TAG);
   if (answers.steps !== DEFAULT_CONFIG.measure.steps) values.set('measure.steps', answers.steps);
   if (answers.preset !== DEFAULT_CONFIG.thresholds.preset)
@@ -174,11 +171,6 @@ export const IMPORTANT_SETTINGS: readonly { option: string; text: string; exampl
     option: 'run.grep',
     text: 'Measure only the tests whose title or tags match, e.g. tests tagged @perf. Setup and teardown projects still run in full.',
     example: "run: { grep: '@perf' },",
-  },
-  {
-    option: 'run.projects',
-    text: "Which Playwright projects are measured. 'auto' measures the Chromium projects that are not setup or teardown projects; tests that only use the request fixture measure nothing.",
-    example: "run: { projects: ['chromium'] },",
   },
   {
     option: 'thresholds.preset',

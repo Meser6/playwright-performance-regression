@@ -144,13 +144,6 @@ const en = {
   laterStepsHint:
     'If they should not run then, add a script without them; the wizard does not create it.',
   oldScripts: 'The perf:* scripts of an earlier wizard ({names}) no longer work; remove them.',
-  stepProjects: 'Projects',
-  projectsLesson:
-    'Measured projects run in every pass; setup and teardown projects run once per pass, as usual. Tests that only use the request fixture measure nothing.',
-  projectHelper: 'setup/teardown, runs as a dependency',
-  projectApi: 'looks like API tests: requests outside the browser are not measured',
-  projectsQuestion: 'Which projects should be measured? (numbers separated by commas)',
-  projectsNeedScript: 'The script runs --project {names}: keep these projects selected.',
   taggedSaved: '@perf is saved as run.grep in pw-perf.config.ts; your commands stay the same.',
   stepPreset: 'Threshold headroom',
   presetLesson:
@@ -321,13 +314,6 @@ const pl: Messages = {
   laterStepsHint:
     'Jeśli nie powinny się wtedy wykonać, dodaj skrypt bez nich; kreator go nie tworzy.',
   oldScripts: 'Skrypty perf:* z wcześniejszej wersji kreatora ({names}) już nie działają; usuń je.',
-  stepProjects: 'Projekty',
-  projectsLesson:
-    "Mierzone projekty wykonują się w każdym przebiegu; projekty setup i teardown raz na przebieg, jak zwykle. Testy korzystające tylko z fixture'u request niczego nie mierzą.",
-  projectHelper: 'setup/teardown, wykonuje się jako zależność',
-  projectApi: 'wygląda na testy API: requesty spoza przeglądarki nie są mierzone',
-  projectsQuestion: 'Które projekty mierzyć? (numery po przecinku)',
-  projectsNeedScript: 'Skrypt uruchamia --project {names}: zostaw te projekty zaznaczone.',
   taggedSaved: '@perf trafia do pw-perf.config.ts jako run.grep; polecenia zostają bez zmian.',
   stepPreset: 'Zapas progów',
   presetLesson: 'Progi to czasy z runu progów plus zapas. Preset ustala zapas wszystkich reguł:',
@@ -498,13 +484,6 @@ const es: Messages = {
   laterStepsHint:
     'Si no deben ejecutarse entonces, añade un script sin ellos; el asistente no lo crea.',
   oldScripts: 'Los scripts perf:* de un asistente anterior ({names}) ya no funcionan; elimínalos.',
-  stepProjects: 'Proyectos',
-  projectsLesson:
-    'Los proyectos medidos se ejecutan en cada pasada; los proyectos setup y teardown una vez por pasada, como siempre. Los tests que solo usan el fixture request no miden nada.',
-  projectHelper: 'setup/teardown, se ejecuta como dependencia',
-  projectApi: 'parecen tests de API: las peticiones fuera del navegador no se miden',
-  projectsQuestion: '¿Qué proyectos se deben medir? (números separados por comas)',
-  projectsNeedScript: 'El script ejecuta --project {names}: mantén esos proyectos seleccionados.',
   taggedSaved: '@perf se guarda como run.grep en pw-perf.config.ts; tus comandos no cambian.',
   stepPreset: 'Margen de los umbrales',
   presetLesson:
@@ -678,13 +657,6 @@ const fr: Messages = {
     'Si elles ne doivent pas s’exécuter alors, ajoutez un script sans elles ; l’assistant ne le crée pas.',
   oldScripts:
     'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
-  stepProjects: 'Projets',
-  projectsLesson:
-    'Les projets mesurés s’exécutent à chaque passage ; les projets setup et teardown une fois par passage, comme d’habitude. Les tests qui n’utilisent que la fixture request ne mesurent rien.',
-  projectHelper: 'setup/teardown, s’exécute comme dépendance',
-  projectApi: 'ressemble à des tests d’API : les requêtes hors navigateur ne sont pas mesurées',
-  projectsQuestion: 'Quels projets mesurer ? (numéros séparés par des virgules)',
-  projectsNeedScript: 'Le script lance --project {names} : gardez ces projets sélectionnés.',
   taggedSaved:
     '@perf est enregistré comme run.grep dans pw-perf.config.ts ; vos commandes restent les mêmes.',
   stepPreset: 'Marge des seuils',
@@ -860,13 +832,6 @@ const it: Messages = {
     'Se non devono essere eseguiti allora, aggiungi uno script senza di essi; la procedura non lo crea.',
   oldScripts:
     'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
-  stepProjects: 'Progetti',
-  projectsLesson:
-    'I progetti misurati vengono eseguiti a ogni passata; i progetti setup e teardown una volta per passata, come sempre. I test che usano solo la fixture request non misurano nulla.',
-  projectHelper: 'setup/teardown, eseguito come dipendenza',
-  projectApi: 'sembrano test di API: le richieste fuori dal browser non vengono misurate',
-  projectsQuestion: 'Quali progetti misurare? (numeri separati da virgole)',
-  projectsNeedScript: 'Lo script esegue --project {names}: lascia selezionati questi progetti.',
   taggedSaved:
     '@perf viene salvato come run.grep in pw-perf.config.ts; i tuoi comandi restano uguali.',
   stepPreset: 'Margine delle soglie',
@@ -1039,13 +1004,6 @@ const uk: Messages = {
     'Якщо вони не мають тоді виконуватися, додайте скрипт без них; майстер його не створює.',
   oldScripts:
     'Скрипти perf:* з попередньої версії майстра ({names}) більше не працюють; видаліть їх.',
-  stepProjects: 'Проєкти',
-  projectsLesson:
-    'Вимірювані проєкти виконуються в кожному проході; проєкти setup і teardown — раз на прохід, як зазвичай. Тести лише з фікстурою request нічого не вимірюють.',
-  projectHelper: 'setup/teardown, виконується як залежність',
-  projectApi: 'схоже на API-тести: запити поза браузером не вимірюються',
-  projectsQuestion: 'Які проєкти вимірювати? (номери через кому)',
-  projectsNeedScript: 'Скрипт запускає --project {names}: залиште ці проєкти вибраними.',
   taggedSaved: '@perf зберігається як run.grep у pw-perf.config.ts; ваші команди не змінюються.',
   stepPreset: 'Запас порогів',
   presetLesson:
@@ -1214,13 +1172,6 @@ const ru: Messages = {
   laterStepsHint:
     'Если они не должны тогда выполняться, добавьте скрипт без них; мастер его не создаёт.',
   oldScripts: 'Скрипты perf:* из прежней версии мастера ({names}) больше не работают; удалите их.',
-  stepProjects: 'Проекты',
-  projectsLesson:
-    'Измеряемые проекты выполняются в каждом проходе; проекты setup и teardown — раз за проход, как обычно. Тесты только с фикстурой request ничего не измеряют.',
-  projectHelper: 'setup/teardown, выполняется как зависимость',
-  projectApi: 'похоже на API-тесты: запросы вне браузера не измеряются',
-  projectsQuestion: 'Какие проекты измерять? (номера через запятую)',
-  projectsNeedScript: 'Скрипт запускает --project {names}: оставьте эти проекты выбранными.',
   taggedSaved: '@perf сохраняется как run.grep в pw-perf.config.ts; ваши команды не меняются.',
   stepPreset: 'Запас порогов',
   presetLesson:

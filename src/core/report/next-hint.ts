@@ -132,7 +132,7 @@ export function nextHint(input: NextHintInput): string | null {
   if (report.toolErrors.length > 0) return null;
   const measured = Object.keys(report.endpoints).length > 0 || Object.keys(report.steps).length > 0;
   if (!measured) {
-    return `nothing was measured: check use.baseURL and run.projects, then run ${commands.check}`;
+    return `nothing was measured: check use.baseURL and the projects of the test command, then run ${commands.check}`;
   }
   if (report.mode === 'thresholds') {
     if (written.length === 0) return null;

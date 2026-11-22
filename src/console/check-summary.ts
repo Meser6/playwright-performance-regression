@@ -46,7 +46,6 @@ export interface CheckSummary {
   failed: number;
   skippedByCheck: number;
   projects: CheckProject[];
-  removedProjects: string[];
   reporters: { kept: string[]; replaced: string[]; removed: string[] };
   requests: number;
   apiKeys: number;
@@ -89,9 +88,6 @@ export function formatCheckSummary(
     } else {
       lines.push(`  dependency  ${p.name} · runs once, not measured`);
     }
-  }
-  if (s.removedProjects.length > 0) {
-    lines.push(`  not run     ${s.removedProjects.join(', ')} (not in run.projects)`);
   }
 
   const reporterParts = [

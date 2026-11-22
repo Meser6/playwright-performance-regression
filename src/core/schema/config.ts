@@ -94,7 +94,6 @@ export const packageConfig = obj({
       test: int({ minimum: 1, maximum: 1000 }),
       thresholds: int({ minimum: 1, maximum: 1000 }),
     }),
-    projects: oneOf(constant('auto'), arr(str(), { minItems: 1, uniqueItems: true })),
     grep: nullable(str({ minLength: 1 })),
     keepReporters: uniqueStrings(1),
   }),

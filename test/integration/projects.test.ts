@@ -127,14 +127,14 @@ describe('multi-browser', () => {
   });
 
   test(
-    '12-AC-03 perf mode measures the Chromium project and leaves Firefox and WebKit out',
+    '12-AC-03 --project chromium measures the Chromium project only; Firefox and WebKit do not run',
     async () => {
-      const run = await harness.run(dir, { env: PERF });
+      const run = await harness.run(dir, { env: PERF, args: ['--project', 'chromium'] });
       expectStatus(run, 0);
       expect(run.outcome?.exitCode).toBe(0);
       expect(run.results.map((r) => [r.project, r.status])).toEqual([['chromium', 'passed']]);
       expect(sampleCount(run, 'GET /api/products')).toBe(2);
-      expect(run.output).toContain('firefox');
+      expect(run.output).toContain('Projects  chromium');
     },
     RUN_TIMEOUT,
   );
@@ -147,9 +147,9 @@ describe('multi-browser', () => {
     ['webkit', webkit],
   ] as const) {
     test.skipIf(!browsers.includes(name) || !existsSync(type.executablePath()))(
-      `run.projects ["${name}"] measures ${name} (best effort)`,
+      `--project ${name} measures ${name} (best effort)`,
       async () => {
-        const run = await harness.run(dir, { env: { ...PERF, PERF_PROJECTS: name } });
+        const run = await harness.run(dir, { env: PERF, args: ['--project', name] });
         expectStatus(run, 0);
         expect(run.results.map((r) => r.project)).toEqual([name]);
         expect(sampleCount(run, 'GET /api/products')).toBe(2);
@@ -233,13 +233,15 @@ describe('existing-project', () => {
     'GET /api/ep/recommendations',
     'GET /api/ep/seed',
   ];
+  const SELECTED = ['--project', 'chromium', '--project', 'bdd'];
   const epKeys = (run: ProjectRun): string[] =>
     endpointKeys(run).filter((key) => key.startsWith('GET /api/ep/'));
 
   test(
     '03-AC-09 12-AC-03 wrapper, reporters, test objects, mergeTests, playwright-bdd and mocks in perf mode',
     async () => {
-      const run = await harness.run(dir, { env: PERF });
+      // The measurement command selects the Chromium projects (04-REQ-18): Firefox does not run.
+      const run = await harness.run(dir, { env: PERF, args: SELECTED });
       // retries: 2 of the company wrapper stays (D-38): the flaky test passes on its retry in
       // every pass and counts as passed; both attempts are measured.
       expect(run.status, run.output).toBe(0);
@@ -254,7 +256,7 @@ describe('existing-project', () => {
       for (const key of MEASURED) {
         expect(sampleCount(run, key), key).toBe(key === 'GET /api/ep/flaky' ? 4 : 2);
       }
-      // Firefox is left out; in each pass the setup project and every test run once (the flaky
+      // Firefox is not selected; in each pass the setup project and every test run once (the flaky
       // one twice); results.json shows the last pass.
       const projects = run.results.map((r) => r.project);
       expect(projects.filter((p) => p === 'setup')).toHaveLength(1);
@@ -273,7 +275,7 @@ describe('existing-project', () => {
   test(
     '03-AC-09 a config wrapper outside withPerf() changes the run conditions: warned, still measured',
     async () => {
-      const run = await harness.run(dir, { env: { ...PERF, OUTER_WRAPPER: '1' } });
+      const run = await harness.run(dir, { env: { ...PERF, OUTER_WRAPPER: '1' }, args: SELECTED });
       expect(warningCodes(run)).toContain('RUN_CONDITIONS_CHANGED');
       expect(epKeys(run)).toEqual(MEASURED);
     },
@@ -284,7 +286,7 @@ describe('existing-project', () => {
     '12-AC-03 without perf mode the same tests pass (the flaky one on retry) and record nothing',
     async () => {
       rmSync(join(dir, 'junit.xml'), { force: true });
-      const run = await harness.run(dir, { args: ['--project', 'chromium', '--project', 'bdd'] });
+      const run = await harness.run(dir, { args: SELECTED });
       expectStatus(run, 0);
       expect(run.report).toBeNull();
       expect(run.results.filter(hasSamples)).toEqual([]);

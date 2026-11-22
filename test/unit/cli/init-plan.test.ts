@@ -44,7 +44,6 @@ function files(entries: Record<string, string>): Map<string, string> {
 
 const ANSWERS: InitAnswers = {
   script: null,
-  projects: 'auto',
   scope: 'all',
   passesTest: 5,
   steps: true,
@@ -198,14 +197,11 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(config).toMatch(/^ {4}\/\/ env: null,$/mu);
   });
 
-  test('04-AC-48 the preset and the projects become active code only when they differ', () => {
-    const config = renderPerfConfig({ ...ANSWERS, preset: 'loose', projects: ['E2E'] });
+  test('04-AC-48 the preset becomes active code only when it differs', () => {
+    const config = renderPerfConfig({ ...ANSWERS, preset: 'loose' });
     expect(activeLines(config)).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
-      '  run: {',
-      "    projects: ['E2E'],",
-      '  },',
       '  thresholds: {',
       "    preset: 'loose',",
       '  },',
@@ -223,7 +219,6 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(IMPORTANT_SETTINGS.map((s) => s.option)).toEqual([
       'run.passes',
       'run.grep',
-      'run.projects',
       'thresholds.preset',
       'run.env',
       'keys.origins',
@@ -339,8 +334,8 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       )?.after ?? '';
     const en = text('en');
     for (const lang of LANGUAGES) expect(text(lang), lang).toBe(en);
-    const answers = { ...ANSWERS, preset: 'strict', scope: 'tagged', projects: ['E2E'] } as const;
-    for (const config of [en, renderPerfConfig({ ...answers, projects: ['E2E'] })]) {
+    const answers = { ...ANSWERS, preset: 'strict', scope: 'tagged' } as const;
+    for (const config of [en, renderPerfConfig(answers)]) {
       const out = typescript.transpileModule(config, { reportDiagnostics: true });
       expect(out.diagnostics ?? []).toEqual([]);
     }

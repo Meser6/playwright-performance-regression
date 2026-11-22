@@ -52,7 +52,6 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
   - [`run.passes`](#runpasses)
     - [`run.passes.test`](#runpassestest)
     - [`run.passes.thresholds`](#runpassesthresholds)
-  - [`run.projects`](#runprojects)
   - [`run.grep`](#rungrep)
   - [`run.keepReporters`](#runkeepreporters)
 - [`measure`](#measure)
@@ -187,7 +186,7 @@ Optional, for editor support in a JSON config file: `"./node_modules/playwright-
 
 How the measurement run is executed.
 
-Options: [`env`](#runenv), [`passes`](#runpasses), [`projects`](#runprojects), [`grep`](#rungrep), [`keepReporters`](#runkeepreporters).
+Options: [`env`](#runenv), [`passes`](#runpasses), [`grep`](#rungrep), [`keepReporters`](#runkeepreporters).
 
 ### `run.env`
 
@@ -216,16 +215,9 @@ Passes in a thresholds derivation run.
 - Type: integer (1 to 1000)
 - Default: `10`
 
-### `run.projects`
-
-Which Playwright projects are measured in perf mode. 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured too.
-
-- Type: `"auto"` or array of string; at least 1 item, no duplicates
-- Default: `"auto"`
-
 ### `run.grep`
 
-Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'. Applied case-insensitively to the measured projects only; their setup and teardown projects run in full. null: all tests.
+Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf'. Applied case-insensitively to the projects that are measured (all but setup and teardown projects); setup and teardown projects run in full. null: all tests.
 
 - Type: `null` or string (at least 1 character)
 - Default: `null`

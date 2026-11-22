@@ -54,7 +54,6 @@ function register(measuredProjects: string[]): void {
     measuredProjects,
     runConditions: {
       overridden: [],
-      removedProjects: [],
       removedReporters: [],
       replacedReporters: [],
     },

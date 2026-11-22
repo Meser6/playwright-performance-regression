@@ -26,7 +26,7 @@ const ROWS: [string, string, string][] = [
     'a config wrapper outside withPerf()',
   ],
   ['Own reporters', 'projects.test.ts', 'wrapper, reporters, test objects'],
-  ['Firefox and WebKit projects', 'projects.test.ts', 'leaves Firefox and WebKit out'],
+  ['Firefox and WebKit projects', 'projects.test.ts', 'measures the Chromium project only'],
   ['`page.route()` mocks', 'projects.test.ts', 'playwright-bdd and mocks'],
   ['Tests that create data', 'projects.test.ts', 'the flaky one on retry'],
 ];

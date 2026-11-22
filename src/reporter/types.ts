@@ -58,7 +58,14 @@ export type ResultLike = Pick<TestResult, 'status' | 'retry' | 'startTime'> & {
   steps?: readonly StepLike[];
 };
 
-export type RootSuiteLike = { allTests(): TestLike[] };
+export type RootSuiteLike = {
+  allTests(): TestLike[];
+  /**
+   * Project suites of the run: the projects the test command selects and their dependencies
+   * (04-REQ-18). Optional so that tests can omit it; without it every config project is in the run.
+   */
+  suites?: readonly { project(): { name: string } | undefined }[];
+};
 
 export type FullResultLike = Pick<FullResult, 'status'>;
 

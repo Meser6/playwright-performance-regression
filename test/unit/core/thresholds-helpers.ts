@@ -98,7 +98,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     muted: 0,
   };
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     tool: { name: 'playwright-performance-regression', version: '0.1.0' },
     runId: spec.runId ?? 'run-1',
     mode: spec.mode ?? 'thresholds',

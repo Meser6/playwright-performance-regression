@@ -40,13 +40,8 @@
             }
           }
         },
-        "projects": {
-          "description": "Which Playwright projects are measured in perf mode (D-13, D-22, D-39; behaviour: 04-REQ-18). 'auto': projects whose effective browser is Chromium (use.browserName, else use.defaultBrowserType from a device descriptor, else chromium; chrome/msedge channels count as Chromium) and which are neither a dependency nor a teardown of another project. A list: exactly these project names; a listed project that is also a dependency of another listed project is measured too.",
-          "oneOf": [{"const": "auto"}, {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true}],
-          "default": "auto"
-        },
         "grep": {
-          "description": "Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf' (03-REQ-25). Applied case-insensitively to the measured projects only; their setup and teardown projects run in full. null: all tests.",
+          "description": "Only tests whose title or tags match this regular expression run in perf mode, e.g. '@perf' (03-REQ-25). Applied case-insensitively to the projects that are measured (all but setup and teardown projects, 04-REQ-18); setup and teardown projects run in full. null: all tests.",
           "oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}],
           "default": null
         },

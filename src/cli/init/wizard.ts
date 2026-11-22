@@ -18,7 +18,7 @@ import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
 import { CI_PATHS } from './ci.ts';
-import { asksProjects, DEFAULT_ANSWERS_PASSES } from './defaults.ts';
+import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
 import type { CiPlatform, ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
@@ -28,8 +28,6 @@ import type { MessageKey, MessageValues, Translate, WizardLanguage } from './mes
 import type { InitAnswers } from './perf-config.ts';
 import { isProtected, planInitChanges } from './plan.ts';
 import type { FileChange, TestObjectBox } from './plan.ts';
-import { defaultProjects, scriptProjects } from './projects.ts';
-import type { LiteralProject } from './projects.ts';
 import { PromptAborted } from './prompt.ts';
 import { breakingFlags, commandSpawn, defaultScript, runCommands } from './scripts.ts';
 import type { DetectedScript, FlagEffect, RunCommands } from './scripts.ts';
@@ -343,48 +341,9 @@ function shorten(text: string, width: number): string {
   return chars.length <= width ? text : `${chars.slice(0, width - 1).join('')}…`;
 }
 
-/** Step 3 (04-REQ-57): the measured projects, only with at least 2 non-helper projects. */
-async function askProjects(
-  dialog: Dialog,
-  info: ProjectInfo,
-  script: DetectedScript | null,
-): Promise<string[] | 'auto'> {
-  const { t, paint } = dialog;
-  const projects = info.projects;
-  if (projects === null || !asksProjects(info)) return 'auto';
-  const listed = projects.filter((p) => !p.helper);
-  dialog.step(3, t('stepProjects'), t('projectsLesson'));
-  const fallback = defaultProjects(projects, script);
-  listed.forEach((p, i) => {
-    const mark = fallback.includes(p.name) ? paint('[x]', 'green') : '[ ]';
-    const note = p.looksLikeApi ? paint(` (${t('projectApi')})`, 'dim') : '';
-    dialog.say(`    ${i + 1}. ${mark} ${p.name}${note}`);
-  });
-  const helpers = projects.filter((p) => p.helper).map((p) => p.name);
-  if (helpers.length > 0)
-    dialog.line(`${helpers.join(', ')}: ${t('projectHelper')}`, 'dim', '    ');
-  const required = scriptProjects(projects, script);
-  const fallbackText = fallback
-    .map((name) => String(listed.findIndex((p) => p.name === name) + 1))
-    .join(',');
-  for (;;) {
-    const answer = await dialog.ask(
-      t('projectsQuestion'),
-      fallbackText,
-      fallback,
-      (a) => parseNumbers(a, listed.length)?.map((i) => (listed[i] as LiteralProject).name) ?? null,
-      fallback.join(', '),
-    );
-    const missing = required.filter((name) => !answer.includes(name));
-    if (missing.length === 0 || !dialog.interactive) return answer;
-    dialog.line(`⚠ ${t('projectsNeedScript', { names: required.join(', ') })}`, 'yellow');
-  }
-}
-
 async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswers> {
   const { t } = dialog;
   const script = await askScript(dialog, info);
-  const projects = await askProjects(dialog, info, script);
 
   let scope: 'all' | 'tagged' = 'all';
   if (script?.selectsTests === true) {
@@ -448,7 +407,6 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   }
   return {
     script: script?.name ?? null,
-    projects,
     scope,
     passesTest,
     steps,

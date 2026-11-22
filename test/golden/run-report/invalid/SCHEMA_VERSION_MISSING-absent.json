@@ -9,7 +9,6 @@
           "test": 5,
           "thresholds": 10
         },
-        "projects": "auto",
         "grep": null,
         "keepReporters": []
       },

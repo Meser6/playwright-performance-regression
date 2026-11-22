@@ -109,22 +109,13 @@ labels it). Give each origin its own label, unless merging their keys is what yo
 normally stay open for the whole test and are recorded as `PENDING` samples, which adds wait time
 at the end of each test. Remove `"eventsource"` unless those requests finish inside the test.
 
-### CONFIG_UNKNOWN_PROJECT
-
-**Error.** `run.projects` names a project that is not in the Playwright config. The message lists
-the available names. Use project names exactly as in `playwright.config`, or `"auto"`.
-
 ### CONFIG_NO_MEASURED_PROJECT
 
-**Error.** No project would be measured. With `run.projects: "auto"` only Chromium projects that
-are not a dependency or teardown of another project are measured, and the config has none (or it
-has `projects: []`). List the projects to measure in `run.projects`.
-
-### CONFIG_MULTIPLE_ENGINES
-
-**Warning.** The measured projects use more than one browser engine (for example Chromium and
-Firefox). Their samples go into the same keys and mix timings of different engines. Measure one
-engine per run: list projects of one engine in `run.projects`.
+**Error.** No project is measured: the test command runs only setup or teardown projects
+(projects named in `dependencies` or `teardown` of another project), for example
+`--project setup`. Select the projects with the tests to measure instead; their setup projects
+run with them. Without `--project` every project that is not a setup or teardown project is
+measured.
 
 ### CONFIG_SLOW_MO
 
@@ -355,12 +346,13 @@ Usually only a few requests are affected and no action is needed.
 
 **Warning.** Samples came from projects that are not measured (the message names them) and were
 not aggregated. Setup and teardown projects run once and are not measured; move the calls you
-want to measure into tests of a measured project, or adjust `run.projects`.
+want to measure into tests of a measured project.
 
 ### STATS_MULTIPLE_BROWSERS
 
 **Warning.** Request samples come from more than one browser, so timings of different engines are
-mixed in the same keys. Measure one browser engine per run with `run.projects`.
+mixed in the same keys. Measure one browser engine per run: select its projects with `--project`
+in the measurement command, e.g. `--project chromium`.
 
 ## Run and reporter
 
@@ -376,8 +368,8 @@ A wrong guess only costs this line.
 
 **Warning.** A measured project ran tests with the pw-perf fixtures, but no request of the
 browser was recorded in it. Tests that only use the `request` fixture (API tests) are not
-measured: requests made outside the browser are out of scope, so remove such projects from
-`run.projects`. Otherwise check `use.baseURL`, that the tests import the test object wrapped with
+measured: requests made outside the browser are out of scope, so leave such projects out of the
+measurement command (`--project`). Otherwise check `use.baseURL`, that the tests import the test object wrapped with
 `withPerfFixtures()`, and `measure.include` / `measure.exclude`.
 
 ### RUN_REPORTER_FLAG

@@ -1,8 +1,7 @@
-// Init wizard: test scripts, run commands, projects and the check process (04-REQ-54 – 04-REQ-58).
+// Init wizard: test scripts, run commands and the check process (04-REQ-54 – 04-REQ-58).
 import { describe, expect, test } from 'vitest';
 import { defaultAnswers } from '../../../src/cli/init/defaults.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
-import { defaultProjects, literalProjects } from '../../../src/cli/init/projects.ts';
 import {
   breakingFlags,
   commandSpawn,
@@ -126,51 +125,6 @@ describe('run commands (04-REQ-55)', () => {
     expect(info.testScripts).toEqual([]);
     expect(defaultAnswers(info).script).toBeNull();
     expect(runCommands(null, 'npm', 'linux').test).toBe('PW_PERF_MODE=test npx playwright test');
-  });
-});
-
-describe('projects (04-REQ-57)', () => {
-  const CONFIG = `export default defineConfig({
-  projects: [
-    { name: 'setup', testMatch: /global\\.setup\\.ts/ },
-    { name: 'E2E', dependencies: ['setup'], use: { ...devices['Desktop Chrome'], name: 'x' } },
-    { name: 'API', testDir: './api' },
-    { name: 'smoke-eu', use: { browserName: 'chromium' } },
-    { name: 'smoke-us', use: { ...devices['Desktop Firefox'] } },
-  ],
-});`;
-
-  test('04-AC-33 helpers, API projects, browser hints and the default selection', () => {
-    const projects = literalProjects(CONFIG);
-    expect(projects).toEqual([
-      { name: 'setup', helper: true, browserHint: null, looksLikeApi: false },
-      { name: 'E2E', helper: false, browserHint: 'chromium', looksLikeApi: false },
-      { name: 'API', helper: false, browserHint: null, looksLikeApi: true },
-      { name: 'smoke-eu', helper: false, browserHint: 'chromium', looksLikeApi: false },
-      { name: 'smoke-us', helper: false, browserHint: 'firefox', looksLikeApi: false },
-    ]);
-    const [script] = detect({ e2e: 'playwright test --project=E2E' });
-    expect(defaultProjects(projects ?? [], script ?? null)).toEqual(['E2E']);
-    expect(defaultProjects(projects ?? [], null)).toEqual(['E2E', 'smoke-eu']);
-    const info = detectProject(
-      new Map([
-        ['playwright.config.ts', CONFIG],
-        ['package.json', JSON.stringify({ scripts: { e2e: 'playwright test --project=E2E' } })],
-      ]),
-    );
-    expect(defaultAnswers(info).projects).toEqual(['E2E']);
-  });
-
-  test('04-AC-33 spread, map or variables: no question and "auto"', () => {
-    expect(literalProjects('export default { projects: [...base, { name: "a" }] };')).toBeNull();
-    expect(
-      literalProjects('export default { projects: envs.map((e) => ({ name: e })) };'),
-    ).toBeNull();
-    expect(literalProjects('export default { projects: [chromium] };')).toBeNull();
-    const info = detectProject(
-      new Map([['playwright.config.ts', 'export default { projects: [...base] };']]),
-    );
-    expect(defaultAnswers(info).projects).toBe('auto');
   });
 });
 

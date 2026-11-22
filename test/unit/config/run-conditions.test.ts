@@ -8,7 +8,6 @@ const REPORTER = '/abs/node_modules/playwright-performance-regression/dist/repor
 
 function input(overrides: Partial<PerfRunInput> = {}): PerfRunInput {
   return {
-    projects: 'auto',
     keepReporters: [],
     reporterPath: REPORTER,
     ...overrides,
@@ -27,12 +26,6 @@ function plan(config: PlaywrightTestConfig, overrides: Partial<PerfRunInput> = {
   const result = planPerfRun(deepFreeze(config), input(overrides));
   if (!result.ok) throw new Error(result.issues.map((i) => i.message).join('\n'));
   return result.value;
-}
-
-function issues(config: PlaywrightTestConfig, overrides: Partial<PerfRunInput> = {}) {
-  const result = planPerfRun(config, input(overrides));
-  if (result.ok) throw new Error('expected issues');
-  return result.issues;
 }
 
 const browsers: PlaywrightTestConfig = {
@@ -131,26 +124,21 @@ describe('planPerfRun: run limits and artifacts', () => {
   });
 });
 
-describe('planPerfRun: measured projects (04-REQ-18)', () => {
-  test('04-AC-12 auto measures chromium only, keeps its dependencies and teardowns, removes the rest', () => {
+describe('planPerfRun: measured projects (04-REQ-18, D-44)', () => {
+  test('04-AC-12 every project but setup and teardown projects may be measured, whatever the browser; no project is removed', () => {
     const result = plan(browsers);
-    expect(result.measuredProjects).toEqual(['chromium']);
+    expect(result.measuredProjects).toEqual(['chromium', 'firefox', 'webkit']);
     expect(result.config.projects?.map((p) => [p.name, p.repeatEach])).toEqual([
       ['setup', 1],
       ['cleanup', 1],
       ['chromium', 1],
+      ['firefox', 1],
+      ['webkit', 1],
     ]);
-    expect(result.runConditions.removedProjects).toEqual(['firefox', 'webkit']);
-  });
-
-  test('04-AC-12 run.projects ["firefox"] measures firefox only', () => {
-    const result = plan(browsers, { projects: ['firefox'] });
-    expect(result.measuredProjects).toEqual(['firefox']);
-    expect(result.config.projects?.map((p) => p.name)).toEqual(['setup', 'cleanup', 'firefox']);
     expect(result.warnings).toEqual([]);
   });
 
-  test('04-AC-09 indirect dependencies and teardowns are kept; every project runs once per pass (D-39)', () => {
+  test('04-AC-09 direct and indirect dependencies and teardowns are not measured; every project runs once per pass (D-39)', () => {
     const result = plan({
       projects: [
         { name: 'auth' },
@@ -161,7 +149,7 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
         { name: 'other', dependencies: ['data'], use: { browserName: 'webkit' } },
       ],
     });
-    expect(result.measuredProjects).toEqual(['measured']);
+    expect(result.measuredProjects).toEqual(['measured', 'other']);
     expect(
       Object.fromEntries(result.config.projects?.map((p) => [p.name, p.repeatEach]) ?? []),
     ).toEqual({
@@ -170,84 +158,16 @@ describe('planPerfRun: measured projects (04-REQ-18)', () => {
       'data-cleanup': 1,
       measured: 1,
       cleanup: 1,
+      other: 1,
     });
-    expect(result.runConditions.removedProjects).toEqual(['other']);
   });
 
-  test('auto: effective browser from browserName, then the global one, then defaultBrowserType', () => {
-    const result = plan({
-      use: { browserName: 'firefox' },
-      projects: [
-        { name: 'inherits-firefox' },
-        { name: 'own-chromium', use: { browserName: 'chromium', channel: 'chrome' } },
-        { name: 'device-over-global', use: { defaultBrowserType: 'chromium' } },
-      ],
-    });
-    expect(result.measuredProjects).toEqual(['own-chromium']);
-    const devices = plan({
-      projects: [
-        { name: 'pixel', use: { defaultBrowserType: 'chromium' } },
-        { name: 'iphone', use: { defaultBrowserType: 'webkit' } },
-        { name: 'edge', use: { channel: 'msedge' } },
-      ],
-    });
-    expect(devices.measuredProjects).toEqual(['pixel', 'edge']);
-  });
-
-  test('a config without projects is one default project, measured when it uses Chromium (01-REQ-10)', () => {
-    const result = plan({ workers: 2, testDir: 'e2e' });
+  test('a config without projects is one default project, always measurable (01-REQ-10)', () => {
+    const result = plan({ workers: 2, testDir: 'e2e', use: { browserName: 'webkit' } });
     expect(result.measuredProjects).toEqual(['']);
     expect(result.config).toMatchObject({ testDir: 'e2e', workers: 1, repeatEach: 1 });
     expect(result.config.retries).toBeUndefined();
     expect(result.config.projects).toBeUndefined();
-    expect(result.runConditions.removedProjects).toEqual([]);
-  });
-
-  test('03-AC-03 CONFIG_NO_MEASURED_PROJECT when auto finds no Chromium project', () => {
-    for (const config of [
-      { use: { browserName: 'webkit' as const } },
-      { projects: [{ name: 'firefox', use: { browserName: 'firefox' as const } }] },
-      { projects: [] },
-    ]) {
-      expect(issues(config)).toEqual([
-        expect.objectContaining({
-          code: 'CONFIG_NO_MEASURED_PROJECT',
-          path: 'run.projects',
-          message:
-            'run.projects: no project is measured; "auto" measures Chromium projects that are not a dependency or teardown of another project, and the Playwright config has none',
-        }),
-      ]);
-    }
-  });
-
-  test('03-AC-03 CONFIG_UNKNOWN_PROJECT for each listed name the config does not have', () => {
-    expect(issues(browsers, { projects: ['chromium', 'chrome', 'edge'] })).toEqual([
-      expect.objectContaining({
-        code: 'CONFIG_UNKNOWN_PROJECT',
-        path: 'run.projects',
-        message:
-          'run.projects: project "chrome" is not in the Playwright config; its projects are "setup", "cleanup", "chromium", "firefox", "webkit"',
-      }),
-      expect.objectContaining({ code: 'CONFIG_UNKNOWN_PROJECT' }),
-    ]);
-    expect(issues({}, { projects: ['chromium'] })[0]?.message).toBe(
-      'run.projects: project "chromium" is not in the Playwright config; it has no projects, only the default one',
-    );
-  });
-
-  test('03-AC-11 two engines give CONFIG_MULTIPLE_ENGINES; a listed dependency of a listed project is measured', () => {
-    const result = plan(browsers, { projects: ['chromium', 'firefox', 'setup'] });
-    expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'CONFIG_MULTIPLE_ENGINES',
-        path: 'run.projects',
-        message:
-          'run.projects: the measured projects use more than one browser engine (chromium, firefox); their samples go to the same keys',
-      }),
-    ]);
-    expect(result.measuredProjects).toEqual(['setup', 'chromium', 'firefox']);
-    expect(result.config.projects?.find((p) => p.name === 'setup')?.repeatEach).toBe(1);
-    expect(result.config.projects?.find((p) => p.name === 'cleanup')?.repeatEach).toBe(1);
   });
 });
 
@@ -334,7 +254,7 @@ describe('run.grep (03-REQ-25)', () => {
   };
 
   test('03-AC-18 measured projects get run.grep, setup projects run in full', () => {
-    const result = plan(projects, { projects: ['E2E', 'smoke'], grep: '@perf' });
+    const result = plan(projects, { grep: '@perf' });
     const byName = new Map(result.config.projects?.map((p) => [p.name, p]));
     expect(byName.get('setup')?.grep).toBeUndefined();
     const e2e = byName.get('E2E')?.grep as RegExp;
@@ -352,7 +272,7 @@ describe('run.grep (03-REQ-25)', () => {
     expect(single.test('x @b @perf')).toBe(true);
     expect(single.test('x @perf')).toBe(false);
     expect(plan({}, { grep: '@perf' }).config.grep).toEqual(/@perf/i);
-    expect(plan(projects, { projects: ['E2E'] }).config.projects?.[1]?.grep).toBeUndefined();
+    expect(plan(projects).config.projects?.[1]?.grep).toBeUndefined();
     expect(plan({}).config.grep).toBeUndefined();
   });
 });
