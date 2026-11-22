@@ -32,7 +32,7 @@ npm init playwright-performance-regression@next
 This installs the package as a dev dependency and starts a short guided setup (after `0.1.0`:
 `npm init playwright-performance-regression`; run it again at any time). It shows a diff of every change
 before writing anything: it wraps your Playwright config and your fixtures module, creates
-`pw-perf.config.ts`, ignores `pw-perf-results/` and can add the CI jobs. It never changes your test
+`pw-perf.config.ts`, ignores `reports/pw-perf/` and can add the CI jobs. It never changes your test
 files or `package.json`: when it cannot wrap your `test` object, it shows the code to paste. At the
 end it runs a short check of what will be measured. `pnpm create` and
 `yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
@@ -97,8 +97,8 @@ On Windows: `npx cross-env PW_PERF_MODE=test npm run e2e` (PowerShell and cmd fo
 [docs/cli.md](docs/cli.md)). Without the variable the tests run as before, with no measuring.
 
 The exit code is Playwright's own; the cause of a failure (a regression, failed tests, a config
-error) is in `pw-perf-results/outcome.json`. The result is also printed in the terminal and written
-to `pw-perf-results/report.json` and `pw-perf-results/report.html`. All variables are described in
+error) is in `reports/pw-perf/outcome.json`. The result is also printed in the terminal and written
+to `reports/pw-perf/report.json` and `reports/pw-perf/report.html`. All variables are described in
 [Running](docs/cli.md).
 
 Derive thresholds on the same machines that run the check, usually your CI runners (see
@@ -152,12 +152,12 @@ jobs:
       - run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: always() # the report matters most when the run fails
-        with: { name: pw-perf-results, path: pw-perf-results/ }
+        with: { name: pw-perf-report, path: reports/pw-perf/ }
 ```
 
 Not ready to block builds yet? Set `continue-on-error: true` on the measure job. The full recipes
 for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit code (**0** ok,
-**2** performance regression, **3** tool or config error) from `pw-perf-results/outcome.json`:
+**2** performance regression, **3** tool or config error) from `reports/pw-perf/outcome.json`:
 [CI](docs/ci.md).
 
 ## Limitations

@@ -16,4 +16,4 @@ playwright-performance-regression · mode: test · 10 tests (10 passed, 0 failed
 ╭────────────────────────────────────────────────────────────────────╮
 │ ❌  ERROR  1 tool error; the performance result is not trustworthy │
 ╰────────────────────────────────────────────────────────────────────╯
-Report: /work/app/pw-perf-results/report.html
+Report: /work/app/reports/pw-perf/report.html

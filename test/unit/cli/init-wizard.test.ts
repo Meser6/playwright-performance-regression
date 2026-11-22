@@ -78,8 +78,8 @@ describe('init wizard', () => {
     });
     expect(out).toContain('Run: PW_PERF_MODE=test npx playwright test');
     expect(out).toContain('PW_PERF_MODE=check npx playwright test: see what will be measured');
-    expect(out).toContain('pw-perf-results/report.html');
-    expect(out).toContain('pw-perf-results/outcome.json');
+    expect(out).toContain('reports/pw-perf/report.html');
+    expect(out).toContain('reports/pw-perf/outcome.json');
     expect(out).toContain('Commit pw-perf-thresholds.json.');
     expect(out).not.toMatch(/warnOnly|warn-only/u);
   });
@@ -213,7 +213,7 @@ describe('init wizard', () => {
       'PW_PERF_PRUNE=1',
       'pw-perf.config.ts',
       'pw-perf-thresholds*.json',
-      'pw-perf-results/',
+      'reports/pw-perf/',
     ])
       expect(step1).toContain(`    ${name}`);
     expect(step1).toContain('do not commit (listed in .gitignore)');

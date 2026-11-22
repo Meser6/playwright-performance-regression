@@ -19,8 +19,8 @@ import type { AggregateSpec } from './evaluate-helpers.ts';
 
 const KEY = 'GET /api/tickets';
 const PATHS: Outcome['paths'] = {
-  reportJson: '/repo/pw-perf-results/report.json',
-  reportHtml: '/repo/pw-perf-results/report.html',
+  reportJson: '/repo/reports/pw-perf/report.json',
+  reportHtml: '/repo/reports/pw-perf/report.html',
   thresholds: [],
   thresholdsDiff: null,
 };

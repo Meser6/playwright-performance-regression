@@ -255,15 +255,22 @@ code,
   height: 24px;
 }
 
-.logo rect {
+.logo circle {
   fill: var(--accent);
 }
 
 .logo path {
   fill: none;
-  stroke: var(--on-hi);
-  stroke-width: 2.2;
+  stroke-width: 2;
   stroke-linecap: round;
+}
+
+.logo .crown {
+  stroke: var(--accent);
+}
+
+.logo .bars {
+  stroke: var(--on-hi);
 }
 
 .meta {

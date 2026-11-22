@@ -32,7 +32,6 @@ const SKIP_DIRS = new Set([
   'test-results',
   'playwright-report',
   'blob-report',
-  DEFAULT_CONFIG.report.dir,
 ]);
 const MAX_DEPTH = 8;
 const MAX_FILES = 3000;
@@ -70,7 +69,11 @@ export async function readProjectFiles(host: CliHost, root: string): Promise<Map
       if (count >= MAX_FILES) return;
       const path = rel === '.' ? entry.name : `${rel}/${entry.name}`;
       if (entry.directory) {
-        if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith('.')) await walk(path, depth + 1);
+        const skip =
+          SKIP_DIRS.has(entry.name) ||
+          entry.name.startsWith('.') ||
+          path === DEFAULT_CONFIG.report.dir;
+        if (!skip) await walk(path, depth + 1);
       } else if (SOURCE_FILE.test(entry.name) && !files.has(path)) {
         count += 1;
         await read(path);

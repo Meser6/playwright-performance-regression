@@ -15,7 +15,12 @@ import { detectProject } from '../../../src/cli/init/detect.ts';
 import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
 import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
 import type { InitAnswers } from '../../../src/cli/init/index.ts';
-import { wrapPlaywrightConfig, wrapTestObject } from '../../../src/cli/init/patterns.ts';
+import {
+  addIgnore,
+  ignores,
+  wrapPlaywrightConfig,
+  wrapTestObject,
+} from '../../../src/cli/init/patterns.ts';
 import { CONFIG_OPTIONS } from '../../../src/cli/init/generated/config-options.ts';
 import { LANGUAGES } from '../../../src/cli/init/messages.ts';
 import type { WizardLanguage } from '../../../src/cli/init/messages.ts';
@@ -515,6 +520,17 @@ describe('recognized layouts (04-REQ-39)', () => {
       '--- /dev/null\n+++ b/n\n@@ -0,0 +1,1 @@\n+x\n',
     );
     expect(unifiedDiff({ path: 'n', kind: 'modify', before: 'x\n', after: 'x\n' })).toBe('');
+  });
+
+  test('D-47 .gitignore gets reports/pw-perf/ unless it or reports/ is already ignored', () => {
+    const dir = DEFAULT_CONFIG.report.dir;
+    expect(dir).toBe('reports/pw-perf');
+    expect(addIgnore(null, dir)).toBe('reports/pw-perf/\n');
+    expect(addIgnore('node_modules', dir)).toBe('node_modules\nreports/pw-perf/\n');
+    for (const line of ['reports/pw-perf/', '/reports/pw-perf', 'reports/', '/reports'])
+      expect(ignores(`node_modules\n${line}\n`, dir), line).toBe(true);
+    for (const line of ['reports/pw', 'reports/pw-perf-old/', 'pw-perf/', ''])
+      expect(ignores(`node_modules\n${line}\n`, dir), line).toBe(false);
   });
 });
 

@@ -9,7 +9,7 @@
     "mode": "test",
     "paths": {
       "reportHtml": "",
-      "reportJson": "/home/user/project/pw-perf-results/report.json",
+      "reportJson": "/home/user/project/reports/pw-perf/report.json",
       "thresholds": [],
       "thresholdsDiff": null
     },

@@ -6,4 +6,4 @@ Thresholds: pw-perf-thresholds.json (created)
   + POST /api/orders                t 868  median 896  p95 1820  p99 2002  apdex 0.900  wilson 0.150  errors 0.075
 
 Review the changes and commit the thresholds files.
-Diff: pw-perf-results/thresholds-diff.md
+Diff: reports/pw-perf/thresholds-diff.md

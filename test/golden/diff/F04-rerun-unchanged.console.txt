@@ -1,4 +1,4 @@
 Thresholds: pw-perf-thresholds.api.json (unchanged)
 
 The thresholds files are up to date.
-Diff: pw-perf-results/thresholds-diff.md
+Diff: reports/pw-perf/thresholds-diff.md

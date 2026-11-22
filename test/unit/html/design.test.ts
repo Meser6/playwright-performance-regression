@@ -198,6 +198,31 @@ describe('icons (11-REQ-59)', () => {
   });
 });
 
+describe('logo (11-REQ-49, v4 E3)', () => {
+  test('11-AC-39 a stopwatch logo in the header and as a data: favicon, no external files', () => {
+    const page = readFileSync(join(HTML_PAGE, 'full-run.html'), 'utf8');
+    const header = /<header[^>]*>.*?<\/header>/su.exec(page)?.[0] ?? '';
+    const logos = [...header.matchAll(/<svg class="logo"[^>]*>.*?<\/svg>/gsu)].map((m) => m[0]);
+    expect(logos).toHaveLength(1);
+    expect(logos[0]).toContain('aria-hidden="true"');
+    expect(logos[0]).toContain('<circle');
+    const head = /<head>.*?<\/head>/su.exec(page)?.[0] ?? '';
+    const icons = [...head.matchAll(/<link rel="icon"[^>]*href="([^"]+)"/gu)].map((m) => m[1]);
+    expect(icons).toHaveLength(1);
+    expect(icons[0]).toMatch(/^data:image\/svg\+xml,%3Csvg%20/u);
+    expect(decodeURIComponent((icons[0] ?? '').slice('data:image/svg+xml,'.length))).toContain(
+      '<circle cx="12" cy="14" r="8.5"',
+    );
+    // Nothing is loaded from a file: every <link> and src is a data: URI; the CSP is unchanged.
+    for (const m of page.matchAll(/<link[^>]*\shref="([^"]*)"|\ssrc="([^"]*)"/gu)) {
+      expect(m[1] ?? m[2], m[0]).toMatch(/^data:/u);
+    }
+    expect(page.replaceAll('&#39;', "'")).toMatch(
+      /content="default-src 'none'; script-src 'sha256-[^']+'; style-src 'sha256-[^']+'; img-src data:"/u,
+    );
+  });
+});
+
 describe('empty states and warnings (11-REQ-45, 11-REQ-58)', () => {
   test('11-AC-36 the empty run has the empty-state block; filters have their empty state', () => {
     const page = readFileSync(join(HTML_PAGE, 'empty-run.html'), 'utf8');

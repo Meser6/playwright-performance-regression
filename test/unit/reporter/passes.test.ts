@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 const RUN_ID = '2026-11-21T10-00-00-abcd';
-const RESULTS = join('pw-perf-results');
+const RESULTS = join('reports/pw-perf');
 
 function readReport(): RunReport {
   const text = readFileSync(join(dir, RESULTS, 'report.json'), 'utf8');
@@ -319,7 +319,7 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       tests: 4,
       passes: 10,
       estimate: '≈ 20 min (30 s per test, no earlier run)',
-      report: 'pw-perf-results/report.html',
+      report: 'reports/pw-perf/report.html',
       tip: false,
     };
     const colored = formatStartBanner(input, { width: 120, color: true, ascii: false });

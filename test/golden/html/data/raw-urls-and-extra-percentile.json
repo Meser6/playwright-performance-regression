@@ -185,7 +185,7 @@
         ]
       },
       "report": {
-        "dir": "pw-perf-results",
+        "dir": "reports/pw-perf",
         "html": true,
         "rawUrls": true
       },
@@ -761,7 +761,7 @@
         ]
       },
       "report": {
-        "dir": "pw-perf-results",
+        "dir": "reports/pw-perf",
         "html": true,
         "rawUrls": true
       },

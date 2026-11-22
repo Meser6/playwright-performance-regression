@@ -12,7 +12,7 @@ import { html, trustedHtml } from './escape.ts';
 import type { HtmlValue, SafeHtml } from './escape.ts';
 import { formatDate } from './format.ts';
 import { SCRIPT, SCRIPT_SHA256, STYLES, STYLES_SHA256 } from './generated/assets.ts';
-import { icon, iconSprite, logo } from './icons.ts';
+import { FAVICON_URI, icon, iconSprite, logo } from './icons.ts';
 import { keyTable } from './keys.ts';
 import { badge, emptyState, kpis, overview, verdictCard } from './overview.ts';
 import { runTab, warningsTab } from './run.ts';
@@ -205,7 +205,7 @@ export function renderHtmlReport(report: RunReport): string {
     html`<meta name="viewport" content="width=device-width, initial-scale=1">`,
     html`<meta name="color-scheme" content="light dark">`,
     html`<meta name="generator" content="${`${PACKAGE_NAME} ${report.tool.version}`}">`,
-    html`<link rel="icon" href="data:,"><title>Performance report ${report.runId}</title>`,
+    html`<link rel="icon" type="image/svg+xml" href="${FAVICON_URI}"><title>Performance report ${report.runId}</title>`,
     html`<style>${trustedHtml(STYLES)}</style></head>`,
   );
   const main = join(

@@ -61,10 +61,10 @@ and the limits would be wrong in both directions.
    ```
 
    It runs the measured tests (10 passes by default), never fails on violations, and writes the
-   thresholds files, `pw-perf-results/report.json` and `pw-perf-results/thresholds-diff.md`.
+   thresholds files, `reports/pw-perf/report.json` and `reports/pw-perf/thresholds-diff.md`.
 
 2. Download the artifact of that job (the recipes keep the `pw-perf-thresholds*.json` files and
-   `pw-perf-results/`).
+   `reports/pw-perf/`).
 3. Review the diff and commit the thresholds files.
 
 Locally you can still run `PW_PERF_MODE=thresholds npm run e2e` to try the setup, but do not
@@ -90,7 +90,7 @@ added. A time limit that grows by more than `thresholds.loosenWarnRelative` (50%
 ## Reviewing the diff
 
 Every thresholds run prints the diff per file and writes it as Markdown to
-`pw-perf-results/thresholds-diff.md`, ready to paste into the pull request description. Each key is
+`reports/pw-perf/thresholds-diff.md`, ready to paste into the pull request description. Each key is
 listed as added, removed, loosened, tightened, mixed, unchanged, locked, unseen or skipped, with
 the old and new limits.
 

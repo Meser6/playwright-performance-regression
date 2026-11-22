@@ -85,7 +85,7 @@ describe.each([
       });
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');
-      expect(existsSync(join(dir, 'pw-perf-results/report.html'))).toBe(true);
+      expect(existsSync(join(dir, 'reports/pw-perf/report.html'))).toBe(true);
     },
     RUN_TIMEOUT,
   );

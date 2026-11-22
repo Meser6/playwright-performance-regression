@@ -25,6 +25,19 @@ changes and are always listed with migration steps:
 After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
 and review the diff before committing anything.
 
+### From 0.1.0-next.3: report folder moved to `reports/pw-perf/`
+
+The default `report.dir` is now `reports/pw-perf/` instead of `pw-perf-results/`; the files in it
+are the same. To upgrade:
+
+1. In `.gitignore`, replace `pw-perf-results/` with `reports/pw-perf/` (or keep `reports/` ignored).
+2. In your CI jobs, replace `pw-perf-results` with `reports/pw-perf` in the artifact path and in
+   the `outcome.json` path. The recipes in [CI](ci.md) name the artifact `pw-perf-report`.
+3. Delete the old `pw-perf-results/` folder.
+
+To keep the old folder instead, set `report: { dir: 'pw-perf-results' }` in `pw-perf.config.*`.
+Only `report.dir` itself is emptied when a run starts, never the `reports/` folder around it.
+
 ### From 0.1.0-next.1 to 0.1.0-next.3: custom measurements removed
 
 Custom measurements are gone. To upgrade:
@@ -51,5 +64,5 @@ Custom measurements are gone. To upgrade:
 3. In `playwright.config` remove `withPerf(...)` around the config and the `pw-perf.config`
    import.
 4. Delete `pw-perf.config.*`, the `pw-perf-thresholds*.json` files, any `perf:*` scripts from an
-   earlier wizard, the CI jobs and the `pw-perf-results/` line in `.gitignore`.
+   earlier wizard, the CI jobs and the `reports/pw-perf/` line in `.gitignore`.
 5. `npm uninstall playwright-performance-regression`.

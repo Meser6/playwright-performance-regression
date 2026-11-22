@@ -56,7 +56,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
 
   /** The run step of every job: outcome.json removed, the project command, exit code from it. */
   const RUN =
-    /rm -f pw-perf-results\/outcome\.json\n.*npm run e2e \|\| true\n.*outcome\.json'\)\.exitCode/su;
+    /rm -f reports\/pw-perf\/outcome\.json\n.*npm run e2e \|\| true\n.*outcome\.json'\)\.exitCode/su;
 
   test('04-AC-49 GitHub Actions: manual thresholds job, weekly measure job, uploads always', () => {
     const wf = yaml('github-actions.yml');
@@ -86,7 +86,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       const upload = steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
       expect(upload?.if).toBe('always()');
       const path = String(obj(upload?.with, 'with').path);
-      expect(path).toContain('pw-perf-results/');
+      expect(path).toContain('reports/pw-perf/');
       if (id === 'thresholds') expect(path).toContain('pw-perf-thresholds*.json');
     }
   });
@@ -114,7 +114,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       expect(obj(job.variables, 'variables').PW_PERF_MODE).toBe(mode);
       const artifacts = obj(job.artifacts, 'artifacts');
       expect(artifacts.when).toBe('always');
-      expect(artifacts.paths).toContain('pw-perf-results/');
+      expect(artifacts.paths).toContain('reports/pw-perf/');
     }
     const thresholds = obj(file['perf-thresholds'], 'perf-thresholds');
     expect(list(thresholds.rules, 'rules')).toEqual([{ when: 'manual' }]);
@@ -157,7 +157,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       }
       const run = steps.find((s) => RUN.test(String(s.bash)));
       expect(run?.bash).toContain('##vso[task.complete result=SucceededWithIssues;]');
-      expect(steps.find((s) => s.publish === 'pw-perf-results')?.condition).toBe('always()');
+      expect(steps.find((s) => s.publish === 'reports/pw-perf')?.condition).toBe('always()');
       expect(steps.find((s) => s.publish === 'pw-perf-thresholds')?.condition).toContain(
         "'thresholds'",
       );
@@ -197,7 +197,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     expect(text).toContain("sh(script: 'npm run e2e', returnStatus: true)");
     expect(text).toMatch(/if \(code == '2'\) \{\s+unstable\(/u);
     expect(text).toMatch(
-      /always \{\s+archiveArtifacts artifacts: 'pw-perf-thresholds\*\.json, pw-perf-results\/\*\*'/u,
+      /always \{\s+archiveArtifacts artifacts: 'pw-perf-thresholds\*\.json, reports\/pw-perf\/\*\*'/u,
     );
   });
 });

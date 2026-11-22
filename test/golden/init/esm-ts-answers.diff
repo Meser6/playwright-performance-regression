@@ -7,7 +7,7 @@
 +#      Thresholds come from the same machines that measure.
 +#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
 +#   3. The "measure" job runs every Monday (or by hand, mode: test) and fails on a regression.
-+# The exit code comes from pw-perf-results/outcome.json: 0 ok, 2 performance regression, 3 tool or
++# The exit code comes from reports/pw-perf/outcome.json: 0 ok, 2 performance regression, 3 tool or
 +# config error. Not ready to block builds? Add "continue-on-error: true" to the measure job.
 +name: Performance
 +
@@ -39,9 +39,9 @@
 +      - run: npx playwright install --with-deps chromium
 +      - name: Thresholds run
 +        run: |
-+          rm -f pw-perf-results/outcome.json
++          rm -f reports/pw-perf/outcome.json
 +          npm run e2e -- --grep "@smoke" || true
-+          exit "$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)"
++          exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
 +      - name: Upload the thresholds files
 +        if: always()
 +        uses: actions/upload-artifact@v7
@@ -49,7 +49,7 @@
 +          name: pw-perf-thresholds
 +          path: |
 +            pw-perf-thresholds*.json
-+            pw-perf-results/
++            reports/pw-perf/
 +          retention-days: 30
 +
 +  measure:
@@ -68,22 +68,22 @@
 +      - run: npx playwright install --with-deps chromium
 +      - name: Measurement run
 +        run: |
-+          rm -f pw-perf-results/outcome.json
++          rm -f reports/pw-perf/outcome.json
 +          npm run e2e -- --grep "@smoke" || true
-+          exit "$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)"
++          exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
 +      - name: Upload the performance report
 +        if: always()
 +        uses: actions/upload-artifact@v7
 +        with:
-+          name: pw-perf-results
-+          path: pw-perf-results/
++          name: pw-perf-report
++          path: reports/pw-perf/
 +          retention-days: 30
 --- a/.gitignore
 +++ b/.gitignore
 @@ -1,2 +1,3 @@
  node_modules/
  test-results/
-+pw-perf-results/
++reports/pw-perf/
 --- a/playwright.config.ts
 +++ b/playwright.config.ts
 @@ -1,7 +1,9 @@
@@ -187,7 +187,7 @@
 +  // report: {
 +  //   // Directory of report.json and report.html (do not commit it), relative to the Playwright
 +  //   // config directory.
-+  //   dir: 'pw-perf-results',
++  //   dir: 'reports/pw-perf',
 +  // },
 +});
 --- a/tests/fixtures.ts

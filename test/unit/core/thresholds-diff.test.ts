@@ -54,7 +54,7 @@ const CONSOLE = {
   width: 120,
   color: false,
   prune: false,
-  diffPath: 'pw-perf-results/thresholds-diff.md',
+  diffPath: 'reports/pw-perf/thresholds-diff.md',
 };
 
 describe('diffThresholds (10, chapter 9)', () => {
@@ -195,7 +195,7 @@ describe('diffThresholds (10, chapter 9)', () => {
         'Thresholds: a.json (unchanged)',
         '',
         'The thresholds files are up to date.',
-        'Diff: pw-perf-results/thresholds-diff.md',
+        'Diff: reports/pw-perf/thresholds-diff.md',
         '',
       ].join('\n'),
     );

@@ -37,10 +37,10 @@ changes; review the diff before committing.
 - **Installs Chromium** with its system libraries (`npx playwright install --with-deps chromium`).
   The measured projects are the ones your test command selects: if your config also has Firefox or
   WebKit projects, add `--project <name>` for the Chromium projects to the measurement command.
-- **Reads the exit code from `pw-perf-results/outcome.json`**: Playwright itself exits with 0 or 1,
+- **Reads the exit code from `reports/pw-perf/outcome.json`**: Playwright itself exits with 0 or 1,
   so the run step removes the file first, runs the command and exits with `exitCode` from the
   file (3 when it is missing: the measurement did not run).
-- **Uploads `pw-perf-results/` always**, also when the run fails, because that is when you need the
+- **Uploads `reports/pw-perf/` always**, also when the run fails, because that is when you need the
   report: GitHub `if: always()`, GitLab `artifacts: when: always`, Jenkins `post { always { ... } }`,
   Azure `condition: always()`. The thresholds job also uploads `pw-perf-thresholds*.json`.
 - **Has a time limit** (60 minutes for measuring, 120 for thresholds, which use more passes).
@@ -67,8 +67,8 @@ measurement did not work. See [exit codes](cli.md#exit-codes) for all codes.
 
 - The job log contains the summary: verdict, counters, the violations table and the slowest
   sample of the first blocking keys.
-- `pw-perf-results/report.html` is a self-contained page: download the artifact and open it.
-- `pw-perf-results/report.json` is the machine-readable report.
+- `reports/pw-perf/report.html` is a self-contained page: download the artifact and open it.
+- `reports/pw-perf/report.json` is the machine-readable report.
 
 Platform notes on the HTML report:
 
@@ -77,7 +77,7 @@ Platform notes on the HTML report:
   layout, sorting and filters. Download the archived file instead, or relax the CSP for that
   page if your Jenkins administrators allow it.
 - **Azure Pipelines** does not display HTML artifacts in the browser. Download the
-  `pw-perf-results` artifact and open `report.html` locally.
+  `pw-perf-report` artifact and open `report.html` locally.
 - **GitHub Actions** and **GitLab CI** offer the artifact as a download.
 
 ## Isolation of the environment and the runner

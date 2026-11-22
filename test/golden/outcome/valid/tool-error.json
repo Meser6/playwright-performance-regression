@@ -8,8 +8,8 @@
     "exitCode": 3,
     "mode": "test",
     "paths": {
-      "reportHtml": "/home/user/project/pw-perf-results/report.html",
-      "reportJson": "/home/user/project/pw-perf-results/report.json",
+      "reportHtml": "/home/user/project/reports/pw-perf/report.html",
+      "reportJson": "/home/user/project/reports/pw-perf/report.json",
       "thresholds": [],
       "thresholdsDiff": null
     },

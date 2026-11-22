@@ -60,4 +60,4 @@ Muted: POST /api/reports/export until 2026-12-31 — "Depends on report service,
 ╭──────────────────────────────────────────────────╮
 │ ❌  FAILED  5 blocking violations (tolerance: 0) │
 ╰──────────────────────────────────────────────────╯
-Report: /work/app/pw-perf-results/report.html
+Report: /work/app/reports/pw-perf/report.html

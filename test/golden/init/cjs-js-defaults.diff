@@ -1,7 +1,7 @@
 --- /dev/null
 +++ b/.gitignore
 @@ -0,0 +1,1 @@
-+pw-perf-results/
++reports/pw-perf/
 --- /dev/null
 +++ b/.gitlab/perf.gitlab-ci.yml
 @@ -0,0 +1,49 @@
@@ -11,7 +11,7 @@
 +#   2. Download its artifacts and commit the pw-perf-thresholds*.json files.
 +#   3. The "perf" job runs in scheduled pipelines (create a weekly schedule) and can be started by
 +#      hand; it fails on a regression.
-+# The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) is a soft
++# The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) is a soft
 +# failure, 3 (tool or config error) fails the job.
 +.perf:
 +  image: node:22
@@ -19,9 +19,9 @@
 +    - npm ci
 +    - npx playwright install --with-deps chromium
 +  script:
-+    - rm -f pw-perf-results/outcome.json
++    - rm -f reports/pw-perf/outcome.json
 +    - pnpm exec playwright test || true
-+    - exit "$(node -p "require('./pw-perf-results/outcome.json').exitCode" 2>/dev/null || echo 3)"
++    - exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
 +
 +perf-thresholds:
 +  extends: .perf
@@ -35,7 +35,7 @@
 +    when: always
 +    paths:
 +      - pw-perf-thresholds*.json
-+      - pw-perf-results/
++      - reports/pw-perf/
 +    expire_in: 30 days
 +
 +perf:
@@ -52,7 +52,7 @@
 +  artifacts:
 +    when: always
 +    paths:
-+      - pw-perf-results/
++      - reports/pw-perf/
 +    expire_in: 30 days
 --- a/playwright.config.js
 +++ b/playwright.config.js
@@ -157,7 +157,7 @@
 +  // report: {
 +  //   // Directory of report.json and report.html (do not commit it), relative to the Playwright
 +  //   // config directory.
-+  //   dir: 'pw-perf-results',
++  //   dir: 'reports/pw-perf',
 +  // },
 +});
 --- a/tests/fixtures.js

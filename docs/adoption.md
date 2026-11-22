@@ -94,7 +94,7 @@ from the table above, or, for the test object, as a red box with the code to pas
 | fixtures module       | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`, in a file without tests | wraps it in `withPerfFixtures(...)`                                                                                                        |
 | test files            | never changed                                                                                                                                                               | when the tests import `test` from `@playwright/test`, the wizard shows the import to use instead: `playwright-performance-regression/test` |
 | `pw-perf.config.ts`   | missing                                                                                                                                                                     | created with the 15 most important options: the answers that differ from the defaults as code, the others commented out with their default |
-| `.gitignore`          | any                                                                                                                                                                         | adds `pw-perf-results/`                                                                                                                    |
+| `.gitignore`          | any                                                                                                                                                                         | adds `reports/pw-perf/`                                                                                                                    |
 | `package.json`        | never changed                                                                                                                                                               | the wizard shows the commands with `PW_PERF_MODE` before your test command                                                                 |
 | CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                                              | adds a separate file from [the CI recipes](ci.md): a manual thresholds job and a weekly measurement job running your test command          |
 
@@ -218,7 +218,7 @@ PW_PERF_MODE=test pnpm --filter web run e2e
 
 Relative paths in the package config (`report.dir`, `thresholds.dir`) are relative to the
 Playwright config's directory, so the report of the example above is in
-`apps/web/pw-perf-results/`.
+`apps/web/reports/pw-perf/`.
 
 ## CommonJS configs
 

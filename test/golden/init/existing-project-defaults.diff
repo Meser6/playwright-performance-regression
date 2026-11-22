@@ -1,7 +1,7 @@
 --- /dev/null
 +++ b/.gitignore
 @@ -0,0 +1,1 @@
-+pw-perf-results/
++reports/pw-perf/
 --- /dev/null
 +++ b/Jenkinsfile.perf
 @@ -0,0 +1,45 @@
@@ -10,7 +10,7 @@
 +//   1. Build with parameters, MODE=thresholds. Thresholds come from the same agents that measure.
 +//   2. Download the archived pw-perf-thresholds*.json files and commit them.
 +//   3. The job runs every Monday with MODE=test and fails on a regression.
-+// The exit code comes from pw-perf-results/outcome.json: 2 (performance regression) marks the
++// The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) marks the
 +// build UNSTABLE, 3 (tool or config error) fails it.
 +pipeline {
 +  agent any
@@ -31,10 +31,10 @@
 +      steps {
 +        sh 'npm ci'
 +        sh 'npx playwright install --with-deps chromium'
-+        sh 'rm -f pw-perf-results/outcome.json'
++        sh 'rm -f reports/pw-perf/outcome.json'
 +        sh(script: 'npx playwright test', returnStatus: true)
 +        script {
-+          def code = sh(script: 'node -p "require(\'./pw-perf-results/outcome.json\').exitCode" 2>/dev/null || echo 3', returnStdout: true).trim()
++          def code = sh(script: 'node -p "require(\'./reports/pw-perf/outcome.json\').exitCode" 2>/dev/null || echo 3', returnStdout: true).trim()
 +          if (code == '2') {
 +            unstable('Performance regression (exit code 2)')
 +          } else if (code != '0') {
@@ -46,7 +46,7 @@
 +  }
 +  post {
 +    always {
-+      archiveArtifacts artifacts: 'pw-perf-thresholds*.json, pw-perf-results/**', allowEmptyArchive: true
++      archiveArtifacts artifacts: 'pw-perf-thresholds*.json, reports/pw-perf/**', allowEmptyArchive: true
 +    }
 +  }
 +}
@@ -137,6 +137,6 @@
 +  // report: {
 +  //   // Directory of report.json and report.html (do not commit it), relative to the Playwright
 +  //   // config directory.
-+  //   dir: 'pw-perf-results',
++  //   dir: 'reports/pw-perf',
 +  // },
 +});

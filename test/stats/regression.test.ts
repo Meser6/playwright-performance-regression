@@ -64,7 +64,7 @@ function perf(
     PW_PERF_MODE: mode,
     PW_PERF_PASSES: PASSES,
   }).then((run) => {
-    const file = join(out, 'pw-perf-results', 'outcome.json');
+    const file = join(out, 'reports/pw-perf', 'outcome.json');
     const code = existsSync(file)
       ? (JSON.parse(readFileSync(file, 'utf8')) as { exitCode: number }).exitCode
       : null;
@@ -115,7 +115,7 @@ describe('statistical tests', () => {
     await setDelays(4);
     const source = await perf('thresholds', 'stat-03-source');
     expect(source.status, source.output).toBe(0);
-    const path = join(source.out, 'pw-perf-results', 'report.json');
+    const path = join(source.out, 'reports/pw-perf', 'report.json');
     const report = parseRunReport(readFileSync(path, 'utf8'), path);
     if (!report.ok) throw new Error(JSON.stringify(report.issues));
     // The snapshot of the report is a valid input with source 'snapshot' (02-REQ-17).

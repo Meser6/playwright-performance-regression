@@ -69,7 +69,7 @@ export async function buildDemoReport({ out, passes = 10, log = () => {} }) {
     const project = join(scratch, 'with-setup');
     cpSync(join(root, 'examples/with-setup'), project, {
       recursive: true,
-      filter: (path) => !/[\\/](node_modules|pw-perf-results|test-results|\.auth)$/u.test(path),
+      filter: (path) => !/[\\/](node_modules|reports|test-results|\.auth)$/u.test(path),
     });
     const type = process.platform === 'win32' ? 'junction' : 'dir';
     mkdirSync(join(project, 'node_modules/@playwright'), { recursive: true });
@@ -91,7 +91,7 @@ export async function buildDemoReport({ out, passes = 10, log = () => {} }) {
     };
     // Asynchronous: the demo server runs in this process.
     const playwright = join(root, 'node_modules/@playwright/test/cli.js');
-    const outcomeFile = join(project, 'pw-perf-results/outcome.json');
+    const outcomeFile = join(project, 'reports/pw-perf/outcome.json');
     /**
      * `PW_PERF_MODE=<mode> playwright test --grep @perf`; status is the exitCode of outcome.json.
      * @param {'test' | 'thresholds'} mode
@@ -134,7 +134,7 @@ export async function buildDemoReport({ out, passes = 10, log = () => {} }) {
     if (test.status !== 2) {
       throw new Error(`The test run should fail on ${SLOW_ENDPOINT} (exitCode 2):\n${test.output}`);
     }
-    const reportFile = join(project, 'pw-perf-results/report.json');
+    const reportFile = join(project, 'reports/pw-perf/report.json');
     const report = JSON.parse(readFileSync(reportFile, 'utf8'));
     report.configDir = 'examples/with-setup';
     const parsed = parseRunReport(JSON.stringify(report), reportFile);

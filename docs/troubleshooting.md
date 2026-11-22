@@ -10,9 +10,9 @@ it and how to fix it. Search the page for the code you see.
   `Errors:` (marked `✖`, red), then up to 10 warnings under `Warnings:` (marked `!`, yellow), each
   as `CODE: message` with an indented `Hint:` line. The verdict at the end names the cause of an
   `ERROR`, e.g. `too many failed tests (30 of 101 executions)`.
-- **`pw-perf-results/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
+- **`reports/pw-perf/report.json`**: the arrays `toolErrors` and `warnings` hold every issue of the
   run with its code, message and hint.
-- **`pw-perf-results/report.html`**: the same warnings and tool errors near the top of the page.
+- **`reports/pw-perf/report.html`**: the same warnings and tool errors near the top of the page.
 - **Setup output (stderr)**: errors of the guided setup (`INIT_*`) and of the `pw-perf` binary
   that starts it (`CLI_*`).
 - **Playwright output**: an invalid package config stops Playwright while it loads
@@ -407,7 +407,7 @@ set the number of passes with `run.passes` or `PW_PERF_PASSES`. Retries are no d
 
 ### RUN_PASS_FAILED
 
-**Warning.** A pass after the first one ended without writing its `pw-perf-results/pass-<k>.json`,
+**Warning.** A pass after the first one ended without writing its `reports/pw-perf/pass-<k>.json`,
 or wrote one of another run. The usual cause is a step of the test script before Playwright that
 failed in that pass (seeding data, starting a service); the output of that pass is above the
 warning. The other passes are evaluated; the report shows the pass under "Passes". See
@@ -427,13 +427,13 @@ command runs on its own, or set `run.passes` to 1.
 
 ### RUN_REPORT_DIR_NOT_CLEANED
 
-**Warning.** Every `test` and `thresholds` run empties `report.dir` (default `pw-perf-results/`)
+**Warning.** Every `test` and `thresholds` run empties `report.dir` (default `reports/pw-perf/`)
 when its first test starts, so old reports never mix with new ones. The folder was left as it is
 because it does not look like a results folder: it is the project directory, the directory of
 `playwright.config`, the home directory, the filesystem root, `thresholds.dir` or a folder that
 contains one of them, or it holds a thresholds file, `package.json`, `playwright.config.*`, `.git`
 or more than 10000 entries. Set `report.dir` to a folder used only for the results, e.g.
-`pw-perf-results`. The same warning with the error text means a file could not be removed;
+`reports/pw-perf`. The same warning with the error text means a file could not be removed;
 check that the folder is writable. The run itself is not affected.
 
 ### TESTS_FAILED

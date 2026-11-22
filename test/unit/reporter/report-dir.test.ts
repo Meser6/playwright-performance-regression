@@ -37,7 +37,7 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-const RESULTS = 'pw-perf-results';
+const RESULTS = 'reports/pw-perf';
 
 /** A report.dir with files of an earlier run. */
 function earlierRun(results = join(dir, RESULTS)): string {
@@ -86,6 +86,31 @@ describe('04-REQ-71 emptying report.dir', () => {
     expect(report.warnings.map((w) => w.code)).not.toContain('RUN_REPORT_DIR_NOT_CLEANED');
     expect(readdirSync(results).sort()).toEqual(['outcome.json', 'report.html', 'report.json']);
     expect(readFileSync(join(results, 'report.html'), 'utf8')).not.toBe('old report');
+  });
+
+  test('04-AC-50 D-47 only reports/pw-perf is emptied, never its parent reports/', async () => {
+    const results = earlierRun();
+    const reports = join(dir, 'reports');
+    writeFileSync(join(reports, 'other.html'), 'another tool');
+    mkdirSync(join(reports, 'other-tool'));
+    writeFileSync(join(reports, 'other-tool', 'index.html'), 'another tool');
+    const run = start();
+    expect(readdirSync(results)).toEqual([]);
+    await run.end();
+    expect(readdirSync(reports).sort()).toEqual(['other-tool', 'other.html', 'pw-perf']);
+    expect(readFileSync(join(reports, 'other.html'), 'utf8')).toBe('another tool');
+    expect(readFileSync(join(reports, 'other-tool', 'index.html'), 'utf8')).toBe('another tool');
+  });
+
+  test('D-47 a missing reports/ parent is created when the report is written', async () => {
+    const run = start();
+    expect(existsSync(join(dir, 'reports'))).toBe(false);
+    await run.end();
+    expect(readdirSync(join(dir, RESULTS)).sort()).toEqual([
+      'outcome.json',
+      'report.html',
+      'report.json',
+    ]);
   });
 
   test('04-AC-50 a thresholds run empties report.dir too', () => {
@@ -141,7 +166,7 @@ describe('04-REQ-71 guard', () => {
     expect(same?.message).toBe(
       'report.dir . was not emptied at the start of the run: it is the project directory or contains it.',
     );
-    expect(same?.hint).toContain('pw-perf-results');
+    expect(same?.hint).toContain('reports/pw-perf');
     expect(refused({ report: { dir: '..' } })).toHaveLength(1);
     expect(existsSync(join(dir, 'keep.txt'))).toBe(true);
   });
@@ -223,14 +248,14 @@ describe('04-REQ-71 guard', () => {
     const report = await run.end();
     const warning = report.warnings.find((w) => w.code === 'RUN_REPORT_DIR_NOT_CLEANED');
     expect(warning?.message).toBe(
-      'report.dir pw-perf-results was not emptied at the start of the run: removing a file failed (EACCES: permission denied).',
+      'report.dir reports/pw-perf was not emptied at the start of the run: removing a file failed (EACCES: permission denied).',
     );
     expect(report.toolErrors).toEqual([]);
   });
 
   test('too many entries are refused without listing them all', () => {
     const scan = { ...io, scanDirSync: () => null };
-    mkdirSync(join(dir, RESULTS));
+    mkdirSync(join(dir, RESULTS), { recursive: true });
     const warning = cleanReportDir(scan, {
       reportDir: join(dir, RESULTS),
       shownPath: RESULTS,

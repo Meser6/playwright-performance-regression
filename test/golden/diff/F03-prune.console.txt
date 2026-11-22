@@ -14,4 +14,4 @@ Thresholds: pw-perf-thresholds.api.json (updated)
   1 entry not seen in this run was kept because it is locked.
 
 Review the changes and commit the thresholds files.
-Diff: pw-perf-results/thresholds-diff.md
+Diff: reports/pw-perf/thresholds-diff.md

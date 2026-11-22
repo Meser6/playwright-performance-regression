@@ -189,7 +189,7 @@
       "loosenWarnRelative": 0.5
     },
     "report": {
-      "dir": "pw-perf-results",
+      "dir": "reports/pw-perf",
       "html": true,
       "rawUrls": false
     },

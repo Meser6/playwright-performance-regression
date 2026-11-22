@@ -710,7 +710,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     description:
       'Directory of report.json and report.html, relative to the Playwright config directory.',
     leaf: true,
-    default: 'pw-perf-results',
+    default: 'reports/pw-perf',
   },
   { path: 'report.html', description: 'Write the HTML report.', leaf: true, default: true },
   {

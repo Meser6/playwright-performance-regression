@@ -40,7 +40,7 @@ const PATHS = ['/api/items/1', '/api/cart'];
 const steady = (i: number, path: string): number => (path === '/api/cart' ? 100 : 50) + (i % 7);
 
 function readReport(): RunReport {
-  const text = readFileSync(join(dir, 'pw-perf-results', 'report.json'), 'utf8');
+  const text = readFileSync(join(dir, 'reports/pw-perf', 'report.json'), 'utf8');
   expect(validReport(JSON.parse(text)), JSON.stringify(validReport.errors)).toBe(true);
   const parsed = parseRunReport(text, 'report.json');
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
@@ -95,8 +95,8 @@ describe('reporter session in test mode', () => {
     const outcome = readOutcome(outcomeFile);
     expect(outcome).toMatchObject({ runId: 'run-1', mode: 'test', exitCode: 0 });
     expect(outcome.paths).toEqual({
-      reportJson: join(dir, 'pw-perf-results', 'report.json'),
-      reportHtml: join(dir, 'pw-perf-results', 'report.html'),
+      reportJson: join(dir, 'reports/pw-perf', 'report.json'),
+      reportHtml: join(dir, 'reports/pw-perf', 'report.html'),
       thresholds: [],
       thresholdsDiff: null,
     });
@@ -107,7 +107,7 @@ describe('reporter session in test mode', () => {
     );
     expect(out).toContain('PASSED');
     // One absolute Report path (09-REQ-30).
-    expect(out).toContain(`Report: ${slash(dir)}/pw-perf-results/report.html\n`);
+    expect(out).toContain(`Report: ${slash(dir)}/reports/pw-perf/report.html\n`);
     expect(out).not.toContain('\u001b[');
   });
 
@@ -175,7 +175,7 @@ describe('reporter session in test mode', () => {
     expect(out).toContain('Projects  chromium (setup: setup)');
     expect(out).toContain('Tests     2 tests × 5 passes = 10 test runs');
     expect(out).toContain('Estimate  ≈ 5 min (30 s per test, no earlier run)');
-    expect(out).toContain('Report    pw-perf-results/report.html');
+    expect(out).toContain('Report    reports/pw-perf/report.html');
     expect(out).toContain('Tip       measure a subset, e.g. --grep @perf');
     expect(out).toMatch(/^╭─+╮$/mu);
     expect(out).not.toContain('Continue?');
@@ -188,7 +188,7 @@ describe('reporter session in test mode', () => {
     s.begin(fakeConfig(dir), ROOT);
     const printed = captured.stdout.length;
     expect(await s.end({ status: 'passed' })).toBeUndefined();
-    expect(existsSync(join(dir, 'pw-perf-results'))).toBe(false);
+    expect(existsSync(join(dir, 'reports/pw-perf'))).toBe(false);
     expect(existsSync(outcomeFile)).toBe(false);
     expect(captured.stdout).toHaveLength(printed);
   });
@@ -505,7 +505,8 @@ describe('reporter session in test mode', () => {
   });
 
   test('REPORT_WRITE_FAILED and OUTCOME_WRITE_FAILED', async () => {
-    writeFileSync(join(dir, 'pw-perf-results'), 'a file, not a directory');
+    mkdirSync(join(dir, 'reports'));
+    writeFileSync(join(dir, 'reports/pw-perf'), 'a file, not a directory');
     mkdirSync(join(dir, 'outcome-dir'));
     const captured = fakeHost(dir);
     const s = session(
@@ -563,7 +564,7 @@ describe('reporter session in test mode', () => {
 });
 
 describe('reporter session: HTML report', () => {
-  const htmlPath = (): string => join(dir, 'pw-perf-results', 'report.html');
+  const htmlPath = (): string => join(dir, 'reports/pw-perf', 'report.html');
 
   async function run(
     input: Parameters<typeof registered>[0],
@@ -591,7 +592,7 @@ describe('reporter session: HTML report', () => {
     const { outcome, out } = await run({ report: { html: false } });
     expect(existsSync(htmlPath())).toBe(false);
     expect(outcome.paths.reportHtml).toBeNull();
-    expect(out).toContain(`Report: ${slash(dir)}/pw-perf-results/report.json\n`);
+    expect(out).toContain(`Report: ${slash(dir)}/reports/pw-perf/report.json\n`);
   });
 
   test('11 chapter 13: HTML_RENDER_FAILED keeps report.json, records the error and exit code 3', async () => {
@@ -656,7 +657,7 @@ describe('reporter session in thresholds mode', () => {
     const { outcome, stdout } = await derive();
     expect(outcome.exitCode).toBe(0);
     expect(outcome.paths.thresholds).toEqual([thresholdsFile()]);
-    expect(outcome.paths.thresholdsDiff).toBe(join(dir, 'pw-perf-results', 'thresholds-diff.md'));
+    expect(outcome.paths.thresholdsDiff).toBe(join(dir, 'reports/pw-perf', 'thresholds-diff.md'));
     const file = JSON.parse(readFileSync(thresholdsFile(), 'utf8')) as {
       entries: Record<string, unknown>;
       generated: { sourceRunId: string };
@@ -669,7 +670,7 @@ describe('reporter session in thresholds mode', () => {
     expect(stdout.indexOf('Thresholds: pw-perf-thresholds.json (created)')).toBeGreaterThan(
       stdout.indexOf('PASSED'),
     );
-    expect(stdout).toContain(`Diff: ${join(dir, 'pw-perf-results', 'thresholds-diff.md')}\n`);
+    expect(stdout).toContain(`Diff: ${join(dir, 'reports/pw-perf', 'thresholds-diff.md')}\n`);
   });
 
   test('09-AC-32 the run that creates the thresholds file does not warn that it is missing', async () => {
@@ -745,10 +746,10 @@ describe('reporter session in thresholds mode', () => {
 });
 
 describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
-  const outcomeJson = (): string => join(dir, 'pw-perf-results', 'outcome.json');
+  const outcomeJson = (): string => join(dir, 'reports/pw-perf', 'outcome.json');
 
-  test('04-AC-39 writes pw-perf-results/outcome.json, removes the old one in onBegin and prints the Outcome line', async () => {
-    mkdirSync(join(dir, 'pw-perf-results'), { recursive: true });
+  test('04-AC-39 writes reports/pw-perf/outcome.json, removes the old one in onBegin and prints the Outcome line', async () => {
+    mkdirSync(join(dir, 'reports/pw-perf'), { recursive: true });
     writeFileSync(outcomeJson(), '{"stale":true}');
     const captured = fakeHost(dir);
     const s = session(captured, registered({}, { mode: 'test', runId: 'run-e' }));
@@ -822,7 +823,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     runTests(s, dir, 5, [], steady);
     await s.end({ status: 'passed' });
     const report = JSON.parse(
-      readFileSync(join(dir, 'pw-perf-results', 'report.json'), 'utf8'),
+      readFileSync(join(dir, 'reports/pw-perf', 'report.json'), 'utf8'),
     ) as {
       warnings: { code: string; message: string }[];
     };
@@ -838,7 +839,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     runTests(s2, other, 5, PATHS, steady);
     await s2.end({ status: 'passed' });
     const report2 = JSON.parse(
-      readFileSync(join(other, 'pw-perf-results', 'report.json'), 'utf8'),
+      readFileSync(join(other, 'reports/pw-perf', 'report.json'), 'utf8'),
     ) as {
       warnings: { code: string }[];
     };
@@ -861,7 +862,7 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
       runTests(s, d, 5, PATHS, steady);
       await s.end({ status: 'passed' });
       const report = JSON.parse(
-        readFileSync(join(d, 'pw-perf-results', 'report.json'), 'utf8'),
+        readFileSync(join(d, 'reports/pw-perf', 'report.json'), 'utf8'),
       ) as {
         warnings: { code: string; message: string }[];
       };

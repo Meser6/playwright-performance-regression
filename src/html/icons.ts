@@ -45,9 +45,21 @@ export function icon(name: IconName): SafeHtml {
   return trustedHtml(`<svg class="i" aria-hidden="true"><use href="#i-${name}"/></svg>`);
 }
 
-/** The logo of the app bar (11-REQ-49): bars of a chart on an accent tile. */
+/** Shapes of the logo (11-REQ-49, v4 E3): a stopwatch with a small bar chart on its dial. */
+const CROWN = 'M10 2.5h4M12 2.5v3M18.4 7.6l1.5-1.5';
+const BARS = 'M8.5 17.5v-2m3.5 2V12m3.5 5.5V14';
+
+/** The logo of the app bar (11-REQ-49): colors come from the theme tokens in styles.css. */
 export function logo(): SafeHtml {
   return trustedHtml(
-    '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="24" height="24" rx="6"/><path d="M6 17v-3m4 3V9m4 8v-5m4 5V6"/></svg>',
+    `<svg class="logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="crown" d="${CROWN}"/><circle cx="12" cy="14" r="8.5"/><path class="bars" d="${BARS}"/></svg>`,
   );
 }
+
+/**
+ * The logo as the favicon, a data: URI (11-REQ-49). A data: image cannot see the tokens of the
+ * page, so it has the accent color of the light theme.
+ */
+export const FAVICON_URI = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-width="2"><path d="${CROWN}" stroke="#4f46e5"/><circle cx="12" cy="14" r="8.5" fill="#4f46e5"/><path d="${BARS}" stroke="#fff"/></svg>`,
+)}`;

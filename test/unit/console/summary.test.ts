@@ -262,15 +262,15 @@ describe('console summary golden files', () => {
 
   test('09-AC-24 one Report line with the absolute path of report.html, else report.json', () => {
     const text = formatSummary(report('passed'), { width: 120, color: false });
-    expect(text.endsWith('\nReport: /work/app/pw-perf-results/report.html\n')).toBe(true);
+    expect(text.endsWith('\nReport: /work/app/reports/pw-perf/report.html\n')).toBe(true);
     expect(text.split('\n').filter((l) => /report/iu.test(l))).toHaveLength(1);
     expect(formatSummary(report('passed'), { width: 120, color: false, html: false })).toContain(
-      'Report: /work/app/pw-perf-results/report.json\n',
+      'Report: /work/app/reports/pw-perf/report.json\n',
     );
     const windows = report('passed');
     windows.configDir = 'C:\\work\\app';
     expect(formatSummary(windows, { width: 120, color: false })).toContain(
-      'Report: C:/work/app/pw-perf-results/report.html\n',
+      'Report: C:/work/app/reports/pw-perf/report.html\n',
     );
   });
 
