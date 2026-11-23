@@ -117,7 +117,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Violation cards show the rule that failed the run.** A card in the Overview of the HTML report
   showed the failed check with the highest share of its limit, e.g. slow share "+5 pp", while its
   hint explained a p95 above the hard limit. It now shows the deciding check: a blocking check
-  above the hard limit first, then other blocking checks.
+  above the hard limit first, then other blocking checks. The Limit used column of the key tables
+  shows the same check for a failed key.
 - **Step thresholds file no longer "differs".** Run & config compared the normalization
   fingerprint of the step thresholds file with the fingerprint of URL keys, so it always showed
   "differs: keys may not match". It now compares it with the step fingerprint of the run; a real
