@@ -283,7 +283,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       '  measure: {',
       '    api: true,',
       '    include: [],',
-      "    exclude: ['/socket.io/'],",
+      "    exclude: ['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/'],",
       '    steps: true,',
       '  },',
       '  keys: {',

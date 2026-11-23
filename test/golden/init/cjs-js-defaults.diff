@@ -83,7 +83,7 @@
 +    include: [],
 +    // Requests whose URL matches any pattern (same forms as include) are not measured. Applied
 +    // after include.
-+    exclude: ['/socket.io/'],
++    exclude: ['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/'],
 +    // The durations of your test.step blocks are measured too, with their own thresholds file
 +    // (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets
 +    // do not reach the keys. Set false to measure only the backend requests.
