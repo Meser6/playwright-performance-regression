@@ -41,6 +41,17 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- **Breaking:** endpoint keys and step keys change in two places (F2 findings). Prefixed ids in
+  URLs are replaced with `:id` by the new built-in pattern `keys.idPatterns.prefixed`: 2–5 capital
+  letters, `-` and at least 3 digits (`/orders/ORD-1000` → `/orders/:id`), or 1–8 lowercase
+  letters, `_` and at least 2 digits or 8–32 letters and digits with a digit
+  (`/invoices/inv_58` → `/invoices/:id`); short names such as `api_v2`, `step_2fa` or `UTF-8`
+  stay. In step titles, bare integers shorter than 9 digits become `:num` instead of `:id`
+  (`Transfer 1500 PLN` → `Transfer :num PLN`, the same key as `Transfer 120.50 PLN`); number
+  segments of paths in titles stay `:id`. Both fingerprints change, so existing thresholds files
+  give `THRESHOLDS_SOURCE_MISMATCH` until re-derived; see
+  [Upgrading](docs/upgrading.md#from-010-next3-endpoint-and-step-keys-changed).
+
 - The report names what it is about: the run report has an optional `suite` (the package name
   from `package.json` next to the Playwright config, else the config path from the repository
   root), shown in the HTML header, the page title and Run & config. A measured project with only

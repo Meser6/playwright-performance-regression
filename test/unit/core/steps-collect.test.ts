@@ -136,7 +136,7 @@ describe('06-AC-13 keys across repetitions and tests', () => {
 describe('06-AC-15 include and exclude', () => {
   test('a filtered step stays a segment of its nested steps', () => {
     const nodes = [step('Open order 4711', [step('submit')])];
-    expect(keys(nodes, options({ include: ['submit'] }))).toEqual(['Open order :id › submit']);
+    expect(keys(nodes, options({ include: ['submit'] }))).toEqual(['Open order :num › submit']);
   });
 
   test('exclude wins over include', () => {
@@ -146,7 +146,7 @@ describe('06-AC-15 include and exclude', () => {
   test('include matches the sanitized title, not the raw one', () => {
     const nodes = [step('Open order 4711')];
     expect(keys(nodes, options({ include: ['Open order 4711'] }))).toEqual([]);
-    expect(keys(nodes, options({ include: ['Open order :id'] }))).toEqual(['Open order :id']);
+    expect(keys(nodes, options({ include: ['Open order :num'] }))).toEqual(['Open order :num']);
   });
 });
 

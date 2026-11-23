@@ -172,6 +172,7 @@ export const packageConfig = obj({
       hex: bool,
       token: bool,
       mixed: bool,
+      prefixed: bool,
       email: bool,
     }),
     extraIdPatterns: arr(urlPattern),

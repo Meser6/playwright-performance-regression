@@ -4,7 +4,7 @@ import { stringifyStable } from '../format/index.ts';
 import { hashHex } from '../random/index.ts';
 
 /** Version of the step key rules; grows when a golden case gets another key (06-REQ-25, P-13). */
-export const STEP_RULES_VERSION = 1;
+export const STEP_RULES_VERSION = 2;
 
 /**
  * hash53 with FIXED_HASH_SEED of the stable JSON text of the settings that change step keys;

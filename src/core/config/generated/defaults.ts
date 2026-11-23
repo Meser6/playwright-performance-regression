@@ -43,7 +43,15 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
   },
   keys: {
     origins: {},
-    idPatterns: { number: true, uuid: true, hex: true, token: true, mixed: true, email: true },
+    idPatterns: {
+      number: true,
+      uuid: true,
+      hex: true,
+      token: true,
+      mixed: true,
+      prefixed: true,
+      email: true,
+    },
     extraIdPatterns: [],
     query: 'names',
     keepQueryValues: [],

@@ -105,7 +105,7 @@ describe('normalization fingerprint (07-REQ-21)', () => {
     normalizationFingerprint(keysOf(keys), ctx);
 
   test('07-AC-08 changing any keys option or baseOrigins changes the fingerprint', () => {
-    expect(NORMALIZE_RULES_VERSION).toBe(1);
+    expect(NORMALIZE_RULES_VERSION).toBe(2);
     const variants: [string, string][] = [
       ['default', fp()],
       ['origins', fp({ origins: { 'https://api.example.com': 'api' } })],
@@ -114,6 +114,7 @@ describe('normalization fingerprint (07-REQ-21)', () => {
       ['idPatterns.hex', fp({ idPatterns: { hex: false } })],
       ['idPatterns.token', fp({ idPatterns: { token: false } })],
       ['idPatterns.mixed', fp({ idPatterns: { mixed: false } })],
+      ['idPatterns.prefixed', fp({ idPatterns: { prefixed: false } })],
       ['idPatterns.email', fp({ idPatterns: { email: false } })],
       ['extraIdPatterns string', fp({ extraIdPatterns: ['me'] })],
       ['extraIdPatterns regex', fp({ extraIdPatterns: [/^me$/] })],
@@ -164,7 +165,7 @@ describe('normalization fingerprint (07-REQ-21)', () => {
   });
 });
 
-const PINNED_DEFAULT_FINGERPRINT = '1171addebdc560';
+const PINNED_DEFAULT_FINGERPRINT = '0fea612f986a40';
 
 describe('host patterns in keys.origins (03-REQ-20, 07-REQ-25, 07-REQ-26)', () => {
   const resolve = (origins: Record<string, string>) => resolveConfig({ keys: { origins } }, {});
@@ -257,5 +258,34 @@ describe('host patterns in keys.origins (03-REQ-20, 07-REQ-25, 07-REQ-26)', () =
     batch();
     const best = Math.min(...Array.from({ length: 5 }, batch));
     expect(best).toBeLessThan(250);
+  });
+});
+
+describe('prefixed ids (07-REQ-08, 07-REQ-21)', () => {
+  const key = (url: string, keys: PerfConfigInput['keys'] = {}) => {
+    const result = createKeyBuilder(
+      keysOf(keys),
+      BASE,
+    )({ method: 'GET', url, resourceType: 'fetch' });
+    return result.ok ? result.key : null;
+  };
+
+  test('07-AC-15 prefixed ids become :id, short names stay, rules version 2 changes the fingerprint', () => {
+    const app = 'https://app.example.com';
+    expect(key(`${app}/api/orders/ORD-1000`)).toBe('GET /api/orders/:id');
+    expect(key(`${app}/v1/invoices/inv_58/payments`)).toBe('GET /v1/invoices/:id/payments');
+    expect(key(`${app}/v1/charges/txn_a1b2c3d4`)).toBe('GET /v1/charges/:id');
+    expect(key(`${app}/api/ORD-12/UTF-8`)).toBe('GET /api/ORD-12/UTF-8');
+    expect(key(`${app}/api_v2/step_2fa/page_1`)).toBe('GET /api_v2/step_2fa/page_1');
+    expect(key(`${app}/v1/customers/c_2`)).toBe('GET /v1/customers/c_2');
+    expect(key(`${app}/api/oauth2_callback/user_settings`)).toBe(
+      'GET /api/oauth2_callback/user_settings',
+    );
+    expect(key(`${app}/api/orders/ORD-1000`, { idPatterns: { prefixed: false } })).toBe(
+      'GET /api/orders/ORD-1000',
+    );
+    expect(NORMALIZE_RULES_VERSION).toBe(2);
+    // Default fingerprint of rules version 1 (0.1.0-next.3): thresholds files must see the change.
+    expect(normalizationFingerprint(keysOf(), BASE)).not.toBe('1171addebdc560');
   });
 });

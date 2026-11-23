@@ -62,6 +62,14 @@
     { "id": "N-56", "title": "another port does not match", "config": { "origins": { "https://app-*.example.com:8443": "app" } }, "input": { "method": "GET", "url": "https://app-7.example.com/x" }, "expected": { "key": "GET app-7.example.com/x" } },
     { "id": "N-57", "title": "more literal characters win", "config": { "origins": { "https://*.ci.example.com": "ci", "https://api-*.ci.example.com": "api" } }, "input": { "method": "GET", "url": "https://api-12.ci.example.com/x" }, "expected": { "key": "GET api/x" } },
     { "id": "N-58", "title": "an exact entry wins over a pattern", "config": { "origins": { "https://*.ci.example.com": "ci", "https://api-12.ci.example.com": "exact" } }, "input": { "method": "GET", "url": "https://api-12.ci.example.com/x" }, "expected": { "key": "GET exact/x" } },
-    { "id": "N-59", "title": "an empty pattern label makes the main origin", "config": { "origins": { "https://*.ci.example.com": "" } }, "context": { "baseOrigins": [] }, "input": { "method": "GET", "url": "https://pr-1.ci.example.com/api/x" }, "expected": { "key": "GET /api/x" } }
+    { "id": "N-59", "title": "an empty pattern label makes the main origin", "config": { "origins": { "https://*.ci.example.com": "" } }, "context": { "baseOrigins": [] }, "input": { "method": "GET", "url": "https://pr-1.ci.example.com/api/x" }, "expected": { "key": "GET /api/x" } },
+    { "id": "N-60", "title": "hyphen-prefixed id is an id", "input": { "method": "GET", "url": "https://app.example.com/api/orders/ORD-1000" }, "expected": { "key": "GET /api/orders/:id" } },
+    { "id": "N-61", "title": "Stripe-style id with digits is an id", "input": { "method": "POST", "url": "https://app.example.com/v1/invoices/inv_58/payments" }, "expected": { "key": "POST /v1/invoices/:id/payments" } },
+    { "id": "N-62", "title": "Stripe-style id of 8 letters and digits is an id", "input": { "method": "GET", "url": "https://app.example.com/v1/charges/txn_a1b2c3d4" }, "expected": { "key": "GET /v1/charges/:id" } },
+    { "id": "N-63", "title": "too few digits or too short a prefix stays", "input": { "method": "GET", "url": "https://app.example.com/api/ORD-12/UTF-8" }, "expected": { "key": "GET /api/ORD-12/UTF-8" } },
+    { "id": "N-64", "title": "snake_case route names with one digit stay", "input": { "method": "GET", "url": "https://app.example.com/api_v2/step_2fa/page_1" }, "expected": { "key": "GET /api_v2/step_2fa/page_1" } },
+    { "id": "N-65", "title": "one character after the underscore stays", "input": { "method": "GET", "url": "https://app.example.com/v1/customers/c_2" }, "expected": { "key": "GET /v1/customers/c_2" } },
+    { "id": "N-66", "title": "snake_case words stay", "input": { "method": "GET", "url": "https://app.example.com/api/oauth2_callback/user_settings" }, "expected": { "key": "GET /api/oauth2_callback/user_settings" } },
+    { "id": "N-67", "title": "prefixed pattern can be disabled", "config": { "idPatterns": { "prefixed": false } }, "input": { "method": "GET", "url": "https://app.example.com/api/orders/ORD-1000" }, "expected": { "key": "GET /api/orders/ORD-1000" } }
   ]
 }
