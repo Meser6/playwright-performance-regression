@@ -144,6 +144,10 @@ jobs:
       - name: Install Chromium system dependencies
         if: steps.browsers.outputs.cache-hit == 'true' && runner.os == 'Linux'
         run: pnpm exec playwright install-deps chromium
+      # xmllint validates the golden junit.xml files against junit-10.xsd (16-AC-01); macOS has it.
+      - name: Install xmllint
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
       - run: pnpm build
       - run: pnpm test
 

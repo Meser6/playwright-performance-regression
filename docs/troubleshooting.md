@@ -498,6 +498,13 @@ another way. Apply `withPerfFixtures()` once, to the final test object.
 **Tool error (exit code 3).** `report.json` could not be written to `report.dir`. Check that the
 directory is writable and the disk is not full.
 
+### REPORT_JUNIT_WRITE_FAILED
+
+**Tool error (exit code 3).** `junit.xml` could not be built or written to `report.dir`;
+`report.json` is kept and records the error. Check that the directory is writable, then run
+again. A build error is a bug in the package; please report it with the message. To skip the
+file, set `report.junit` to `false`.
+
 ### OUTCOME_WRITE_FAILED
 
 **Error line on stderr.** The reporter could not write the outcome file (`outcome.json` in

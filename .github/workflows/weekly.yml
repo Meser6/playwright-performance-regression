@@ -34,6 +34,9 @@ jobs:
       - run: pnpm add --save-dev --save-exact @playwright/test@next
       - run: pnpm exec playwright --version
       - run: pnpm exec playwright install --with-deps chromium
+      # xmllint validates the golden junit.xml files against junit-10.xsd (16-AC-01).
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
       - run: pnpm build
       - run: pnpm test
 

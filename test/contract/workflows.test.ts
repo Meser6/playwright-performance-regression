@@ -140,6 +140,7 @@ describe('workflows', () => {
       '12-PERF-02',
       '12-PERF-03',
       '12-PERF-04',
+      '12-PERF-05',
     ]);
     expect(idsInTests('test/stats', /12-STAT-\d\d/gu)).toEqual([
       '12-STAT-01',

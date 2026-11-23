@@ -745,12 +745,17 @@
       "default": {},
       "properties": {
         "dir": {
-          "description": "Directory of report.json and report.html, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.",
+          "description": "Directory of report.json, report.html and junit.xml, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.",
           "type": "string",
           "minLength": 1,
           "default": "reports/pw-perf"
         },
         "html": {"description": "Write the HTML report.", "type": "boolean", "default": true},
+        "junit": {
+          "description": "Write junit.xml next to report.json in test mode (16).",
+          "type": "boolean",
+          "default": true
+        },
         "rawUrls": {
           "description": "Include raw URLs of the slowest samples in the run report (D-11).",
           "type": "boolean",

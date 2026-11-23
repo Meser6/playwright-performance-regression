@@ -75,6 +75,8 @@ describe.each([
       });
       expectStatus(thresholds, 0);
       expect(existsSync(join(dir, 'pw-perf-thresholds.json'))).toBe(true);
+      // 16-REQ-14: no junit.xml in thresholds mode.
+      expect(existsSync(join(dir, 'reports/pw-perf/junit.xml'))).toBe(false);
       expect(endpointKeys(thresholds).filter((key) => key.includes('/api/'))).toEqual(keys);
       if (name === 'with-setup') {
         // The page object's test.step, measured by default (13-REQ-16, 03-REQ-18, docs/steps.md).
@@ -95,6 +97,41 @@ describe.each([
       expectStatus(run, 0);
       expect(run.report?.mode).toBe('test');
       expect(existsSync(join(dir, 'reports/pw-perf/report.html'))).toBe(true);
+    },
+    RUN_TIMEOUT,
+  );
+
+  test.runIf(name === 'basic')(
+    '16-AC-05 a test run writes reports/pw-perf/junit.xml; with report.junit false it does not',
+    async () => {
+      const junit = join(dir, 'reports/pw-perf/junit.xml');
+      const run = await harness.run(dir, { env: { PW_PERF_MODE: 'test', PW_PERF_PASSES: '2' } });
+      expectStatus(run, 0);
+      const xml = readFileSync(junit, 'utf8');
+      expect(
+        xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="pw-perf"'),
+      ).toBe(true);
+      expect(xml).toContain('<property name="pw-perf.passes" value="2/2"/>');
+      for (const key of keys) {
+        expect(xml).toContain(
+          `<testcase classname="pw-perf.endpoints" name="${key.replace(/&/gu, '&amp;')}" time="`,
+        );
+      }
+      const configFile = join(dir, 'playwright.config.ts');
+      const original = readFileSync(configFile, 'utf8');
+      try {
+        writeFileSync(
+          configFile,
+          original.replace(/\}\),\n\);\s*$/u, '}),\n  { report: { junit: false } },\n);\n'),
+        );
+        expect(readFileSync(configFile, 'utf8')).toContain('junit: false');
+        const off = await harness.run(dir, { env: { PW_PERF_MODE: 'test', PW_PERF_PASSES: '2' } });
+        expectStatus(off, 0);
+        expect(off.report?.config.report?.junit).toBe(false);
+        expect(existsSync(junit)).toBe(false);
+      } finally {
+        writeFileSync(configFile, original);
+      }
     },
     RUN_TIMEOUT,
   );

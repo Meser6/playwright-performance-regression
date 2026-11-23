@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pw-perf" tests="41" failures="0" errors="0" time="300.000">
+  <testsuite name="pw-perf run" tests="1" failures="0" errors="0" skipped="0" time="0" timestamp="2026-11-18T10:00:00.000Z">
+    <properties>
+      <property name="pw-perf.runId" value="run-1"/>
+      <property name="pw-perf.mode" value="test"/>
+      <property name="pw-perf.env" value="qa"/>
+      <property name="pw-perf.toolVersion" value="0.1.0"/>
+      <property name="pw-perf.evaluation" value="warned"/>
+      <property name="pw-perf.exitCode" value="0"/>
+      <property name="pw-perf.passes" value="1/1"/>
+      <property name="pw-perf.shards" value="0"/>
+      <property name="pw-perf.commit" value="abc123"/>
+      <property name="pw-perf.branch" value="main"/>
+      <property name="pw-perf.buildUrl" value="https://github.com/o/r/actions/runs/1"/>
+    </properties>
+    <testcase classname="pw-perf.run" name="measurement run" time="0">
+      <system-out>Mode: test (env qa)
+Tests: 3 passed, 0 failed, 0 flaky, 0 skipped; passes 1/1
+Evaluation: warned (exit code 0)
+Warnings: none</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf endpoints" tests="40" failures="0" errors="0" skipped="0" time="14.500" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-01" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-02" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-03" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-04" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-05" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-06" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-07" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-08" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-09" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-10" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-11" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-12" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-13" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-14" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-15" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-16" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-17" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-18" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-19" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-20" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-21" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-22" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-23" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-24" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-25" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-26" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-27" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-28" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-29" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-30" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-31" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-32" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-33" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-34" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-35" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-36" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-37" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/filler-38" time="0.300"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/tickets" time="1.500">
+      <system-out>p95 1500 ms &gt; limit 1400 ms (+7%), 20 samples, thresholds file (not blocking)
+Limits: median 2000 ms, p95 1400 ms, p99 4000 ms, errors &lt;= 0.050
+Samples: 20, errors 0
+Details: report.html (key &quot;GET /api/tickets&quot;)
+not blocking: within gate.tolerance (2)</system-out>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="POST /api/orders" time="1.600">
+      <system-out>p95 1600 ms &gt; limit 1400 ms (+14%), 20 samples, thresholds file (not blocking)
+Limits: median 2000 ms, p95 1400 ms, p99 4000 ms, errors &lt;= 0.050
+Samples: 20, errors 0
+Details: report.html (key &quot;POST /api/orders&quot;)
+not blocking: within gate.tolerance (2)</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

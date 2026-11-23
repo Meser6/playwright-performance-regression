@@ -532,9 +532,11 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     }
   });
 
-  test('02-AC-21 the v3 golden report loses config.run.projects, gets run.overrideSlowMo false and measure.api true, everything else unchanged', () => {
+  test('02-AC-21 the v3 golden report loses config.run.projects, gets run.overrideSlowMo false, measure.api true and report.junit false, everything else unchanged', () => {
     const text = raw('run-report', 'v3', 'full-run.json');
-    const before = JSON.parse(text) as Json & { config: { run: Json; measure: Json } };
+    const before = JSON.parse(text) as Json & {
+      config: { run: Json; measure: Json; report: Json };
+    };
     expect(before.config.run['projects']).toBe('auto');
     const result = parseRunReport(text, 'v3.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
@@ -549,8 +551,20 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
         ...before.config,
         run: { ...run, overrideSlowMo: false },
         measure: { api: true, ...before.config.measure },
+        report: { ...before.config.report, junit: false },
       },
     });
+  });
+
+  test('16-REQ-18 a v4 report of 0.1.0-next.4 without report.junit stays valid without migration', () => {
+    const text = raw('run-report', 'v3', 'full-run.json');
+    const result = parseRunReport(text, 'v3.json');
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    const { junit: _junit, ...report } = result.value.config.report ?? {};
+    const next4 = { ...result.value, config: { ...result.value.config, report } };
+    const parsed = parseRunReport(JSON.stringify(next4), 'next4.json');
+    if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
+    expect(parsed.value.config.report).not.toHaveProperty('junit');
   });
 
   test('02-AC-19 v1 and v2 reports migrate to one pass and run.passes from run.repeat', () => {

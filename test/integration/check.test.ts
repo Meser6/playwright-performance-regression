@@ -26,7 +26,7 @@ describe('check', () => {
   });
 
   test(
-    '04-AC-34 04-AC-37 PW_PERF_MAX_TESTS=2 runs 2 tests, skips 10, runs setup, writes nothing, exit code 0',
+    '04-AC-34 04-AC-37 16-AC-05 PW_PERF_MAX_TESTS=2 runs 2 tests, skips 10, runs setup, writes nothing, exit code 0',
     async () => {
       const dir = shared;
       const before = stateFiles();
@@ -43,6 +43,8 @@ describe('check', () => {
         /Next: derive thresholds on the CI machines: (?:npx cross-env )?PW_PERF_MODE=thresholds /u,
       );
       expect(existsSync(join(dir, 'reports/pw-perf', 'report.json'))).toBe(false);
+      // 16-AC-05: a check writes no junit.xml.
+      expect(existsSync(join(dir, 'reports/pw-perf', 'junit.xml'))).toBe(false);
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'))).toEqual([]);
       expect(existsSync(join(dir, 'reports/pw-perf', 'outcome.json'))).toBe(false);
       expect(stateFiles()).toEqual(before);

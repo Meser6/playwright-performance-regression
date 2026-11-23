@@ -2,6 +2,13 @@
 // report only (01-REQ-22). Pure: the caller passes the
 // terminal width, the color decision and TERM=dumb, and prints the text. Frames, tables, emoji and
 // colors follow 09-REQ-27; without colors the text is the same apart from the ANSI sequences.
+import {
+  exceedance,
+  formatActual,
+  formatLimit,
+  formatMs,
+  overText,
+} from '../core/format/violation.ts';
 import { KINDS } from '../core/types/index.ts';
 import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
 import { boxLines, marks, table } from './box.ts';
@@ -10,7 +17,7 @@ import { painter } from './color.ts';
 import type { ColorStyle, Painter } from './color.ts';
 import { compareText, plural, textWidth, truncateMiddle } from './text.ts';
 
-export { truncateMiddle };
+export { exceedance, overText, truncateMiddle };
 
 export interface SummaryOptions {
   /** Terminal columns; 120 without a terminal (09-REQ-22). */
@@ -52,44 +59,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'wilson',
   'errors',
 ];
-const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
-  'median',
-  'percentile',
-  'p99',
-]);
-
 type Paint = Painter;
-
-/**
- * Relative exceedance r of a failed check (09-REQ-19, 09-REQ-20): actual / limit for rules
- * failing on `>`, limit / actual for apdex; Infinity when the divisor is 0.
- */
-export function exceedance(check: Pick<Check, 'rule' | 'actual' | 'limit'>): number {
-  if (check.rule === 'apdex') return check.actual === 0 ? Infinity : check.limit / check.actual;
-  return check.limit === 0 ? Infinity : check.actual / check.limit;
-}
-
-/** Rules on shares: the excess is in percentage points (09-REQ-19, 09-D-20). */
-const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
-  'apdex',
-  'wilson',
-  'errors',
-]);
-
-/**
- * Column `over`: Math.round((r − 1) · 100) with "+" and "%", or ">999%" (09-REQ-19, 09-D-15);
- * for the share rules the difference in percentage points, at least 1: "+81 pp" (09-D-20).
- */
-export function overText(check: Pick<Check, 'rule' | 'actual' | 'limit'>): string {
-  if (SHARE_RULES.has(check.rule)) {
-    const points = Math.max(1, Math.round(Math.abs(check.actual - check.limit) * 100));
-    return `+${String(points)} pp`;
-  }
-  const r = exceedance(check);
-  if (!Number.isFinite(r)) return '>999%';
-  const over = Math.round((r - 1) * 100);
-  return over > 999 ? '>999%' : `+${over}%`;
-}
 
 interface Violation {
   kind: Kind;
@@ -243,20 +213,6 @@ function mutedLines(report: RunReport, paint: Paint): string[] {
   return lines;
 }
 
-function formatTime(ms: number): string {
-  return `${Math.round(ms)} ms`;
-}
-
-function formatActual(check: Check): string {
-  if (TIME_RULES.has(check.rule)) return formatTime(check.actual);
-  const observed = check.observed === null ? '' : ` (${check.observed.toFixed(3)})`;
-  return `${check.actual.toFixed(3)}${observed}`;
-}
-
-function formatLimit(check: Check): string {
-  return TIME_RULES.has(check.rule) ? formatTime(check.limit) : check.limit.toFixed(3);
-}
-
 function tableLines(
   report: RunReport,
   list: Violation[],
@@ -318,7 +274,7 @@ function slowestLines(report: RunReport, list: Violation[]): string[] {
     if (slowest === undefined) continue;
     const t = slowest.test;
     lines.push(
-      `  slowest: ${v.key} — ${formatTime(slowest.duration)} in "${t.title}" (${t.file}:${t.line})`,
+      `  slowest: ${v.key} — ${formatMs(slowest.duration)} in "${t.title}" (${t.file}:${t.line})`,
     );
   }
   return lines;

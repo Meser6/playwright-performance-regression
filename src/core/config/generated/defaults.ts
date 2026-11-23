@@ -115,6 +115,6 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     hysteresis: { relative: 0.1, ratio: 0.01 },
     loosenWarnRelative: 0.5,
   },
-  report: { dir: 'reports/pw-perf', html: true, rawUrls: false },
+  report: { dir: 'reports/pw-perf', html: true, junit: true, rawUrls: false },
   advanced: { maxSamplesPerKey: 5000, seed: 1 },
 };

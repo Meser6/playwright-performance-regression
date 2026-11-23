@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pw-perf" tests="2" failures="0" errors="1" time="300.000">
+  <testsuite name="pw-perf run" tests="1" failures="0" errors="1" skipped="0" time="0" timestamp="2026-11-18T10:00:00.000Z">
+    <properties>
+      <property name="pw-perf.runId" value="2026-11-18T10-00-00-a1b2"/>
+      <property name="pw-perf.mode" value="test"/>
+      <property name="pw-perf.env" value=""/>
+      <property name="pw-perf.toolVersion" value="0.1.0"/>
+      <property name="pw-perf.evaluation" value="error"/>
+      <property name="pw-perf.exitCode" value="3"/>
+      <property name="pw-perf.passes" value="1/1"/>
+      <property name="pw-perf.shards" value="0"/>
+      <property name="pw-perf.commit" value=""/>
+      <property name="pw-perf.branch" value=""/>
+      <property name="pw-perf.buildUrl" value=""/>
+    </properties>
+    <testcase classname="pw-perf.run" name="measurement run" time="0">
+      <error type="SCHEMA_INVALID_JSON" message="pw-perf-thresholds.api.json: not valid JSON">SCHEMA_INVALID_JSON: pw-perf-thresholds.api.json: not valid JSON
+hint: Fix the JSON syntax, or delete the file and let the package write it again.</error>
+      <system-out>Mode: test
+Tests: 10 passed, 0 failed, 0 flaky, 0 skipped; passes 1/1
+Evaluation: error (exit code 3)
+Warnings: none</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf endpoints" tests="1" failures="0" errors="0" skipped="1" time="0.120" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.endpoints" name="GET /api/users" time="0.120">
+      <skipped message="not evaluated: thresholds file pw-perf-thresholds.api.json is invalid"/>
+    </testcase>
+  </testsuite>
+</testsuites>

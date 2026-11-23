@@ -716,11 +716,17 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   {
     path: 'report.dir',
     description:
-      'Directory of report.json and report.html, relative to the Playwright config directory.',
+      'Directory of report.json, report.html and junit.xml, relative to the Playwright config directory.',
     leaf: true,
     default: 'reports/pw-perf',
   },
   { path: 'report.html', description: 'Write the HTML report.', leaf: true, default: true },
+  {
+    path: 'report.junit',
+    description: 'Write junit.xml next to report.json in test mode.',
+    leaf: true,
+    default: true,
+  },
   {
     path: 'report.rawUrls',
     description: 'Include raw URLs of the slowest samples in the run report.',

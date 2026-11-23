@@ -95,7 +95,7 @@ const passRunIds = (): string[] =>
 
 describe('passes of the test script (04-REQ-63, 04-REQ-64)', () => {
   test(
-    '04-AC-42 04-AC-64 PW_PERF_MODE=test npm run e2e runs the script with its setup step once per pass',
+    '04-AC-42 04-AC-64 16-AC-07 PW_PERF_MODE=test npm run e2e runs the script with its setup step once per pass',
     async () => {
       const result = await run(npm, ['run', 'e2e', '--', '--grep', 'cart'], {
         PW_PERF_MODE: 'test',
@@ -110,6 +110,10 @@ describe('passes of the test script (04-REQ-63, 04-REQ-64)', () => {
       expect(report?.endpoints['GET /api/items/:id']).toBeUndefined();
       expect(new Set(passRunIds())).toEqual(new Set([report?.runId]));
       expect(passRunIds()).toHaveLength(3);
+      // 16-AC-07: one junit.xml, written by pass 1 with the evaluation of all passes.
+      const junit = readFileSync(join(dir, 'reports/pw-perf', 'junit.xml'), 'utf8');
+      expect(junit).toContain('<property name="pw-perf.passes" value="3/3"/>');
+      expect(junit).toContain('name="GET /api/cart"');
       // 04-AC-64 the command as the user types it, without absolute paths.
       expect(result.output).toContain('pass 2/3: npm run e2e -- --grep cart\n');
       expect(result.output).toContain('Tests     1 test × 3 passes = 3 test runs');
