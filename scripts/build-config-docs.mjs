@@ -266,6 +266,22 @@ const URL_PATTERNS = `## URL patterns
 - in a TypeScript or JavaScript config, a \`RegExp\` works as well.
 
 The \`g\` and \`y\` flags are ignored, so a pattern matches the same way on every call.
+
+Example: ids that the built-in \`keys.idPatterns\` miss, such as \`ord.1000\`, \`2026-Q4-17\` or the
+fixed id \`demo-tenant\`, split one endpoint into many keys (the run warns with
+\`NORMALIZE_HIGH_CARDINALITY\`). Each pattern is tested against one whole path segment:
+
+\`\`\`ts
+keys: {
+  extraIdPatterns: [
+    /^ord\\.[0-9]+$/, // GET /orders/ord.1000 → GET /orders/:id
+    /^[0-9]{4}-Q[1-4]-[0-9]+$/, // GET /reports/2026-Q4-17 → GET /reports/:id
+    'demo-tenant', // GET /t/demo-tenant/users → GET /t/:id/users
+  ],
+}
+\`\`\`
+
+In a JSON config: \`"extraIdPatterns": [{ "regex": "^ord\\\\.[0-9]+$" }, "demo-tenant"]\`.
 `;
 
 /** @returns {Promise<string>} */

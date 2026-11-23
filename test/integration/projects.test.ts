@@ -94,6 +94,8 @@ describe('custom-fixtures', () => {
         'GET /api/cf/account-second',
         'GET /api/cf/admin',
         'GET /api/cf/base-context',
+        'GET /api/cf/chain-inner',
+        'GET /api/cf/chain-page',
         'GET /api/cf/late-page',
         'GET /api/cf/own-page',
         'GET /api/cf/tracked',
@@ -101,6 +103,8 @@ describe('custom-fixtures', () => {
       ]);
       // Two repetitions, one request each: nothing is counted twice.
       for (const key of keys) expect(sampleCount(run, key), key).toBe(2);
+      // A chain with both test objects wrapped records the request fixture once as well.
+      expect(sampleCount(run, 'request GET /api/cf/chain-request')).toBe(2);
       // The late context override is found through the page.
       const autoTracked = (run.report?.warnings ?? []).filter(
         (w) => w.code === 'COLLECTOR_CONTEXT_AUTO_TRACKED',
@@ -114,7 +118,7 @@ describe('custom-fixtures', () => {
   test(
     '12-AC-03 without perf mode the same tests pass and record nothing',
     async () => {
-      expectPlainRun(await harness.run(dir), 7);
+      expectPlainRun(await harness.run(dir), 9);
     },
     RUN_TIMEOUT,
   );

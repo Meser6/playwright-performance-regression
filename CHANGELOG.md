@@ -245,6 +245,11 @@ details: performance failed (code 2) in …/outcome.json`.
 
 ### Added
 
+- Docs: installing in a pnpm monorepo (`pnpm add -Dw` or in every importing package,
+  `pnpm --filter <app> exec playwright test`, `--no-bail` for `pnpm -r`), `globalSetup` and setup
+  projects running once per pass, `trackRequestContext()` in fixtures, several test objects in one
+  chain (wrapping both is safe: an integration test shows every request is recorded once) and an
+  example of `keys.extraIdPatterns`.
 - Warning `CONFIG_FILE_NOT_PASSED`: a `pw-perf.config.*` file next to the Playwright config is
   no longer ignored silently when `withPerf(config)` gets no second argument; the run still uses
   the defaults, and the hint shows how to pass the file.
