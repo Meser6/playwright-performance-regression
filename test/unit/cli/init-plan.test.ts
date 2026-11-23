@@ -77,6 +77,13 @@ const ANSWERS: InitAnswers = {
 const activeLines = (config: string): string[] =>
   config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
 
+/** The active lines of a section, e.g. `run` (04-D-54: every listed option is code). */
+const section = (config: string, name: string): string[] => {
+  const lines = activeLines(config);
+  const start = lines.indexOf(`  ${name}: {`);
+  return lines.slice(start, lines.indexOf('  },', start) + 1);
+};
+
 describe('detectProject', () => {
   test('reads the project as text: config, version, package manager, module type, tests', async () => {
     const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
@@ -205,30 +212,33 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     const plan = planInitChanges(info, { ...ANSWERS, scope: 'tagged' });
     expect(plan.changes.map((c) => c.path)).not.toContain('package.json');
     const config = plan.changes.find((c) => c.path === 'pw-perf.config.ts')?.after ?? '';
-    expect(activeLines(config)).toEqual([
-      "import { definePerfConfig } from 'playwright-performance-regression';",
-      'export default definePerfConfig({',
+    expect(section(config, 'run')).toEqual([
       '  run: {',
+      '    env: null,',
+      '    passes: {',
+      '      test: 5,',
+      '      thresholds: 10,',
+      '    },',
       "    grep: '@perf',",
+      '    overrideSlowMo: false,',
       '  },',
-      '});',
     ]);
-    // run.env stays the default: only a commented line.
-    expect(config).toMatch(/^ {4}\/\/ env: null,$/mu);
+    // run.env stays the default (no environments from the wizard).
+    expect(config).toMatch(/^ {4}env: null,$/mu);
   });
 
-  test('04-AC-48 the preset becomes active code only when it differs', () => {
+  test('04-AC-48 the preset is always written; a preset other than the default names it', () => {
     const config = renderPerfConfig({ ...ANSWERS, preset: 'loose' });
-    expect(activeLines(config)).toEqual([
-      "import { definePerfConfig } from 'playwright-performance-regression';",
-      'export default definePerfConfig({',
+    expect(section(config, 'thresholds')).toEqual([
       '  thresholds: {',
       "    preset: 'loose',",
+      "    dir: '.',",
       '  },',
-      '});',
     ]);
     expect(config).toMatch(/Default: 'normal'\.\n {4}preset: 'loose',/u);
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, preset: 'normal' }))).toHaveLength(3);
+    const normal = renderPerfConfig({ ...ANSWERS, preset: 'normal' });
+    expect(normal).toMatch(/regressions\.\n {4}preset: 'normal',/u);
+    expect(normal).not.toContain('Default:');
   });
 
   test('04-AC-48 04-REQ-46 the file lists at most 15 important options and links the full list', () => {
@@ -255,26 +265,57 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       for (const path of activeValues(a).keys()) expect(listed, path).toContain(path);
   });
 
-  test('04-AC-17 04-REQ-46 pw-perf.config.ts holds only values that differ from the defaults as active code', () => {
+  test('04-AC-17 04-REQ-46 04-D-54 pw-perf.config.ts holds every listed option as active code with the answers', () => {
     const config = renderPerfConfig(ANSWERS);
     expect(activeLines(config)).toEqual([
       "import { definePerfConfig } from 'playwright-performance-regression';",
       'export default definePerfConfig({',
-      '});',
-    ]);
-    // No origin labels from the wizard: they follow the baseURL (07-REQ-03).
-    expect(config).toContain('  //   origins: {},\n');
-    const other = renderPerfConfig({ ...ANSWERS, passesTest: 7 });
-    expect(other.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l))).toEqual([
-      "import { definePerfConfig } from 'playwright-performance-regression';",
-      'export default definePerfConfig({',
       '  run: {',
+      '    env: null,',
       '    passes: {',
-      '      test: 7,',
+      '      test: 5,',
+      '      thresholds: 10,',
       '    },',
+      '    grep: null,',
+      '    overrideSlowMo: false,',
+      '  },',
+      '  measure: {',
+      '    api: true,',
+      '    include: [],',
+      "    exclude: ['/socket.io/'],",
+      '    steps: true,',
+      '  },',
+      '  keys: {',
+      '    origins: {},',
+      '  },',
+      '  gate: {',
+      '    tolerance: 0,',
+      '    hardLimitFactor: 2,',
+      '  },',
+      '  thresholds: {',
+      "    preset: 'normal',",
+      "    dir: '.',",
+      '  },',
+      '  report: {',
+      "    dir: 'reports/pw-perf',",
       '  },',
       '});',
     ]);
+    // No commented-out option and no header sentence about them.
+    expect(config).not.toMatch(/^\s*\/\/\s+[\w$]+: .*,$/mu);
+    expect(config).not.toContain('commented out');
+    expect(config).toContain(
+      '// Objects are merged with the defaults; an array you set replaces the default array.\n',
+    );
+    // A comment above each section, after a blank line.
+    expect(config).toContain('\n\n  // What the collector measures.\n  measure: {\n');
+    expect(config).toContain('  // How the measurement run is executed.\n  run: {\n');
+    expect(config).toContain('(do not commit it)');
+    // No line wider than the owner's layout.
+    for (const line of config.split('\n').filter((l) => !l.includes('https://')))
+      expect(line.length, line).toBeLessThanOrEqual(97);
+    const other = renderPerfConfig({ ...ANSWERS, passesTest: 7 });
+    expect(section(other, 'run')).toContain('      test: 7,');
     expect(other).toMatch(/ passes on 1 worker\)\. Default: 5\.\n {6}test: 7,/u);
   });
 
@@ -303,8 +344,8 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
       );
       expect(index, option.path).toBeGreaterThanOrEqual(at);
       // Nested as in the config object: two more spaces per level.
-      // With the default answers every option is commented out.
-      expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth + 3);
+      // Every option is active code (04-D-54).
+      expect(lines[index]?.indexOf(name), option.path).toBe(2 + 2 * depth);
       // The text comes right before, wrapped.
       const text =
         CONFIG_FILE_OPTIONS.find((o) => o.option === option.path)?.text ?? option.description;
@@ -922,28 +963,13 @@ describe('04-REQ-47 step 4', () => {
   });
 
   test('04-AC-28 all keeps the defaults, api writes measure.steps: false and steps measure.api: false', () => {
-    const header = [
-      "import { definePerfConfig } from 'playwright-performance-regression';",
-      'export default definePerfConfig({',
-    ];
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'all' }))).toEqual([
-      ...header,
-      '});',
-    ]);
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'api' }))).toEqual([
-      ...header,
-      '  measure: {',
-      '    steps: false,',
-      '  },',
-      '});',
-    ]);
-    expect(activeLines(renderPerfConfig({ ...ANSWERS, measure: 'steps' }))).toEqual([
-      ...header,
-      '  measure: {',
-      '    api: false,',
-      '  },',
-      '});',
-    ]);
+    const kinds = (measure: InitAnswers['measure']): string[] =>
+      section(renderPerfConfig({ ...ANSWERS, measure }), 'measure').filter((l) =>
+        /^ {4}(api|steps):/u.test(l),
+      );
+    expect(kinds('all')).toEqual(['    api: true,', '    steps: true,']);
+    expect(kinds('api')).toEqual(['    api: true,', '    steps: false,']);
+    expect(kinds('steps')).toEqual(['    api: false,', '    steps: true,']);
     // Every answer gives a valid config (never both kinds off, 03-REQ-28).
     for (const measure of ['all', 'api', 'steps'] as const) {
       const values = activeValues({ ...ANSWERS, measure });

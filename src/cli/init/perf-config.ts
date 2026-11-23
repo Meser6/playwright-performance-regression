@@ -1,9 +1,9 @@
-// The package config file written by the init wizard (04-REQ-38 step 8, 04-REQ-46, v4 D6): the
-// most important options only (CONFIG_FILE_OPTIONS), in schema order with a short comment each;
-// the answers that differ from the defaults as active values, the other options commented out
-// with their default value, and a link to the full option list in the docs. Defaults and order
-// come from the schema (generated/config-options.ts). The text is English and does
-// not depend on the wizard language (04-REQ-43). Pure.
+// The package config file written by the init wizard (04-REQ-38 step 7, 04-REQ-46, v4 D6,
+// 04-D-54): the most important options only (CONFIG_FILE_OPTIONS), in schema order with a short
+// comment each and a comment above each section; every option as an active value (the wizard
+// answers, the other options with their default value) and a link to the full option list in the
+// docs. Defaults and order come from the schema (generated/config-options.ts). The text is
+// English and does not depend on the wizard language (04-REQ-43). Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import type { MarginPreset } from '../../core/config/index.ts';
 import { DOCS_CONFIG_URL, PACKAGE_NAME } from '../../core/types/index.ts';
@@ -31,8 +31,8 @@ export interface InitAnswers {
 /** The tag of step 2 written to run.grep (03-REQ-25). */
 export const PERF_TAG = '@perf';
 
-/** Width of the written lines. */
-const WIDTH = 100;
+/** Width of the written lines, as in the owner's layout (04-D-54). */
+const WIDTH = 97;
 
 /** Package config values of the answers that differ from the defaults: option path → value. */
 export function activeValues(answers: InitAnswers): Map<string, unknown> {
@@ -77,31 +77,13 @@ function wrap(text: string, width: number): string[] {
   return lines;
 }
 
-/** Where lines go: spaces before the code, and once commented out, "// " and inner spaces. */
-interface Place {
-  indent: string;
-  commented: boolean;
-  inner: string;
-}
-
-const nested = (place: Place): Place =>
-  place.commented
-    ? { ...place, inner: `${place.inner}  ` }
-    : { ...place, indent: `${place.indent}  ` };
-
-const lineAt = (place: Place, text: string): string =>
-  place.commented ? `${place.indent}// ${place.inner}${text}`.trimEnd() : `${place.indent}${text}`;
-
-const prefixLength = (place: Place): number =>
-  place.indent.length + (place.commented ? 3 + place.inner.length : 0);
-
 class Renderer {
   readonly lines: string[] = [];
   readonly #children = new Map<string, TemplateOption[]>();
-  readonly #active: Map<string, unknown>;
+  readonly #answers: Map<string, unknown>;
 
-  constructor(active: Map<string, unknown>) {
-    this.#active = active;
+  constructor(answers: Map<string, unknown>) {
+    this.#answers = answers;
     for (const option of CONFIG_OPTIONS) {
       if (!inFile(option.path)) continue;
       const parent = option.path.split('.').slice(0, -1).join('.');
@@ -113,43 +95,35 @@ class Renderer {
     return this.#children.get(path) ?? [];
   }
 
-  #isActive(path: string): boolean {
-    for (const key of this.#active.keys())
-      if (key === path || key.startsWith(`${path}.`)) return true;
-    return false;
-  }
-
-  option(option: TemplateOption, outer: Place): void {
-    const active = this.#isActive(option.path);
-    const place: Place = outer.commented || active ? outer : { ...outer, commented: true };
+  /** The option with its comment above, as active code (04-D-54). */
+  option(option: TemplateOption, indent: string): void {
     const name = option.path.split('.').at(-1) as string;
-    const valueText =
-      option.leaf && active ? ts(this.#active.get(option.path)) : ts(option.default);
+    const answered = option.leaf && this.#answers.has(option.path);
     const text = FILE_TEXTS.get(option.path) ?? option.description;
-    const description = option.leaf && active ? `${text} Default: ${ts(option.default)}.` : text;
-    // The description stays a plain comment where the option itself is commented out first.
-    for (const l of wrap(description, WIDTH - prefixLength(outer) - 3))
-      this.lines.push(lineAt(outer, `// ${l}`));
+    const description = answered ? `${text} Default: ${ts(option.default)}.` : text;
+    for (const l of wrap(description, WIDTH - indent.length - 3))
+      this.lines.push(`${indent}// ${l}`);
     if (!option.leaf) {
-      this.lines.push(lineAt(place, `${name}: {`));
-      for (const child of this.children(option.path)) this.option(child, nested(place));
-      this.lines.push(lineAt(place, '},'));
+      this.lines.push(`${indent}${name}: {`);
+      for (const child of this.children(option.path)) this.option(child, `${indent}  `);
+      this.lines.push(`${indent}},`);
       return;
     }
-    const single = `${name}: ${valueText},`;
-    if (prefixLength(place) + single.length <= WIDTH || !Array.isArray(option.default)) {
-      this.lines.push(lineAt(place, single));
+    const value = answered ? this.#answers.get(option.path) : option.default;
+    const single = `${indent}${name}: ${ts(value)},`;
+    if (single.length <= WIDTH || !Array.isArray(value)) {
+      this.lines.push(single);
       return;
     }
     // A long list: its items in lines.
-    const inside = nested(place);
-    this.lines.push(lineAt(place, `${name}: [`));
+    const inside = `${indent}  `;
+    this.lines.push(`${indent}${name}: [`);
     for (const l of wrap(
-      (option.default as unknown[]).map((item) => `${ts(item)},`).join(' '),
-      WIDTH - prefixLength(inside),
+      (value as unknown[]).map((item) => `${ts(item)},`).join(' '),
+      WIDTH - inside.length,
     ))
-      this.lines.push(lineAt(inside, l));
-    this.lines.push(lineAt(place, '],'));
+      this.lines.push(`${inside}${l}`);
+    this.lines.push(`${indent}],`);
   }
 }
 
@@ -217,7 +191,7 @@ export const CONFIG_FILE_OPTIONS: readonly { option: string; text: string }[] = 
   },
   {
     option: 'report.dir',
-    text: 'Directory of report.json and report.html (do not commit it), relative to the Playwright config directory.',
+    text: 'Directory of report.json, report.html and junit.xml (do not commit it), relative to the Playwright config directory.',
   },
 ];
 
@@ -239,19 +213,16 @@ export type PerfConfigFormat = 'ts' | 'esm' | 'cjs';
 /** Text of the package config file for the answers (pw-perf.config.ts by default). */
 export function renderPerfConfig(answers: InitAnswers, format: PerfConfigFormat = 'ts'): string {
   const renderer = new Renderer(activeValues(answers));
-  const top: Place = { indent: '  ', commented: false, inner: '' };
   renderer.children('').forEach((section, i) => {
     if (i > 0) renderer.lines.push('');
-    renderer.option(section, top);
+    renderer.option(section, '  ');
   });
   return [
     ...(format === 'ts' ? [] : ['// @ts-check']),
     `// Configuration of ${PACKAGE_NAME}, written by its guided setup.`,
     '// It lists the most important options only; every option, with its default, is described at',
     `// ${DOCS_CONFIG_URL}`,
-    '// Only the values that differ from the defaults are set. The other options are commented out',
-    '// with their default value: uncomment a line (and its enclosing objects) to change it. Objects',
-    '// are merged with the defaults; an array you set replaces the default array.',
+    '// Objects are merged with the defaults; an array you set replaces the default array.',
     format === 'cjs'
       ? `const { definePerfConfig } = require('${PACKAGE_NAME}');`
       : `import { definePerfConfig } from '${PACKAGE_NAME}';`,

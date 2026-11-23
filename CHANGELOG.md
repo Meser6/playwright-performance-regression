@@ -29,6 +29,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   commands printed at the end and for the check, and the step says so. The recipes stay in
   `examples/ci/` and [CI](docs/ci.md) for you to copy; the summary links to them. CI files written
   by an earlier wizard are left as they are.
+- **The config file of the guided setup lists every option as code.** `pw-perf.config.ts` (or
+  `.js`) now sets all 15 listed options: your answers and the default value of every other
+  option, so you edit a value instead of uncommenting lines and objects. Each section has a
+  short comment above it, and the `report.dir` comment says the folder (with `junit.xml`) is not
+  committed. Config files written by an earlier wizard keep working unchanged.
 
 ## [0.1.0-next.4] - 2026-11-23
 

@@ -4,92 +4,90 @@
 +reports/pw-perf/
 --- /dev/null
 +++ b/pw-perf.config.ts
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,86 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.
 +// It lists the most important options only; every option, with its default, is described at
 +// https://github.com/Meser6/playwright-performance-regression/blob/main/docs/configuration.md
-+// Only the values that differ from the defaults are set. The other options are commented out
-+// with their default value: uncomment a line (and its enclosing objects) to change it. Objects
-+// are merged with the defaults; an array you set replaces the default array.
++// Objects are merged with the defaults; an array you set replaces the default array.
 +import { definePerfConfig } from 'playwright-performance-regression';
 +
 +export default definePerfConfig({
 +  // How the measurement run is executed.
-+  // run: {
-+  //   // Environment label: each label has its own thresholds files
-+  //   // (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see
-+  //   // docs/dynamic-environments.md.
-+  //   env: null,
-+  //   // Passes of the test command: the command runs once per pass and every test runs once in
-+  //   // each pass.
-+  //   passes: {
-+  //     // How many times your test command runs in a measurement run (PW_PERF_MODE=test). More
-+  //     // passes give more samples per endpoint and steadier results, but the run takes longer
-+  //     // (tests x passes on 1 worker).
-+  //     test: 5,
-+  //     // Passes in a thresholds run (PW_PERF_MODE=thresholds): more passes give steadier
-+  //     // thresholds.
-+  //     thresholds: 10,
-+  //   },
-+  //   // Measure only the tests whose title or tags match this regular expression, e.g. '@perf'.
-+  //   // Setup and teardown projects still run in full.
-+  //   grep: null,
-+  //   // true: slowMo is set to 0 in every measured project in perf mode, because it delays every
-+  //   // browser action and distorts the times. false: slowMo stays and perf mode warns about it.
-+  //   overrideSlowMo: false,
-+  // },
++  run: {
++    // Environment label: each label has its own thresholds files
++    // (pw-perf-thresholds.<env>.json). Usually set per run with PW_PERF_ENV=staging instead; see
++    // docs/dynamic-environments.md.
++    env: null,
++    // Passes of the test command: the command runs once per pass and every test runs once in
++    // each pass.
++    passes: {
++      // How many times your test command runs in a measurement run (PW_PERF_MODE=test). More
++      // passes give more samples per endpoint and steadier results, but the run takes longer
++      // (tests x passes on 1 worker).
++      test: 5,
++      // Passes in a thresholds run (PW_PERF_MODE=thresholds): more passes give steadier
++      // thresholds.
++      thresholds: 10,
++    },
++    // Measure only the tests whose title or tags match this regular expression, e.g. '@perf'.
++    // Setup and teardown projects still run in full.
++    grep: null,
++    // true: slowMo is set to 0 in every measured project in perf mode, because it delays every
++    // browser action and distorts the times. false: slowMo stays and perf mode warns about it.
++    overrideSlowMo: false,
++  },
 +
 +  // What the collector measures.
-+  // measure: {
-+  //   // The backend requests the browser makes and the calls of the request fixture (keys like
-+  //   // "request GET /api/x") are measured as endpoint keys. Set false to measure only test.step
-+  //   // durations (api and steps cannot both be off).
-+  //   api: true,
-+  //   // When not empty, only requests whose URL matches at least one pattern are measured. A
-+  //   // string matches as a substring of the URL; { regex: '...' } is a regular expression.
-+  //   include: [],
-+  //   // Requests whose URL matches any pattern (same forms as include) are not measured. Applied
-+  //   // after include.
-+  //   exclude: ['/socket.io/'],
-+  //   // The durations of your test.step blocks are measured too, with their own thresholds file
-+  //   // (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets
-+  //   // do not reach the keys. Set false to measure only the backend requests.
-+  //   steps: true,
-+  // },
++  measure: {
++    // The backend requests the browser makes and the calls of the request fixture (keys like
++    // "request GET /api/x") are measured as endpoint keys. Set false to measure only test.step
++    // durations (api and steps cannot both be off).
++    api: true,
++    // When not empty, only requests whose URL matches at least one pattern are measured. A
++    // string matches as a substring of the URL; { regex: '...' } is a regular expression.
++    include: [],
++    // Requests whose URL matches any pattern (same forms as include) are not measured. Applied
++    // after include.
++    exclude: ['/socket.io/'],
++    // The durations of your test.step blocks are measured too, with their own thresholds file
++    // (pw-perf-thresholds.steps.json). Step titles are sanitized: ids, e-mails, URLs and secrets
++    // do not reach the keys. Set false to measure only the backend requests.
++    steps: true,
++  },
 +
 +  // How raw URLs become endpoint keys.
-+  // keys: {
-+  //   // Short labels for backend hosts in endpoint keys; the baseURL host has no label. Host
-+  //   // patterns with * merge random CI hosts, e.g. { 'https://auth.example.com': 'auth',
-+  //   // 'https://pr-*.ci.example.com': '' }.
-+  //   origins: {},
-+  // },
++  keys: {
++    // Short labels for backend hosts in endpoint keys; the baseURL host has no label. Host
++    // patterns with * merge random CI hosts, e.g. { 'https://auth.example.com': 'auth',
++    // 'https://pr-*.ci.example.com': '' }.
++    origins: {},
++  },
 +
 +  // Gate policy: when violations fail the run.
-+  // gate: {
-+  //   // How many endpoints may exceed their thresholds before the run fails: a number, or a share
-+  //   // of the measured keys like '5%'. 0: every violation fails the run.
-+  //   tolerance: 0,
-+  //   // A time above threshold x this factor fails the run regardless of tolerance. null turns
-+  //   // hard limits off.
-+  //   hardLimitFactor: 2,
-+  // },
++  gate: {
++    // How many endpoints may exceed their thresholds before the run fails: a number, or a share
++    // of the measured keys like '5%'. 0: every violation fails the run.
++    tolerance: 0,
++    // A time above threshold x this factor fails the run regardless of tolerance. null turns
++    // hard limits off.
++    hardLimitFactor: 2,
++  },
 +
 +  // Thresholds files and derivation.
-+  // thresholds: {
-+  //   // Headroom added to the measured times when thresholds are derived. 'strict' catches smaller
-+  //   // regressions but alarms more often on a noisy environment, 'loose' only flags clear
-+  //   // regressions.
-+  //   preset: 'normal',
-+  //   // Directory of the thresholds files (commit them), relative to the Playwright config
-+  //   // directory.
-+  //   dir: '.',
-+  // },
++  thresholds: {
++    // Headroom added to the measured times when thresholds are derived. 'strict' catches smaller
++    // regressions but alarms more often on a noisy environment, 'loose' only flags clear
++    // regressions.
++    preset: 'normal',
++    // Directory of the thresholds files (commit them), relative to the Playwright config
++    // directory.
++    dir: '.',
++  },
 +
 +  // Run outputs.
-+  // report: {
-+  //   // Directory of report.json and report.html (do not commit it), relative to the Playwright
-+  //   // config directory.
-+  //   dir: 'reports/pw-perf',
-+  // },
++  report: {
++    // Directory of report.json, report.html and junit.xml (do not commit it), relative to the
++    // Playwright config directory.
++    dir: 'reports/pw-perf',
++  },
 +});

@@ -211,9 +211,9 @@ tagged `@perf`; when no test is tagged, the wizard shows how to tag them
 What it can change:
 
 - a new `pw-perf.config.ts` (in a JavaScript project `pw-perf.config.js`, an ES module or CommonJS
-  like the Playwright config) with the 15 most important options, each with a short comment: the
-  answers that differ from the defaults as code, the other options commented out with their
-  default value, and a link to [every option](configuration.md);
+  like the Playwright config) with the 15 most important options, all set as code: your answers
+  and the default value of every other option, each with a short comment, a comment above each
+  section, and a link to [every option](configuration.md);
 - `playwright.config`: the config wrapped in `withPerf()`;
 - your fixtures module (one file that exports `test` created with `.extend()` and contains no
   tests): wrapped in `withPerfFixtures()`;

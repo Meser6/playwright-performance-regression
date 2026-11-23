@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // @ts-check
 // Generates the option list of the pw-perf.config.ts written by the init wizard (04-REQ-46,
-// 04-REQ-38 step 9) from schemas/config.schema.json: every option in schema order with its
-// default value and a one-sentence English description. The wizard writes the options it does
-// not set as comments from this list. The output is committed; CI runs this script with --check.
+// 04-REQ-38 step 7) from schemas/config.schema.json: every option in schema order with its
+// default value and a one-sentence English description. The wizard takes the default values and
+// the section comments from this list (04-D-54). The output is committed; CI runs this script
+// with --check.
 //
 // Descriptions are sanitized like docs/configuration.md (no specification references, package
 // placeholders replaced) and cut to their first sentence.
