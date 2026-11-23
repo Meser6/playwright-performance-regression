@@ -42,6 +42,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Wording of the guided setup in es, fr, it, pl, uk and ru.** A review of every translated
+  text: the question about passes now asks how many passes per measurement (es, fr, it); one word
+  for a pass in Italian ("passata", no longer "passaggio", which also means a step) and for a
+  measurement ("misurazione"); the wizard is the "procedura guidata" in Italian; the summary is
+  "Récapitulatif" in French and "Сводка" in Russian; Ukrainian and Russian no longer say that a
+  run "falls" on a regression but that it ends with an error, call step titles "names" and write
+  "endpoint" in Cyrillic everywhere; plainer words for the cleaning of step titles (es, pl).
+  Meaning and placeholders are unchanged.
 - **The guided setup ends with an IMPORTANT box.** After it writes the setup, the wizard ends
   with a framed box (in the chosen language, at most 80 columns, ASCII with `TERM=dumb`) of the
   next steps with your exact commands: derive the thresholds on CI, on the environment where the

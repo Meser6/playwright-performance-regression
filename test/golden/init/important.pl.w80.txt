@@ -7,7 +7,7 @@
 │    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
 │                                                                              │
 │ 2. Ściągnij pliki progów z artefaktów CI: run progów kopiuje je też do       │
-│    folderu raportu reports/pw-perf. Przepisy CI: docs/ci.md.                 │
+│    folderu raportu reports/pw-perf. Przykłady dla CI: docs/ci.md.            │
 │                                                                              │
 │ 3. Zacommituj je: pw-perf-thresholds.json, pw-perf-thresholds.steps.json.    │
 │                                                                              │

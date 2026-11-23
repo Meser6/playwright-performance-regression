@@ -242,7 +242,7 @@ const pl: Messages = {
   measureSteps:
     'steps: czasy Twoich bloków test.step, bez zmian w testach; każdy krok staje się kluczem, np. "checkout › pay", z własnym plikiem progów.',
   stepsPrivacy:
-    'Tytuły kroków są sanityzowane: identyfikatory, e-maile, adresy URL i sekrety nie trafiają do kluczy, także w cudzysłowach.',
+    'Tytuły kroków są czyszczone: identyfikatory, e-maile, adresy URL i sekrety nie trafiają do kluczy, także w cudzysłowach.',
   stepFilesFound: 'Pliki z test.step: {count}.',
   noStepsFound:
     'Nie znaleziono jeszcze test.step: kroki będą mierzone, gdy dodasz bloki test.step.',
@@ -308,7 +308,7 @@ const pl: Messages = {
   usageCommandPlaceholder: '<twoje polecenie testów>',
   usageThresholds: 'wykonuje testy kilka razy na 1 workerze i zapisuje pliki progów;',
   usageCommit: 'zacommituj pliki progów do repozytorium;',
-  usageTest: 'mierzy ponownie i kończy się błędem przy regresji; lokalnie i w CI.',
+  usageTest: 'mierzy ponownie i kończy się błędem przy regresji; używaj go lokalnie i w CI.',
   usageCommand:
     'Polecenie testów to to, którego już używasz (np. npm run e2e albo npx playwright test). Mierzony jest każdy projekt playwright.config, który ono uruchamia: dodaj --project <nazwa>, aby mierzyć tylko jedną przeglądarkę.',
   variablesTitle: 'Pozostałe zmienne:',
@@ -348,7 +348,7 @@ const pl: Messages = {
   boxImports:
     'Jeśli testy importują test z @playwright/test (plików: {count}), zmień import w każdym z nich:',
   boxDocs: 'Inne układy (mergeTests, kilka obiektów test, playwright-bdd): {url}',
-  runLine: 'Uruchomienie: {command}',
+  runLine: 'Uruchom: {command}',
   runLesson: 'Pomiar to Twoje zwykłe polecenie testów z ustawionym PW_PERF_MODE.',
   importantTitle: 'WAŻNE',
   importantIntro: 'Co dalej, w tej kolejności:',
@@ -357,13 +357,13 @@ const pl: Messages = {
   importantThresholds:
     'Wyznacz progi na CI, na tym środowisku, na którym będą uruchamiane testy (czasy z laptopa się nie przenoszą). Może to potrwać kilka godzin: polecenie testów wykonuje się kilka razy na 1 workerze.',
   importantDownload:
-    'Ściągnij pliki progów z artefaktów CI: run progów kopiuje je też do folderu raportu {dir}. Przepisy CI: docs/ci.md.',
+    'Ściągnij pliki progów z artefaktów CI: run progów kopiuje je też do folderu raportu {dir}. Przykłady dla CI: docs/ci.md.',
   importantCommit: 'Zacommituj je: {files}.',
   importantTest: 'Od tej pory uruchamiaj testy tym poleceniem; kończy się błędem przy regresji:',
   importantResults: 'Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
   tryCheck:
     'Najpierw spróbuj lokalnie: {command} pokazuje, co zostanie zmierzone i ile potrwa pełny run.',
-  windowsNote: 'Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.',
+  windowsNote: 'Wersje tych poleceń dla PowerShell i cmd: docs/cli.md.',
   boxWrapThis: 'Owiń ten, który importują Twoje testy: {file}',
   boxWorkspace:
     '{file} jest w pakiecie workspace {pkg}: zainstaluj {self} w korzeniu workspace (np. pnpm add -Dw) albo także w tym pakiecie.',
@@ -383,7 +383,7 @@ const pl: Messages = {
   checkCause: 'Najbardziej prawdopodobna przyczyna: {cause}',
   formatNote: 'Sformatuj zmienione pliki swoim formatterem (np. prettier --write).',
   manualNewContext:
-    'Requesty kontekstów tworzonych przez request.newContext() nie są mierzone, dopóki każdy kontekst nie jest śledzony ({count}): {files}.',
+    'Requesty kontekstów tworzonych przez request.newContext() nie są mierzone, dopóki każdy kontekst nie będzie śledzony ({count}): {files}.',
   manualNewContextHint: 'Śledź każdy kontekst zaraz po jego utworzeniu:',
 };
 
@@ -408,7 +408,7 @@ const es: Messages = {
   noShort: 'n',
   stepTests: 'Qué tests',
   testsLesson:
-    'Una medición dura unas (tests × pasadas) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
+    'Una medición tarda lo que unas (tests × pasadas) ejecuciones de tests en 1 worker, así que mide los tests que llaman a los endpoints importantes del backend.',
   taggedFiles: 'Archivos con tests etiquetados @perf: {count}.',
   noTaggedMessage: 'Ningún test tiene aún la etiqueta @perf; se miden todos los tests.',
   noTaggedHint:
@@ -418,14 +418,14 @@ const es: Messages = {
   stepPasses: 'Pasadas',
   passesLesson:
     'Cada regla necesita un mínimo de muestras por endpoint (minSamples), y las muestras son llamadas por test × tests × pasadas. Tu comando de tests, con sus pasos de preparación, se ejecuta una vez por pasada.',
-  passesQuestion: '¿Pasadas del comando de tests en las mediciones?',
+  passesQuestion: '¿Cuántas pasadas del comando de tests por medición?',
   stepMeasure: 'Qué medir',
   measureApi:
     'api: tiempos de respuesta de las peticiones al backend que envían tus páginas y de las llamadas request en los tests de API, agrupados en claves de endpoint como "GET /api/users/:id".',
   measureSteps:
     'steps: duración de tus bloques test.step, sin cambiar los tests; cada paso se convierte en una clave como "checkout › pay", con su propio archivo de umbrales.',
   stepsPrivacy:
-    'Los títulos de los pasos se sanean: ids, correos, URL y secretos nunca llegan a las claves, tampoco entre comillas.',
+    'Los títulos de los pasos se limpian: ids, correos, URL y secretos nunca llegan a las claves, tampoco entre comillas.',
   stepFilesFound: 'Archivos con test.step: {count}.',
   noStepsFound:
     'Aún no se encontró ningún test.step: los pasos se medirán cuando añadas bloques test.step.',
@@ -491,7 +491,7 @@ const es: Messages = {
   usageCommandPlaceholder: '<tu comando de tests>',
   usageThresholds: 'ejecuta tus tests varias veces en 1 worker y escribe los archivos de umbrales;',
   usageCommit: 'haz commit de los archivos de umbrales en el repositorio;',
-  usageTest: 'vuelve a medir y falla ante una regresión; en local y en CI.',
+  usageTest: 'vuelve a medir y falla ante una regresión; úsalo en local y en CI.',
   usageCommand:
     'Tu comando de tests es el que ya usas (p. ej. npm run e2e o npx playwright test). Se mide cada proyecto de playwright.config que ejecuta: añade --project <nombre> para medir un solo navegador.',
   variablesTitle: 'Otras variables:',
@@ -542,7 +542,7 @@ const es: Messages = {
   importantFixFirst:
     'Primero añade el fixture perf (recuadro rojo de arriba): hasta entonces no se mide ningún endpoint.',
   importantThresholds:
-    'Calcula los umbrales en CI, en el entorno donde se ejecutarán los tests (los tiempos de un portátil no sirven). Puede tardar varias horas: tu comando de tests se ejecuta varias veces en 1 worker.',
+    'Calcula los umbrales en CI, en el entorno donde se ejecutarán los tests (los tiempos medidos en un portátil no sirven). Puede tardar varias horas: tu comando de tests se ejecuta varias veces en 1 worker.',
   importantDownload:
     'Descarga los archivos de umbrales de los artefactos de CI: la ejecución de umbrales también los copia a la carpeta del informe {dir}. Ejemplos de CI: docs/ci.md.',
   importantCommit: 'Haz commit de ellos: {files}.',
@@ -565,7 +565,7 @@ const es: Messages = {
   commandReporter:
     'Este comando o su script define --reporter: una ejecución de medición o de umbrales con él se detiene con RUN_REPORTER_FLAG. Usa un comando sin --reporter para la medición.',
   commandEveryPass:
-    'El script ejecuta esto antes de playwright test, y se ejecuta en cada pasada: {prep}. Mueve la preparación larga a su propio script e indica aquí un script sin ella.',
+    'El script ejecuta esto antes de playwright test, así que se repite en cada pasada: {prep}. Mueve la preparación larga a su propio script e indica aquí un script sin ella.',
   noConfigFound:
     'Se encontró playwright.config en subcarpetas; ejecuta la configuración en la carpeta de cada uno que quieras medir:',
   checkCause: 'Causa más probable: {cause}',
@@ -596,7 +596,7 @@ const fr: Messages = {
   noShort: 'n',
   stepTests: 'Quels tests',
   testsLesson:
-    'Une mesure prend environ (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
+    'Une mesure dure environ autant que (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
   taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
   noTaggedMessage: 'Aucun test n’est encore marqué @perf ; tous les tests sont mesurés.',
   noTaggedHint:
@@ -605,8 +605,8 @@ const fr: Messages = {
   scopeAll: 'tous',
   stepPasses: 'Passes',
   passesLesson:
-    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et le nombre d’échantillons vaut : appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
-  passesQuestion: 'Passes de la commande de tests dans les mesures ?',
+    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et chaque endpoint en obtient : appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
+  passesQuestion: 'Combien de passes de la commande de tests par mesure ?',
   stepMeasure: 'Que mesurer',
   measureApi:
     'api : temps de réponse des requêtes backend envoyées par vos pages et des appels request dans les tests d’API, regroupés en clés d’endpoint comme "GET /api/users/:id".',
@@ -640,7 +640,7 @@ const fr: Messages = {
   applyQuestion: 'Appliquer cette modification ?',
   fileWritten: 'Écrit : {path}',
   skipped: 'Ignoré.',
-  stepSummary: 'Résumé',
+  stepSummary: 'Récapitulatif',
   changedFiles: 'Fichiers modifiés :',
   noFilesChanged: 'Aucun fichier n’a été modifié.',
   plannedChanges: 'Modifications prévues (non écrites) :',
@@ -679,7 +679,7 @@ const fr: Messages = {
   usageCommandPlaceholder: '<votre commande de tests>',
   usageThresholds: 'lance vos tests plusieurs fois sur 1 worker et écrit les fichiers de seuils ;',
   usageCommit: 'commitez les fichiers de seuils dans le dépôt ;',
-  usageTest: 'mesure à nouveau et échoue en cas de régression ; en local et en CI.',
+  usageTest: 'mesure à nouveau et échoue en cas de régression ; à utiliser en local et en CI.',
   usageCommand:
     'Votre commande de tests est celle que vous utilisez déjà (par ex. npm run e2e ou npx playwright test). Chaque projet de playwright.config qu’elle lance est mesuré : ajoutez --project <nom> pour ne mesurer qu’un navigateur.',
   variablesTitle: 'Autres variables :',
@@ -733,7 +733,7 @@ const fr: Messages = {
   importantFixFirst:
     'Ajoutez d’abord la fixture perf (cadre rouge ci-dessus) : jusque-là, aucun endpoint n’est mesuré.',
   importantThresholds:
-    'Calculez les seuils en CI, sur l’environnement où les tests seront lancés (les temps d’un portable ne se transposent pas). Cela peut prendre plusieurs heures : votre commande de tests s’exécute plusieurs fois sur 1 worker.',
+    'Calculez les seuils en CI, sur l’environnement où les tests seront lancés (les temps mesurés sur un portable ne sont pas transposables). Cela peut prendre plusieurs heures : votre commande de tests s’exécute plusieurs fois sur 1 worker.',
   importantDownload:
     'Téléchargez les fichiers de seuils depuis les artefacts de CI : l’exécution des seuils les copie aussi dans le dossier du rapport {dir}. Exemples de CI : docs/ci.md.',
   importantCommit: 'Commitez-les : {files}.',
@@ -756,7 +756,7 @@ const fr: Messages = {
   commandReporter:
     'Cette commande ou son script définit --reporter : une exécution de mesure ou de seuils s’arrête alors avec RUN_REPORTER_FLAG. Utilisez une commande sans --reporter pour la mesure.',
   commandEveryPass:
-    'Le script exécute ceci avant playwright test, et cela s’exécute à chaque passe : {prep}. Déplacez une longue préparation dans son propre script et indiquez ici un script sans elle.',
+    'Le script exécute ceci avant playwright test, donc à chaque passe : {prep}. Déplacez une longue préparation dans son propre script et indiquez ici un script sans elle.',
   noConfigFound:
     'playwright.config trouvé dans des sous-dossiers ; lancez la configuration dans le dossier de chacun de ceux que vous voulez mesurer :',
   checkCause: 'Cause la plus probable : {cause}',
@@ -787,17 +787,17 @@ const it: Messages = {
   noShort: 'n',
   stepTests: 'Quali test',
   testsLesson:
-    'Una misurazione richiede circa (test × passaggi) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
+    'Una misurazione richiede circa (test × passate) esecuzioni di test su 1 worker, quindi misura i test che chiamano gli endpoint importanti del backend.',
   taggedFiles: 'File con test contrassegnati @perf: {count}.',
   noTaggedMessage: 'Nessun test ha ancora il tag @perf; vengono misurati tutti i test.',
   noTaggedHint:
     "Per misurare solo alcuni test, contrassegnali con test('titolo', { tag: '@perf' }, ...) e scegli @perf.",
   scopeQuestion: 'Misurare tutti i test o solo quelli contrassegnati @perf? [{all}/@perf]',
   scopeAll: 'tutti',
-  stepPasses: 'Passaggi',
+  stepPasses: 'Passate',
   passesLesson:
-    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passaggi. Il comando di test, con i suoi passi di preparazione, viene eseguito una volta per passaggio.',
-  passesQuestion: 'Passaggi del comando di test nelle misurazioni?',
+    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passate. Il comando di test, con i suoi passi di preparazione, viene eseguito una volta per passata.',
+  passesQuestion: 'Quante passate del comando di test per misurazione?',
   stepMeasure: 'Cosa misurare',
   measureApi:
     'api: tempi di risposta delle richieste al backend inviate dalle pagine e delle chiamate request nei test API, raggruppati in chiavi di endpoint come "GET /api/users/:id".',
@@ -813,12 +813,12 @@ const it: Messages = {
     'Solo step, ma nessun test.step trovato: non viene misurato nulla finché non aggiungi blocchi test.step.',
   stepCommand: 'Comando di test',
   commandLesson1:
-    'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura non lo modifica: lo usa nei comandi alla fine e per la verifica.',
+    'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura guidata non lo modifica: lo usa nei comandi alla fine e per la verifica.',
   commandLesson2:
     'Invio mantiene il comando proposto; "skip" lo mantiene e salta la verifica finale.',
   commandQuestion: 'Con quale comando esegui di solito i test?',
   commandVariable:
-    'Scrivi il comando senza variabili PW_PERF_: la procedura aggiunge PW_PERF_MODE da sola.',
+    'Scrivi il comando senza variabili PW_PERF_: la procedura guidata aggiunge PW_PERF_MODE da sola.',
   commandChain:
     'Questo comando concatena più comandi: PW_PERF_MODE=... davanti raggiunge solo il primo. Metti la catena in uno script di package.json e scrivi npm run <script>.',
   stepChanges: 'Modifiche',
@@ -870,14 +870,14 @@ const it: Messages = {
   usageCommandPlaceholder: '<il tuo comando di test>',
   usageThresholds: 'esegue i test più volte su 1 worker e scrive i file delle soglie;',
   usageCommit: 'fai commit dei file delle soglie nel repository;',
-  usageTest: 'misura di nuovo e fallisce in caso di regressione; in locale e in CI.',
+  usageTest: 'misura di nuovo e fallisce in caso di regressione; usalo in locale e in CI.',
   usageCommand:
     'Il comando di test è quello che usi già (es. npm run e2e o npx playwright test). Viene misurato ogni progetto di playwright.config che esegue: aggiungi --project <nome> per misurare un solo browser.',
   variablesTitle: 'Altre variabili:',
   varCheck: 'una verifica rapida della configurazione su pochi test, senza file delle soglie',
   varMaxTests: 'test eseguiti da una verifica (predefinito 10)',
   varEnv: 'etichetta di ambiente: file delle soglie separati per ogni ambiente',
-  varPasses: 'passaggi del comando di test in questa esecuzione',
+  varPasses: 'passate del comando di test in questa esecuzione',
   varPrune:
     'in un’esecuzione delle soglie: rimuove le voci degli endpoint che questa esecuzione non ha visto',
   filesTitle: 'File:',
@@ -885,7 +885,7 @@ const it: Messages = {
   fileThresholds: 'soglie (step dei test in .steps.json); da committare',
   fileReport: 'report HTML e dati dell’ultima esecuzione; da non committare (in .gitignore)',
   oldScripts:
-    'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
+    'Gli script perf:* di una procedura guidata precedente ({names}) non funzionano più; rimuovili.',
   taggedSaved: '@perf viene salvato come run.grep in {configFile}; i tuoi comandi restano uguali.',
   stepPreset: 'Margine delle soglie',
   presetLesson:
@@ -898,32 +898,32 @@ const it: Messages = {
   presetQuestion: 'Quanto margine devono avere le soglie calcolate? [strict/normal/loose]',
   stepCheck: 'Verifica',
   checkLesson:
-    'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passaggi: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file di soglie non vengono toccati.',
+    'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passate: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file delle soglie non vengono toccati.',
   checkQuestion: 'Eseguire la verifica adesso?',
   checkManual: 'Eseguila tu: {command}',
   checkExit: 'La verifica con PW_PERF_MODE={mode} è terminata con il codice {code}.',
   boxTitle: 'Azione richiesta: per ora non si misura nulla',
   boxWhy:
-    'Senza la fixture perf il pacchetto non misura alcuna richiesta. La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
+    'Senza la fixture perf il pacchetto non misura alcuna richiesta. La procedura guidata non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
   boxTitleSteps: 'Azione richiesta: endpoint non ancora misurati',
   boxWhySteps:
-    'Senza la fixture perf il pacchetto non misura alcuna richiesta (le durate dei test.step sono misurate). La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
+    'Senza la fixture perf il pacchetto non misura alcuna richiesta (le durate dei test.step sono misurate). La procedura guidata non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
   boxFixtures: 'Se hai un file di fixture che esporta test:',
   boxFixturesFiles: 'File con .extend() e il numero di file di test che importano ciascuno:',
   boxImports:
     'Se i tuoi test importano test da @playwright/test (file: {count}), cambia l’import in ognuno:',
   boxDocs: 'Altre strutture (mergeTests, più oggetti test, playwright-bdd): {url}',
   runLine: 'Esegui: {command}',
-  runLesson: 'Una misura è il tuo solito comando di test con PW_PERF_MODE.',
+  runLesson: 'Una misurazione è il tuo solito comando di test con PW_PERF_MODE.',
   importantTitle: 'IMPORTANTE',
   importantIntro: 'Cosa fare ora, in questo ordine:',
   importantFixFirst:
     'Prima aggiungi la fixture perf (riquadro rosso sopra): fino ad allora nessun endpoint viene misurato.',
   importantThresholds:
-    'Calcola le soglie in CI, nell’ambiente in cui verranno eseguiti i test (i tempi di un portatile non valgono). Può richiedere diverse ore: il tuo comando di test viene eseguito più volte su 1 worker.',
+    'Calcola le soglie in CI, nell’ambiente in cui verranno eseguiti i test (i tempi misurati su un portatile non sono confrontabili). Può richiedere diverse ore: il tuo comando di test viene eseguito più volte su 1 worker.',
   importantDownload:
     'Scarica i file delle soglie dagli artefatti di CI: l’esecuzione delle soglie li copia anche nella cartella del report {dir}. Esempi di CI: docs/ci.md.',
-  importantCommit: 'Fanne commit: {files}.',
+  importantCommit: 'Committali: {files}.',
   importantTest:
     'Da quel momento esegui i test con questo comando; fallisce in caso di regressione:',
   importantResults: 'Risultati: {report}; dettagli del codice di uscita: {outcome}.',
@@ -939,11 +939,11 @@ const it: Messages = {
   manualDirectImportsModuleHint:
     'Importa in essi test da {module}, oppure cambia l’import in ciascuno:',
   passesSetup:
-    'globalSetup e i progetti di setup vengono eseguiti anch’essi una volta per passaggio e le loro richieste non sono misurate: rendi idempotente il seeding dei dati.',
+    'globalSetup e i progetti di setup vengono eseguiti anch’essi una volta per passata e le loro richieste non sono misurate: rendi idempotente il seeding dei dati.',
   commandReporter:
-    'Questo comando o il suo script imposta --reporter: un’esecuzione di misura o di soglie si ferma con RUN_REPORTER_FLAG. Usa un comando senza --reporter per la misura.',
+    'Questo comando o il suo script imposta --reporter: un’esecuzione di misurazione o delle soglie si ferma con RUN_REPORTER_FLAG. Usa un comando senza --reporter per la misurazione.',
   commandEveryPass:
-    'Lo script esegue questo prima di playwright test, e viene eseguito a ogni passaggio: {prep}. Sposta una preparazione lunga in uno script a parte e indica qui uno script senza di essa.',
+    'Lo script esegue questo prima di playwright test, quindi a ogni passata: {prep}. Sposta una preparazione lunga in uno script a parte e indica qui uno script senza di essa.',
   noConfigFound:
     'Trovato playwright.config in sottocartelle; esegui la configurazione nella cartella di ciascuno che vuoi misurare:',
   checkCause: 'Causa più probabile: {cause}',
@@ -983,7 +983,7 @@ const uk: Messages = {
   scopeAll: 'усі',
   stepPasses: 'Проходи',
   passesLesson:
-    'Кожне правило потребує мінімальної кількості вимірів на ендпоінт (minSamples), а вимірів буде: виклики в тесті × тести × проходи. Команда тестів разом із кроками підготовки виконується один раз на прохід.',
+    'Кожне правило потребує мінімальної кількості замірів на ендпоінт (minSamples), а замірів буде: виклики в тесті × тести × проходи. Команда тестів разом із кроками підготовки виконується один раз на прохід.',
   passesQuestion: 'Скільки проходів команди тестів під час вимірювання?',
   stepMeasure: 'Що вимірювати',
   measureApi:
@@ -991,7 +991,7 @@ const uk: Messages = {
   measureSteps:
     'steps: тривалість ваших блоків test.step без змін у тестах; кожен крок стає ключем, наприклад "checkout › pay", з власним файлом порогів.',
   stepsPrivacy:
-    'Заголовки кроків очищуються: ідентифікатори, e-mail, URL і секрети ніколи не потрапляють у ключі, навіть у лапках.',
+    'Назви кроків очищуються: ідентифікатори, e-mail, URL і секрети ніколи не потрапляють у ключі, навіть у лапках.',
   stepFilesFound: 'Файли з test.step: {count}.',
   noStepsFound:
     'test.step поки не знайдено: кроки вимірюватимуться, щойно ви додасте блоки test.step.',
@@ -1056,7 +1056,7 @@ const uk: Messages = {
   usageCommandPlaceholder: '<ваша команда тестів>',
   usageThresholds: 'виконує тести кілька разів на 1 воркері й записує файли порогів;',
   usageCommit: 'закомітьте файли порогів у репозиторій;',
-  usageTest: 'вимірює знову й падає при регресії; локально і в CI.',
+  usageTest: 'вимірює знову й завершується помилкою при регресії; локально і в CI.',
   usageCommand:
     'Команда тестів — та, якою ви вже користуєтеся (напр. npm run e2e або npx playwright test). Вимірюється кожен проєкт playwright.config, який вона запускає: додайте --project <назва>, щоб вимірювати лише один браузер.',
   variablesTitle: 'Інші змінні:',
@@ -1102,9 +1102,9 @@ const uk: Messages = {
   importantTitle: 'ВАЖЛИВО',
   importantIntro: 'Що робити далі, у такому порядку:',
   importantFixFirst:
-    'Спершу додайте фікстуру perf (червона рамка вище): доти жоден endpoint не вимірюється.',
+    'Спершу додайте фікстуру perf (червона рамка вище): доти жоден ендпоінт не вимірюється.',
   importantThresholds:
-    'Обчисліть пороги в CI, на тому середовищі, де запускатимуться тести (час із ноутбука не переноситься). Це може тривати кілька годин: ваша команда тестів виконується кілька разів на 1 воркері.',
+    'Обчисліть пороги в CI, у тому середовищі, де запускатимуться тести (час, виміряний на ноутбуці, не переноситься). Це може тривати кілька годин: ваша команда тестів виконується кілька разів на 1 воркері.',
   importantDownload:
     'Завантажте файли порогів з артефактів CI: запуск порогів також копіює їх у папку звіту {dir}. Приклади для CI: docs/ci.md.',
   importantCommit: 'Закомітьте їх: {files}.',
@@ -1133,7 +1133,7 @@ const uk: Messages = {
   checkCause: 'Найімовірніша причина: {cause}',
   formatNote: 'Відформатуйте змінені файли своїм форматером (напр. prettier --write).',
   manualNewContext:
-    'Запити контекстів, створених через request.newContext(), не вимірюються, доки кожен контекст не відстежується ({count}): {files}.',
+    'Запити контекстів, створених через request.newContext(), не вимірюються, доки кожен контекст не відстежуватиметься ({count}): {files}.',
   manualNewContextHint: 'Відстежуйте кожен контекст одразу після створення:',
 };
 
@@ -1175,7 +1175,7 @@ const ru: Messages = {
   measureSteps:
     'steps: длительность ваших блоков test.step без изменений в тестах; каждый шаг становится ключом, например "checkout › pay", с собственным файлом порогов.',
   stepsPrivacy:
-    'Заголовки шагов очищаются: идентификаторы, e-mail, URL и секреты никогда не попадают в ключи, даже в кавычках.',
+    'Названия шагов очищаются: идентификаторы, e-mail, URL и секреты никогда не попадают в ключи, даже в кавычках.',
   stepFilesFound: 'Файлы с test.step: {count}.',
   noStepsFound:
     'test.step пока не найдено: шаги будут измеряться, как только вы добавите блоки test.step.',
@@ -1201,7 +1201,7 @@ const ru: Messages = {
   applyQuestion: 'Применить это изменение?',
   fileWritten: 'Записано: {path}',
   skipped: 'Пропущено.',
-  stepSummary: 'Итог',
+  stepSummary: 'Сводка',
   changedFiles: 'Изменённые файлы:',
   noFilesChanged: 'Ни один файл не изменён.',
   plannedChanges: 'Запланированные изменения (не записаны):',
@@ -1240,7 +1240,7 @@ const ru: Messages = {
   usageCommandPlaceholder: '<ваша команда тестов>',
   usageThresholds: 'выполняет тесты несколько раз на 1 воркере и записывает файлы порогов;',
   usageCommit: 'закоммитьте файлы порогов в репозиторий;',
-  usageTest: 'измеряет снова и падает при регрессии; локально и в CI.',
+  usageTest: 'измеряет снова и завершается с ошибкой при регрессии; локально и в CI.',
   usageCommand:
     'Команда тестов — та, которой вы уже пользуетесь (напр. npm run e2e или npx playwright test). Измеряется каждый проект playwright.config, который она запускает: добавьте --project <имя>, чтобы измерять только один браузер.',
   variablesTitle: 'Другие переменные:',
@@ -1259,9 +1259,9 @@ const ru: Messages = {
   presetLesson:
     'Пороги — это время из запуска порогов плюс запас. Пресет задаёт запас для всех правил:',
   presetStrict:
-    'strict: малый запас; ловит меньшие регрессии, чаще ложные тревоги в нестабильной среде.',
+    'strict: малый запас; ловит меньшие регрессии, чаще ложные тревоги в нестабильном окружении.',
   presetNormal: 'normal: рекомендуется для начала.',
-  presetLoose: 'loose: большой запас; только явные регрессии, для общих или шумных сред.',
+  presetLoose: 'loose: большой запас; только явные регрессии, для общих или шумных окружений.',
   presetQuestion: 'Какой запас должен быть у вычисленных порогов? [strict/normal/loose]',
   stepCheck: 'Проверка',
   checkLesson:
@@ -1285,9 +1285,9 @@ const ru: Messages = {
   importantTitle: 'ВАЖНО',
   importantIntro: 'Что делать дальше, в таком порядке:',
   importantFixFirst:
-    'Сначала добавьте фикстуру perf (красная рамка выше): до этого ни один endpoint не измеряется.',
+    'Сначала добавьте фикстуру perf (красная рамка выше): до этого ни один эндпоинт не измеряется.',
   importantThresholds:
-    'Вычислите пороги в CI, на том окружении, где будут запускаться тесты (время с ноутбука не переносится). Это может занять несколько часов: ваша команда тестов выполняется несколько раз на 1 воркере.',
+    'Вычислите пороги в CI, в том окружении, где будут запускаться тесты (время, измеренное на ноутбуке, не переносится). Это может занять несколько часов: ваша команда тестов выполняется несколько раз на 1 воркере.',
   importantDownload:
     'Скачайте файлы порогов из артефактов CI: запуск порогов также копирует их в папку отчёта {dir}. Примеры для CI: docs/ci.md.',
   importantCommit: 'Закоммитьте их: {files}.',
@@ -1308,7 +1308,7 @@ const ru: Messages = {
   passesSetup:
     'globalSetup и проекты setup тоже выполняются один раз за проход, а их запросы не измеряются: сделайте заполнение данных идемпотентным.',
   commandReporter:
-    'Эта команда или её скрипт задаёт --reporter: измерительный запуск или запуск порогов с ним завершается ошибкой RUN_REPORTER_FLAG. Для измерения используйте команду без --reporter.',
+    'Эта команда или её скрипт задаёт --reporter: измерительный запуск или запуск порогов с ним завершается с ошибкой RUN_REPORTER_FLAG. Для измерения используйте команду без --reporter.',
   commandEveryPass:
     'Скрипт запускает это перед playwright test, поэтому оно выполняется в каждом проходе: {prep}. Перенесите долгую подготовку в отдельный скрипт, а здесь укажите скрипт без неё.',
   noConfigFound:
@@ -1316,7 +1316,7 @@ const ru: Messages = {
   checkCause: 'Наиболее вероятная причина: {cause}',
   formatNote: 'Отформатируйте изменённые файлы своим форматтером (напр. prettier --write).',
   manualNewContext:
-    'Запросы контекстов, созданных через request.newContext(), не измеряются, пока каждый контекст не отслеживается ({count}): {files}.',
+    'Запросы контекстов, созданных через request.newContext(), не измеряются, пока каждый контекст не начнёт отслеживаться ({count}): {files}.',
   manualNewContextHint: 'Отслеживайте каждый контекст сразу после создания:',
 };
 
