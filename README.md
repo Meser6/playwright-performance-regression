@@ -2,11 +2,6 @@
 
 Catch backend performance regressions from the Playwright tests you already have.
 
-> **Pre-release.** `0.1.0-next.N` versions are published under the `next` tag: install with
-> `npm init playwright-performance-regression@next` or
-> `npm install --save-dev playwright-performance-regression@next`. Until `0.1.0`, the API, file
-> formats and CLI may still change.
-
 ![HTML report of a measurement run](.github/assets/report.png)
 
 ## How it works
@@ -27,12 +22,11 @@ Your normal `npx playwright test` runs are not changed.
 ## Install
 
 ```sh
-npm init playwright-performance-regression@next
+npm init playwright-performance-regression
 ```
 
-This installs the package as a dev dependency and starts a short guided setup (after `0.1.0`:
-`npm init playwright-performance-regression`; run it again at any time; in a project with the
-package installed, `npx pw-perf` starts it too). It asks which tests to measure, the passes, what
+This installs the package as a dev dependency and starts a short guided setup (run it again at
+any time; in a project with the package installed, `npx pw-perf` starts it too). It asks which tests to measure, the passes, what
 to measure (endpoints, `test.step` blocks or both), the threshold headroom and your usual test
 command, then shows a diff of every change before writing it: it creates `pw-perf.config.ts`
 (`pw-perf.config.js` in a JavaScript project) with the most important options, wraps your
@@ -46,8 +40,7 @@ check: your test command runs with `PW_PERF_MODE=thresholds`, then `PW_PERF_MODE
 2 passes, and the check's thresholds files are deleted afterwards. It ends with an IMPORTANT box
 of the next steps: thresholds on CI (can take several hours), download, commit, then
 `PW_PERF_MODE=test`. `pnpm create` and `yarn create`
-work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as `@next` with
-`yarn create`). The guided setup speaks English, Spanish, French, Polish, Italian, Ukrainian and
+work too. The guided setup speaks English, Spanish, French, Polish, Italian, Ukrainian and
 Russian (it asks at the start). It takes no arguments; `PW_PERF_LANG`, `PW_PERF_DRY_RUN` and
 `PW_PERF_NO_TUTORIAL` change it ([Guided setup](docs/cli.md#guided-setup)).
 

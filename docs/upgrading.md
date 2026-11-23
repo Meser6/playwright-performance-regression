@@ -25,6 +25,28 @@ changes and are always listed with migration steps:
 After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
 and review the diff before committing anything.
 
+### From 0.1.0-next.x to 1.0.0
+
+`1.0.0` is the first stable release, under the `latest` dist-tag. The `0.1.0-next.N` versions were
+pre-releases under `next`; coming from `0.1.0-next.3` or earlier, also follow the sections below.
+To upgrade from `0.1.0-next.4`:
+
+1. Install the stable version: `npm install -D playwright-performance-regression@latest` (the
+   range in `package.json` becomes `^1.0.0`, so later `1.x` releases are picked up as usual).
+2. Requests under `/sockjs/`, `/sockjs-node/`, `/signalr/` and `/_blazor/` are no longer measured
+   by default (like `/socket.io/` before). If your thresholds files have such keys, the run
+   reports them with `THRESHOLDS_UNSEEN_ENTRIES`; remove them with a thresholds run of the full
+   suite with `PW_PERF_PRUNE=1`. If `pw-perf.config.*` sets `measure.exclude` (an earlier guided
+   setup wrote it), the new patterns are not added for you: add them, or write
+   `exclude: [...perfDefaults.measure.exclude, '/your/path/']`.
+3. The guided setup no longer writes CI jobs. Jobs it wrote earlier are left as they are and keep
+   working. To pick up the current recipes from [CI](ci.md) (the thresholds job uploads only
+   `reports/pw-perf/`, which now also holds copies of the thresholds files; the measurement job
+   publishes `junit.xml`), update your jobs by hand.
+4. Nothing else to migrate: thresholds files, normalization and run reports keep their formats. A
+   measurement run now also writes `reports/pw-perf/junit.xml` (`report.junit: false` turns it
+   off), and an empty thresholds file warns with `THRESHOLDS_FILE_EMPTY`.
+
 ### From 0.1.0-next.3: no commands, only variables
 
 The `pw-perf` commands and their options are gone, and so is `run.projects`. To upgrade:
