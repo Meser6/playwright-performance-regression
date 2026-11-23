@@ -16,7 +16,7 @@ import {
   keyAnchor,
   keyLink,
   rowGroup,
-  topCheck,
+  keyCheck,
 } from './context.ts';
 import type { Ctx, LinkKind } from './context.ts';
 import type { HtmlAggregate } from './data.ts';
@@ -519,9 +519,12 @@ function limitCell(value: number | undefined, limit: number | null): SafeHtml {
   return html`<td class="num${over ? ' ov' : ''}">${Math.round(value)}<span class="lim"> / ${limit === null ? DASH : Math.round(limit)}</span></td>`;
 }
 
-/** Headroom cell: the key's largest usage (11-REQ-30); — without checks or in a v1 report. */
+/**
+ * Limit used cell: the check of the violation card for a failed key (blocking, hard limit first),
+ * else the key's largest usage (11-REQ-30); — without checks or in a v1 report.
+ */
 function headroomCell(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
-  const top = ctx.migrated ? undefined : topCheck(agg.evaluation.checks);
+  const top = ctx.migrated ? undefined : keyCheck(agg.evaluation.checks);
   if (top === undefined) return html`<td class="z">${DASH}</td>`;
   return html`<td>${usageMeter(top)}</td>`;
 }

@@ -816,7 +816,7 @@ describe('owner notes on the demo report (11-AC-43, v5 item 10b)', () => {
     expect(usagePercent(0.9996)).toBe(100);
   });
 
-  test('11-AC-43 the violation card shows the rule that decided: hard limit first', () => {
+  test('11-AC-43 the violation card and the Limit used cell show the rule that decided: hard limit first', () => {
     const checks = [
       check('median', { actual: 405.9, limit: 229, usage: 1.7725, passed: false, blocking: true }),
       check('percentile', {
@@ -840,8 +840,18 @@ describe('owner notes on the demo report (11-AC-43, v5 item 10b)', () => {
     expect(decidingCheck(checks.map((c) => ({ ...c, hardLimitExceeded: false })))?.rule).toBe(
       'wilson',
     );
-    const html = section(page(withChecks(checks)), 'viol-h');
+    const full = page(withChecks(checks));
+    const html = section(full, 'viol-h');
     expect(text(html)).toContain('p95 543 ms · limit 258 ms');
+    // The Limit used column of the key's table row shows the same check as the card.
+    const body =
+      full
+        .split('<tbody data-g=')
+        .slice(1)
+        .find((b) => b.includes('/api/tickets/')) ?? '';
+    const row = /<tr class="[^"]+">(.*?)<\/tr>/su.exec(body)?.[1] ?? '';
+    expect(row).toContain('<b class="ov">+111% over</b>');
+    expect(row).not.toContain('pp over');
   });
 
   test('11-AC-43 checks table: Raw and Bound with a legend, Limit used, T at its minimum', () => {

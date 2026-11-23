@@ -110,6 +110,14 @@ export function decidingCheck(checks: readonly Check[]): Check | undefined {
   );
 }
 
+/**
+ * The check a key is summed up by, in the violation card and the Limit used column alike
+ * (11-REQ-52, chapter 6.4): the deciding check of a failed key, else the highest usage.
+ */
+export function keyCheck(checks: readonly Check[]): Check | undefined {
+  return decidingCheck(checks) ?? topCheck(checks);
+}
+
 export interface Ctx {
   report: RunReport;
   data: HtmlReportData;

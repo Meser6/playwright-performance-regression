@@ -13,7 +13,7 @@ import {
   keyLink,
   limitRatio,
   rowGroup,
-  decidingCheck,
+  keyCheck,
   topCheck,
 } from './context.ts';
 import type { Ctx, LinkKind } from './context.ts';
@@ -409,7 +409,7 @@ export function badge(n: number, tone = ''): SafeHtml {
 /** A violation card (11-REQ-52). */
 function violationCard(ctx: Ctx, e: Entry): SafeHtml {
   const ev = e.agg.evaluation;
-  const top = decidingCheck(ev.checks) ?? topCheck(ev.checks);
+  const top = keyCheck(ev.checks);
   const hint = ctx.migrated ? undefined : e.agg.hints[0];
   const muted = ev.muted !== null && !ev.muted.expired;
   return join(
