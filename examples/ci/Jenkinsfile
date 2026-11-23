@@ -4,7 +4,8 @@
 //   2. Download the archived pw-perf-thresholds*.json files and commit them.
 //   3. The job runs every Monday with MODE=test and fails on a regression.
 // The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) marks the
-// build UNSTABLE, 3 (tool or config error) fails it.
+// build UNSTABLE, 3 (tool or config error) fails it. The JUnit plugin shows
+// reports/pw-perf/junit.xml (MODE=test) as Test Result; it never changes the build status.
 pipeline {
   agent any
   parameters {
@@ -40,6 +41,7 @@ pipeline {
   post {
     always {
       archiveArtifacts artifacts: 'pw-perf-thresholds*.json, reports/pw-perf/**', allowEmptyArchive: true
+      junit testResults: 'reports/pw-perf/junit.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true
     }
   }
 }

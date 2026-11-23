@@ -75,3 +75,11 @@ jobs:
           name: pw-perf-report
           path: reports/pw-perf/
           retention-days: 30
+      # Optional: GitHub has no test view of its own; reports/pw-perf/junit.xml is in the
+      # pw-perf-report artifact. To show it as a check run, add "permissions: checks: write" to
+      # this job and uncomment a test report action, e.g.:
+      # - name: Show the JUnit result
+      #   if: always()
+      #   uses: mikepenz/action-junit-report@v5
+      #   with:
+      #     report_paths: reports/pw-perf/junit.xml

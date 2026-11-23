@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/azure-pipelines.perf.yml
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,73 @@
 +# Performance runs with playwright-performance-regression (pw-perf). Register as its own
 +# pipeline, e.g. azure-pipelines.perf.yml. Recommended path (docs/ci.md):
 +#   1. Run the pipeline by hand with mode "thresholds". Thresholds come from the same agents
@@ -8,7 +8,8 @@
 +#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
 +#   3. The pipeline runs every Monday with mode "test" and fails on a regression.
 +# The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) ends the job
-+# as "succeeded with issues", 3 (tool or config error) fails it.
++# as "succeeded with issues", 3 (tool or config error) fails it. In mode "test" the run also
++# publishes reports/pw-perf/junit.xml to the Tests tab; that step never fails the job.
 +trigger: none
 +pr: none
 +
@@ -60,6 +61,15 @@
 +        artifact: pw-perf-thresholds
 +        condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
 +        displayName: Publish the thresholds files
++      - task: PublishTestResults@2
++        condition: and(always(), eq('${{ parameters.mode }}', 'test'))
++        inputs:
++          testResultsFormat: JUnit
++          testResultsFiles: reports/pw-perf/junit.xml
++          testRunTitle: pw-perf
++          failTaskOnFailedTests: false
++          failTaskOnMissingResultsFile: false
++        displayName: Publish the test results
 +      - publish: reports/pw-perf
 +        artifact: pw-perf-report
 +        condition: always()

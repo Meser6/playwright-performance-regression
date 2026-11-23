@@ -15,6 +15,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   muted and not evaluated keys as skipped, tool errors as an error of the `measurement run` test
   case. Not written in thresholds mode or by a check. Turn it off with `report.junit: false`; a
   failed write is the tool error `REPORT_JUNIT_WRITE_FAILED` (exit code 3).
+- **JUnit in the CI recipes.** The recipes in `examples/ci/` publish `junit.xml` without changing
+  the job status: GitLab `artifacts: reports: junit`, Jenkins `junit` (empty results allowed,
+  build not marked unstable by it), Azure `PublishTestResults@2` in mode `test` only, and an
+  optional, commented-out test report step for GitHub Actions. `docs/ci.md` explains where the
+  result shows up and how to read it.
 
 ## [0.1.0-next.4] - 2026-11-23
 
