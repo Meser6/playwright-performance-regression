@@ -156,7 +156,13 @@ describe('reporter with real Playwright', () => {
         derived.output.indexOf('PASSED'),
       );
 
-      const evaluated = await runPlaywright({ PW_PERF_MODE: 'test', THRESHOLDS_DIR: dir });
+      // The test is about loading the derived files, not about the verdict: timings of a few
+      // milliseconds jitter past the derived limits on a loaded runner, so violations only warn.
+      const evaluated = await runPlaywright({
+        PW_PERF_MODE: 'test',
+        THRESHOLDS_DIR: dir,
+        GATE_WARN_ONLY: '1',
+      });
       expect(evaluated.status, evaluated.output).toBe(0);
       // Steps are measured by default; this project has none, so no step file (06-REQ-29).
       expect(evaluated.report?.thresholdFiles.map((f) => [f.kind, f.status])).toEqual([

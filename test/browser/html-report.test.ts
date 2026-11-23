@@ -578,11 +578,14 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     expect(await page.evaluate('document.documentElement.scrollWidth')).toBeLessThanOrEqual(360);
     // Tables and the waterfall scroll inside their containers.
     await page.keyboard.press('Escape');
+    // The dialog's close event (it puts back #tab=…) arrives as a separate task; a hash change
+    // made before it would be routed to the restored tab, so wait for it first.
+    await page.waitForFunction(`!location.hash.startsWith('#key-')`);
     await page.evaluate(`location.hash = '#tab=tests'`);
-    const scroll = await page
-      .locator('.wfs')
-      .first()
-      .evaluate((s) => [s.scrollWidth, s.clientWidth]);
+    await pw(page.locator('#tab-tests')).toBeVisible();
+    const waterfall = page.locator('.wfs').first();
+    await pw(waterfall).toBeVisible();
+    const scroll = await waterfall.evaluate((s) => [s.scrollWidth, s.clientWidth]);
     expect(scroll[0]).toBeGreaterThan(scroll[1] ?? 0);
     await page.context().close();
   });
