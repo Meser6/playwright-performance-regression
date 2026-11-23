@@ -85,6 +85,31 @@ export function topCheck(checks: readonly Check[]): Check | undefined {
   return top;
 }
 
+const RULE_ORDER: readonly Check['rule'][] = [
+  'median',
+  'percentile',
+  'p99',
+  'apdex',
+  'wilson',
+  'errors',
+];
+
+/**
+ * The check that decided a failed key (11-REQ-52, 11-D-27): a blocking check over the hard
+ * limit (the first time rule, as HINT_HARD_LIMIT), then the blocking check with the highest
+ * usage, then any failed check with the highest usage; ties in the order of the rules.
+ */
+export function decidingCheck(checks: readonly Check[]): Check | undefined {
+  const failed = [...checks]
+    .filter((c) => !c.passed)
+    .sort((a, b) => RULE_ORDER.indexOf(a.rule) - RULE_ORDER.indexOf(b.rule));
+  return (
+    failed.find((c) => c.blocking && c.hardLimitExceeded) ??
+    topCheck(failed.filter((c) => c.blocking)) ??
+    topCheck(failed)
+  );
+}
+
 export interface Ctx {
   report: RunReport;
   data: HtmlReportData;
@@ -145,7 +170,7 @@ export function keyLink(
   full = false,
 ): SafeHtml {
   const anchor = keyAnchor(ctx, kind, key);
-  const view = keyView(kind, key, max, full);
+  const view = keyView(kind, key, max, full, ctx.report.origins);
   return anchor === null
     ? html`<span class="kl">${view}</span>`
     : html`<a class="kl" href="#${anchor}">${view}</a>`;

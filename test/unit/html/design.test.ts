@@ -146,7 +146,7 @@ describe('layout (11-REQ-49 – 11-REQ-55)', () => {
     const fields = [...page.matchAll(/<div class="kpi[^"]*"><dt>(.*?)<\/dt>/gu)].map((m) => m[1]);
     expect(fields).toEqual([
       'Endpoints',
-      'Tests',
+      'Test runs',
       'Violations',
       'Error rate',
       'Duration',

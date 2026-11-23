@@ -64,7 +64,7 @@
       }
     ],
     "texts": [
-      "Median is 2.5× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
+      "Median is 2.50× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
       "The median is 150% over its limit: most responses are slower, not only the tail."
     ]
   },
@@ -1716,7 +1716,7 @@
       }
     ],
     "texts": [
-      "Median is 2.5× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
+      "Median is 2.50× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.",
       "The median is 150% over its limit: most responses are slower, not only the tail.",
       "Error rate 60.0% is above the limit of 5.0%, mostly 500 (6 of 6 errors)."
     ]

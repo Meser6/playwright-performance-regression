@@ -162,7 +162,8 @@ describe('console summary golden files', () => {
     expect(overText({ rule: 'errors', actual: 0.001, limit: 0 })).toBe('+1 pp');
     expect(overText({ rule: 'median', actual: 1100, limit: 100 })).toBe('>999%');
     expect(overText({ rule: 'median', actual: 1099.4, limit: 100 })).toBe('+999%');
-    expect(overText({ rule: 'median', actual: 1400.1, limit: 1400 })).toBe('+0%');
+    // At least +1%: a violation never reads +0% (09-REQ-19, v5 item 10b).
+    expect(overText({ rule: 'median', actual: 1400.1, limit: 1400 })).toBe('+1%');
     expect(exceedance({ rule: 'apdex', actual: 0, limit: 0.9 })).toBe(Infinity);
   });
 

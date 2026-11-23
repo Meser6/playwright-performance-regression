@@ -59,6 +59,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   thresholds files stay valid. A config file that sets `measure.exclude` (the guided setup writes
   it) keeps its own list: add the new patterns there or use `[...perfDefaults.measure.exclude,
 ...]`. The guided setup now writes the longer default list.
+- **Clearer labels in the HTML report.** The checks table of a key shows Raw (the value measured
+  in the run) and Bound (the 95% confidence bound that Apdex, slow share and error rate compare
+  with the limit) instead of Actual and Observed, with a one-line legend; `report.json` keeps the
+  field names `actual` and `observed`. The column Headroom is now Limit used (it shows how much of
+  the limit is used). A line under the checks table gives T of Apdex and slow share and says when
+  T is the lowest the thresholds allow, so a key can pass them while its percentiles fail. The
+  Steps tile says how many steps are over their limit ("1 over limit · 0 near limit"). The Tests
+  result and the tile without steps count test runs ("passed 50 test runs"), not tests. Hints of
+  steps say "samples" instead of "responses". The key header in the details dialog shows the
+  origin label as a token before the path (`api` and `/api/prices`, not `GET api/api/prices`),
+  with the origin address in its tooltip. The note that the medians of the TTFB split can differ
+  from p50 only appears when they differ.
+- **Rounded multiples and percentages.** The hard-limit hint shows the multiple of the limit with
+  two decimals, rounded ("2.67×", was "2.6×"), and never one that is not above the hard limit
+  factor ("2.05×", was "2.0× … above the hard limit of 2×"). The excess of a failed check in the
+  HTML report is the text of the console and `junit.xml` (rounded: "+105%", was "+106%" from
+  rounding up), and every output shows at least "+1%" (the console could show "+0%"). The share of
+  the limit used by a passing check is rounded ("56% of limit", was "55%"), but never shown as 90%
+  or more below 0.9, where the near-limit hint and colour start.
 - **Wording of the guided setup in es, fr, it, pl, uk and ru.** A review of every translated
   text: the question about passes now asks how many passes per measurement (es, fr, it); one word
   for a pass in Italian ("passata", no longer "passaggio", which also means a step) and for a
@@ -94,6 +113,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   committed. Config files written by an earlier wizard keep working unchanged.
 
 ### Fixed
+
+- **Violation cards show the rule that failed the run.** A card in the Overview of the HTML report
+  showed the failed check with the highest share of its limit, e.g. slow share "+5 pp", while its
+  hint explained a p95 above the hard limit. It now shows the deciding check: a blocking check
+  above the hard limit first, then other blocking checks.
+- **Step thresholds file no longer "differs".** Run & config compared the normalization
+  fingerprint of the step thresholds file with the fingerprint of URL keys, so it always showed
+  "differs: keys may not match". It now compares it with the step fingerprint of the run; a real
+  difference also links to the `THRESHOLDS_SOURCE_MISMATCH` warning.
+- **No limit for rules that were not evaluated.** A key with too few samples for p95 or p99 showed
+  their limits (in red when above), although those rules decided nothing. The key table now shows
+  "/ —" with a footnote, and the details say "p95 · not evaluated".
 
 - **Start box closes on every line.** The title line of the start box used ⏱️ (a character with
   the emoji variation selector U+FE0F), whose width terminals count differently, so its right

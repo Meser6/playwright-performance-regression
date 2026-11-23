@@ -3,6 +3,7 @@
 // a step in the proportional font with the parent titles muted and the last title bold. Long keys
 // are shortened in the middle with the full key in `title` (11, chapter 6.4).
 import { REQUEST_KEY_PREFIX, isRequestKey } from '../core/types/index.ts';
+import type { RunReport } from '../core/types/index.ts';
 import type { LinkKind } from './context.ts';
 import { html } from './escape.ts';
 import type { SafeHtml } from './escape.ts';
@@ -53,12 +54,23 @@ export function methodBadge(method: string): SafeHtml {
     : html`<b class="m">${method}</b>`;
 }
 
+/** The origin label token, with the origin address in `title` when the report has it. */
+function originToken(label: string, origins: RunReport['origins'] | undefined): SafeHtml {
+  const address = origins?.find((o) => o.label === label)?.origin;
+  return html`<span class="o" title="${address === undefined ? 'origin label' : `origin label: ${address}`}">${label}</span>`;
+}
+
 /** Key text of an endpoint: origin token and path, shortened to `max` code points. */
-function endpointView(key: string, max: number, full: boolean): SafeHtml {
+function endpointView(
+  key: string,
+  max: number,
+  full: boolean,
+  origins?: RunReport['origins'],
+): SafeHtml {
   const { method, origin, path, request } = splitEndpoint(key);
   const room = Math.max(8, max - method.length - 1 - origin.length - (request ? 8 : 0));
   const short = truncateMiddle(path, room);
-  return html`${request ? html`<span class="rq">request</span> ` : null}${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path && !full ? null : html` title="${key}"`}>${origin === '' ? null : html`<span class="o">${origin}</span>`}${pathView(short)}</span>`;
+  return html`${request ? html`<span class="rq">request</span> ` : null}${method === '' ? null : html`${methodBadge(method)} `}<span class="key"${short === path && !full ? null : html` title="${key}"`}>${origin === '' ? null : originToken(origin, origins)}${pathView(short)}</span>`;
 }
 
 /** Key text of a step: parent titles muted, the last title bold. */
@@ -73,8 +85,14 @@ function stepView(key: string, max: number, full: boolean): SafeHtml {
  * The view of a key of a kind (11-REQ-53). The full key goes to `title` when it is shortened, and
  * always with `full` (cards, where the line itself is cut with an ellipsis).
  */
-export function keyView(kind: LinkKind, key: string, max: number, full = false): SafeHtml {
-  return kind === 'step' ? stepView(key, max, full) : endpointView(key, max, full);
+export function keyView(
+  kind: LinkKind,
+  key: string,
+  max: number,
+  full = false,
+  origins?: RunReport['origins'],
+): SafeHtml {
+  return kind === 'step' ? stepView(key, max, full) : endpointView(key, max, full, origins);
 }
 
 /** Depth marker of a step key in the Steps table: up to 3 dots filled to the depth. */

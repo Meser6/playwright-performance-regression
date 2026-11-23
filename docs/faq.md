@@ -16,7 +16,9 @@ isolate the run ([CI](ci.md#isolation-of-the-environment-and-the-runner)), choos
 `loose` headroom preset on a noisy environment (`thresholds: { preset: 'loose' }`), and keep the
 measurement job non-blocking (`continue-on-error`) for the first weeks. The p95 and p99 checks need enough samples to be stable; the
 checks on Apdex, slow share and error rate compare confidence bounds rather than raw values, so a
-single slow sample does not fail them.
+single slow sample does not fail them. The checks table in the key details of the HTML report shows
+both: Raw is the share measured in the run, Bound is the 95% confidence bound compared with the
+limit (in the console the bound comes first and the raw share follows in parentheses).
 
 ## Exit code 2: what now?
 
