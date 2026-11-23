@@ -204,7 +204,8 @@ measured project.
 At the end of each test the collector waits up to `measure.pendingTimeoutMs` (2 s by default) for
 requests still in flight. A long poll or a streamed response that never ends uses that whole wait
 in every test and is then recorded as `PENDING`, which counts as an error by default, and the run
-warns with `COLLECTOR_REQUESTS_PENDING`. Exclude such endpoints:
+warns with `COLLECTOR_REQUESTS_PENDING`. The default `measure.exclude` already skips the HTTP
+transports of socket.io, SockJS, SignalR and Blazor Server. Exclude your own such endpoints:
 
 ```ts
 import { definePerfConfig, perfDefaults } from 'playwright-performance-regression';

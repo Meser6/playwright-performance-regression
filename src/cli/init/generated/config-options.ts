@@ -100,7 +100,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     path: 'measure.exclude',
     description: 'Requests whose URL matches any pattern are skipped.',
     leaf: true,
-    default: ['/socket.io/'],
+    default: ['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/'],
   },
   {
     path: 'measure.excludeKnownThirdParty',

@@ -35,7 +35,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
       '.eot',
     ],
     include: [],
-    exclude: ['/socket.io/'],
+    exclude: ['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/'],
     excludeKnownThirdParty: true,
     successStatuses: ['2xx', '3xx'],
     steps: true,
