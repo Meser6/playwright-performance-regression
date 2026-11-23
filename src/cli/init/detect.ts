@@ -8,7 +8,6 @@ import {
 } from '../../core/types/index.ts';
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn';
-export type CiPlatform = 'github' | 'gitlab' | 'jenkins' | 'azure';
 
 export interface ProjectInfo {
   playwrightConfig: { path: string; text: string } | null;
@@ -25,7 +24,6 @@ export interface ProjectInfo {
   taggedPerfTestFiles: number;
   /** Source files with a test.step( call (04-REQ-47). */
   stepFiles: number;
-  ciPlatform: CiPlatform | null;
   /** Scripts of package.json: name → command (04-REQ-55). */
   scriptTexts: Record<string, string>;
   /** Source files with request.newContext( and no trackRequestContext (04-REQ-74). */
@@ -63,14 +61,6 @@ export const LOCKFILES: Readonly<Record<string, PackageManager>> = {
   'yarn.lock': 'yarn',
   'package-lock.json': 'npm',
 };
-
-/** CI markers in the order of 04-REQ-38 step 6. */
-const CI_MARKERS: readonly [CiPlatform, (path: string) => boolean][] = [
-  ['github', (p) => p.startsWith('.github/')],
-  ['gitlab', (p) => p === '.gitlab-ci.yml'],
-  ['jenkins', (p) => p === 'Jenkinsfile'],
-  ['azure', (p) => p === 'azure-pipelines.yml'],
-];
 
 export const SOURCE_FILE = /\.(?:[cm]?[jt]s|[jt]sx)$/u;
 const IMPORTS_PLAYWRIGHT_TEST =
@@ -187,7 +177,6 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
 
   const packageModule: 'esm' | 'cjs' = pkg?.['type'] === 'module' ? 'esm' : 'cjs';
   const scripts = pkg?.['scripts'];
-  const paths = [...files.keys()];
   return {
     playwrightConfig: configPath === null ? null : { path: configPath, text: configText },
     playwrightVersion: playwrightVersion(files, pkg),
@@ -204,7 +193,6 @@ export function detectProject(files: ReadonlyMap<string, string>): ProjectInfo {
     ),
     taggedPerfTestFiles: sources.filter((p) => PERF_TAG.test(text(p))).length,
     stepFiles: sources.filter((p) => text(p).includes('test.step(')).length,
-    ciPlatform: CI_MARKERS.find(([, test]) => paths.some(test))?.[0] ?? null,
     scriptTexts:
       typeof scripts === 'object' && scripts !== null
         ? Object.fromEntries(

@@ -17,7 +17,6 @@ import { parsePasses } from '../../mode/index.ts';
 import type { CliHost, Prompt } from '../host.ts';
 import { formatIssues, infoLine } from '../output.ts';
 import type { OutputStyle } from '../output.ts';
-import { CI_PATHS } from './ci.ts';
 import {
   chainsCommands,
   checkRuns,
@@ -30,7 +29,7 @@ import {
 import type { CheckRun, RunCommands } from './commands.ts';
 import { DEFAULT_ANSWERS_PASSES } from './defaults.ts';
 import { detectProject } from './detect.ts';
-import type { CiPlatform, ProjectInfo } from './detect.ts';
+import type { ProjectInfo } from './detect.ts';
 import { unifiedDiff } from './diff.ts';
 import { findPlaywrightConfigs, readProjectFiles } from './files.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
@@ -63,16 +62,10 @@ export function versionAtLeast(version: string, minimum: string): boolean {
 }
 
 /**
- * Steps shown as [n/10] (04-REQ-38); a skipped step keeps its number, and step 9 is not shown at
- * all with the red box, so the summary stays [10/10] (04-D-43).
+ * Steps shown as [n/9] (04-REQ-38, 04-D-53: no CI step); a skipped step keeps its number, and
+ * step 8 is not shown at all with the red box, so the summary stays [9/9] (04-D-43).
  */
-const STEPS = 10;
-const PLATFORM_NAMES: Record<CiPlatform, string> = {
-  github: 'GitHub Actions',
-  gitlab: 'GitLab CI',
-  jenkins: 'Jenkins',
-  azure: 'Azure Pipelines',
-};
+const STEPS = 9;
 const DOCS = `${REPOSITORY_URL}/blob/main/docs`;
 /** Step 0a and step 0 come before the language is known: English (04-REQ-45, 04-REQ-43). */
 const TUTORIAL_QUESTION = `Set up ${PACKAGE_NAME} with a guided tutorial?`;
@@ -117,7 +110,7 @@ class Dialog {
     this.say(`${indent}${this.paint(text, style)}`);
   }
 
-  /** Step header in cyan ("[2/10] Which tests") and the lesson dimmed. */
+  /** Step header in cyan ("[2/9] Which tests") and the lesson dimmed. */
   step(n: number | string, title: string, ...lesson: string[]): void {
     this.say('', this.paint(`[${n}/${STEPS}] ${title}`, 'cyan'));
     for (const l of lesson) this.line(l, 'dim');
@@ -363,23 +356,12 @@ async function askAnswers(dialog: Dialog, info: ProjectInfo): Promise<InitAnswer
   if (hints.everyPass !== null)
     dialog.line(`⚠ ${t('commandEveryPass', { prep: hints.everyPass })}`, 'yellow');
 
-  dialog.stepOf(7, 'stepCi', 'ci1', 'ci2', 'ci3', 'ci4');
-  let addCi = false;
-  if (info.ciPlatform === null) {
-    dialog.say(`  ${t('noCi', { url: `${DOCS}/ci.md` })}`);
-  } else {
-    addCi = await dialog.confirm(
-      t('ciQuestion', { platform: PLATFORM_NAMES[info.ciPlatform] }),
-      true,
-    );
-  }
   return {
     scope,
     passesTest,
     measure,
     preset,
     command,
-    addCi,
     runCheck: dialog.interactive && !skipped,
   };
 }
@@ -544,19 +526,11 @@ function nextSteps(
   const cmd = (text: string): string => paint(text, 'cyan');
   if (written.length === 0) return [t('nextApply')];
   const dir = DEFAULT_CONFIG.report.dir;
-  const platform = info.ciPlatform;
-  const ciPath = answers.addCi && platform !== null ? CI_PATHS[platform] : null;
   const estimate = t(checkRan ? 'estimateAbove' : 'estimateUnknown');
   const steps: string[] = [];
   if (!checkRan) steps.push(t('nextCheck', { command: cmd(commands.check) }));
   steps.push(
-    ciPath === null
-      ? t('nextThresholdsNoCi', {
-          command: cmd(commands.thresholds),
-          url: `${DOCS}/ci.md`,
-          estimate,
-        })
-      : t('nextThresholds', { command: cmd(commands.thresholds), estimate }),
+    t('nextThresholds', { command: cmd(commands.thresholds), url: `${DOCS}/ci.md`, estimate }),
     t('nextCommit', { files: thresholdsFiles(info, answers).join(', ') }),
     t('nextTest', {
       command: cmd(commands.test),
@@ -564,12 +538,6 @@ function nextSteps(
       outcome: `${dir}/outcome.json`,
     }),
   );
-  if (ciPath !== null && platform !== null) {
-    const ci = [t('nextCiJobs', { path: ciPath })];
-    if (platform === 'jenkins') ci.push(t('nextJenkins', { path: ciPath }));
-    if (platform === 'azure') ci.push(t('nextAzure', { path: ciPath }));
-    steps.push(ci.join(' '));
-  }
   return steps;
 }
 
@@ -601,7 +569,7 @@ async function checkCause(host: CliHost, mode: CheckRun['mode']): Promise<string
 }
 
 /**
- * Step 9 (04-REQ-58, v4 D4b): runs the test command of step 6 twice, as a child process with the
+ * Step 8 (04-REQ-58, v4 D4b): runs the test command of step 6 twice, as a child process with the
  * terminal: PW_PERF_MODE=thresholds, then PW_PERF_MODE=test, both with PW_PERF_PASSES=2 and the
  * thresholds in a temporary directory that is removed afterwards. Returns the exit codes of the
  * runs that ran (an empty list when the command is shown instead); Ctrl+C (130) stops the check.
@@ -729,7 +697,7 @@ export async function runInit(
     const commands = runCommands(answers.command, host.platform);
 
     dialog.stepOf(
-      8,
+      7,
       'stepChanges',
       plan.changes.length === 0 ? 'nothingToChange' : 'changesLesson',
     );
@@ -753,14 +721,14 @@ export async function runInit(
     const redBox = testObject === null ? null : testObjectBox(dialog, host, testObject);
     if (redBox !== null) host.stdout.write(`\n${redBox}`);
 
-    // Step 9: a check only when something was written, playwright.config is wrapped and step 6
+    // Step 8: a check only when something was written, playwright.config is wrapped and step 6
     // was not skipped; with the red box and no measured test.step nothing would be measured, so no
-    // step 9 at all (04-REQ-58); with measured steps the check is useful (04-D-47).
+    // step 8 at all (04-REQ-58); with measured steps the check is useful (04-D-47).
     const configPath = info.playwrightConfig.path;
     const wrapped = info.existing.wrappedConfig || written.includes(configPath);
     let checkResults: CheckResult[] | null = null;
     if (testObject === null || testObject.stepsMeasured) {
-      dialog.stepOf(9, 'stepCheck', 'checkLesson');
+      dialog.stepOf(8, 'stepCheck', 'checkLesson');
       if (answers.runCheck && written.length > 0 && wrapped) {
         if (await dialog.confirm(t('checkQuestion'), true)) {
           prompt?.close();
@@ -775,7 +743,7 @@ export async function runInit(
       }
     }
 
-    dialog.step(10, t('stepSummary'));
+    dialog.step(9, t('stepSummary'));
     if (written.length > 0) {
       dialog.say(
         `  ${t('changedFiles')}`,

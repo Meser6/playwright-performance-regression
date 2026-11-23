@@ -52,7 +52,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm check:types-generated
       - run: pnpm check:html-generated
-      - run: pnpm check:ci-generated
       - run: pnpm check:docs-generated
       - run: pnpm check:config-template-generated
       # 13-AC-07: actionlint (workflow linter) on the GitHub Actions recipe and on the workflows

@@ -21,6 +21,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   optional, commented-out test report step for GitHub Actions. `docs/ci.md` explains where the
   result shows up and how to read it.
 
+### Changed
+
+- **The guided setup adds no CI jobs.** The CI step is gone (steps are now `[n/9]`) and the wizard
+  no longer writes `.github/workflows/perf.yml`, `.gitlab/perf.gitlab-ci.yml`, `Jenkinsfile.perf`
+  or `azure-pipelines.perf.yml`; it still adds no scripts. Your test command is only used in the
+  commands printed at the end and for the check, and the step says so. The recipes stay in
+  `examples/ci/` and [CI](docs/ci.md) for you to copy; the summary links to them. CI files written
+  by an earlier wizard are left as they are.
+
 ## [0.1.0-next.4] - 2026-11-23
 
 Upgrading from `0.1.0-next.3`: see [Upgrading](docs/upgrading.md). In short, run your test

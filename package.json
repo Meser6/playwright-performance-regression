@@ -126,8 +126,6 @@
     "check:types-generated": "node scripts/generate-types.mjs --check",
     "gen:html": "node scripts/build-html-assets.mjs",
     "check:html-generated": "node scripts/build-html-assets.mjs --check",
-    "gen:ci": "node scripts/build-ci-templates.mjs",
-    "check:ci-generated": "node scripts/build-ci-templates.mjs --check",
     "gen:docs": "node scripts/build-config-docs.mjs",
     "check:docs-generated": "node scripts/build-config-docs.mjs --check",
     "gen:config-template": "node scripts/build-config-template.mjs",

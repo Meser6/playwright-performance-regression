@@ -118,11 +118,10 @@ from the table above, or, for the test object, as a red box with the code to pas
 | `pw-perf.config.ts` (`.js` in a JavaScript project) | missing                                                                                                                                                                     | created with the 15 most important options: the answers that differ from the defaults as code, the others commented out with their default                                               |
 | `.gitignore`                                        | any                                                                                                                                                                         | adds `reports/pw-perf/`                                                                                                                                                                  |
 | `package.json`                                      | never changed                                                                                                                                                               | the wizard shows the commands with `PW_PERF_MODE` before your test command                                                                                                               |
-| CI                                                  | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                                              | adds a separate file from [the CI recipes](ci.md): a manual thresholds job and a weekly measurement job running your test command                                                        |
 
-Not recognised, so left to you: other config wrappers, several test objects, `mergeTests`, a
-`.json` package config, and existing CI files with other content. Running `init` again
-changes nothing that is already set up.
+Not recognised, so left to you: other config wrappers, several test objects, `mergeTests` and a
+`.json` package config. The wizard never adds CI jobs or scripts: copy a [CI recipe](ci.md) and put
+your test command in it. Running `init` again changes nothing that is already set up.
 
 ## Choosing the tests to measure
 

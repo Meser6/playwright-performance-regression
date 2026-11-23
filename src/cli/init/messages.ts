@@ -66,7 +66,7 @@ const en = {
     'Only steps, but no test.step was found: nothing is measured until you add test.step blocks.',
   stepCommand: 'Test command',
   commandLesson1:
-    'Type the command you usually run your tests with, e.g. npm run e2e:qa. The wizard puts PW_PERF_MODE in front of it in the commands below, writes it into the CI jobs and runs it for the check.',
+    'Type the command you usually run your tests with, e.g. npm run e2e:qa. The wizard does not change anything in it: it uses it in the commands at the end and for the check.',
   commandLesson2:
     'Enter keeps the suggested command; "skip" keeps it too and skips the check at the end.',
   commandQuestion: 'Which command do you usually run your tests with?',
@@ -74,8 +74,6 @@ const en = {
     'Type the command without PW_PERF_ variables: the wizard adds PW_PERF_MODE itself.',
   commandChain:
     'This command chains several commands: PW_PERF_MODE=... in front of it only reaches the first one. Put the chain in a package.json script and type npm run <script>.',
-  stepCi: 'CI',
-  noCi: 'No CI configuration found. Recipes for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines: {url}',
   stepChanges: 'Changes',
   nothingToChange: 'Nothing to change: the project is already set up for these answers.',
   changesLesson: 'Each change is shown as a diff before it is applied.',
@@ -92,8 +90,6 @@ const en = {
   plannedChanges: 'Planned changes (not written):',
   manualSteps: 'Manual steps: {count} (see the warnings above).',
   nextSteps: 'Next steps:',
-  nextJenkins: 'Create a Pipeline job in Jenkins with the script path {path}.',
-  nextAzure: 'Create a pipeline in Azure DevOps from {path}.',
   nextApply: 'Apply the changes above (run the setup again in a terminal).',
   originsNote:
     'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of {configFile}.',
@@ -115,12 +111,6 @@ const en = {
   configHintIntro:
     'Wrap the exported config in withPerf() as the outermost call (also around other wrappers):',
   configHintCjs: 'In {path} with module.exports: {call}.',
-  manualCiKept: '{file} exists and was not changed.',
-  manualCiHint: 'Compare it with examples/ci/ in the {pkg} repository.',
-  manualGitlabInclude: '.gitlab-ci.yml was not changed: include the new job file in it.',
-  manualNpmOne: '{files} installs the dependencies with npm.',
-  manualNpmHint:
-    'This project uses {manager}: replace "npm ci" with "{install}" and "npx" with "{npx}".',
 
   declinedRun:
     'Run your test command with PW_PERF_MODE=thresholds and commit the pw-perf-thresholds*.json files, then PW_PERF_MODE=test runs the measurement (e.g. {example}).',
@@ -156,11 +146,6 @@ const en = {
   presetNormal: 'normal: recommended to start with.',
   presetLoose: 'loose: large headroom; only clear regressions, for shared or noisy environments.',
   presetQuestion: 'How much headroom should derived thresholds have? [strict/normal/loose]',
-  ci1: 'Derive thresholds on the CI machines that will measure: times from a laptop do not carry over.',
-  ci2: 'A CI job you start by hand with PW_PERF_MODE=thresholds saves the thresholds files as an artifact.',
-  ci3: 'Download them and commit them to the repository.',
-  ci4: 'A scheduled job (once a week by default) with PW_PERF_MODE=test fails on a regression.',
-  ciQuestion: 'Add the CI jobs for thresholds and measurement runs ({platform})?',
   stepCheck: 'Check',
   checkLesson:
     'The check runs your test command like the real runs, only with 2 passes: first PW_PERF_MODE=thresholds, then PW_PERF_MODE=test. Its thresholds go to a temporary folder that is deleted afterwards; your thresholds files are not touched.',
@@ -182,15 +167,12 @@ const en = {
   runLesson: 'A measurement is your usual test command with PW_PERF_MODE set.',
   nextCheck: '{command}: see what will be measured and how long a full run takes.',
   nextThresholds:
-    '{command}: derive thresholds first, on the CI machines that will measure: run the manual thresholds CI job (or this command there) and download the thresholds files from its artifact. Until they exist, measurement runs use the loose default thresholds. {estimate}',
-  nextThresholdsNoCi:
     '{command}: derive thresholds first, on the CI machines that will measure (see {url}). Until the thresholds files exist, measurement runs use the loose default thresholds. {estimate}',
   estimateUnknown: '(Run the check command for an estimate.)',
   estimateAbove: '(The start box of the run shows a time estimate from the last run.)',
   nextCommit: 'Commit {files}.',
   nextTest:
     '{command}: a measurement run that fails on a regression. Results: {report}; exit code details: {outcome}.',
-  nextCiJobs: 'The measurement job in {path} runs once a week and can be started by hand.',
   windowsNote: 'PowerShell and cmd forms of these commands: docs/cli.md.',
   boxWrapThis: 'Wrap the one your tests import: {file}',
   boxWorkspace:
@@ -264,15 +246,13 @@ const pl: Messages = {
     'Tylko kroki, ale nie znaleziono test.step: nic nie będzie mierzone, dopóki nie dodasz bloków test.step.',
   stepCommand: 'Polecenie testów',
   commandLesson1:
-    'Wpisz polecenie, którym zwykle uruchamiasz testy, np. npm run e2e:qa. Kreator dopisze przed nim PW_PERF_MODE w poleceniach poniżej, wpisze je do jobów CI i uruchomi je w sprawdzeniu.',
+    'Wpisz polecenie, którym zwykle uruchamiasz testy, np. npm run e2e:qa. Kreator niczego w nim nie zmienia: użyje go w poleceniach na końcu i do sprawdzenia.',
   commandLesson2:
     'Enter zostawia proponowane polecenie; "skip" też je zostawia i pomija sprawdzenie na końcu.',
   commandQuestion: 'Jakim poleceniem zwykle uruchamiasz testy?',
   commandVariable: 'Wpisz polecenie bez zmiennych PW_PERF_: kreator sam dodaje PW_PERF_MODE.',
   commandChain:
     'To polecenie łączy kilka poleceń: PW_PERF_MODE=... przed nim dociera tylko do pierwszego. Zamknij łańcuch w skrypcie package.json i wpisz npm run <skrypt>.',
-  stepCi: 'CI',
-  noCi: 'Nie znaleziono konfiguracji CI. Gotowe konfiguracje dla GitHub Actions, GitLab CI, Jenkinsa i Azure Pipelines: {url}',
   stepChanges: 'Zmiany',
   nothingToChange: 'Nic do zmiany: projekt jest już skonfigurowany dla tych odpowiedzi.',
   changesLesson: 'Każda zmiana jest najpierw pokazana jako diff, a dopiero potem zastosowana.',
@@ -289,8 +269,6 @@ const pl: Messages = {
   plannedChanges: 'Planowane zmiany (niezapisane):',
   manualSteps: 'Kroki ręczne: {count} (zobacz ostrzeżenia powyżej).',
   nextSteps: 'Następne kroki:',
-  nextJenkins: 'Utwórz w Jenkinsie job typu Pipeline ze ścieżką skryptu {path}.',
-  nextAzure: 'Utwórz w Azure DevOps pipeline z pliku {path}.',
   nextApply: 'Zastosuj powyższe zmiany (uruchom konfigurację ponownie w terminalu).',
   originsNote:
     'Klucze endpointów originu z baseURL nie mają etykiety, a inne hosty są oznaczone nazwą hosta; krótsze etykiety dla nich ustawisz w keys.origins w {configFile}.',
@@ -313,11 +291,6 @@ const pl: Messages = {
   configHintIntro:
     'Owiń eksportowaną konfigurację w withPerf() jako najbardziej zewnętrzne wywołanie (także wokół innych wrapperów):',
   configHintCjs: 'W {path} z module.exports: {call}.',
-  manualCiKept: '{file} już istnieje i nie został zmieniony.',
-  manualCiHint: 'Porównaj go z examples/ci/ w repozytorium {pkg}.',
-  manualGitlabInclude: 'Nie zmieniono .gitlab-ci.yml: dołącz do niego nowy plik joba.',
-  manualNpmOne: '{files} instaluje zależności przez npm.',
-  manualNpmHint: 'Ten projekt używa {manager}: zamień "npm ci" na "{install}", a "npx" na "{npx}".',
 
   declinedRun:
     'Uruchom swoje polecenie testów z PW_PERF_MODE=thresholds i zacommituj pliki pw-perf-thresholds*.json, potem PW_PERF_MODE=test wykonuje pomiar (np. {example}).',
@@ -353,11 +326,6 @@ const pl: Messages = {
   presetLoose:
     'loose: duży zapas; tylko wyraźne regresje, dla współdzielonych lub zaszumionych środowisk.',
   presetQuestion: 'Jaki zapas mają mieć wyznaczone progi? [strict/normal/loose]',
-  ci1: 'Progi wyznaczaj na maszynach CI, które będą mierzyć: czasy z laptopa się nie przenoszą.',
-  ci2: 'Job CI uruchamiany ręcznie z PW_PERF_MODE=thresholds zapisuje pliki progów jako artefakt.',
-  ci3: 'Pobierz je i zacommituj do repozytorium.',
-  ci4: 'Job cykliczny (domyślnie raz w tygodniu) z PW_PERF_MODE=test kończy się błędem przy regresji.',
-  ciQuestion: 'Dodać joby CI dla runów progów i pomiarowych ({platform})?',
   stepCheck: 'Sprawdzenie',
   checkLesson:
     'Sprawdzenie uruchamia Twoje polecenie testów jak prawdziwe runy, tylko z 2 przebiegami: najpierw PW_PERF_MODE=thresholds, potem PW_PERF_MODE=test. Jego progi trafiają do katalogu tymczasowego, usuwanego na końcu; Twoje pliki progów zostają nietknięte.',
@@ -379,15 +347,12 @@ const pl: Messages = {
   runLesson: 'Pomiar to Twoje zwykłe polecenie testów z ustawionym PW_PERF_MODE.',
   nextCheck: '{command}: zobacz, co zostanie zmierzone i ile potrwa pełny run.',
   nextThresholds:
-    '{command}: najpierw wyznacz progi na maszynach CI, które będą mierzyć: uruchom ręczny job progów w CI (albo to polecenie tam) i pobierz pliki progów z jego artefaktu. Dopóki ich nie ma, runy pomiarowe używają luźnych progów domyślnych. {estimate}',
-  nextThresholdsNoCi:
     '{command}: najpierw wyznacz progi na maszynach CI, które będą mierzyć (zobacz {url}). Dopóki plików progów nie ma, runy pomiarowe używają luźnych progów domyślnych. {estimate}',
   estimateUnknown: '(Szacunek czasu da polecenie sprawdzenia.)',
   estimateAbove: '(Ramka startowa runu podaje szacunek czasu z ostatniego runu.)',
   nextCommit: 'Zacommituj {files}.',
   nextTest:
     '{command}: run pomiarowy, który kończy się błędem przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
-  nextCiJobs: 'Job pomiarowy w {path} działa raz w tygodniu i można go uruchomić ręcznie.',
   windowsNote: 'Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.',
   boxWrapThis: 'Owiń ten, który importują Twoje testy: {file}',
   boxWorkspace:
@@ -459,7 +424,7 @@ const es: Messages = {
     'Solo pasos, pero no se encontró ningún test.step: no se mide nada hasta que añadas bloques test.step.',
   stepCommand: 'Comando de tests',
   commandLesson1:
-    'Escribe el comando con el que sueles ejecutar tus tests, p. ej. npm run e2e:qa. El asistente pone PW_PERF_MODE delante en los comandos de abajo, lo escribe en los jobs de CI y lo ejecuta en la comprobación.',
+    'Escribe el comando con el que sueles ejecutar tus tests, p. ej. npm run e2e:qa. El asistente no lo modifica: lo usa en los comandos del final y para la comprobación.',
   commandLesson2:
     'Enter mantiene el comando sugerido; "skip" también lo mantiene y omite la comprobación final.',
   commandQuestion: '¿Con qué comando sueles ejecutar tus tests?',
@@ -467,8 +432,6 @@ const es: Messages = {
     'Escribe el comando sin variables PW_PERF_: el asistente añade PW_PERF_MODE por sí mismo.',
   commandChain:
     'Este comando encadena varios comandos: PW_PERF_MODE=... delante solo llega al primero. Pon la cadena en un script de package.json y escribe npm run <script>.',
-  stepCi: 'CI',
-  noCi: 'No se encontró configuración de CI. Recetas para GitHub Actions, GitLab CI, Jenkins y Azure Pipelines: {url}',
   stepChanges: 'Cambios',
   nothingToChange: 'Nada que cambiar: el proyecto ya está configurado para estas respuestas.',
   changesLesson: 'Cada cambio se muestra como diff antes de aplicarlo.',
@@ -485,8 +448,6 @@ const es: Messages = {
   plannedChanges: 'Cambios previstos (no escritos):',
   manualSteps: 'Pasos manuales: {count} (ver las advertencias de arriba).',
   nextSteps: 'Siguientes pasos:',
-  nextJenkins: 'Crea un job Pipeline en Jenkins con la ruta de script {path}.',
-  nextAzure: 'Crea un pipeline en Azure DevOps a partir de {path}.',
   nextApply: 'Aplica los cambios de arriba (ejecuta la configuración de nuevo en un terminal).',
   originsNote:
     'Las claves de endpoint del origen de baseURL no llevan etiqueta y los demás hosts se etiquetan con su host; define etiquetas más cortas para ellos en keys.origins de {configFile}.',
@@ -508,12 +469,6 @@ const es: Messages = {
   configHintIntro:
     'Envuelve la configuración exportada en withPerf() como llamada más externa (también alrededor de otros wrappers):',
   configHintCjs: 'En {path} con module.exports: {call}.',
-  manualCiKept: '{file} ya existe y no se modificó.',
-  manualCiHint: 'Compáralo con examples/ci/ del repositorio de {pkg}.',
-  manualGitlabInclude: '.gitlab-ci.yml no se modificó: incluye en él el nuevo archivo del job.',
-  manualNpmOne: '{files} instala las dependencias con npm.',
-  manualNpmHint:
-    'Este proyecto usa {manager}: sustituye "npm ci" por "{install}" y "npx" por "{npx}".',
 
   declinedRun:
     'Ejecuta tu comando de tests con PW_PERF_MODE=thresholds y haz commit de los archivos pw-perf-thresholds*.json; después PW_PERF_MODE=test ejecuta la medición (p. ej. {example}).',
@@ -552,11 +507,6 @@ const es: Messages = {
   presetLoose:
     'loose: margen grande; solo regresiones claras, para entornos compartidos o ruidosos.',
   presetQuestion: '¿Cuánto margen deben tener los umbrales calculados? [strict/normal/loose]',
-  ci1: 'Calcula los umbrales en las máquinas de CI que van a medir: los tiempos de un portátil no sirven allí.',
-  ci2: 'Un job de CI lanzado a mano con PW_PERF_MODE=thresholds guarda los archivos de umbrales como artefacto.',
-  ci3: 'Descárgalos y haz commit en el repositorio.',
-  ci4: 'Un job programado (una vez por semana por defecto) con PW_PERF_MODE=test falla ante una regresión.',
-  ciQuestion: '¿Añadir los jobs de CI para umbrales y mediciones ({platform})?',
   stepCheck: 'Comprobación',
   checkLesson:
     'La comprobación ejecuta tu comando de tests como las ejecuciones reales, solo con 2 pasadas: primero PW_PERF_MODE=thresholds y luego PW_PERF_MODE=test. Sus umbrales van a una carpeta temporal que se borra al final; tus archivos de umbrales no se tocan.',
@@ -579,8 +529,6 @@ const es: Messages = {
   runLesson: 'Una medición es tu comando de tests habitual con PW_PERF_MODE.',
   nextCheck: '{command}: mira qué se medirá y cuánto dura una ejecución completa.',
   nextThresholds:
-    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir: lanza el job manual de umbrales (o este comando allí) y descarga los archivos de umbrales de su artefacto. Mientras no existan, las mediciones usan los umbrales amplios por defecto. {estimate}',
-  nextThresholdsNoCi:
     '{command}: primero calcula los umbrales en las máquinas de CI que van a medir (ver {url}). Mientras no existan los archivos de umbrales, las mediciones usan los umbrales amplios por defecto. {estimate}',
   estimateUnknown: '(El comando de comprobación da una estimación.)',
   estimateAbove:
@@ -588,8 +536,6 @@ const es: Messages = {
   nextCommit: 'Haz commit de {files}.',
   nextTest:
     '{command}: una medición que falla ante una regresión. Resultados: {report}; detalles del código de salida: {outcome}.',
-  nextCiJobs:
-    'El job de medición en {path} se ejecuta una vez por semana y se puede lanzar a mano.',
   windowsNote: 'Formas de estos comandos para PowerShell y cmd: docs/cli.md.',
   boxWrapThis: 'Envuelve el que importan tus tests: {file}',
   boxWorkspace:
@@ -661,7 +607,7 @@ const fr: Messages = {
     'Étapes seulement, mais aucun test.step trouvé : rien n’est mesuré tant que vous n’ajoutez pas de blocs test.step.',
   stepCommand: 'Commande de tests',
   commandLesson1:
-    'Saisissez la commande avec laquelle vous lancez d’habitude vos tests, p. ex. npm run e2e:qa. L’assistant ajoute PW_PERF_MODE devant dans les commandes ci-dessous, l’écrit dans les jobs de CI et l’exécute pour la vérification.',
+    'Saisissez la commande avec laquelle vous lancez d’habitude vos tests, p. ex. npm run e2e:qa. L’assistant n’y change rien : il l’utilise dans les commandes à la fin et pour la vérification.',
   commandLesson2:
     'Entrée garde la commande proposée ; "skip" la garde aussi et saute la vérification finale.',
   commandQuestion: 'Avec quelle commande lancez-vous d’habitude vos tests ?',
@@ -669,8 +615,6 @@ const fr: Messages = {
     'Saisissez la commande sans variables PW_PERF_ : l’assistant ajoute PW_PERF_MODE lui-même.',
   commandChain:
     'Cette commande enchaîne plusieurs commandes : PW_PERF_MODE=... devant n’atteint que la première. Mettez la chaîne dans un script de package.json et saisissez npm run <script>.',
-  stepCi: 'CI',
-  noCi: 'Aucune configuration CI trouvée. Recettes pour GitHub Actions, GitLab CI, Jenkins et Azure Pipelines : {url}',
   stepChanges: 'Modifications',
   nothingToChange: 'Rien à modifier : le projet est déjà configuré pour ces réponses.',
   changesLesson: 'Chaque modification est affichée sous forme de diff avant d’être appliquée.',
@@ -687,8 +631,6 @@ const fr: Messages = {
   plannedChanges: 'Modifications prévues (non écrites) :',
   manualSteps: 'Étapes manuelles : {count} (voir les avertissements ci-dessus).',
   nextSteps: 'Étapes suivantes :',
-  nextJenkins: 'Créez dans Jenkins un job Pipeline avec le chemin de script {path}.',
-  nextAzure: 'Créez un pipeline dans Azure DevOps à partir de {path}.',
   nextApply: 'Appliquez les modifications ci-dessus (relancez la configuration dans un terminal).',
   originsNote:
     'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de {configFile}.',
@@ -710,12 +652,6 @@ const fr: Messages = {
   configHintIntro:
     'Enveloppez la configuration exportée dans withPerf() comme appel le plus externe (aussi autour des autres wrappers) :',
   configHintCjs: 'Dans {path} avec module.exports : {call}.',
-  manualCiKept: '{file} existe déjà et n’a pas été modifié.',
-  manualCiHint: 'Comparez-le avec examples/ci/ dans le dépôt de {pkg}.',
-  manualGitlabInclude: '.gitlab-ci.yml n’a pas été modifié : incluez-y le nouveau fichier de job.',
-  manualNpmOne: '{files} installe les dépendances avec npm.',
-  manualNpmHint:
-    'Ce projet utilise {manager} : remplacez "npm ci" par "{install}" et "npx" par "{npx}".',
 
   declinedRun:
     'Lancez votre commande de tests avec PW_PERF_MODE=thresholds et commitez les fichiers pw-perf-thresholds*.json, puis PW_PERF_MODE=test lance la mesure (par ex. {example}).',
@@ -757,11 +693,6 @@ const fr: Messages = {
   presetLoose:
     'loose : grande marge ; seulement les régressions nettes, pour des environnements partagés ou bruyants.',
   presetQuestion: 'Quelle marge pour les seuils calculés ? [strict/normal/loose]',
-  ci1: 'Calculez les seuils sur les machines de CI qui mesureront : les temps d’un portable ne s’y appliquent pas.',
-  ci2: 'Un job de CI lancé à la main avec PW_PERF_MODE=thresholds enregistre les fichiers de seuils comme artefact.',
-  ci3: 'Téléchargez-les et commitez-les dans le dépôt.',
-  ci4: 'Un job planifié (une fois par semaine par défaut) avec PW_PERF_MODE=test échoue en cas de régression.',
-  ciQuestion: 'Ajouter les jobs de CI pour les seuils et les mesures ({platform}) ?',
   stepCheck: 'Vérification',
   checkLesson:
     'La vérification lance votre commande de tests comme les vraies exécutions, mais avec 2 passes : d’abord PW_PERF_MODE=thresholds, puis PW_PERF_MODE=test. Ses seuils vont dans un dossier temporaire supprimé à la fin ; vos fichiers de seuils ne sont pas touchés.',
@@ -785,8 +716,6 @@ const fr: Messages = {
   nextCheck:
     '{command} : voyez ce qui sera mesuré et combien de temps dure une exécution complète.',
   nextThresholds:
-    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront : lancez le job manuel de seuils (ou cette commande là-bas) et téléchargez les fichiers de seuils depuis son artefact. Tant qu’ils n’existent pas, les mesures utilisent les seuils larges par défaut. {estimate}',
-  nextThresholdsNoCi:
     '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront (voir {url}). Tant que les fichiers de seuils n’existent pas, les mesures utilisent les seuils larges par défaut. {estimate}',
   estimateUnknown: '(La commande de vérification donne une estimation.)',
   estimateAbove:
@@ -794,8 +723,6 @@ const fr: Messages = {
   nextCommit: 'Commitez {files}.',
   nextTest:
     '{command} : une mesure qui échoue en cas de régression. Résultats : {report} ; détail du code de sortie : {outcome}.',
-  nextCiJobs:
-    'Le job de mesure dans {path} s’exécute une fois par semaine et peut être lancé à la main.',
   windowsNote: 'Formes de ces commandes pour PowerShell et cmd : docs/cli.md.',
   boxWrapThis: 'Enveloppez celui qu’importent vos tests : {file}',
   boxWorkspace:
@@ -867,7 +794,7 @@ const it: Messages = {
     'Solo step, ma nessun test.step trovato: non viene misurato nulla finché non aggiungi blocchi test.step.',
   stepCommand: 'Comando di test',
   commandLesson1:
-    'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura mette PW_PERF_MODE davanti nei comandi qui sotto, lo scrive nei job di CI e lo esegue per la verifica.',
+    'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura non lo modifica: lo usa nei comandi alla fine e per la verifica.',
   commandLesson2:
     'Invio mantiene il comando proposto; "skip" lo mantiene e salta la verifica finale.',
   commandQuestion: 'Con quale comando esegui di solito i test?',
@@ -875,8 +802,6 @@ const it: Messages = {
     'Scrivi il comando senza variabili PW_PERF_: la procedura aggiunge PW_PERF_MODE da sola.',
   commandChain:
     'Questo comando concatena più comandi: PW_PERF_MODE=... davanti raggiunge solo il primo. Metti la catena in uno script di package.json e scrivi npm run <script>.',
-  stepCi: 'CI',
-  noCi: 'Nessuna configurazione CI trovata. Ricette per GitHub Actions, GitLab CI, Jenkins e Azure Pipelines: {url}',
   stepChanges: 'Modifiche',
   nothingToChange: 'Niente da modificare: il progetto è già configurato per queste risposte.',
   changesLesson: 'Ogni modifica viene mostrata come diff prima di essere applicata.',
@@ -893,8 +818,6 @@ const it: Messages = {
   plannedChanges: 'Modifiche previste (non scritte):',
   manualSteps: 'Passi manuali: {count} (vedi gli avvisi sopra).',
   nextSteps: 'Prossimi passi:',
-  nextJenkins: 'Crea in Jenkins un job Pipeline con il percorso dello script {path}.',
-  nextAzure: 'Crea una pipeline in Azure DevOps da {path}.',
   nextApply: 'Applica le modifiche sopra (esegui di nuovo la configurazione in un terminale).',
   originsNote:
     'Le chiavi di endpoint dell’origine di baseURL non hanno etichetta e gli altri host sono etichettati con il loro host; imposta etichette più brevi in keys.origins di {configFile}.',
@@ -916,12 +839,6 @@ const it: Messages = {
   configHintIntro:
     'Avvolgi la configurazione esportata in withPerf() come chiamata più esterna (anche attorno ad altri wrapper):',
   configHintCjs: 'In {path} con module.exports: {call}.',
-  manualCiKept: '{file} esiste già e non è stato modificato.',
-  manualCiHint: 'Confrontalo con examples/ci/ nel repository di {pkg}.',
-  manualGitlabInclude: '.gitlab-ci.yml non è stato modificato: includi il nuovo file del job.',
-  manualNpmOne: '{files} installa le dipendenze con npm.',
-  manualNpmHint:
-    'Questo progetto usa {manager}: sostituisci "npm ci" con "{install}" e "npx" con "{npx}".',
 
   declinedRun:
     'Esegui il tuo comando di test con PW_PERF_MODE=thresholds e fai commit dei file pw-perf-thresholds*.json, poi PW_PERF_MODE=test esegue la misurazione (es. {example}).',
@@ -960,11 +877,6 @@ const it: Messages = {
   presetLoose:
     'loose: margine ampio; solo regressioni evidenti, per ambienti condivisi o rumorosi.',
   presetQuestion: 'Quanto margine devono avere le soglie calcolate? [strict/normal/loose]',
-  ci1: 'Calcola le soglie sulle macchine di CI che misureranno: i tempi di un portatile non valgono lì.',
-  ci2: 'Un job di CI avviato a mano con PW_PERF_MODE=thresholds salva i file delle soglie come artefatto.',
-  ci3: 'Scaricali e fanne commit nel repository.',
-  ci4: 'Un job pianificato (una volta a settimana per impostazione predefinita) con PW_PERF_MODE=test fallisce in caso di regressione.',
-  ciQuestion: 'Aggiungere i job di CI per soglie e misure ({platform})?',
   stepCheck: 'Verifica',
   checkLesson:
     'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passaggi: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file di soglie non vengono toccati.',
@@ -986,8 +898,6 @@ const it: Messages = {
   runLesson: 'Una misura è il tuo solito comando di test con PW_PERF_MODE.',
   nextCheck: '{command}: guarda cosa verrà misurato e quanto dura un’esecuzione completa.',
   nextThresholds:
-    '{command}: prima calcola le soglie sulle macchine di CI che misureranno: avvia il job manuale delle soglie (o questo comando lì) e scarica i file delle soglie dal suo artefatto. Finché non esistono, le misure usano le soglie larghe predefinite. {estimate}',
-  nextThresholdsNoCi:
     '{command}: prima calcola le soglie sulle macchine di CI che misureranno (vedi {url}). Finché i file delle soglie non esistono, le misure usano le soglie larghe predefinite. {estimate}',
   estimateUnknown: '(Il comando di verifica fornisce una stima.)',
   estimateAbove:
@@ -995,8 +905,6 @@ const it: Messages = {
   nextCommit: 'Fai commit di {files}.',
   nextTest:
     '{command}: una misura che fallisce in caso di regressione. Risultati: {report}; dettagli del codice di uscita: {outcome}.',
-  nextCiJobs:
-    'Il job di misura in {path} viene eseguito una volta a settimana e può essere avviato a mano.',
   windowsNote: 'Forme di questi comandi per PowerShell e cmd: docs/cli.md.',
   boxWrapThis: 'Avvolgi quello che importano i tuoi test: {file}',
   boxWorkspace:
@@ -1068,15 +976,13 @@ const uk: Messages = {
     'Лише кроки, але test.step не знайдено: нічого не вимірюється, доки ви не додасте блоки test.step.',
   stepCommand: 'Команда тестів',
   commandLesson1:
-    'Введіть команду, якою ви зазвичай запускаєте тести, напр. npm run e2e:qa. Майстер додасть перед нею PW_PERF_MODE у командах нижче, запише її в job-и CI і запустить для перевірки.',
+    'Введіть команду, якою ви зазвичай запускаєте тести, напр. npm run e2e:qa. Майстер нічого в ній не змінює: використає її в командах наприкінці та для перевірки.',
   commandLesson2:
     'Enter залишає запропоновану команду; "skip" теж її залишає і пропускає перевірку наприкінці.',
   commandQuestion: 'Якою командою ви зазвичай запускаєте тести?',
   commandVariable: 'Введіть команду без змінних PW_PERF_: майстер сам додає PW_PERF_MODE.',
   commandChain:
     'Ця команда поєднує кілька команд: PW_PERF_MODE=... перед нею доходить лише до першої. Помістіть ланцюжок у скрипт package.json і введіть npm run <скрипт>.',
-  stepCi: 'CI',
-  noCi: 'Конфігурацію CI не знайдено. Рецепти для GitHub Actions, GitLab CI, Jenkins та Azure Pipelines: {url}',
   stepChanges: 'Зміни',
   nothingToChange: 'Нічого змінювати: проєкт уже налаштовано для цих відповідей.',
   changesLesson: 'Кожну зміну показано як diff, перш ніж її застосувати.',
@@ -1093,8 +999,6 @@ const uk: Messages = {
   plannedChanges: 'Заплановані зміни (не записані):',
   manualSteps: 'Ручні кроки: {count} (див. попередження вище).',
   nextSteps: 'Наступні кроки:',
-  nextJenkins: 'Створіть у Jenkins job типу Pipeline зі шляхом до скрипта {path}.',
-  nextAzure: 'Створіть pipeline в Azure DevOps з {path}.',
   nextApply: 'Застосуйте зміни вище (запустіть налаштування ще раз у терміналі).',
   originsNote:
     'Ключі ендпоінтів origin з baseURL не мають мітки, а інші хости позначаються своїм хостом; коротші мітки для них задайте в keys.origins у {configFile}.',
@@ -1116,12 +1020,6 @@ const uk: Messages = {
   configHintIntro:
     'Обгорніть експортовану конфігурацію у withPerf() як найзовнішній виклик (також навколо інших обгорток):',
   configHintCjs: 'У {path} з module.exports: {call}.',
-  manualCiKept: '{file} уже існує і не змінювався.',
-  manualCiHint: 'Порівняйте його з examples/ci/ у репозиторії {pkg}.',
-  manualGitlabInclude: '.gitlab-ci.yml не змінено: підключіть у ньому новий файл job.',
-  manualNpmOne: '{files} встановлює залежності через npm.',
-  manualNpmHint:
-    'Цей проєкт використовує {manager}: замініть "npm ci" на "{install}", а "npx" на "{npx}".',
 
   declinedRun:
     'Запустіть свою команду тестів з PW_PERF_MODE=thresholds і закомітьте файли pw-perf-thresholds*.json, потім PW_PERF_MODE=test виконує вимірювання (напр. {example}).',
@@ -1158,11 +1056,6 @@ const uk: Messages = {
   presetNormal: 'normal: рекомендовано для початку.',
   presetLoose: 'loose: великий запас; лише явні регресії, для спільних або шумних середовищ.',
   presetQuestion: 'Який запас мають мати обчислені пороги? [strict/normal/loose]',
-  ci1: 'Обчислюйте пороги на тих машинах CI, які будуть вимірювати: час із ноутбука там не підходить.',
-  ci2: 'Job CI, запущений вручну з PW_PERF_MODE=thresholds, зберігає файли порогів як артефакт.',
-  ci3: 'Завантажте їх і закомітьте в репозиторій.',
-  ci4: 'Запланований job (типово раз на тиждень) з PW_PERF_MODE=test падає при регресії.',
-  ciQuestion: 'Додати job-и CI для запусків порогів і вимірювань ({platform})?',
   stepCheck: 'Перевірка',
   checkLesson:
     'Перевірка запускає вашу команду тестів як справжні запуски, лише з 2 проходами: спершу PW_PERF_MODE=thresholds, потім PW_PERF_MODE=test. Її пороги потрапляють у тимчасову папку, яку потім видаляють; ваші файли порогів не змінюються.',
@@ -1184,15 +1077,12 @@ const uk: Messages = {
   runLesson: 'Вимірювання — це ваша звичайна команда тестів із PW_PERF_MODE.',
   nextCheck: '{command}: подивіться, що буде виміряно і скільки триватиме повний запуск.',
   nextThresholds:
-    '{command}: спершу обчисліть пороги на машинах CI, які будуть вимірювати: запустіть ручний job порогів (або цю команду там) і завантажте файли порогів з його артефакту. Поки їх немає, вимірювання використовують широкі типові пороги. {estimate}',
-  nextThresholdsNoCi:
     '{command}: спершу обчисліть пороги на машинах CI, які будуть вимірювати (див. {url}). Поки файлів порогів немає, вимірювання використовують широкі типові пороги. {estimate}',
   estimateUnknown: '(Оцінку часу дасть команда перевірки.)',
   estimateAbove: '(Стартова рамка запуску показує оцінку часу за останнім запуском.)',
   nextCommit: 'Закомітьте {files}.',
   nextTest:
     '{command}: вимірювальний запуск, що падає при регресії. Результати: {report}; подробиці коду виходу: {outcome}.',
-  nextCiJobs: 'Вимірювальний job у {path} виконується раз на тиждень, його можна запустити вручну.',
   windowsNote: 'Форми цих команд для PowerShell і cmd: docs/cli.md.',
   boxWrapThis: 'Обгорніть той, який імпортують ваші тести: {file}',
   boxWorkspace:
@@ -1264,15 +1154,13 @@ const ru: Messages = {
     'Только шаги, но test.step не найдено: ничего не измеряется, пока вы не добавите блоки test.step.',
   stepCommand: 'Команда тестов',
   commandLesson1:
-    'Введите команду, которой вы обычно запускаете тесты, напр. npm run e2e:qa. Мастер добавит перед ней PW_PERF_MODE в командах ниже, запишет её в job-ы CI и запустит для проверки.',
+    'Введите команду, которой вы обычно запускаете тесты, напр. npm run e2e:qa. Мастер ничего в ней не меняет: использует её в командах в конце и для проверки.',
   commandLesson2:
     'Enter оставляет предложенную команду; "skip" тоже её оставляет и пропускает проверку в конце.',
   commandQuestion: 'Какой командой вы обычно запускаете тесты?',
   commandVariable: 'Введите команду без переменных PW_PERF_: мастер сам добавляет PW_PERF_MODE.',
   commandChain:
     'Эта команда объединяет несколько команд: PW_PERF_MODE=... перед ней доходит только до первой. Поместите цепочку в скрипт package.json и введите npm run <скрипт>.',
-  stepCi: 'CI',
-  noCi: 'Конфигурация CI не найдена. Рецепты для GitHub Actions, GitLab CI, Jenkins и Azure Pipelines: {url}',
   stepChanges: 'Изменения',
   nothingToChange: 'Менять нечего: проект уже настроен для этих ответов.',
   changesLesson: 'Каждое изменение показывается как diff, прежде чем его применить.',
@@ -1289,8 +1177,6 @@ const ru: Messages = {
   plannedChanges: 'Запланированные изменения (не записаны):',
   manualSteps: 'Ручные шаги: {count} (см. предупреждения выше).',
   nextSteps: 'Дальнейшие шаги:',
-  nextJenkins: 'Создайте в Jenkins job типа Pipeline с путём к скрипту {path}.',
-  nextAzure: 'Создайте pipeline в Azure DevOps из {path}.',
   nextApply: 'Примените изменения выше (запустите настройку ещё раз в терминале).',
   originsNote:
     'Ключи эндпоинтов origin из baseURL не имеют метки, а другие хосты помечаются своим хостом; более короткие метки для них задайте в keys.origins в {configFile}.',
@@ -1312,12 +1198,6 @@ const ru: Messages = {
   configHintIntro:
     'Оберните экспортируемую конфигурацию в withPerf() как самый внешний вызов (в том числе вокруг других обёрток):',
   configHintCjs: 'В {path} с module.exports: {call}.',
-  manualCiKept: '{file} уже существует и не изменялся.',
-  manualCiHint: 'Сравните его с examples/ci/ в репозитории {pkg}.',
-  manualGitlabInclude: '.gitlab-ci.yml не изменён: подключите в нём новый файл job.',
-  manualNpmOne: '{files} устанавливает зависимости через npm.',
-  manualNpmHint:
-    'Этот проект использует {manager}: замените "npm ci" на "{install}", а "npx" на "{npx}".',
 
   declinedRun:
     'Запустите свою команду тестов с PW_PERF_MODE=thresholds и закоммитьте файлы pw-perf-thresholds*.json, затем PW_PERF_MODE=test выполняет измерение (напр. {example}).',
@@ -1353,11 +1233,6 @@ const ru: Messages = {
   presetNormal: 'normal: рекомендуется для начала.',
   presetLoose: 'loose: большой запас; только явные регрессии, для общих или шумных сред.',
   presetQuestion: 'Какой запас должен быть у вычисленных порогов? [strict/normal/loose]',
-  ci1: 'Вычисляйте пороги на тех машинах CI, которые будут измерять: время с ноутбука там не подходит.',
-  ci2: 'Job CI, запущенный вручную с PW_PERF_MODE=thresholds, сохраняет файлы порогов как артефакт.',
-  ci3: 'Скачайте их и закоммитьте в репозиторий.',
-  ci4: 'Запланированный job (по умолчанию раз в неделю) с PW_PERF_MODE=test падает при регрессии.',
-  ciQuestion: 'Добавить job-ы CI для запусков порогов и измерений ({platform})?',
   stepCheck: 'Проверка',
   checkLesson:
     'Проверка запускает вашу команду тестов как настоящие запуски, только с 2 проходами: сначала PW_PERF_MODE=thresholds, затем PW_PERF_MODE=test. Её пороги попадают во временную папку, которая затем удаляется; ваши файлы порогов не меняются.',
@@ -1379,15 +1254,12 @@ const ru: Messages = {
   runLesson: 'Измерение — это ваша обычная команда тестов с PW_PERF_MODE.',
   nextCheck: '{command}: посмотрите, что будет измерено и сколько займёт полный запуск.',
   nextThresholds:
-    '{command}: сначала вычислите пороги на машинах CI, которые будут измерять: запустите ручной job порогов (или эту команду там) и скачайте файлы порогов из его артефакта. Пока их нет, измерения используют широкие пороги по умолчанию. {estimate}',
-  nextThresholdsNoCi:
     '{command}: сначала вычислите пороги на машинах CI, которые будут измерять (см. {url}). Пока файлов порогов нет, измерения используют широкие пороги по умолчанию. {estimate}',
   estimateUnknown: '(Оценку времени даст команда проверки.)',
   estimateAbove: '(Стартовая рамка запуска показывает оценку времени по последнему запуску.)',
   nextCommit: 'Закоммитьте {files}.',
   nextTest:
     '{command}: измерительный запуск, который падает при регрессии. Результаты: {report}; подробности кода выхода: {outcome}.',
-  nextCiJobs: 'Измерительный job в {path} выполняется раз в неделю, его можно запустить вручную.',
   windowsNote: 'Формы этих команд для PowerShell и cmd: docs/cli.md.',
   boxWrapThis: 'Оберните тот, который импортируют ваши тесты: {file}',
   boxWorkspace:

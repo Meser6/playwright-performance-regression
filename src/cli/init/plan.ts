@@ -1,4 +1,4 @@
-// The change plan of the init wizard (04-REQ-38 step 8, 04-REQ-39, 04-REQ-40, 04-REQ-42,
+// The change plan of the init wizard (04-REQ-38 step 7, 04-REQ-39, 04-REQ-40, 04-REQ-42,
 // 04-REQ-67): file changes for recognized layouts, manual instructions (INIT_MANUAL_STEP) for
 // everything else. Test files are never changed: only a fixtures module is wrapped, otherwise the
 // wizard shows the red box of INIT_TEST_OBJECT_MANUAL. package.json is never changed (D-35).
@@ -6,7 +6,6 @@
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
 import { PACKAGE_NAME } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
-import { ciFile } from './ci.ts';
 import { EXTEND_CALL, PERF_CONFIG_NAMES, SOURCE_FILE } from './detect.ts';
 import { importSpecifiers, resolveImport, tsconfigAliases, workspaceKey } from './imports.ts';
 import type { ProjectInfo } from './detect.ts';
@@ -371,44 +370,6 @@ function planGitignore(info: ProjectInfo, plan: InitPlan): void {
   if (c !== null) plan.changes.push(c);
 }
 
-const INSTALL: Record<ProjectInfo['packageManager'], string> = {
-  npm: 'npm ci',
-  pnpm: 'pnpm install --frozen-lockfile',
-  yarn: 'yarn install --immutable',
-};
-
-function planCi(info: ProjectInfo, answers: InitAnswers, plan: InitPlan, t: Translate): void {
-  const platform = info.ciPlatform;
-  if (!answers.addCi || platform === null) return;
-  const file = ciFile(platform, answers.command);
-  const before = info.files.get(file.path) ?? null;
-  if (before === file.text) return;
-  if (before !== null) {
-    plan.manualSteps.push(
-      manual(t('manualCiKept', { file: file.path }), t('manualCiHint', { pkg: PACKAGE_NAME })),
-    );
-    return;
-  }
-  plan.changes.push({ path: file.path, kind: 'create', before: null, after: file.text });
-  if (platform === 'gitlab' && !(info.files.get('.gitlab-ci.yml') ?? '').includes(file.path)) {
-    plan.manualSteps.push(
-      manual(t('manualGitlabInclude'), ['include:', `  - local: ${file.path}`].join('\n')),
-    );
-  }
-  if (info.packageManager !== 'npm') {
-    plan.manualSteps.push(
-      manual(
-        t('manualNpmOne', { files: file.path }),
-        t('manualNpmHint', {
-          manager: info.packageManager,
-          install: INSTALL[info.packageManager],
-          npx: info.packageManager === 'pnpm' ? 'pnpm exec' : 'yarn',
-        }),
-      ),
-    );
-  }
-}
-
 /**
  * Pure plan of the init changes; unrecognized layouts give manual steps (04-REQ-39) in the wizard
  * language (04-REQ-43). The file changes do not depend on the language.
@@ -425,7 +386,6 @@ export function planInitChanges(
   planTestObject(info, answers, plan, t);
   planRequestContexts(info, answers, plan, t);
   planGitignore(info, plan);
-  planCi(info, answers, plan, t);
   return plan;
 }
 

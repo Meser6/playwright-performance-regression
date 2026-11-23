@@ -24,9 +24,7 @@ export interface InitAnswers {
   preset: MarginPreset;
   /** Step 6: the test command C as typed, by default the package manager's (04-REQ-55). */
   command: string;
-  /** Step 7: write the CI jobs. */
-  addCi: boolean;
-  /** Step 6: false after 'skip' and without a terminal; step 9 asks before the check (04-REQ-58). */
+  /** Step 6: false after 'skip' and without a terminal; step 8 asks before the check (04-REQ-58). */
   runCheck: boolean;
 }
 

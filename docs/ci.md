@@ -1,8 +1,8 @@
 # CI
 
-Ready recipes for four platforms are in [`examples/ci/`](../examples/ci). The guided setup
-(`npm init playwright-performance-regression`) copies the one for your platform into the project;
-you can also copy it by hand.
+Ready recipes for four platforms are in [`examples/ci/`](../examples/ci). Copy the one for your
+platform into the project: the guided setup (`npm init playwright-performance-regression`) does
+not create CI jobs, it only points here at the end.
 
 | Platform        | Recipe                                                      | Save as                                                                |
 | --------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -11,9 +11,10 @@ you can also copy it by hand.
 | Jenkins         | [`Jenkinsfile`](../examples/ci/Jenkinsfile)                 | `Jenkinsfile.perf`, as the script of its own pipeline job              |
 | Azure Pipelines | [`azure-pipelines.yml`](../examples/ci/azure-pipelines.yml) | `azure-pipelines.perf.yml`, registered as its own pipeline             |
 
-All recipes install dependencies with `npm ci` and run `npm run e2e`; the guided setup writes the
-recipe with your own test command (e.g. `npm run e2e:qa`). In a pnpm or yarn project replace the
-install line (and `npx` with `pnpm exec` or `yarn`).
+All recipes install dependencies with `npm ci` and run `npm run e2e`: replace it with your own test
+command (e.g. `npm run e2e:qa`). The jobs run on Linux, so a command written for cmd or PowerShell
+needs fixing there. In a pnpm or yarn project replace the install line (and `npx` with `pnpm exec`
+or `yarn`).
 
 ## The recommended path
 

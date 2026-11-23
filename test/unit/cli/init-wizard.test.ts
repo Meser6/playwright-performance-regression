@@ -111,28 +111,16 @@ describe('init wizard', () => {
     expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).not.toMatch(/^\s*grep: /mu);
   });
 
-  test('04-AC-17 04-AC-48 04-AC-52 steps [0/10] to [10/10] without skipped ones; a command step, no script, projects, origin, trial or environment question', async () => {
+  test('04-AC-17 04-AC-48 04-AC-52 steps [0/9] to [9/9] without skipped ones; a command step, no script, projects, origin, trial, environment or CI question', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = defaultsHost(dir);
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     const steps = [...out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
-    expect(steps).toEqual([
-      '0/10',
-      '1/10',
-      '2/10',
-      '3/10',
-      '4/10',
-      '5/10',
-      '6/10',
-      '7/10',
-      '8/10',
-      '9/10',
-      '10/10',
-    ]);
-    expect(out).toContain('[1/10] What it does and how to run it');
-    expect(out).toContain('[2/10] Which tests');
-    expect(out).toContain('[6/10] Test command');
+    expect(steps).toEqual(['0/9', '1/9', '2/9', '3/9', '4/9', '5/9', '6/9', '7/9', '8/9', '9/9']);
+    expect(out).toContain('[1/9] What it does and how to run it');
+    expect(out).toContain('[2/9] Which tests');
+    expect(out).toContain('[6/9] Test command');
     expect(out).toContain(
       'Which command do you usually run your tests with? (npx playwright test)',
     );
@@ -142,7 +130,12 @@ describe('init wizard', () => {
     expect(out).toContain(
       'How much headroom should derived thresholds have? [strict/normal/loose] (normal)',
     );
-    expect(out).toContain('A CI job you start by hand with PW_PERF_MODE=thresholds');
+    // No CI step and no CI file (04-D-53); step 6 says the command is not changed.
+    expect(out).toContain(
+      'The wizard does not change anything in it: it uses it in the commands at the end and for the check.',
+    );
+    expect(out).not.toMatch(/Add the CI jobs|CI job you start by hand|perf\.yml/u);
+    expect(existsSync(join(dir, '.github/workflows/perf.yml'))).toBe(false);
     expect(out).not.toMatch(/Label for|Backend/u);
     expect(out).toContain(
       'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
@@ -184,7 +177,7 @@ describe('init wizard', () => {
       };
     };
     const all = await measured('');
-    expect(all.out).toContain('[4/10] What to measure');
+    expect(all.out).toContain('[4/9] What to measure');
     expect(all.out).toContain('api: response times of the backend requests');
     expect(all.out).toContain('steps: durations of your test.step blocks');
     expect(all.out).toContain('Step titles are sanitized');
@@ -213,7 +206,7 @@ describe('init wizard', () => {
     const fake = defaultsHost(dir);
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
-    const step1 = out.slice(out.indexOf('[1/10]'), out.indexOf('[2/10]'));
+    const step1 = out.slice(out.indexOf('[1/9]'), out.indexOf('[2/9]'));
     expect(step1).toContain('1. PW_PERF_MODE=thresholds <your test command>');
     expect(step1).toContain('2. commit the thresholds files to the repository;');
     expect(step1).toContain('3. PW_PERF_MODE=test <your test command>');
@@ -239,7 +232,8 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const first = defaultsHost(dir);
     expect(await main([], first.host)).toBe(0);
-    expect(first.written.length).toBe(5);
+    // pw-perf.config.ts, playwright.config.ts, tests/fixtures.ts, .gitignore; no CI file (04-D-53).
+    expect(first.written.length).toBe(4);
     const after = snapshot(dir);
     const second = defaultsHost(dir);
     expect(await main([], second.host)).toBe(0);
@@ -286,8 +280,8 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const before = snapshot(dir);
     // Questions before the changes step: tutorial (0a), language (0), Enter (1), scope (2),
-    // passes (3), preset (5), CI (6).
-    for (let at = 0; at < 7; at += 1) {
+    // passes (3), measure (4), preset (5), test command (6).
+    for (let at = 0; at < 8; at += 1) {
       const script = scriptedPrompt([], at);
       const fake = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
       expect(await main([], fake.host), `abort at question ${at}`).toBe(130);
@@ -313,12 +307,10 @@ describe('init wizard', () => {
       'loose',
       'PW_PERF_MODE=test npm run e2e', // refused: the wizard adds PW_PERF_MODE, asked again
       'npm run e2e -- --grep "@smoke"', // test command
-      'yes', // CI
       '', // apply: pw-perf.config.ts
       '', // playwright.config.ts
       '', // tests/fixtures.ts
       '', // .gitignore
-      '', // CI file
       'n', // no check
     ];
     const input = new PassThrough();
@@ -377,7 +369,7 @@ describe('init wizard', () => {
     expect(noTty.stdout.join('')).toContain('pw-perf.config.ts exists and is kept.');
 
     // Interactive: every default, then "y" to the overwrite question.
-    const script = scriptedPrompt(['', '', '', '', '', '', '', '', '', 'y']);
+    const script = scriptedPrompt(['', '', '', '', '', '', '', '', 'y']);
     const tty = fakeCliHost({ cwd: dir, playwright: null, prompt: script.prompt });
     expect(await main([], tty.host)).toBe(0);
     expect(script.asked.map(stripAnsi)).toContain(
@@ -476,7 +468,7 @@ describe('init wizard', () => {
     expect(noTty.spawned).toEqual([]);
   });
 
-  test('04-AC-52 step 6: a typed command is run for the check through the shell and used everywhere', async () => {
+  test('04-AC-52 step 6: a typed command is run for the check through the shell and shown in the commands', async () => {
     const session = (
       command: string,
       options: Partial<FakeHostOptions> = {},
@@ -518,8 +510,9 @@ describe('init wizard', () => {
     );
     expect(out).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
     expect(out).not.toContain('chains several commands');
-    const ci = readFileSync(join(typed.fake.host.cwd, '.github/workflows/perf.yml'), 'utf8');
-    expect(ci).toContain('          npm run e2e -- --grep "@smoke" || true\n');
+    // The command is used only in the commands and the check: no CI file, no script (04-D-53).
+    expect(existsSync(join(typed.fake.host.cwd, '.github/workflows/perf.yml'))).toBe(false);
+    expect(readFileSync(join(typed.fake.host.cwd, 'package.json'), 'utf8')).not.toContain('@smoke');
 
     // Windows: the platform shell (%ComSpec%), cross-env in the shown commands.
     const win = session('npm run e2e', { platform: 'win32' });
@@ -622,7 +615,7 @@ describe('init wizard', () => {
       "from '@playwright/test'",
     );
     expect(applied.out).not.toContain('INIT_TEST_OBJECT_MANUAL');
-    expect(applied.out).toContain('[9/10] ');
+    expect(applied.out).toContain('[8/9] ');
     expect(applied.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
     const declined = await run('tests/home.spec.ts');
     expect(readFileSync(join(declined.dir, 'tests/home.spec.ts'), 'utf8')).toContain(
@@ -631,7 +624,7 @@ describe('init wizard', () => {
     expect(declined.out).toContain(
       'INIT_TEST_OBJECT_MANUAL · Action needed: nothing is measured yet',
     );
-    expect(declined.out).not.toContain('[9/10]');
+    expect(declined.out).not.toContain('[8/9]');
   });
 
   test('04-AC-58 the red box lists the fixtures modules by imports and names the one to wrap', async () => {
@@ -687,7 +680,7 @@ describe('init wizard', () => {
     );
     expect(err).not.toContain('node_modules');
     expect(err).not.toContain('apps/a/b/c');
-    expect(fake.stdout.join('')).not.toContain('[1/10]');
+    expect(fake.stdout.join('')).not.toContain('[1/9]');
   });
 
   test('04-AC-62 step 6 defaults to the only playwright script and warns about its --reporter and preparation', async () => {
@@ -832,25 +825,14 @@ describe('init wizard', () => {
     const red = await wizard('');
     expect(red.out).toContain(box);
     const steps = [...red.out.matchAll(/^\[(\d+)\/(\d+)\] /gmu)].map((m) => `${m[1]}/${m[2]}`);
-    expect(steps).toEqual([
-      '0/10',
-      '1/10',
-      '2/10',
-      '3/10',
-      '4/10',
-      '5/10',
-      '6/10',
-      '7/10',
-      '8/10',
-      '10/10',
-    ]);
-    expect(red.out).not.toContain('[9/10]');
+    expect(steps).toEqual(['0/9', '1/9', '2/9', '3/9', '4/9', '5/9', '6/9', '7/9', '9/9']);
+    expect(red.out).not.toContain('[8/9]');
     expect(red.out).not.toContain('Skipped.');
     expect(red.asked.some((q) => /Run a check now\?/u.test(q))).toBe(false);
     expect(red.out).toContain('PW_PERF_MODE=check npx playwright test');
     const onlySteps = await wizard('steps');
     expect(onlySteps.out).not.toContain(box);
-    expect(onlySteps.out).toContain('[9/10] ');
+    expect(onlySteps.out).toContain('[8/9] ');
     expect(onlySteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
 
     // 04-D-47: all with test.step found: steps are measured, endpoints are not; the check is shown.
@@ -860,7 +842,7 @@ describe('init wizard', () => {
     );
     expect(withSteps.out).not.toContain(box);
     expect(withSteps.out).toContain('(test.step durations are measured)');
-    expect(withSteps.out).toContain('[9/10] ');
+    expect(withSteps.out).toContain('[8/9] ');
     expect(withSteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
     const titles: Record<string, string> = {
       pl: 'Do zrobienia: endpointy nie są jeszcze mierzone',
@@ -932,7 +914,7 @@ export default defineConfig({
     expect(snapshot(pl)).toEqual(snapshot(en));
     expect(fakePl.written.length).toBe(fakeEn.written.length);
     const out = fakePl.stdout.join('');
-    expect(out).toContain('[1/10] Co robi paczka i jak ją uruchamiać');
+    expect(out).toContain('[1/9] Co robi paczka i jak ją uruchamiać');
     expect(out).toContain('Zastosować tę zmianę?');
     expect(out).toContain('Następne kroki:');
     expect(out).not.toContain('Apply this change?');
@@ -1054,7 +1036,7 @@ export default defineConfig({
     expect(await main([], fake.host)).toBe(0);
     const out = fake.stdout.join('');
     expect(out).not.toContain('guided tutorial');
-    expect(out).toContain('[0/10] Language');
+    expect(out).toContain('[0/9] Language');
     expect(out).toContain('+++ b/pw-perf.config.ts');
     expect(fake.written).toEqual([]);
   });
@@ -1069,7 +1051,7 @@ export default defineConfig({
     const help = fake.stdout.join('');
     expect(help).toContain('Run your usual test command with PW_PERF_MODE set');
     expect(help).toContain('PW_PERF_DRY_RUN=1');
-    expect(help).not.toContain('[0/10]');
+    expect(help).not.toContain('[0/9]');
     expect(fake.written).toEqual([]);
   });
 });
