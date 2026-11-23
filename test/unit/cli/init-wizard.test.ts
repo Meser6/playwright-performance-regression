@@ -108,7 +108,7 @@ describe('init wizard', () => {
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))).not.toHaveProperty(
       'scripts',
     );
-    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).not.toMatch(/^\s*grep: /mu);
+    expect(readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')).toMatch(/^\s*grep: null,$/mu);
   });
 
   test('04-AC-17 04-AC-48 04-AC-52 steps [0/9] to [9/9] without skipped ones; a command step, no script, projects, origin, trial, environment or CI question', async () => {
@@ -141,7 +141,7 @@ describe('init wizard', () => {
       'Endpoint keys of the baseURL origin have no label and other hosts are labeled with their host; set shorter labels for them in keys.origins of pw-perf.config.ts.',
     );
     const config = readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8');
-    expect(config).toContain('  //   origins: {},\n');
+    expect(config).toContain('    origins: {},\n');
     expect(config).not.toContain("'https://api.example.com':");
   });
 
@@ -168,7 +168,7 @@ describe('init wizard', () => {
       expect(await main([], fake.host)).toBe(0);
       return {
         out: fake.stdout.join(''),
-        // The active lines only: commented-out options sit between them.
+        // The active lines only, without the comments.
         config: readFileSync(join(dir, 'pw-perf.config.ts'), 'utf8')
           .split('\n')
           .filter((l) => !/^\s*(\/\/|$)/u.test(l))
@@ -184,17 +184,20 @@ describe('init wizard', () => {
     expect(all.out).toContain('Files with test.step: 0.');
     expect(all.out).toContain('No test.step found yet');
     expect(all.asked).toContain('  What to measure? [all/api/steps] (all) ');
-    expect(all.config).not.toMatch(/^\s*measure: \{/mu);
+    expect(all.config).toContain('  measure: {\n    api: true,\n');
+    expect(all.config).toMatch(/^ {4}steps: true,$/mu);
     const commit = (out: string): string | undefined => /Commit (.*)\./u.exec(out)?.[1];
     expect(commit(all.out)).toBe('pw-perf-thresholds.json');
     expect(all.out).not.toContain('Only steps');
 
     const api = await measured('api');
-    expect(api.config).toContain('  measure: {\n    steps: false,\n  },');
+    expect(api.config).toContain('    api: true,\n');
+    expect(api.config).toMatch(/^ {4}steps: false,$/mu);
     expect(commit(api.out)).toBe('pw-perf-thresholds.json');
 
     const steps = await measured('steps');
-    expect(steps.config).toContain('  measure: {\n    api: false,\n  },');
+    expect(steps.config).toContain('  measure: {\n    api: false,\n');
+    expect(steps.config).toMatch(/^ {4}steps: true,$/mu);
     expect(steps.out).toContain(
       '⚠ Only steps, but no test.step was found: nothing is measured until you add test.step blocks.',
     );

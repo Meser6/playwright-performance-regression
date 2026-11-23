@@ -1,5 +1,5 @@
 {
-  "specCommit": "pw-benchmark-docs@64aab09",
+  "specCommit": "pw-benchmark-docs@7028230",
   "ids": [
     {"id":"01-AC-01","kind":"AC"},
     {"id":"01-AC-02","kind":"AC"},
@@ -325,6 +325,7 @@
     {"id":"04-D-51","kind":"D"},
     {"id":"04-D-52","kind":"D"},
     {"id":"04-D-53","kind":"D"},
+    {"id":"04-D-54","kind":"D"},
     {"id":"04-REQ-01","kind":"REQ"},
     {"id":"04-REQ-02","kind":"REQ","withdrawn":true},
     {"id":"04-REQ-03","kind":"REQ","withdrawn":true},
