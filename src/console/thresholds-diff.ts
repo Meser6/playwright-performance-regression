@@ -8,9 +8,10 @@ import {
   skippedReasonText,
 } from '../core/types/index.ts';
 import type { KeyDiff, ThresholdsDiff } from '../core/types/index.ts';
+import { table } from './box.ts';
 import { painter } from './color.ts';
 import type { ColorStyle } from './color.ts';
-import { padEnd, plural, textWidth, truncateMiddle } from './text.ts';
+import { plural } from './text.ts';
 
 export interface ThresholdsDiffOptions {
   /** Path of each thresholds file as shown, parallel to the diffs. */
@@ -33,6 +34,8 @@ export interface ThresholdsDiffOptions {
    * would be ignored, so the unseen line does not advise it (10, chapter 9.1).
    */
   subset?: boolean;
+  /** TERM=dumb: tables with `+`, `-`, `|` (09-REQ-27); false by default. */
+  ascii?: boolean;
 }
 
 /** At most this many change rows per file; the rest is in thresholds-diff.md (10, chapter 9.1). */
@@ -52,65 +55,66 @@ const MARKER_STYLE: Record<string, Style> = {
   '±': 'yellow',
 };
 
+/** Color of a change marker; a large change ("↑!") is red (10, chapter 9.1). */
+function markerStyle(marker: string): Style {
+  if (marker.length > 1) return 'red';
+  return MARKER_STYLE[marker] ?? 'yellow';
+}
+
 function fileLines(
   diff: ThresholdsDiff,
   path: string,
   opts: ThresholdsDiffOptions,
-  paint: (text: string, style: Style) => string,
+  paint: (text: string, style: ColorStyle) => string,
 ): string[] {
   const lines = [`Thresholds: ${path} (${fileStatusText(diff)})`];
   const listed = diff.keys.filter((k) => LISTED_CATEGORIES.has(k.category));
   const expired = diff.keys.filter((k) => k.muted?.expired === true);
   if (diff.fileStatus !== 'unchanged') lines.push(`  ${diffCountsText(diff)}`);
+  const tableOpts = { width: opts.width, color: opts.color, ascii: opts.ascii === true };
 
+  // Changes in a table (09-REQ-27, 09-D-24): marker, key, values before and after.
   const shown = listed.slice(0, MAX_DIFF_ROWS);
-  const rows = shown.map((k) => ({
-    marker: diffMarker(k),
-    key: k.key,
-    change: diffChangeText(k, diff.level, '  ') + mutedSuffix(k),
-  }));
+  if (shown.length > 0) {
+    lines.push('');
+    lines.push(
+      ...table(
+        [
+          { header: '' },
+          { header: 'key', flex: true, minWidth: MIN_KEY_WIDTH },
+          { header: 'change' },
+        ],
+        shown.map((k) => {
+          const marker = diffMarker(k);
+          return {
+            cells: [marker, k.key, diffChangeText(k, diff.level, '  ') + mutedSuffix(k)],
+            cellStyles: [markerStyle(marker)],
+          };
+        }),
+        tableOpts,
+      ),
+    );
+    if (listed.length > shown.length) {
+      lines.push(paint(`  … and ${String(listed.length - shown.length)} more`, 'dim'));
+    }
+  }
   // Skipped keys with their reason (10, chapter 9.1, 10-D-21).
   const skipped = diff.keys.filter((k) => k.category === 'skipped' && k.samples !== undefined);
-  const skippedRows = skipped.slice(0, MAX_SKIPPED_ROWS).map((k) => ({
-    marker: '.',
-    key: k.key,
-    change: k.samples === undefined ? '' : skippedReasonText(k.samples),
-  }));
-  const all = [...rows, ...skippedRows];
-  if (all.length > 0) {
-    const markerWidth = Math.max(...all.map((r) => textWidth(r.marker)));
-    const changeWidth = Math.max(...all.map((r) => textWidth(r.change)));
-    const longest = Math.max(...all.map((r) => textWidth(r.key)));
-    // "  " + marker + " " + key + "  " + change.
-    const rest = opts.width - 2 - markerWidth - 1 - 2 - changeWidth;
-    const keyWidth = Math.max(MIN_KEY_WIDTH, Math.min(longest, rest));
-    const line = (r: { marker: string; key: string; change: string }, marker: string): string => {
-      const pad = ' '.repeat(markerWidth - textWidth(r.marker));
-      return `  ${marker}${pad} ${padEnd(truncateMiddle(r.key, keyWidth), keyWidth)}  ${r.change}`.trimEnd();
-    };
-    if (rows.length > 0) {
-      lines.push('');
-      for (const r of rows) {
-        const head = r.marker.slice(0, 1);
-        const style = MARKER_STYLE[head] ?? 'yellow';
-        lines.push(
-          line(
-            r,
-            paint(head, style) + (r.marker.length > 1 ? paint(r.marker.slice(1), 'red') : ''),
-          ),
-        );
-      }
-      if (listed.length > shown.length) {
-        lines.push(`  … and ${listed.length - shown.length} more`);
-      }
-    }
-    if (skippedRows.length > 0) {
-      lines.push('');
-      for (const r of skippedRows) lines.push(line(r, r.marker));
-      if (skipped.length > skippedRows.length) {
-        const more = `  … and ${String(skipped.length - skippedRows.length)} more skipped`;
-        lines.push(opts.diffPath === null ? more : `${more} (see thresholds-diff.md)`);
-      }
+  const skippedShown = skipped.slice(0, MAX_SKIPPED_ROWS);
+  if (skippedShown.length > 0) {
+    lines.push('');
+    lines.push(
+      ...table(
+        [{ header: 'skipped', flex: true, minWidth: MIN_KEY_WIDTH }, { header: 'reason' }],
+        skippedShown.map((k) => ({
+          cells: [k.key, k.samples === undefined ? '' : skippedReasonText(k.samples)],
+        })),
+        tableOpts,
+      ),
+    );
+    if (skipped.length > skippedShown.length) {
+      const more = `  … and ${String(skipped.length - skippedShown.length)} more skipped`;
+      lines.push(paint(opts.diffPath === null ? more : `${more} (see thresholds-diff.md)`, 'dim'));
     }
   }
   if (expired.length > 0) {
@@ -151,7 +155,7 @@ function mutedSuffix(k: KeyDiff): string {
  * Ends with a newline.
  */
 export function formatThresholdsDiff(diffs: ThresholdsDiff[], opts: ThresholdsDiffOptions): string {
-  const paint: (text: string, style: Style) => string = painter(opts.color);
+  const paint = painter(opts.color);
   const lines: string[] = [];
   diffs.forEach((diff, i) => {
     lines.push(...fileLines(diff, opts.paths[i] ?? `${diff.kind} thresholds`, opts, paint));

@@ -92,4 +92,46 @@ describe('console frames and tables', () => {
       '└────┴──────────────────┴────┘',
     ]);
   });
+
+  test('09-D-24 a table without a header row and with a title in the top edge', () => {
+    const rows = [
+      { cells: ['Tests', '4 tests × 5 passes'] },
+      { cells: ['Tip', 'measure a subset'] },
+    ];
+    const columns = [
+      { header: '', style: 'bold' as const },
+      { header: '', flex: true },
+    ];
+    const opts = { width: 80, color: false, ascii: false, header: false };
+    expect(table(columns, rows, { ...opts, title: '⏳ pw-perf · measurement run' })).toEqual([
+      '┌─ ⏳ pw-perf · measurement run ─┐',
+      '│ Tests │ 4 tests × 5 passes     │',
+      '│ Tip   │ measure a subset       │',
+      '└───────┴────────────────────────┘',
+    ]);
+    // A short title leaves the column crossing in the top edge.
+    expect(table(columns, rows, { ...opts, title: 'run' })[0]).toBe(
+      '┌─ run ─┬────────────────────┐',
+    );
+    // A title wider than the terminal is cut; the table keeps the width.
+    const narrow = table(columns, rows, {
+      ...opts,
+      width: 24,
+      title: 'a very long title of a run',
+    });
+    expect(narrow[0]).toBe('┌─ a very long title… ─┐');
+    expect(narrow.every((line) => textWidth(line) <= 24)).toBe(true);
+    // ASCII and colors: cyan lines, bold labels, a cell style before the row style.
+    expect(table(columns, rows, { ...opts, ascii: true, title: 'run' })[0]).toBe(
+      '+- run -+--------------------+',
+    );
+    const colored = table(
+      [{ header: '' }, { header: 'key' }],
+      [{ cells: ['+', 'k'], cellStyles: ['green'], style: 'red' }],
+      { width: 80, color: true, ascii: false, border: 'cyan' },
+    );
+    expect(colored[0]?.startsWith('\u001b[36m┌')).toBe(true);
+    expect(colored[3]).toContain('\u001b[32m+');
+    expect(colored[3]).toContain('\u001b[31mk  ');
+  });
 });

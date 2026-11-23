@@ -1082,6 +1082,7 @@ export class RunSession {
           // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
           diffPath: paths.thresholdsDiff,
           temporary,
+          ascii: asciiTerminal(this.host.env),
         }),
       );
     }

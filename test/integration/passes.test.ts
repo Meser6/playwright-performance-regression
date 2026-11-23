@@ -116,7 +116,7 @@ describe('passes of the test script (04-REQ-63, 04-REQ-64)', () => {
       expect(junit).toContain('name="GET /api/cart"');
       // 04-AC-64 the command as the user types it, without absolute paths.
       expect(result.output).toContain('pass 2/3: npm run e2e -- --grep cart\n');
-      expect(result.output).toContain('Tests     1 test × 3 passes = 3 test runs');
+      expect(result.output).toContain('Tests    │ 1 test × 3 passes = 3 test runs');
       expect(
         JSON.parse(readFileSync(join(dir, 'reports/pw-perf', 'outcome.json'), 'utf8')).exitCode,
       ).toBe(0);

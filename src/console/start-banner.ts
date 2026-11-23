@@ -1,7 +1,7 @@
 // The start banner of a perf-mode run (04-REQ-65, uwaga #36): mode, projects, tests × passes,
-// estimate, report path and a tip. Pure.
-import { box } from './box.ts';
-import type { BoxLine } from './box.ts';
+// estimate, report path and a tip, as a table without a header row and with the title in its top
+// edge (09-REQ-27, 09-D-24). Pure.
+import { table } from './box.ts';
 import { plural } from './text.ts';
 
 export interface StartBannerInput {
@@ -33,40 +33,42 @@ function names(list: readonly string[]): string {
   return list.map((n) => (n === '' ? '(default)' : n)).join(', ');
 }
 
-const LABEL = 10;
-
 /** The banner; every line ends with a newline. */
 export function formatStartBanner(
   input: StartBannerInput,
   opts: { width: number; color: boolean; ascii: boolean },
 ): string {
-  const row = (label: string, value: string): BoxLine => ({
-    text: `${label.padEnd(LABEL)}${value}`,
-  });
+  const rows: [string, string][] = [];
+  const deps = input.dependencies.length > 0 ? ` (setup: ${names(input.dependencies)})` : '';
+  rows.push(['Projects', `${names(input.measured)}${deps}`]);
+  if (input.mode === 'check') {
+    rows.push([
+      'Tests',
+      `${plural(input.tests, 'test')}; the first test of each file runs once, at most ${String(input.maxTests ?? input.tests)}`,
+    ]);
+  } else {
+    rows.push([
+      'Tests',
+      `${plural(input.tests, 'test')} × ${plural(input.passes, 'pass', 'passes')} = ${plural(input.tests * input.passes, 'test run')}`,
+    ]);
+  }
+  if (input.estimate !== null) rows.push(['Estimate', input.estimate]);
+  rows.push(['Report', input.report ?? 'no files are written']);
+  if (input.tip) rows.push(['Tip', 'measure a subset, e.g. --grep @perf']);
   // ⏳ has Emoji_Presentation=Yes: two columns in every terminal, unlike ⏱️ (09-D-23).
   const icon = opts.ascii ? '' : '⏳ ';
-  const lines: BoxLine[] = [
-    { text: `${icon}${input.packageName} · ${TITLES[input.mode]}`, style: 'bold' },
-  ];
-  const deps = input.dependencies.length > 0 ? ` (setup: ${names(input.dependencies)})` : '';
-  lines.push(row('Projects', `${names(input.measured)}${deps}`));
-  if (input.mode === 'check') {
-    lines.push(
-      row(
-        'Tests',
-        `${plural(input.tests, 'test')}; the first test of each file runs once, at most ${String(input.maxTests ?? input.tests)}`,
-      ),
-    );
-  } else {
-    lines.push(
-      row(
-        'Tests',
-        `${plural(input.tests, 'test')} × ${plural(input.passes, 'pass', 'passes')} = ${plural(input.tests * input.passes, 'test run')}`,
-      ),
-    );
-  }
-  if (input.estimate !== null) lines.push(row('Estimate', input.estimate));
-  lines.push(row('Report', input.report ?? 'no files are written'));
-  if (input.tip) lines.push(row('Tip', 'measure a subset, e.g. --grep @perf'));
-  return box(lines, { ...opts, border: 'cyan' });
+  const lines = table(
+    [
+      { header: '', style: 'bold' },
+      { header: '', flex: true, minWidth: 10 },
+    ],
+    rows.map((cells) => ({ cells })),
+    {
+      ...opts,
+      border: 'cyan',
+      header: false,
+      title: `${icon}${input.packageName} · ${TITLES[input.mode]}`,
+    },
+  );
+  return `${lines.join('\n')}\n`;
 }

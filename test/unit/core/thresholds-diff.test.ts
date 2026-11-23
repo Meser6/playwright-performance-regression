@@ -186,11 +186,12 @@ describe('diffThresholds (10, chapter 9)', () => {
     expect(d[0]?.counts.skipped).toBe(7);
     const out = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a.json'] });
     expect(out).toMatch(
-      /^ {2}\. GET \/api\/notes\/does-not-exist +no successful samples, 5 needed \(5 × 404\)$/mu,
+      /^│ GET \/api\/notes\/does-not-exist +│ no successful samples, 5 needed \(5 × 404\) │$/mu,
     );
-    expect(out.match(/^ {2}\. /gmu)).toHaveLength(5);
+    expect(out).toMatch(/^│ skipped +│ reason +│$/mu);
+    expect(out.match(/^│ GET \/api\//gmu)).toHaveLength(5);
     expect(out).toContain('  … and 2 more skipped (see thresholds-diff.md)');
-    expect(out).toMatch(/^ {2}\+ k +apdex T \d+ ms {2}median/mu);
+    expect(out).toMatch(/^│ \+ │ k +│ apdex T \d+ ms {2}median/mu);
     const md = formatThresholdsDiffMarkdown(d, ['a.json']);
     expect(md.match(/^- `GET \/api\//gmu)).toHaveLength(7);
     expect(md).toContain('- `GET /api/two`: 2 successful samples, 5 needed');
@@ -240,7 +241,7 @@ describe('diffThresholds (10, chapter 9)', () => {
       { limit: 'percentile', before: 228, after: 364, direction: 'looser', large: true },
     ]);
     expect(formatThresholdsDiff(much, { ...CONSOLE, paths: ['a'] })).toContain(
-      '  ↑! k                               p95 228 → 364',
+      '│ ↑! │ k                              │ p95 228 → 364 │',
     );
     expect(formatThresholdsDiffMarkdown(much, ['a'])).toContain('| ↑! | `k` | p95 228 | p95 364 |');
     const little = at(1.4);
@@ -292,19 +293,29 @@ describe('console and Markdown diff output (10, chapter 9.1, 10-REQ-19)', () => 
   test('at most 30 rows per file in the console; every row in thresholds-diff.md', () => {
     const d = diffs({ endpoints: many(35) });
     const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['api.json'] });
-    expect(text.split('\n').filter((l) => l.startsWith('  + ')).length).toBe(30);
+    expect(text.split('\n').filter((l) => l.startsWith('│ + │')).length).toBe(30);
     expect(text).toContain('  … and 5 more\n');
     const md = formatThresholdsDiffMarkdown(d, ['api.json']);
     expect(md.split('\n').filter((l) => l.startsWith('| + |')).length).toBe(35);
+  });
+
+  test('09-D-24 the changes are a table; TERM=dumb draws it with +, - and |', () => {
+    const d = diffs({ endpoints: many(2) });
+    const text = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'] });
+    expect(text).toMatch(/^│ {3}│ key +│ change +│$/mu);
+    const dumb = formatThresholdsDiff(d, { ...CONSOLE, paths: ['a'], ascii: true });
+    expect(dumb).not.toMatch(/[│┌┐└┘├┤┬┴┼─]/u);
+    expect(dumb).toMatch(/^\| \+ \| /mu);
   });
 
   test('long keys are shortened in the middle to the terminal width, at least 30 columns', () => {
     const key = `GET /api/${'x'.repeat(100)}/end`;
     const d = diffs({ endpoints: { [key]: FAST } });
     const text = formatThresholdsDiff(d, { ...CONSOLE, width: 80, paths: ['a'] });
-    const row = text.split('\n').find((l) => l.startsWith('  + '));
-    expect(row).toMatch(/^ {2}\+ GET \/api\/x+…x+\/end {2}apdex T 500 ms/u);
-    expect(row?.indexOf('apdex T 500')).toBe(2 + 1 + 1 + 30 + 2);
+    const row = text.split('\n').find((l) => l.startsWith('│ + │'));
+    expect(row).toMatch(/^│ \+ │ GET \/api\/x+…x+\/end │ apdex T 500 ms/u);
+    // "│ + │ " + key of at least 30 columns + " │ " (09-REQ-22).
+    expect(row?.indexOf('apdex T 500')).toBe(6 + 30 + 3);
   });
 
   test('the unseen hint names PW_PERF_PRUNE (04-REQ-70), or locked entries after pruning', () => {

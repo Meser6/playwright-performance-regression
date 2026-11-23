@@ -173,12 +173,12 @@ describe('reporter session in test mode', () => {
     });
     const out = captured.stdout.join('');
     expect(out).toContain('⏳ pw-perf · measurement run');
-    expect(out).toContain('Projects  chromium (setup: setup)');
-    expect(out).toContain('Tests     2 tests × 5 passes = 10 test runs');
-    expect(out).toContain('Estimate  unknown (run PW_PERF_MODE=check for an estimate)');
-    expect(out).toContain('Report    reports/pw-perf/report.html');
-    expect(out).toContain('Tip       measure a subset, e.g. --grep @perf');
-    expect(out).toMatch(/^╭─+╮$/mu);
+    expect(out).toContain('Projects │ chromium (setup: setup)');
+    expect(out).toContain('Tests    │ 2 tests × 5 passes = 10 test runs');
+    expect(out).toContain('Estimate │ unknown (run PW_PERF_MODE=check for an estimate)');
+    expect(out).toContain('Report   │ reports/pw-perf/report.html');
+    expect(out).toContain('Tip      │ measure a subset, e.g. --grep @perf');
+    expect(out).toMatch(/^┌─ ⏳ pw-perf · measurement run ─+┐$/mu);
     expect(out).not.toContain('Continue?');
   });
 
@@ -319,7 +319,7 @@ describe('reporter session in test mode', () => {
       allTests: () => [],
       suites: suites(['setup', 'firefox']),
     });
-    expect(firefox.stdout.join('')).toContain('Projects  firefox (setup: setup)');
+    expect(firefox.stdout.join('')).toContain('Projects │ firefox (setup: setup)');
     // --project setup: nothing is measured.
     const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const only = session(fakeHost(dir), registered({}, { mode: 'test' }, measured));

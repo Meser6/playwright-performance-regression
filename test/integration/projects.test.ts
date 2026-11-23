@@ -138,7 +138,7 @@ describe('multi-browser', () => {
       expect(run.outcome?.exitCode).toBe(0);
       expect(run.results.map((r) => [r.project, r.status])).toEqual([['chromium', 'passed']]);
       expect(sampleCount(run, 'GET /api/products')).toBe(2);
-      expect(run.output).toContain('Projects  chromium');
+      expect(run.output).toContain('Projects │ chromium');
     },
     RUN_TIMEOUT,
   );
