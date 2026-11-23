@@ -113,6 +113,13 @@ only be done by the owner.
    most 10 minutes. Record the time in the pull request of the next step.
 10. **Enable GitHub Pages**: Settings → Pages → Source "GitHub Actions"; then run the
     `Demo report` workflow by hand (Actions → Demo report → Run workflow) and open the page.
+    The release deploys the demo from the tag, so the `github-pages` environment must allow
+    tags too: Settings → Environments → `github-pages` → Deployment branches and tags → Add
+    deployment branch or tag rule → type **Tag**, pattern `v*` (or
+    `gh api -X POST repos/Meser6/playwright-performance-regression/environments/github-pages/deployment-branch-policies -f name='v*' -f type=tag`).
+    Without the rule the `Deploy to GitHub Pages` job of the release fails with "Tag … is not
+    allowed to deploy"; the packages and the GitHub Release are not affected: run `Demo report`
+    by hand on `main` at the tagged commit instead.
 11. **Release `1.0.0`** (the first stable release; there is no `0.1.0`): a pull request with
     `"version": "1.0.0"` in both `package.json` files and a `## [1.0.0] - YYYY-MM-DD` CHANGELOG
     section; after the merge, run `pnpm install --frozen-lockfile && pnpm build && pnpm test:perf`
