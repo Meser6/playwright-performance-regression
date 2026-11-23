@@ -80,7 +80,8 @@ describe('statistical tests', () => {
 
     await setDelays(2, { 'GET /api/cart': BASE_DELAY + 300 });
     const run = await perf('test', 'stat-01');
-    const violation = /✖\s+api\s+GET \/api\/cart\s/u;
+    // A violation row of the table: marker, kind and key cells (✖ in ASCII terminals).
+    const violation = /(?:❌|✖)\s*│\s*api\s*│\s*GET \/api\/cart\s/u;
     const slowest = /slowest: GET \/api\/cart — \d+ ms in "(item \d|checkout)"/u;
     recordResult('12-STAT-01', {
       exitCode: run.code,
@@ -88,7 +89,7 @@ describe('statistical tests', () => {
       slowestLine: slowest.exec(run.output)?.[0] ?? null,
       otherViolations: run.output
         .split('\n')
-        .filter((line) => /^\s+✖/u.test(line) && !line.includes('GET /api/cart')),
+        .filter((line) => /^\s*│\s*(?:❌|✖)\s*│/u.test(line) && !line.includes('GET /api/cart')),
     });
     expect(run.code, run.output).toBe(2);
     expect(run.output).toMatch(violation);
