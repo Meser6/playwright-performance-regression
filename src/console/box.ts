@@ -4,7 +4,7 @@
 // the init wizard. Pure.
 import { paint } from './color.ts';
 import type { ColorStyle } from './color.ts';
-import { charWidth, padEnd, padStart, textWidth, truncateMiddle } from './text.ts';
+import { clusters, padEnd, padStart, textWidth, truncateMiddle } from './text.ts';
 
 export interface BoxOptions {
   /** Terminal width; the frame is at most this wide. */
@@ -41,8 +41,8 @@ export function asciiTerminal(env: Readonly<Record<string, string | undefined>>)
 }
 
 /**
- * Status marks (09-REQ-27): emoji, or text marks for TERM=dumb. The warning sign goes without
- * U+FE0F: terminals disagree on the width of ⚠️, but all show ⚠ in one column.
+ * Status marks (09-REQ-27): emoji, or text marks for TERM=dumb. Frames take no U+FE0F sequences
+ * (09-D-23): terminals disagree on the width of ⚠️, but all show ⚠ in one column and ✅ ❌ in two.
  */
 export interface Marks {
   ok: string;
@@ -64,10 +64,9 @@ function cellsOf(line: BoxLine): Cell[] {
   const spans = line.spans ?? [{ text: line.text ?? '', style: line.style }];
   const cells: Cell[] = [];
   for (const span of spans) {
-    for (const char of span.text) {
-      // U+FE0F turns the character before it into a two-column emoji (text.ts).
-      cells.push({ char, style: span.style, width: charWidth(char) });
-    }
+    // One cell per cluster, so an emoji sequence is never cut or wrapped apart (text.ts).
+    for (const c of clusters(span.text))
+      cells.push({ char: c.text, style: span.style, width: c.width });
   }
   return cells;
 }

@@ -172,7 +172,7 @@ describe('reporter session in test mode', () => {
       allTests: () => [setup, ...tests],
     });
     const out = captured.stdout.join('');
-    expect(out).toContain('⏱️  pw-perf · measurement run');
+    expect(out).toContain('⏳ pw-perf · measurement run');
     expect(out).toContain('Projects  chromium (setup: setup)');
     expect(out).toContain('Tests     2 tests × 5 passes = 10 test runs');
     expect(out).toContain('Estimate  unknown (run PW_PERF_MODE=check for an estimate)');
