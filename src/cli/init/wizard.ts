@@ -35,6 +35,7 @@ import { findPlaywrightConfigs, readProjectFiles } from './files.ts';
 import { LANGUAGES, LANGUAGE_NAMES, isWizardLanguage, translator } from './messages.ts';
 import type { MessageKey, MessageValues, Translate, WizardLanguage } from './messages.ts';
 import type { InitAnswers, MeasureAnswer } from './perf-config.ts';
+import { importantBox } from './next-steps.ts';
 import { isProtected, perfConfigFile, planInitChanges } from './plan.ts';
 import type { FileChange, TestObjectBox } from './plan.ts';
 import { PromptAborted } from './prompt.ts';
@@ -513,34 +514,6 @@ function thresholdsFiles(info: ProjectInfo, answers: InitAnswers): string[] {
   return files;
 }
 
-/** Next steps of the summary (04-REQ-59). */
-function nextSteps(
-  dialog: Dialog,
-  info: ProjectInfo,
-  answers: InitAnswers,
-  commands: RunCommands,
-  written: readonly string[],
-  checkRan: boolean,
-): string[] {
-  const { t, paint } = dialog;
-  const cmd = (text: string): string => paint(text, 'cyan');
-  if (written.length === 0) return [t('nextApply')];
-  const dir = DEFAULT_CONFIG.report.dir;
-  const estimate = t(checkRan ? 'estimateAbove' : 'estimateUnknown');
-  const steps: string[] = [];
-  if (!checkRan) steps.push(t('nextCheck', { command: cmd(commands.check) }));
-  steps.push(
-    t('nextThresholds', { command: cmd(commands.thresholds), url: `${DOCS}/ci.md`, estimate }),
-    t('nextCommit', { files: thresholdsFiles(info, answers).join(', ') }),
-    t('nextTest', {
-      command: cmd(commands.test),
-      report: `${dir}/report.html`,
-      outcome: `${dir}/outcome.json`,
-    }),
-  );
-  return steps;
-}
-
 /** Exit code of one run of the wizard's check. */
 interface CheckResult {
   mode: CheckRun['mode'];
@@ -764,26 +737,37 @@ export async function runInit(
       if (r.code !== 0) dialog.say(`  ${t('checkExit', { mode: r.mode, code: r.code })}`);
       if (r.code !== 0 && r.cause !== null) dialog.say(`  ${t('checkCause', { cause: r.cause })}`);
     }
-    dialog.say('', `  ${paint(t('runLine', { command: commands.test }), 'bold')}`);
-    dialog.line(t('runLesson'), 'dim');
-    if (host.platform === 'win32') dialog.line(t('windowsNote'), 'dim');
-    dialog.say(
-      `  ${paint(t('nextSteps'), 'bold')}`,
-      ...nextSteps(
-        dialog,
-        info,
-        answers,
-        commands,
-        written,
-        checkResults !== null && checkResults.length > 0,
-      ).map((s, i) => `    ${i + 1}. ${s}`),
-    );
+    // After a write the IMPORTANT box at the end has the commands; without one the Run line and
+    // "apply the changes" (04-REQ-59, 04-D-56).
+    const done = write && (written.length > 0 || plan.changes.length === 0);
+    if (!done) {
+      dialog.say('', `  ${paint(t('runLine', { command: commands.test }), 'bold')}`);
+      dialog.line(t('runLesson'), 'dim');
+      if (host.platform === 'win32') dialog.line(t('windowsNote'), 'dim');
+      dialog.say(`  ${paint(t('nextSteps'), 'bold')}`, `    1. ${t('nextApply')}`);
+    } else if (checkResults === null || checkResults.length === 0) {
+      dialog.say('', `  ${t('tryCheck', { command: paint(commands.check, 'cyan') })}`);
+    }
     const oldScripts = info.existing.scripts.filter((name) => name.startsWith('perf:'));
     if (oldScripts.length > 0) dialog.say(`  ${t('oldScripts', { names: oldScripts.join(', ') })}`);
     dialog.say(`  ${t('originsNote', { configFile: configFileName(info) })}`);
     const links = [`${DOCS}/adoption.md`, `${DOCS}/cli.md`, `${DOCS}/ci.md`];
     dialog.line(t('docs', { links: links.join(' · ') }), 'dim');
     if (write) dialog.line(`✔ ${t('finished')}`, 'green');
+    if (done) {
+      const important = importantBox(
+        {
+          t,
+          commands,
+          files: thresholdsFiles(info, answers),
+          reportDir: DEFAULT_CONFIG.report.dir,
+          fixFirst: redBox !== null,
+          windows: host.platform === 'win32',
+        },
+        { columns: host.stdout.columns, color: dialog.colors, ascii: dialog.ascii },
+      );
+      host.stdout.write(`\n${important}`);
+    }
     return 0;
   } catch (error) {
     if (error instanceof PromptAborted) {

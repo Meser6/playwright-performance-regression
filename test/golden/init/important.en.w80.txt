@@ -1,0 +1,19 @@
+╭─ ⚠ IMPORTANT ────────────────────────────────────────────────────────────────╮
+│ What to do next, in this order:                                              │
+│                                                                              │
+│ 1. Derive the thresholds on CI, on the environment where the tests will run  │
+│    (times from a laptop do not carry over). It can take several hours: your  │
+│    test command runs several times on 1 worker.                              │
+│    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
+│                                                                              │
+│ 2. Download the thresholds files from the CI artifacts: the thresholds run   │
+│    also copies them to the report folder reports/pw-perf. CI recipes:        │
+│    docs/ci.md.                                                               │
+│                                                                              │
+│ 3. Commit them: pw-perf-thresholds.json, pw-perf-thresholds.steps.json.      │
+│                                                                              │
+│ 4. From then on run the tests with this command; it fails on a regression:   │
+│    PW_PERF_MODE=test npm run e2e:qa                                          │
+│    Results: reports/pw-perf/report.html; exit code details:                  │
+│    reports/pw-perf/outcome.json.                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯

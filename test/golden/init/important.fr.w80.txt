@@ -1,0 +1,21 @@
+╭─ ⚠ IMPORTANT ────────────────────────────────────────────────────────────────╮
+│ Que faire ensuite, dans cet ordre :                                          │
+│                                                                              │
+│ 1. Calculez les seuils en CI, sur l’environnement où les tests seront lancés │
+│    (les temps d’un portable ne se transposent pas). Cela peut prendre        │
+│    plusieurs heures : votre commande de tests s’exécute plusieurs fois sur   │
+│    1 worker.                                                                 │
+│    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
+│                                                                              │
+│ 2. Téléchargez les fichiers de seuils depuis les artefacts de CI :           │
+│    l’exécution des seuils les copie aussi dans le dossier du rapport         │
+│    reports/pw-perf. Exemples de CI : docs/ci.md.                             │
+│                                                                              │
+│ 3. Commitez-les : pw-perf-thresholds.json, pw-perf-thresholds.steps.json.    │
+│                                                                              │
+│ 4. Ensuite, lancez les tests avec cette commande ; elle échoue en cas de     │
+│    régression :                                                              │
+│    PW_PERF_MODE=test npm run e2e:qa                                          │
+│    Résultats : reports/pw-perf/report.html ; détail du code de sortie :      │
+│    reports/pw-perf/outcome.json.                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯

@@ -190,7 +190,13 @@ your test command), shows a diff of every change and applies the changes after y
 confirm them. At the end it offers a check: your test command runs twice, first with
 `PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`. The
 thresholds of the check go to a temporary folder that is deleted afterwards, so your thresholds
-files are never written or read by it. Then it prints the exact commands for your project, e.g. `Run: PW_PERF_MODE=test npm run e2e:qa`.
+files are never written or read by it. It ends with an **IMPORTANT** box of the next steps, with
+the exact commands for your project: derive the thresholds on CI, on the environment where the
+tests will run (`PW_PERF_MODE=thresholds npm run e2e:qa`; this can take several hours), download
+the thresholds files from the CI artifacts (the report folder `reports/pw-perf`, see
+[CI](ci.md)), commit them, and from then on run `PW_PERF_MODE=test npm run e2e:qa`. Without a
+terminal or with `PW_PERF_DRY_RUN=1` nothing is written, so it prints the `Run:` command and asks
+you to apply the changes instead.
 
 The test command question suggests the command of your package manager (`npx playwright test`,
 `pnpm exec playwright test` or `yarn playwright test`); press Enter to keep it, or type the
