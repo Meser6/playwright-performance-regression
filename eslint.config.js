@@ -157,7 +157,7 @@ export default tseslint.config(
     files: ['src/html/template/**/*.ts'],
     languageOptions: { globals: { ...globals.browser } },
   },
-  ...moduleBoundaries('src/console', ['./', '../core/types/']),
+  ...moduleBoundaries('src/console', ['./', '../core/types/', '../core/format/violation.ts']),
   ...moduleBoundaries('src/cli', [
     './',
     '../core/',
