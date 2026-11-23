@@ -124,6 +124,23 @@ function generatedSource(file: ThresholdFileInfo): string {
   ].join('');
 }
 
+/**
+ * Source of a thresholds file shortened to the version and the date, the full text in `title`
+ * (11-REQ-46, F2 decision 9): the full one overflowed the card at 1280 px.
+ */
+function sourceCell(file: ThresholdFileInfo): SafeHtml {
+  const full = generatedSource(file);
+  const generated = file.generated;
+  if (generated === null) return html`<td>${full}</td>`;
+  const version = textOf(field(field(generated, 'tool'), 'version'));
+  const at = textOf(field(generated, 'sourceRunStartedAt'));
+  const short = [
+    version === null ? 'generated' : `generated v${version}`,
+    ...(at === null ? [] : [formatDate(at).slice(0, 10)]),
+  ].join(' · ');
+  return html`<td title="${full}">${short}</td>`;
+}
+
 function thresholdsFileRow(file: ThresholdFileInfo, report: RunReport): SafeHtml {
   const percentile = textOf(field(file.generated, 'evaluatedPercentile'));
   const fingerprint = textOf(field(file.generated, 'normalization'));
@@ -143,7 +160,8 @@ function thresholdsFileRow(file: ThresholdFileInfo, report: RunReport): SafeHtml
   return join(
     html`<tr><td>${file.kind}</td><td class="loc">${file.path}</td>`,
     html`<td>${status}</td><td>${percentile ?? DASH}</td>`,
-    html`<td>${generatedSource(file)}</td><td>${normalization}</td><td>`,
+    sourceCell(file),
+    html`<td>${normalization}</td><td>`,
     unseen.length === 0
       ? '0'
       : html`<details><summary>${plural(unseen.length, 'key')}</summary><ul class="plain">${unseen.map((k) => html`<li><code>${k}</code></li>`)}</ul></details>`,

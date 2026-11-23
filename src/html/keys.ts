@@ -9,6 +9,7 @@ import {
   DASH,
   KIND_LABEL,
   aggregatesOf,
+  compareText,
   isBlocking,
   join,
   keyAnchor,
@@ -209,10 +210,35 @@ export function msValue(value: number): SafeHtml {
   return html`${number}<small> ${unit}</small>`;
 }
 
+/**
+ * Statuses of a key without timed samples that the Errors column does not count, e.g. "5 × 404
+ * (not timed)" (11, chapter 6.4, F2 decision 6): at most 3 labels by count descending, then by
+ * label; null with timed samples or when every sample is an error.
+ */
+export function notTimedNote(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): string | null {
+  if (agg.successCount > 0 || agg.count === 0) return null;
+  const errors = ctx.report.config.checks?.errors?.statuses ?? DEFAULT_ERROR_STATUSES;
+  // A step sample is an error by its outcome (08-REQ-30), a request sample by its status.
+  const counted = (label: string): boolean =>
+    kind === 'step' ? label !== 'ok' : isErrorStatus(label, errors);
+  const labels = Object.entries(agg.statuses)
+    .filter(([label]) => !counted(label))
+    .sort(([a, n], [b, m]) => m - n || compareText(a, b));
+  const shown = labels.slice(0, NOT_TIMED_LABELS).map(([label, n]) => `${String(n)} × ${label}`);
+  const more = labels.length - shown.length;
+  if (shown.length === 0) return null;
+  return `${shown.join(', ')}${more > 0 ? ` +${String(more)} more` : ''} (not timed)`;
+}
+
+const NOT_TIMED_LABELS = 3;
+
 /** p50, the evaluated percentile and p99 with their limits, and max (11-REQ-60). */
-function statsGrid(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
+function statsGrid(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
   const stats = agg.stats;
-  if (stats === null) return html`<div class="ds"><p>No successful timed samples.</p></div>`;
+  if (stats === null) {
+    const note = notTimedNote(ctx, kind, agg);
+    return html`<div class="ds"><p>No successful timed samples${note === null ? '' : `: ${note}`}.</p></div>`;
+  }
   const limits = agg.evaluation.limits;
   const cell = (label: string, value: number | undefined, limit: number | null): SafeHtml => {
     const over = value !== undefined && limit !== null && value > limit;
@@ -262,7 +288,8 @@ function distribution(ctx: Ctx, agg: HtmlAggregate): SafeHtml | null {
 /** `file:line` of a step key, a dash without one (11-REQ-47). */
 function locationText(agg: HtmlAggregate): string {
   const loc = agg.location;
-  return loc == null ? DASH : `${loc.file}:${String(loc.line)}`;
+  // Playwright gives no location for box: true steps (11-REQ-47, F2 decision 36).
+  return loc == null ? 'boxed step (no location)' : `${loc.file}:${String(loc.line)}`;
 }
 
 /** TTFB split of an endpoint (11-REQ-33). */
@@ -350,7 +377,7 @@ export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggre
     hints.length === 0
       ? null
       : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted)}</li>`)}</ul>`,
-    statsGrid(ctx, agg),
+    statsGrid(ctx, kind, agg),
     distribution(ctx, agg),
     checksTable(ctx, agg),
     kind === 'api' ? ttfbSplit(agg) : null,
@@ -417,12 +444,19 @@ function headroomCell(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   return html`<td>${usageMeter(top)}</td>`;
 }
 
+/** Samples cell with the statuses of a key without timed samples (F2 decision 6). */
+function samplesCell(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
+  const note = notTimedNote(ctx, kind, agg);
+  return html`<td class="num">${agg.successCount} / ${agg.count}${note === null ? null : html`<small class="why">${note}</small>`}</td>`;
+}
+
 function keyRow(
   ctx: Ctx,
   kind: LinkKind,
   key: string,
   agg: HtmlAggregate,
   columns: number,
+  ttfb: boolean,
 ): SafeHtml {
   const ev = agg.evaluation;
   const s = agg.stats;
@@ -438,7 +472,7 @@ function keyRow(
     reason === null ? null : html`<small class="why">${reason}</small>`,
     html`</td>`,
     headroomCell(ctx, agg),
-    html`<td class="num">${agg.successCount} / ${agg.count}</td>`,
+    samplesCell(ctx, kind, agg),
     agg.errorCount === 0
       ? html`<td class="num"></td>`
       : html`<td class="num e">${agg.errorCount}</td>`,
@@ -446,7 +480,7 @@ function keyRow(
     s === null ? timeCell(undefined) : limitCell(s.percentiles[ctx.level], ev.limits.percentile),
     s === null ? timeCell(undefined) : limitCell(s.percentiles['p99'], ev.limits.p99),
     timeCell(s?.max),
-    kind === 'api' ? timeCell(agg.ttfb?.p50) : null,
+    ttfb ? timeCell(agg.ttfb?.p50) : null,
     kind === 'step' ? html`<td class="loc">${locationText(agg)}</td>` : null,
     html`<td class="num">${agg.testCount}</td></tr>`,
     html`<tr class="drow"><td colspan="${columns}"><details id="${id}"${group <= 1 ? html` data-v=""` : null}>`,
@@ -492,6 +526,8 @@ export function noMatch(text: string): SafeHtml {
 export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
   const aggregates = aggregatesOf(ctx.data, kind);
   const keys = ctx.order[kind];
+  // No TTFB column when no key has TTFB, e.g. only request calls (F2 decision 27).
+  const ttfb = kind === 'api' && keys.some((key) => aggregates[key]?.ttfb != null);
   const cols: [column: string, label: string][] = [
     ['key', 'Key'],
     // Browser traffic or APIRequestContext calls (15-REQ-15).
@@ -504,7 +540,7 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
     ['percentile', `${ctx.level} / limit`],
     ['p99', 'p99 / limit'],
     ['max', 'Max'],
-    ...(kind === 'api' ? [['ttfb', 'TTFB p50'] as [string, string]] : []),
+    ...(ttfb ? [['ttfb', 'TTFB p50'] as [string, string]] : []),
     ...(kind === 'step' ? [['defined', 'Defined at'] as [string, string]] : []),
     ['tests', 'Tests'],
   ];
@@ -535,7 +571,7 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
         ? html`<th scope="col">${label}</th>`
         : html`<th scope="col" data-sort="${column}"${numeric.has(column) ? html` class="num"` : null}><button type="button">${label}</button></th>`,
     )}</tr></thead>`,
-    keys.map((key) => keyRow(ctx, kind, key, aggregates[key] as HtmlAggregate, cols.length)),
+    keys.map((key) => keyRow(ctx, kind, key, aggregates[key] as HtmlAggregate, cols.length, ttfb)),
     html`</table></div>`,
     noMatch('No keys match the filters'),
     html`<p class="tfoot">${notes.join(' · ')}</p></div>`,

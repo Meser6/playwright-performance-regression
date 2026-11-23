@@ -39,7 +39,8 @@ function testRow(ctx: Ctx, t: TestCost, i: number, most: number): SafeHtml {
     html`<td><span class="hr"><span class="tb neu tw"><span class="${widthClass(most > 0 ? t.totalMs / most : 0)}"></span></span><b>${formatMs(t.totalMs)}</b></span></td>`,
     html`<td class="num">${formatMs(perRun(t))}</td>`,
     html`<td class="num">${t.maxRequestMs === null ? '—' : formatMs(t.maxRequestMs)}</td><td class="num">${t.keyCount}</td>`,
-    html`<td class="tk">${t.topKeys.map((k) => html`<span>${keyLink(ctx, 'api', k.key, KEY_MAX)} <span class="sub">${formatMs(k.totalMs)} · ${share(k.totalMs)}</span></span>`)}</td>`,
+    // Each key on its own line, its time and share below (F2 decision 12).
+    html`<td class="tk tk2">${t.topKeys.map((k) => html`<span>${keyLink(ctx, 'api', k.key, KEY_MAX)} <span class="sub">${formatMs(k.totalMs)} · ${share(k.totalMs)}</span></span>`)}</td>`,
     html`<td class="tk">`,
     t.violatedKeyCount === 0
       ? null
