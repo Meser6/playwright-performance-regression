@@ -863,10 +863,10 @@ describe('init wizard', () => {
     expect(withSteps.out).toContain('[9/10] ');
     expect(withSteps.asked.some((q) => /Run a check now\?/u.test(q))).toBe(true);
     const titles: Record<string, string> = {
-      pl: 'Wymagane działanie: endpointy nie są jeszcze mierzone',
-      es: 'Acción necesaria: los endpoints todavía no se miden',
-      fr: 'Action requise : les endpoints ne sont pas encore mesurés',
-      it: 'Azione richiesta: gli endpoint non sono ancora misurati',
+      pl: 'Do zrobienia: endpointy nie są jeszcze mierzone',
+      es: 'Acción necesaria: los endpoints aún no se miden',
+      fr: 'Action requise\u00a0: endpoints pas encore mesurés',
+      it: 'Azione richiesta: endpoint non ancora misurati',
       uk: 'Потрібна дія: ендпоінти поки що не вимірюються',
       ru: 'Требуется действие: эндпоинты пока не измеряются',
     };
