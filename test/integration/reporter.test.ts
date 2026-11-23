@@ -135,7 +135,7 @@ describe('reporter with real Playwright', () => {
       expect(report.toolErrors).toEqual([]);
       expect(run.outcome).toMatchObject({ runId: report.runId, exitCode: 0 });
       expect(run.outcome?.paths.reportJson).toBe(join(run.out, 'reports/pw-perf', 'report.json'));
-      expect(run.output).toContain('Tests     4 tests × 5 passes = 20 test runs');
+      expect(run.output).toContain('Tests    │ 4 tests × 5 passes = 20 test runs');
       expect(run.output).toContain('playwright-performance-regression: pass 5/5 done: 4 tests');
       expect(run.output).toContain('PASSED');
     },

@@ -42,6 +42,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Tables in the thresholds diff and the start box.** The changes of a thresholds run are
+  listed in a table with lines (marker, key, change), like the tables of the run summary, and the
+  skipped keys in a second table with their reason; the start box of a perf-mode run is a table
+  with the mode in its top edge, labels on the left and values on the right (long values are
+  shortened in the middle). `NO_COLOR` only drops the colors; `TERM=dumb` draws the tables with
+  `+`, `-` and `|`.
 - **More realtime transports skipped by default.** The default `measure.exclude` is now
   `['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/']`: besides socket.io it
   skips the HTTP requests of SockJS (also Meteor and the webpack-dev-server 3 reload client),

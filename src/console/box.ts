@@ -184,12 +184,16 @@ export interface TableColumn {
   /** Takes the remaining width, at least `minWidth`; longer text is shortened in the middle. */
   flex?: boolean;
   minWidth?: number;
+  /** Style of the cells of this column when the row has none (e.g. bold labels). */
+  style?: ColorStyle;
 }
 
 export interface TableRow {
   cells: readonly string[];
   /** Style of the cell text; the lines stay dim. */
   style?: ColorStyle;
+  /** Style per cell, before `style` (e.g. a colored marker, 10, chapter 9.1). */
+  cellStyles?: readonly (ColorStyle | undefined)[];
 }
 
 export interface TableOptions {
@@ -197,9 +201,31 @@ export interface TableOptions {
   width: number;
   color: boolean;
   ascii: boolean;
+  /** Color of the lines; dim by default (09-REQ-27). */
+  border?: ColorStyle;
+  /** Header row with its separating line; true by default. */
+  header?: boolean;
+  /** Bold title in the top edge, like a box title (the start banner, 04-REQ-65). */
+  title?: string;
 }
 
-/** A table with box-drawing lines and a separated header row, as lines without newlines. */
+/** Cuts `text` to `width` columns with "…" at the end; clusters are never split. */
+function cutText(text: string, width: number): string {
+  if (textWidth(text) <= width) return text;
+  let out = '';
+  let used = 0;
+  for (const c of clusters(text)) {
+    if (used + c.width > width - 1) break;
+    out += c.text;
+    used += c.width;
+  }
+  return `${out}…`;
+}
+
+/**
+ * A table with box-drawing lines and a separated header row, as lines without newlines
+ * (09-REQ-27, 09-D-24).
+ */
 export function table(
   columns: readonly TableColumn[],
   rows: readonly TableRow[],
@@ -208,8 +234,9 @@ export function table(
   const g = opts.ascii
     ? { v: '|', h: '-', top: ['+', '+', '+'], mid: ['+', '+', '+'], bottom: ['+', '+', '+'] }
     : { v: '│', h: '─', top: ['┌', '┬', '┐'], mid: ['├', '┼', '┤'], bottom: ['└', '┴', '┘'] };
+  const header = opts.header !== false;
   const natural = columns.map((c, i) =>
-    Math.max(textWidth(c.header), ...rows.map((r) => textWidth(r.cells[i] ?? ''))),
+    Math.max(header ? textWidth(c.header) : 0, ...rows.map((r) => textWidth(r.cells[i] ?? ''))),
   );
   const overhead = 3 * columns.length + 1;
   const widths = columns.map((c, i) => {
@@ -217,27 +244,55 @@ export function table(
     const others = natural.reduce((sum, w, j) => (j === i ? sum : sum + w), 0);
     return Math.max(c.minWidth ?? 1, Math.min(natural[i] ?? 0, opts.width - overhead - others));
   });
-  const dim = (text: string): string => paint(text, 'dim', opts.color);
-  const rule = ([left, cross, right]: string[]): string =>
-    dim(`${left}${widths.map((w) => g.h.repeat(w + 2)).join(cross)}${right}`);
-  const line = (cells: readonly string[], style: ColorStyle | undefined): string => {
+  // A title in the top edge: "─ title " and at least one "─" after it; the last column widens
+  // for it up to the terminal width, beyond that the title is cut.
+  let title = opts.title ?? '';
+  if (title !== '') {
+    const inner = (): number => widths.reduce((sum, w) => sum + w + 3, -1);
+    const room = Math.max(1, opts.width - 2 - 4);
+    title = cutText(title, room);
+    const need = textWidth(title) + 4 - inner();
+    const last = widths.length - 1;
+    if (need > 0 && last >= 0) widths[last] = (widths[last] ?? 0) + need;
+  }
+  const border = opts.border ?? 'dim';
+  const edge = (text: string): string => paint(text, border, opts.color);
+  const ruleText = ([left, cross, right]: string[]): string =>
+    `${left}${widths.map((w) => g.h.repeat(w + 2)).join(cross)}${right}`;
+  const rule = (marks: string[]): string => edge(ruleText(marks));
+  const top = (): string => {
+    if (title === '') return rule(g.top);
+    // Every character of a rule is one column wide, so the rest of it is a plain slice.
+    const rest = ruleText(g.top).slice(textWidth(title) + 4);
+    return `${edge(`${g.top[0] ?? ''}${g.h} `)}${paint(title, 'bold', opts.color)}${edge(` ${rest}`)}`;
+  };
+  const line = (
+    cells: readonly string[],
+    style: ColorStyle | undefined,
+    cellStyles: readonly (ColorStyle | undefined)[] = [],
+  ): string => {
     const texts = columns.map((c, i) => {
       const w = widths[i] ?? 0;
       const raw = cells[i] ?? '';
       const text = c.flex === true ? truncateMiddle(raw, w) : raw;
       const padded = c.align === 'right' ? padStart(text, w) : padEnd(text, w);
-      return style === undefined ? padded : paint(padded, style, opts.color);
+      const cellStyle = cellStyles[i] ?? style ?? c.style;
+      return cellStyle === undefined ? padded : paint(padded, cellStyle, opts.color);
     });
-    return `${dim(g.v)} ${texts.join(` ${dim(g.v)} `)} ${dim(g.v)}`;
+    return `${edge(g.v)} ${texts.join(` ${edge(g.v)} `)} ${edge(g.v)}`;
   };
   return [
-    rule(g.top),
-    line(
-      columns.map((c) => c.header),
-      'bold',
-    ),
-    rule(g.mid),
-    ...rows.map((r) => line(r.cells, r.style)),
+    top(),
+    ...(header
+      ? [
+          line(
+            columns.map((c) => c.header),
+            'bold',
+          ),
+          rule(g.mid),
+        ]
+      : []),
+    ...rows.map((r) => line(r.cells, r.style, r.cellStyles)),
     rule(g.bottom),
   ];
 }

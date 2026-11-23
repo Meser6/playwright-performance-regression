@@ -138,7 +138,7 @@ function sourceRun(): Promise<{ run: Run; thresholds: string }> {
 }
 
 /** Output after the start banner of the reporter (04-REQ-65). */
-const afterBanner = (output: string): string => output.split('╯').slice(1).join('');
+const afterBanner = (output: string): string => output.split('┘').slice(1).join('');
 
 describe('environment mode runs', () => {
   test(
@@ -154,7 +154,7 @@ describe('environment mode runs', () => {
       expect(outcomeCode(run)).toBe(0);
       // The start banner of the reporter shows the runs and the subset tip (04-REQ-65).
       expect(run.stdout).toContain('4 tests × 2 passes = 8 test runs');
-      expect(run.stdout).toContain('Tip       measure a subset');
+      expect(run.stdout).toContain('Tip      │ measure a subset');
       // One absolute Report line at the end of the summary (09-REQ-30).
       const html = join(dirname(reportPath(run)), 'report.html');
       const shown = /^Report: (.+)$/mu.exec(run.stdout)?.[1];

@@ -343,8 +343,10 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       formatStartBanner(input, { width: 120, color: false, ascii: false }),
     );
     const dumb = formatStartBanner(input, { width: 120, color: false, ascii: true });
-    expect(dumb.split('\n')[0]).toMatch(/^\+-+\+$/u);
-    expect(dumb).toContain('| pw-perf · thresholds run');
+    // A table without a header row and with the title in its top edge (09-REQ-27, 09-D-24).
+    expect(dumb.split('\n')[0]).toMatch(/^\+- pw-perf · thresholds run -+\+$/u);
+    expect(dumb).toContain('| Tests    | 4 tests × 10 passes = 40 test runs');
+    expect(dumb.trimEnd().split('\n').at(-1)).toMatch(/^\+-{10}\+-+\+$/u);
     expect(dumb).not.toContain('⏳');
     expect(dumb).not.toContain('Tip');
     const narrow = formatStartBanner(input, { width: 30, color: false, ascii: false });
@@ -353,8 +355,10 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       { ...input, mode: 'check', estimate: null, report: null, maxTests: 10 },
       { width: 120, color: false, ascii: false },
     );
-    expect(check).toContain('Tests     4 tests; the first test of each file runs once, at most 10');
-    expect(check).toContain('Report    no files are written');
+    expect(check).toContain(
+      'Tests    │ 4 tests; the first test of each file runs once, at most 10',
+    );
+    expect(check).toContain('Report   │ no files are written');
     expect(check).not.toContain('Estimate');
   });
 
@@ -404,9 +408,9 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       s.begin(fakeConfig(dir), { allTests: () => [1, 2, 3, 4].map(() => fakeTest(dir)) });
       return captured.stdout.join('');
     };
-    expect(banner()).toContain('Estimate  ≈ 4 min (from the last run)');
+    expect(banner()).toContain('Estimate │ ≈ 4 min (from the last run)');
     rmSync(path);
-    expect(banner()).toContain('Estimate  unknown (run PW_PERF_MODE=check for an estimate)');
+    expect(banner()).toContain('Estimate │ unknown (run PW_PERF_MODE=check for an estimate)');
   });
 
   test('04-AC-45 no Tip when run.grep selects the measured tests', () => {
@@ -416,7 +420,7 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
       s.begin(fakeConfig(dir), { allTests: () => [fakeTest(dir)] });
       return captured.stdout.join('');
     };
-    expect(banner(null)).toContain('Tip       measure a subset');
+    expect(banner(null)).toContain('Tip      │ measure a subset');
     expect(banner('@smoke')).not.toContain('Tip');
   });
 });
