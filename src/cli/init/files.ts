@@ -20,6 +20,7 @@ import {
   relativePath,
   workspaceKey,
 } from './imports.ts';
+import { emptyThresholdsFiles } from './plan.ts';
 
 const ROOT_FILES = new Set([
   'package.json',
@@ -27,6 +28,8 @@ const ROOT_FILES = new Set([
   '.gitignore',
   ...PLAYWRIGHT_CONFIG_NAMES,
   ...PERF_CONFIG_NAMES,
+  // Existing thresholds files are never replaced by the empty ones (04-REQ-75).
+  ...emptyThresholdsFiles().map((f) => f.path),
 ]);
 const SKIP_DIRS = new Set([
   'node_modules',

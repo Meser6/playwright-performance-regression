@@ -224,14 +224,17 @@ What it can change:
   ([`INIT_TEST_OBJECT_MANUAL`](troubleshooting.md#init_test_object_manual));
 - `.gitignore`: `reports/pw-perf/`, unless it is already ignored (also by `reports/` or a glob
   such as `reports/**/*`);
-- a CI file from the [CI recipes](ci.md) with a manual thresholds job and a weekly measurement
-  job that run your test command.
+- empty thresholds files `pw-perf-thresholds.json` (endpoints) and `pw-perf-thresholds.steps.json`
+  (steps), whatever you chose to measure: valid files without entries, next to the Playwright
+  config, so you see where the thresholds will go. An existing thresholds file is never changed.
+  Until a thresholds run fills them, a measurement run uses the default limits and warns with
+  [`THRESHOLDS_FILE_EMPTY`](troubleshooting.md#thresholds_file_empty).
 
 `package.json` is never changed. Scripts `perf:*` written by an earlier version of the wizard no
 longer work (they call a runner that was removed); the summary lists them so you can remove them.
 
-Layouts it does not recognize (another wrapper around the config, existing CI files with other
-content) are left as they are, with an
+Layouts it does not recognize (another wrapper around the config, several test objects) are left
+as they are, with an
 instruction ([`INIT_MANUAL_STEP`](troubleshooting.md#init_manual_step)); see
 [Adoption](adoption.md) for those cases. An existing `pw-perf.config.ts` is replaced only after
 its own confirmation.

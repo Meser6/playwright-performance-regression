@@ -187,7 +187,11 @@ export function nextHint(input: NextHintInput): string | null {
       report.ci === null ? '; for CI, derive them on the CI machines (docs/thresholds.md)' : '';
     return `commit ${files}${local}`;
   }
-  if (report.warnings.some((w) => w.code === 'THRESHOLDS_FILE_MISSING')) {
+  if (
+    report.warnings.some(
+      (w) => w.code === 'THRESHOLDS_FILE_MISSING' || w.code === 'THRESHOLDS_FILE_EMPTY',
+    )
+  ) {
     return `derive thresholds: ${commands.thresholds}`;
   }
   if (report.evaluation.status === 'failed') {

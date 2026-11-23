@@ -1,5 +1,5 @@
 // The check mode with real Playwright (04, chapter 4.11).
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -48,6 +48,29 @@ describe('check', () => {
       expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds'))).toEqual([]);
       expect(existsSync(join(dir, 'reports/pw-perf', 'outcome.json'))).toBe(false);
       expect(stateFiles()).toEqual(before);
+    },
+    RUN_TIMEOUT,
+  );
+
+  test(
+    "09-AC-35 the wizard's empty thresholds files: 0 entries and the derive hint",
+    async () => {
+      const dir = shared;
+      const names = { api: 'pw-perf-thresholds.json', step: 'pw-perf-thresholds.steps.json' };
+      for (const [kind, name] of Object.entries(names))
+        writeFileSync(
+          join(dir, name),
+          `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 2\n}\n`,
+        );
+      const run = await harness.run(dir, {
+        env: { PW_PERF_MODE: 'check', PW_PERF_MAX_TESTS: '2' },
+      });
+      for (const name of Object.values(names)) rmSync(join(dir, name));
+      expect(run.status, run.output).toBe(0);
+      expect(run.output).toContain('api 0 entries (pw-perf-thresholds.json)');
+      expect(run.output).toMatch(
+        /Next: derive thresholds on the CI machines: (?:npx cross-env )?PW_PERF_MODE=thresholds /u,
+      );
     },
     RUN_TIMEOUT,
   );

@@ -90,7 +90,7 @@
     },
     "violations": [],
     "notEvaluated": [],
-    "warnings": [],
+    "warnings": ["THRESHOLDS_FILE_EMPTY"],
     "toolErrors": []
   }
 }

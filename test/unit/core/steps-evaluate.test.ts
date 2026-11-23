@@ -1,7 +1,7 @@
 // Evaluation and thresholds derivation of step keys (09-REQ-31, 10-REQ-22).
 import { describe, expect, test } from 'vitest';
 import { evaluate } from '../../../src/core/evaluate/index.ts';
-import { deriveThresholds } from '../../../src/core/thresholds/index.ts';
+import { deriveThresholds, diffThresholds } from '../../../src/core/thresholds/index.ts';
 import type { AggregateStats, StepAggregateStats } from '../../../src/core/types/index.ts';
 import {
   aggregates,
@@ -174,5 +174,55 @@ describe('10-AC-19 step thresholds file', () => {
     const off = deriveThresholds(empty, STEPS_OFF, existing(), deriveOptions());
     if (!off.ok) throw new Error('refused');
     expect(off.value.files.map((f) => f.kind)).toEqual(['api']);
+  });
+});
+
+describe('09-AC-35 empty thresholds files (04-REQ-75)', () => {
+  test('test mode: THRESHOLDS_FILE_EMPTY for a kind with keys, the derive hint, default limits', () => {
+    const run = (mode: 'test' | 'thresholds', step = STEP) =>
+      evaluate(
+        { endpoints: API, steps: step },
+        files(loaded('api'), loaded('step')),
+        STEPS_ON,
+        options({ mode }),
+      );
+    const e = run('test');
+    expect(e.warnings.map((w) => w.code)).toEqual([
+      'THRESHOLDS_FILE_EMPTY',
+      'THRESHOLDS_FILE_EMPTY',
+    ]);
+    expect(e.warnings[0]).toEqual({
+      code: 'THRESHOLDS_FILE_EMPTY',
+      message:
+        'Thresholds file pw-perf-thresholds.json has no entries; endpoint keys are evaluated with default thresholds.',
+      hint: 'Derive thresholds with `PW_PERF_MODE=thresholds <your test command>`.',
+    });
+    expect(e.perKey.api['GET /api/a']?.thresholdSource).toBe('default');
+    // A kind without keys in the run needs no thresholds yet (09-D-17).
+    expect(run('test', {}).warnings.map((w) => w.message)).toEqual([
+      'Thresholds file pw-perf-thresholds.json has no entries; endpoint keys are evaluated with default thresholds.',
+    ]);
+    expect(run('thresholds').warnings.map((w) => w.code)).not.toContain('THRESHOLDS_FILE_EMPTY');
+  });
+});
+
+describe('10-AC-22 derivation over the empty files of the wizard', () => {
+  const report = runReport({ endpoints: { 'GET /api/a': { durations: [[30, 100]] } } });
+  const empty = (kind: 'api' | 'step') =>
+    loadedFile({ schemaVersion: 2, kind, generated: null, entries: {} });
+
+  test('writes the same entries as a first derivation, updated, without THRESHOLDS_MANUAL_FILE', () => {
+    const first = deriveThresholds(report, STEPS_ON, existing(), deriveOptions());
+    const before = existing(empty('api'), empty('step'));
+    const result = deriveThresholds(report, STEPS_ON, before, deriveOptions());
+    if (!first.ok || !result.ok) throw new Error('refused');
+    expect(result.value.warnings.map((w) => w.code)).not.toContain('THRESHOLDS_MANUAL_FILE');
+    const api = result.value.files.find((f) => f.kind === 'api');
+    expect(api?.changed).toBe(true);
+    expect(api?.content).toEqual(first.value.files.find((f) => f.kind === 'api')?.content);
+    if (api === undefined) throw new Error('no api');
+    expect(diffThresholds(before.api, api, report, STEPS_ON).fileStatus).toBe('updated');
+    // No step keys: the empty step file stays as it is (10-REQ-14).
+    expect(result.value.files.find((f) => f.kind === 'step')?.changed).toBe(false);
   });
 });

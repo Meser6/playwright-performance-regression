@@ -539,6 +539,14 @@ the file does not report it. Derive thresholds with `PW_PERF_MODE=thresholds npm
 environment label is set, a file without the label is not used for it; the hint says so when such
 a file exists. See [thresholds.md](thresholds.md).
 
+### THRESHOLDS_FILE_EMPTY
+
+**Warning.** The thresholds file for a kind (endpoints or steps) exists but has no entries, so
+those keys are evaluated with the default limits from `checks.*.limit`. The guided setup creates
+such empty files; a thresholds run fills them. It is reported only in test mode and only for a
+kind that has keys in the run. Derive thresholds with `PW_PERF_MODE=thresholds npm run e2e` and
+commit the file. See [thresholds.md](thresholds.md).
+
 ### THRESHOLDS_FILE_OUTDATED
 
 **Warning.** The thresholds file has an older format version and was migrated while reading. The

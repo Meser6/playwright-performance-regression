@@ -175,4 +175,7 @@ A key that has no entry is checked against the default limits from the config
 (`checks.*.limit`, e.g. 2000 ms median for requests). With `gate.defaultThresholds: "block"` (the
 default) these violations can fail the run; with `"warn"` they only warn. Without a thresholds
 file a test-mode run warns with `THRESHOLDS_FILE_MISSING`, once for each kind that has keys in the
-run; the thresholds run that creates the file does not.
+run; the thresholds run that creates the file does not. The guided setup creates both files empty
+(no entries); until a thresholds run fills them, a test-mode run warns with
+`THRESHOLDS_FILE_EMPTY` in the same way, and the thresholds run fills them without treating them as
+hand-written.

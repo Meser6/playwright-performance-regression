@@ -24,6 +24,24 @@
 -});
 +}), perfConfig);
 --- /dev/null
++++ b/pw-perf-thresholds.json
+@@ -0,0 +1,6 @@
++{
++  "entries": {},
++  "generated": null,
++  "kind": "api",
++  "schemaVersion": 2
++}
+--- /dev/null
++++ b/pw-perf-thresholds.steps.json
+@@ -0,0 +1,6 @@
++{
++  "entries": {},
++  "generated": null,
++  "kind": "step",
++  "schemaVersion": 2
++}
+--- /dev/null
 +++ b/pw-perf.config.ts
 @@ -0,0 +1,86 @@
 +// Configuration of playwright-performance-regression, written by its guided setup.

@@ -124,6 +124,13 @@ describe('09-AC-26 nextHint', () => {
     );
   });
 
+  test('09-AC-35 test mode with an empty thresholds file names the thresholds command', () => {
+    const empty = { code: 'THRESHOLDS_FILE_EMPTY', message: '', hint: '' };
+    expect(hint({ warnings: [empty] })).toBe(
+      'derive thresholds: PW_PERF_MODE=thresholds npm run e2e:qa',
+    );
+  });
+
   test('thresholds mode lists the written files; outside CI a note about CI machines', () => {
     const written = [
       { name: 'pw-perf-thresholds.json', entries: 42 },
