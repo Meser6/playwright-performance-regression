@@ -210,13 +210,17 @@ tagged `@perf`; when no test is tagged, the wizard shows how to tag them
 
 What it can change:
 
-- a new `pw-perf.config.ts` with the 15 most important options, each with a short comment: the
+- a new `pw-perf.config.ts` (in a JavaScript project `pw-perf.config.js`, an ES module or CommonJS
+  like the Playwright config) with the 15 most important options, each with a short comment: the
   answers that differ from the defaults as code, the other options commented out with their
   default value, and a link to [every option](configuration.md);
 - `playwright.config`: the config wrapped in `withPerf()`;
 - your fixtures module (one file that exports `test` created with `.extend()` and contains no
-  tests): wrapped in `withPerfFixtures()`. Test files are never changed; in every other layout
-  the wizard shows a red box with the code to paste
+  tests): wrapped in `withPerfFixtures()`;
+- test files, only without a fixtures module: an import of `test` from `@playwright/test`
+  becomes `playwright-performance-regression/test` (`test` and `expect`; other names stay), one
+  diff per file; setup files are left alone. In every other layout, or when you decline one of
+  these diffs, the wizard shows a red box with the code to paste
   ([`INIT_TEST_OBJECT_MANUAL`](troubleshooting.md#init_test_object_manual));
 - `.gitignore`: `reports/pw-perf/`, unless it is already ignored (also by `reports/` or a glob
   such as `reports/**/*`);

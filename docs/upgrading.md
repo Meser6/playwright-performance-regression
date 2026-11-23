@@ -25,6 +25,29 @@ changes and are always listed with migration steps:
 After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
 and review the diff before committing anything.
 
+### From 0.1.0-next.3: no commands, only variables
+
+The `pw-perf` commands and their options are gone, and so is `run.projects`. To upgrade:
+
+1. Replace every `pw-perf test|thresholds|check …` call with your test command and variables:
+   `PW_PERF_MODE=test npx playwright test` (`--env` → `PW_PERF_ENV`, `--passes` →
+   `PW_PERF_PASSES`, `--prune` → `PW_PERF_PRUNE=1`, `--max-tests` → `PW_PERF_MAX_TESTS`). Remove
+   the `perf:*` scripts an earlier wizard wrote to `package.json`. Thresholds come from a
+   `PW_PERF_MODE=thresholds` run (the CI thresholds job and its artifact) instead of
+   `thresholds --from`, and every run writes the HTML report, so `pw-perf report` has no
+   replacement. See [Running](cli.md).
+2. The guided setup takes no options: `PW_PERF_LANG=<code>`, `PW_PERF_DRY_RUN=1` and
+   `PW_PERF_NO_TUTORIAL=1` replace `--lang`, `--dry-run` and `--no-tutorial`.
+3. Remove `run.projects` from `pw-perf.config.*` (it is now `CONFIG_UNKNOWN_OPTION`). The
+   measured projects are the ones your test command selects; add `--project chromium` to measure
+   one browser engine.
+4. Remove `--reporter` from the command you measure with (also inside an npm script): a test or
+   thresholds run with it now stops with [`RUN_REPORTER_FLAG`](troubleshooting.md#run_reporter_flag)
+   instead of measuring nothing.
+5. `request` calls (API tests, data setup in UI tests) are now measured as keys such as
+   `request GET /api/orders`. Until the next thresholds run (below) they are checked against the
+   default thresholds ([Keys without an entry](thresholds.md#keys-without-an-entry)).
+
 ### From 0.1.0-next.3: endpoint and step keys changed
 
 The built-in normalization changed (rules version 2 for URLs and for step titles):
