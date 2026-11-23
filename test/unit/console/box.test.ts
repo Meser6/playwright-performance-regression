@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { box, boxLines, marks, table } from '../../../src/console/box.ts';
 import { stripAnsi } from '../../../src/console/color.ts';
-import { textWidth } from '../../../src/console/text.ts';
+import { clusters, textWidth, truncateMiddle } from '../../../src/console/text.ts';
 
 // The shared frame module (04-REQ-65, 09-REQ-27).
 describe('console frames and tables', () => {
@@ -12,9 +12,32 @@ describe('console frames and tables', () => {
     expect(textWidth('❌')).toBe(2);
     expect(textWidth('⚠️')).toBe(2);
     expect(textWidth('⚠')).toBe(1);
-    expect(textWidth('⏱️  pw-perf')).toBe(11);
+    expect(textWidth('⏳ pw-perf')).toBe(10);
     expect(marks(false)).toEqual({ ok: '✅', warn: '⚠', error: '❌' });
     expect(marks(true)).toEqual({ ok: '✔', warn: '!', error: '✖' });
+  });
+
+  test('09-REQ-27 09-D-23 widths follow wcwidth: U+FE0F sequences two, joiners and marks zero', () => {
+    expect(textWidth('⏱️')).toBe(2);
+    expect(textWidth('⏱')).toBe(1);
+    expect(textWidth('✅️')).toBe(2);
+    expect(textWidth('\uFE0F')).toBe(0);
+    expect(textWidth('e\u0301')).toBe(1);
+    expect(textWidth('👩‍💻')).toBe(2);
+    expect(textWidth('👍🏽')).toBe(2);
+    expect(textWidth('1️⃣')).toBe(2);
+    expect(textWidth('⏳ ✅ ❌ ⚠ ✔ ✖ · × …')).toBe(20);
+    expect(clusters('a⏱️b').map((c) => c.text)).toEqual(['a', '⏱️', 'b']);
+    expect(truncateMiddle('⏱️abcdef⏱️', 6)).toBe('⏱️a…⏱️');
+    expect(textWidth(truncateMiddle('✅✅✅✅✅', 6))).toBeLessThanOrEqual(6);
+  });
+
+  test('09-D-23 an emoji sequence is never cut apart and every frame line closes', () => {
+    const lines = boxLines([{ text: 'ab⏱️cd' }, { text: '⏳ x' }], { ...opts, width: 7 });
+    expect(lines.map(textWidth)).toEqual([7, 7, 7, 7]);
+    expect(lines[1]).toBe('│ ab… │');
+    const wide = boxLines([{ text: '⚠️ ⏱️ 👩‍💻' }], opts);
+    expect(new Set(wide.map(textWidth)).size).toBe(1);
   });
 
   test('a box with a title in the top edge closes on every line', () => {

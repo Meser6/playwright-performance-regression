@@ -68,6 +68,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   short comment above it, and the `report.dir` comment says the folder (with `junit.xml`) is not
   committed. Config files written by an earlier wizard keep working unchanged.
 
+### Fixed
+
+- **Start box closes on every line.** The title line of the start box used ⏱️ (a character with
+  the emoji variation selector U+FE0F), whose width terminals count differently, so its right
+  edge stood one column off in VS Code and Terminal.app. The title now uses ⏳, which every modern
+  terminal shows in two columns, and no frame or table uses U+FE0F sequences. Text widths of
+  frames and tables now follow the wcwidth conventions (variation selectors, joiners and combining
+  marks take no column; an emoji sequence is never cut apart).
+
 ## [0.1.0-next.4] - 2026-11-23
 
 Upgrading from `0.1.0-next.3`: see [Upgrading](docs/upgrading.md). In short, run your test

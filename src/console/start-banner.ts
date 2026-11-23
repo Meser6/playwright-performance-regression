@@ -43,7 +43,8 @@ export function formatStartBanner(
   const row = (label: string, value: string): BoxLine => ({
     text: `${label.padEnd(LABEL)}${value}`,
   });
-  const icon = opts.ascii ? '' : '⏱️  ';
+  // ⏳ has Emoji_Presentation=Yes: two columns in every terminal, unlike ⏱️ (09-D-23).
+  const icon = opts.ascii ? '' : '⏳ ';
   const lines: BoxLine[] = [
     { text: `${icon}${input.packageName} · ${TITLES[input.mode]}`, style: 'bold' },
   ];

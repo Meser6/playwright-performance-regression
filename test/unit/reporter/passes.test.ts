@@ -8,6 +8,7 @@ import { parseRunReport } from '../../../src/core/schema/index.ts';
 import type { RunReport } from '../../../src/core/types/index.ts';
 import { stripAnsi } from '../../../src/console/color.ts';
 import { formatStartBanner } from '../../../src/console/start-banner.ts';
+import { textWidth } from '../../../src/console/text.ts';
 import { parsePassFile } from '../../../src/reporter/pass-file.ts';
 import type { ReporterHost, TestLike } from '../../../src/reporter/types.ts';
 import {
@@ -344,10 +345,10 @@ describe('start banner (04-REQ-65, 04-REQ-66)', () => {
     const dumb = formatStartBanner(input, { width: 120, color: false, ascii: true });
     expect(dumb.split('\n')[0]).toMatch(/^\+-+\+$/u);
     expect(dumb).toContain('| pw-perf · thresholds run');
-    expect(dumb).not.toContain('⏱');
+    expect(dumb).not.toContain('⏳');
     expect(dumb).not.toContain('Tip');
     const narrow = formatStartBanner(input, { width: 30, color: false, ascii: false });
-    expect(narrow.split('\n').every((line) => Array.from(line).length <= 30)).toBe(true);
+    expect(narrow.split('\n').every((line) => textWidth(line) <= 30)).toBe(true);
     const check = formatStartBanner(
       { ...input, mode: 'check', estimate: null, report: null, maxTests: 10 },
       { width: 120, color: false, ascii: false },
