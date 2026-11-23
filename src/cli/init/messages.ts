@@ -30,7 +30,7 @@ const en = {
   declinedDocs: 'Guide: {url}',
   declinedLater: 'Run {init} any time for the guided setup.',
   noTerminal:
-    'no terminal: the default answers are used and nothing is written Run the setup again in a terminal to write the changes.',
+    'no terminal: the default answers are used and nothing is written. Run the setup again in a terminal to write the changes.',
   dryRun: 'dry run: the planned changes are shown and nothing is written.',
   interrupted: 'interrupted.',
   answerAgain: 'Please answer again: that value is not valid here.',
@@ -227,8 +227,8 @@ const pl: Messages = {
   declinedDocs: 'Przewodnik: {url}',
   declinedLater: 'Konfigurację z przewodnikiem uruchomisz w każdej chwili poleceniem {init}.',
   noTerminal:
-    'brak terminala: kreator przyjmuje odpowiedzi domyślne i niczego nie zapisuje Uruchom konfigurację ponownie w terminalu, aby zapisać zmiany.',
-  dryRun: 'próba: kreator pokazuje planowane zmiany i niczego nie zapisuje.',
+    'brak terminala: kreator przyjmuje odpowiedzi domyślne i niczego nie zapisuje. Uruchom konfigurację ponownie w terminalu, aby zapisać zmiany.',
+  dryRun: 'tryb próbny: kreator pokazuje planowane zmiany i niczego nie zapisuje.',
   interrupted: 'przerwano.',
   answerAgain: 'Odpowiedz jeszcze raz: ta wartość nie jest tu poprawna.',
   pressEnter: 'Naciśnij Enter, aby kontynuować.',
@@ -272,7 +272,7 @@ const pl: Messages = {
   commandChain:
     'To polecenie łączy kilka poleceń: PW_PERF_MODE=... przed nim dociera tylko do pierwszego. Zamknij łańcuch w skrypcie package.json i wpisz npm run <skrypt>.',
   stepCi: 'CI',
-  noCi: 'Nie znaleziono konfiguracji CI. Przepisy dla GitHub Actions, GitLab CI, Jenkinsa i Azure Pipelines: {url}',
+  noCi: 'Nie znaleziono konfiguracji CI. Gotowe konfiguracje dla GitHub Actions, GitLab CI, Jenkinsa i Azure Pipelines: {url}',
   stepChanges: 'Zmiany',
   nothingToChange: 'Nic do zmiany: projekt jest już skonfigurowany dla tych odpowiedzi.',
   changesLesson: 'Każda zmiana jest najpierw pokazana jako diff, a dopiero potem zastosowana.',
@@ -325,12 +325,12 @@ const pl: Messages = {
     '{pkg} mierzy czasy odpowiedzi endpointów backendu (i opcjonalnie bloków test.step) w Twoich istniejących testach e2e, bez zmian w testach.',
   stepProject: 'Co robi paczka i jak ją uruchamiać',
   about2:
-    'Progi wyznacza sama z Twoich runów, oblewa run przy regresji wydajności i zostawia raport HTML.',
+    'Progi wyznacza sama z Twoich runów, przy regresji wydajności kończy run błędem i zostawia raport HTML.',
   usageTitle: 'Jak uruchamiać:',
   usageCommandPlaceholder: '<twoje polecenie testów>',
   usageThresholds: 'wykonuje testy kilka razy na 1 workerze i zapisuje pliki progów;',
   usageCommit: 'zacommituj pliki progów do repozytorium;',
-  usageTest: 'mierzy ponownie i oblewa się przy regresji; lokalnie i w CI.',
+  usageTest: 'mierzy ponownie i kończy się błędem przy regresji; lokalnie i w CI.',
   usageCommand:
     'Polecenie testów to to, którego już używasz (np. npm run e2e albo npx playwright test). Mierzony jest każdy projekt playwright.config, który ono uruchamia: dodaj --project <nazwa>, aby mierzyć tylko jedną przeglądarkę.',
   variablesTitle: 'Pozostałe zmienne:',
@@ -351,23 +351,23 @@ const pl: Messages = {
     'strict: mały zapas; łapie mniejsze regresje, częściej fałszywe alarmy na niestabilnym środowisku.',
   presetNormal: 'normal: zalecany na start.',
   presetLoose:
-    'loose: duży zapas; tylko wyraźne regresje, dla współdzielonych i hałaśliwych środowisk.',
+    'loose: duży zapas; tylko wyraźne regresje, dla współdzielonych lub zaszumionych środowisk.',
   presetQuestion: 'Jaki zapas mają mieć wyznaczone progi? [strict/normal/loose]',
   ci1: 'Progi wyznaczaj na maszynach CI, które będą mierzyć: czasy z laptopa się nie przenoszą.',
   ci2: 'Job CI uruchamiany ręcznie z PW_PERF_MODE=thresholds zapisuje pliki progów jako artefakt.',
   ci3: 'Pobierz je i zacommituj do repozytorium.',
-  ci4: 'Job cykliczny (domyślnie raz w tygodniu) z PW_PERF_MODE=test oblewa się przy regresji.',
+  ci4: 'Job cykliczny (domyślnie raz w tygodniu) z PW_PERF_MODE=test kończy się błędem przy regresji.',
   ciQuestion: 'Dodać joby CI dla runów progów i pomiarowych ({platform})?',
   stepCheck: 'Sprawdzenie',
   checkLesson:
     'Sprawdzenie uruchamia Twoje polecenie testów jak prawdziwe runy, tylko z 2 przebiegami: najpierw PW_PERF_MODE=thresholds, potem PW_PERF_MODE=test. Jego progi trafiają do katalogu tymczasowego, usuwanego na końcu; Twoje pliki progów zostają nietknięte.',
   checkQuestion: 'Uruchomić sprawdzenie teraz?',
-  checkManual: 'Uruchom je sam: {command}',
+  checkManual: 'Uruchom je samodzielnie: {command}',
   checkExit: 'Sprawdzenie z PW_PERF_MODE={mode} zakończyło się kodem {code}.',
-  boxTitle: 'Wymagane działanie: na razie nic nie jest mierzone',
+  boxTitle: 'Do zrobienia: na razie nic nie jest mierzone',
   boxWhy:
     "Bez fixture'u perf paczka nie mierzy żadnego requestu. Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
-  boxTitleSteps: 'Wymagane działanie: endpointy nie są jeszcze mierzone',
+  boxTitleSteps: 'Do zrobienia: endpointy nie są jeszcze mierzone',
   boxWhySteps:
     "Bez fixture'u perf paczka nie mierzy żadnego requestu (czasy test.step są mierzone). Kreator nie zmienia plików testów; dodaj ręcznie jeden z wariantów:",
   boxFixtures: "Jeśli masz plik fixture'ów, który eksportuje test:",
@@ -386,7 +386,7 @@ const pl: Messages = {
   estimateAbove: '(Ramka startowa runu podaje szacunek czasu z ostatniego runu.)',
   nextCommit: 'Zacommituj {files}.',
   nextTest:
-    '{command}: run pomiarowy, który oblewa się przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
+    '{command}: run pomiarowy, który kończy się błędem przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
   nextCiJobs: 'Job pomiarowy w {path} działa raz w tygodniu i można go uruchomić ręcznie.',
   windowsNote: 'Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.',
   boxWrapThis: 'Owiń ten, który importują Twoje testy: {file}',
@@ -398,7 +398,7 @@ const pl: Messages = {
   manualDirectImportsModuleHint:
     'Importuj w nich test z {module} albo zmień import w każdym z nich:',
   passesSetup:
-    'globalSetup i projekty setup też wykonują się raz na przebieg, a ich żądania nie są mierzone: seed danych musi być idempotentny.',
+    'globalSetup i projekty setup też wykonują się raz na przebieg, a ich requesty nie są mierzone: seed danych musi być idempotentny.',
   commandReporter:
     'To polecenie albo jego skrypt ustawia --reporter: run pomiarowy albo progów z nim kończy się błędem RUN_REPORTER_FLAG. Do pomiaru użyj polecenia bez --reporter.',
   commandEveryPass:
@@ -408,7 +408,7 @@ const pl: Messages = {
   checkCause: 'Najbardziej prawdopodobna przyczyna: {cause}',
   formatNote: 'Sformatuj zmienione pliki swoim formatterem (np. prettier --write).',
   manualNewContext:
-    'Żądania kontekstów tworzonych przez request.newContext() nie są mierzone, dopóki każdy kontekst nie jest śledzony ({count}): {files}.',
+    'Requesty kontekstów tworzonych przez request.newContext() nie są mierzone, dopóki każdy kontekst nie jest śledzony ({count}): {files}.',
   manualNewContextHint: 'Śledź każdy kontekst zaraz po jego utworzeniu:',
 };
 
@@ -422,7 +422,7 @@ const es: Messages = {
   declinedDocs: 'Guía: {url}',
   declinedLater: 'Ejecuta {init} cuando quieras para la configuración guiada.',
   noTerminal:
-    'sin terminal: se usan las respuestas por defecto y no se escribe nada Ejecuta la configuración de nuevo en un terminal para escribir los cambios.',
+    'sin terminal: se usan las respuestas por defecto y no se escribe nada. Ejecuta la configuración de nuevo en un terminal para escribir los cambios.',
   dryRun: 'simulación: se muestran los cambios previstos y no se escribe nada.',
   interrupted: 'interrumpido.',
   answerAgain: 'Responde de nuevo: ese valor no es válido aquí.',
@@ -457,12 +457,12 @@ const es: Messages = {
   measureQuestion: '¿Qué medir? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Solo pasos, pero no se encontró ningún test.step: no se mide nada hasta que añadas bloques test.step.',
-  stepCommand: 'Comando de pruebas',
+  stepCommand: 'Comando de tests',
   commandLesson1:
-    'Escribe el comando con el que sueles ejecutar tus pruebas, p. ej. npm run e2e:qa. El asistente pone PW_PERF_MODE delante en los comandos de abajo, lo escribe en los jobs de CI y lo ejecuta en la comprobación.',
+    'Escribe el comando con el que sueles ejecutar tus tests, p. ej. npm run e2e:qa. El asistente pone PW_PERF_MODE delante en los comandos de abajo, lo escribe en los jobs de CI y lo ejecuta en la comprobación.',
   commandLesson2:
     'Enter mantiene el comando sugerido; "skip" también lo mantiene y omite la comprobación final.',
-  commandQuestion: '¿Con qué comando sueles ejecutar tus pruebas?',
+  commandQuestion: '¿Con qué comando sueles ejecutar tus tests?',
   commandVariable:
     'Escribe el comando sin variables PW_PERF_: el asistente añade PW_PERF_MODE por sí mismo.',
   commandChain:
@@ -540,7 +540,7 @@ const es: Messages = {
   filesTitle: 'Archivos:',
   fileConfig: 'ajustes del paquete; haz commit',
   fileThresholds: 'umbrales (los pasos de test en .steps.json); haz commit',
-  fileReport: 'informe HTML y datos de la última ejecución; sin commit (está en .gitignore)',
+  fileReport: 'informe HTML y datos de la última ejecución; no hagas commit (está en .gitignore)',
   oldScripts: 'Los scripts perf:* de un asistente anterior ({names}) ya no funcionan; elimínalos.',
   taggedSaved: '@perf se guarda como run.grep en {configFile}; tus comandos no cambian.',
   stepPreset: 'Margen de los umbrales',
@@ -566,12 +566,12 @@ const es: Messages = {
   boxTitle: 'Acción necesaria: todavía no se mide nada',
   boxWhy:
     'Sin el fixture perf el paquete no mide ninguna petición. El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
-  boxTitleSteps: 'Acción necesaria: los endpoints todavía no se miden',
+  boxTitleSteps: 'Acción necesaria: los endpoints aún no se miden',
   boxWhySteps:
     'Sin el fixture perf el paquete no mide ninguna petición (las duraciones de test.step sí se miden). El asistente no cambia tus archivos de tests; añade a mano una de estas opciones:',
   boxFixtures: 'Si tienes un archivo de fixtures que exporta test:',
   boxFixturesFiles:
-    'Archivos con .extend() y el número de archivos de prueba que importan cada uno:',
+    'Archivos con .extend() y el número de archivos de tests que importan cada uno:',
   boxImports:
     'Si tus tests importan test de @playwright/test (archivos: {count}), cambia el import en cada uno:',
   boxDocs: 'Otras estructuras (mergeTests, varios objetos test, playwright-bdd): {url}',
@@ -579,9 +579,9 @@ const es: Messages = {
   runLesson: 'Una medición es tu comando de tests habitual con PW_PERF_MODE.',
   nextCheck: '{command}: mira qué se medirá y cuánto dura una ejecución completa.',
   nextThresholds:
-    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir: lanza el job manual de umbrales (o este comando allí) y descarga los archivos de umbrales de su artefacto. Mientras no existan, las mediciones usan los umbrales por defecto, amplios. {estimate}',
+    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir: lanza el job manual de umbrales (o este comando allí) y descarga los archivos de umbrales de su artefacto. Mientras no existan, las mediciones usan los umbrales amplios por defecto. {estimate}',
   nextThresholdsNoCi:
-    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir (ver {url}). Mientras no existan los archivos de umbrales, las mediciones usan los umbrales por defecto, amplios. {estimate}',
+    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir (ver {url}). Mientras no existan los archivos de umbrales, las mediciones usan los umbrales amplios por defecto. {estimate}',
   estimateUnknown: '(El comando de comprobación da una estimación.)',
   estimateAbove:
     '(El recuadro de inicio de la ejecución muestra una estimación de tiempo según la última ejecución.)',
@@ -591,14 +591,14 @@ const es: Messages = {
   nextCiJobs:
     'El job de medición en {path} se ejecuta una vez por semana y se puede lanzar a mano.',
   windowsNote: 'Formas de estos comandos para PowerShell y cmd: docs/cli.md.',
-  boxWrapThis: 'Envuelve el que importan tus pruebas: {file}',
+  boxWrapThis: 'Envuelve el que importan tus tests: {file}',
   boxWorkspace:
     '{file} está en el paquete del workspace {pkg}: instala {self} en la raíz del workspace (p. ej. pnpm add -Dw) o también en ese paquete.',
   manualDirectImports:
-    'Los archivos de prueba que importan test directamente de @playwright/test no se miden ({count}): {files}.',
-  manualDirectImportsHint: 'Cambia la importación en cada uno de ellos:',
+    'Los archivos de tests que importan test directamente de @playwright/test no se miden ({count}): {files}.',
+  manualDirectImportsHint: 'Cambia el import en cada uno de ellos:',
   manualDirectImportsModuleHint:
-    'Importa en ellos test desde {module} o cambia la importación en cada uno:',
+    'Importa en ellos test desde {module} o cambia el import en cada uno:',
   passesSetup:
     'globalSetup y los proyectos de setup también se ejecutan una vez por pasada y sus peticiones no se miden: haz que la carga de datos sea idempotente.',
   commandReporter:
@@ -615,19 +615,19 @@ const es: Messages = {
 };
 
 const fr: Messages = {
-  declinedInstalled: '{pkg} est installé ; aucun fichier n’a été modifié.',
-  declinedSteps: 'Pour le configurer à la main :',
+  declinedInstalled: '{pkg} est installé ; aucun fichier n’a été modifié.',
+  declinedSteps: 'Pour le configurer à la main :',
   declinedConfig:
     'Enveloppez la configuration exportée de playwright.config dans withPerf() de {config}.',
   declinedTest:
     'Enveloppez votre objet test dans withPerfFixtures() de {fixture}, ou importez test depuis {test} au lieu de @playwright/test.',
-  declinedDocs: 'Guide : {url}',
+  declinedDocs: 'Guide : {url}',
   declinedLater: 'Lancez {init} à tout moment pour la configuration guidée.',
   noTerminal:
-    "pas de terminal : les réponses par défaut sont utilisées et rien n'est écrit Relancez la configuration dans un terminal pour écrire les modifications.",
-  dryRun: "simulation : les modifications prévues sont affichées et rien n'est écrit.",
+    'pas de terminal : les réponses par défaut sont utilisées et rien n’est écrit. Relancez la configuration dans un terminal pour écrire les modifications.',
+  dryRun: 'simulation : les modifications prévues sont affichées et rien n’est écrit.',
   interrupted: 'interrompu.',
-  answerAgain: "Répondez à nouveau : cette valeur n'est pas valide ici.",
+  answerAgain: 'Répondez à nouveau : cette valeur n’est pas valide ici.',
   pressEnter: 'Appuyez sur Entrée pour continuer.',
   yes: 'oui',
   no: 'non',
@@ -635,87 +635,87 @@ const fr: Messages = {
   noShort: 'n',
   stepTests: 'Quels tests',
   testsLesson:
-    'Une mesure prend environ (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
-  taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
-  noTaggedMessage: 'Aucun test n’est encore marqué @perf ; tous les tests sont mesurés.',
+    'Une mesure prend environ (tests × passes) exécutions de tests sur 1 worker : mesurez donc les tests qui appellent les endpoints importants du backend.',
+  taggedFiles: 'Fichiers avec des tests marqués @perf : {count}.',
+  noTaggedMessage: 'Aucun test n’est encore marqué @perf ; tous les tests sont mesurés.',
   noTaggedHint:
     "Pour ne mesurer que certains tests, marquez-les avec test('titre', { tag: '@perf' }, ...) et choisissez @perf.",
-  scopeQuestion: 'Mesurer tous les tests ou seulement ceux marqués @perf ? [{all}/@perf]',
+  scopeQuestion: 'Mesurer tous les tests ou seulement ceux marqués @perf ? [{all}/@perf]',
   scopeAll: 'tous',
   stepPasses: 'Passes',
   passesLesson:
-    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et les échantillons valent appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
-  passesQuestion: 'Passes de la commande de tests dans les mesures ?',
+    'Chaque règle demande un nombre minimal d’échantillons par endpoint (minSamples), et le nombre d’échantillons vaut : appels par test × tests × passes. Votre commande de tests, avec ses étapes de préparation, s’exécute une fois par passe.',
+  passesQuestion: 'Passes de la commande de tests dans les mesures ?',
   stepMeasure: 'Que mesurer',
   measureApi:
-    'api : temps de réponse des requêtes backend envoyées par vos pages et des appels request dans les tests d’API, regroupés en clés d’endpoint comme "GET /api/users/:id".',
+    'api : temps de réponse des requêtes backend envoyées par vos pages et des appels request dans les tests d’API, regroupés en clés d’endpoint comme "GET /api/users/:id".',
   measureSteps:
-    'steps : durée de vos blocs test.step, sans modifier les tests ; chaque étape devient une clé comme "checkout › pay", avec son propre fichier de seuils.',
+    'steps : durée de vos blocs test.step, sans modifier les tests ; chaque étape devient une clé comme "checkout › pay", avec son propre fichier de seuils.',
   stepsPrivacy:
-    'Les titres des étapes sont nettoyés : identifiants, e-mails, URL et secrets n’arrivent jamais dans les clés, même entre guillemets.',
-  stepFilesFound: 'Fichiers avec test.step : {count}.',
+    'Les titres des étapes sont nettoyés : identifiants, e-mails, URL et secrets n’arrivent jamais dans les clés, même entre guillemets.',
+  stepFilesFound: 'Fichiers avec test.step : {count}.',
   noStepsFound:
-    'Aucun test.step trouvé pour l’instant : les étapes seront mesurées dès que vous ajouterez des blocs test.step.',
-  measureQuestion: 'Que mesurer ? [{all}/api/steps]',
+    'Aucun test.step trouvé pour l’instant : les étapes seront mesurées dès que vous ajouterez des blocs test.step.',
+  measureQuestion: 'Que mesurer ? [{all}/api/steps]',
   onlyStepsNoSteps:
-    'Étapes seulement, mais aucun test.step trouvé : rien n’est mesuré tant que vous n’ajoutez pas de blocs test.step.',
-  stepCommand: 'Commande de test',
+    'Étapes seulement, mais aucun test.step trouvé : rien n’est mesuré tant que vous n’ajoutez pas de blocs test.step.',
+  stepCommand: 'Commande de tests',
   commandLesson1:
-    "Saisissez la commande avec laquelle vous lancez d'habitude vos tests, p. ex. npm run e2e:qa. L'assistant ajoute PW_PERF_MODE devant dans les commandes ci-dessous, l'écrit dans les jobs de CI et l'exécute pour la vérification.",
+    'Saisissez la commande avec laquelle vous lancez d’habitude vos tests, p. ex. npm run e2e:qa. L’assistant ajoute PW_PERF_MODE devant dans les commandes ci-dessous, l’écrit dans les jobs de CI et l’exécute pour la vérification.',
   commandLesson2:
-    'Entrée garde la commande proposée ; "skip" la garde aussi et saute la vérification finale.',
-  commandQuestion: "Avec quelle commande lancez-vous d'habitude vos tests ?",
+    'Entrée garde la commande proposée ; "skip" la garde aussi et saute la vérification finale.',
+  commandQuestion: 'Avec quelle commande lancez-vous d’habitude vos tests ?',
   commandVariable:
-    "Saisissez la commande sans variables PW_PERF_ : l'assistant ajoute PW_PERF_MODE lui-même.",
+    'Saisissez la commande sans variables PW_PERF_ : l’assistant ajoute PW_PERF_MODE lui-même.',
   commandChain:
-    "Cette commande enchaîne plusieurs commandes : PW_PERF_MODE=... devant n'atteint que la première. Mettez la chaîne dans un script de package.json et saisissez npm run <script>.",
+    'Cette commande enchaîne plusieurs commandes : PW_PERF_MODE=... devant n’atteint que la première. Mettez la chaîne dans un script de package.json et saisissez npm run <script>.',
   stepCi: 'CI',
-  noCi: 'Aucune configuration CI trouvée. Recettes pour GitHub Actions, GitLab CI, Jenkins et Azure Pipelines : {url}',
+  noCi: 'Aucune configuration CI trouvée. Recettes pour GitHub Actions, GitLab CI, Jenkins et Azure Pipelines : {url}',
   stepChanges: 'Modifications',
-  nothingToChange: 'Rien à modifier : le projet est déjà configuré pour ces réponses.',
+  nothingToChange: 'Rien à modifier : le projet est déjà configuré pour ces réponses.',
   changesLesson: 'Chaque modification est affichée sous forme de diff avant d’être appliquée.',
   newFile: 'nouveau fichier',
   modifiedFile: 'modification',
-  overwriteQuestion: '{path} existe déjà. L’écraser ?',
+  overwriteQuestion: '{path} existe déjà. L’écraser ?',
   kept: '{path} existe déjà et est conservé.',
-  applyQuestion: 'Appliquer cette modification ?',
-  fileWritten: 'Écrit : {path}',
+  applyQuestion: 'Appliquer cette modification ?',
+  fileWritten: 'Écrit : {path}',
   skipped: 'Ignoré.',
   stepSummary: 'Résumé',
-  changedFiles: 'Fichiers modifiés :',
+  changedFiles: 'Fichiers modifiés :',
   noFilesChanged: 'Aucun fichier n’a été modifié.',
-  plannedChanges: 'Modifications prévues (non écrites) :',
-  manualSteps: 'Étapes manuelles : {count} (voir les avertissements ci-dessus).',
-  nextSteps: 'Étapes suivantes :',
+  plannedChanges: 'Modifications prévues (non écrites) :',
+  manualSteps: 'Étapes manuelles : {count} (voir les avertissements ci-dessus).',
+  nextSteps: 'Étapes suivantes :',
   nextJenkins: 'Créez dans Jenkins un job Pipeline avec le chemin de script {path}.',
   nextAzure: 'Créez un pipeline dans Azure DevOps à partir de {path}.',
   nextApply: 'Appliquez les modifications ci-dessus (relancez la configuration dans un terminal).',
   originsNote:
-    'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de {configFile}.',
-  docs: 'Documentation : {links}',
+    'Les clés d’endpoint de l’origine du baseURL n’ont pas de libellé et les autres hôtes sont libellés avec leur hôte ; définissez des libellés plus courts dans keys.origins de {configFile}.',
+  docs: 'Documentation : {links}',
   finished: 'Configuration terminée.',
   noConfigMessage: 'Aucun playwright.config.* dans {dir}.',
   noConfigHint:
-    'Lancez "{command}" dans le répertoire de playwright.config (dans un monorepo : le paquet qui contient les tests Playwright).',
+    'Lancez "{command}" dans le répertoire de playwright.config (dans un monorepo : le paquet qui contient les tests Playwright).',
   tooOldMessage:
     '@playwright/test {version} est antérieur à {min}, la version minimale prise en charge par {pkg}.',
   tooOldHint: 'Mettez à jour @playwright/test en {min} ou plus, puis relancez "{command}".',
   writeFailedMessage: 'Impossible d’écrire {detail}',
   writeFailedHint: 'Vérifiez les droits du fichier et de son répertoire, puis relancez init.',
-  manualPerfConfigKept: "{file} existe déjà et n'a pas été modifié.",
-  manualPerfConfigHint: 'Définissez-y ces options si vous les voulez :',
-  manualConfigJson: "{config} n'a pas été modifié : la configuration du paquet est {file}.",
+  manualPerfConfigKept: '{file} existe déjà et n’a pas été modifié.',
+  manualPerfConfigHint: 'Définissez-y ces options si vous les voulez :',
+  manualConfigJson: '{config} n’a pas été modifié : la configuration du paquet est {file}.',
   manualConfigPattern:
-    "{config} n'a pas été modifié : son export n'est pas un simple defineConfig({...}) ni un objet (par exemple un autre wrapper).",
+    '{config} n’a pas été modifié : son export n’est pas un simple defineConfig({...}) ni un objet (par exemple un autre wrapper).',
   configHintIntro:
-    'Enveloppez la configuration exportée dans withPerf() comme appel le plus externe (aussi autour des autres wrappers) :',
-  configHintCjs: 'Dans {path} avec module.exports : {call}.',
-  manualCiKept: "{file} existe déjà et n'a pas été modifié.",
+    'Enveloppez la configuration exportée dans withPerf() comme appel le plus externe (aussi autour des autres wrappers) :',
+  configHintCjs: 'Dans {path} avec module.exports : {call}.',
+  manualCiKept: '{file} existe déjà et n’a pas été modifié.',
   manualCiHint: 'Comparez-le avec examples/ci/ dans le dépôt de {pkg}.',
-  manualGitlabInclude: ".gitlab-ci.yml n'a pas été modifié : incluez-y le nouveau fichier de job.",
+  manualGitlabInclude: '.gitlab-ci.yml n’a pas été modifié : incluez-y le nouveau fichier de job.',
   manualNpmOne: '{files} installe les dépendances avec npm.',
   manualNpmHint:
-    'Ce projet utilise {manager} : remplacez "npm ci" par "{install}" et "npx" par "{npx}".',
+    'Ce projet utilise {manager} : remplacez "npm ci" par "{install}" et "npx" par "{npx}".',
 
   declinedRun:
     'Lancez votre commande de tests avec PW_PERF_MODE=thresholds et commitez les fichiers pw-perf-thresholds*.json, puis PW_PERF_MODE=test lance la mesure (par ex. {example}).',
@@ -724,100 +724,100 @@ const fr: Messages = {
   stepProject: 'Ce qu’il fait et comment le lancer',
   about2:
     'Il calcule les seuils à partir de vos propres exécutions, fait échouer l’exécution en cas de régression de performance et laisse un rapport HTML.',
-  usageTitle: 'Comment le lancer :',
+  usageTitle: 'Comment le lancer :',
   usageCommandPlaceholder: '<votre commande de tests>',
-  usageThresholds: 'lance vos tests plusieurs fois sur 1 worker et écrit les fichiers de seuils ;',
-  usageCommit: 'commitez les fichiers de seuils dans le dépôt ;',
-  usageTest: 'mesure à nouveau et échoue en cas de régression ; en local et en CI.',
+  usageThresholds: 'lance vos tests plusieurs fois sur 1 worker et écrit les fichiers de seuils ;',
+  usageCommit: 'commitez les fichiers de seuils dans le dépôt ;',
+  usageTest: 'mesure à nouveau et échoue en cas de régression ; en local et en CI.',
   usageCommand:
-    'Votre commande de tests est celle que vous utilisez déjà (par ex. npm run e2e ou npx playwright test). Chaque projet de playwright.config qu’elle lance est mesuré : ajoutez --project <nom> pour ne mesurer qu’un navigateur.',
-  variablesTitle: 'Autres variables :',
+    'Votre commande de tests est celle que vous utilisez déjà (par ex. npm run e2e ou npx playwright test). Chaque projet de playwright.config qu’elle lance est mesuré : ajoutez --project <nom> pour ne mesurer qu’un navigateur.',
+  variablesTitle: 'Autres variables :',
   varCheck:
     'une vérification rapide de la configuration sur quelques tests, sans fichiers de seuils',
   varMaxTests: 'tests lancés par une vérification (10 par défaut)',
-  varEnv: 'étiquette d’environnement : des fichiers de seuils séparés pour chaque environnement',
+  varEnv: 'étiquette d’environnement : des fichiers de seuils séparés pour chaque environnement',
   varPasses: 'passes de la commande de tests dans cette exécution',
   varPrune:
-    'dans une exécution de seuils : supprime les entrées des endpoints que cette exécution n’a pas vus',
-  filesTitle: 'Fichiers :',
-  fileConfig: 'réglages du paquet ; à commiter',
-  fileThresholds: 'seuils (étapes de test dans .steps.json) ; à commiter',
+    'dans une exécution de seuils : supprime les entrées des endpoints que cette exécution n’a pas vus',
+  filesTitle: 'Fichiers :',
+  fileConfig: 'réglages du paquet ; à commiter',
+  fileThresholds: 'seuils (étapes de test dans .steps.json) ; à commiter',
   fileReport:
-    'rapport HTML et données de la dernière exécution ; à ne pas commiter (dans .gitignore)',
+    'rapport HTML et données de la dernière exécution ; à ne pas commiter (dans .gitignore)',
   oldScripts:
-    'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
+    'Les scripts perf:* d’un assistant précédent ({names}) ne fonctionnent plus ; supprimez-les.',
   taggedSaved:
-    '@perf est enregistré comme run.grep dans {configFile} ; vos commandes restent les mêmes.',
+    '@perf est enregistré comme run.grep dans {configFile} ; vos commandes restent les mêmes.',
   stepPreset: 'Marge des seuils',
   presetLesson:
-    'Les seuils sont les temps d’une exécution de seuils plus une marge. Le preset fixe la marge de toutes les règles :',
+    'Les seuils sont les temps d’une exécution de seuils plus une marge. Le preset fixe la marge de toutes les règles :',
   presetStrict:
-    'strict : petite marge ; détecte des régressions plus faibles, plus de fausses alertes sur un environnement instable.',
-  presetNormal: 'normal : recommandé pour commencer.',
+    'strict : petite marge ; détecte des régressions plus faibles, plus de fausses alertes sur un environnement instable.',
+  presetNormal: 'normal : recommandé pour commencer.',
   presetLoose:
-    'loose : grande marge ; seulement les régressions nettes, pour des environnements partagés ou bruyants.',
-  presetQuestion: 'Quelle marge pour les seuils calculés ? [strict/normal/loose]',
-  ci1: 'Calculez les seuils sur les machines de CI qui mesureront : les temps d’un portable ne s’y appliquent pas.',
+    'loose : grande marge ; seulement les régressions nettes, pour des environnements partagés ou bruyants.',
+  presetQuestion: 'Quelle marge pour les seuils calculés ? [strict/normal/loose]',
+  ci1: 'Calculez les seuils sur les machines de CI qui mesureront : les temps d’un portable ne s’y appliquent pas.',
   ci2: 'Un job de CI lancé à la main avec PW_PERF_MODE=thresholds enregistre les fichiers de seuils comme artefact.',
   ci3: 'Téléchargez-les et commitez-les dans le dépôt.',
   ci4: 'Un job planifié (une fois par semaine par défaut) avec PW_PERF_MODE=test échoue en cas de régression.',
-  ciQuestion: 'Ajouter les jobs de CI pour les seuils et les mesures ({platform}) ?',
+  ciQuestion: 'Ajouter les jobs de CI pour les seuils et les mesures ({platform}) ?',
   stepCheck: 'Vérification',
   checkLesson:
-    'La vérification lance votre commande de tests comme les vraies exécutions, mais avec 2 passes : d’abord PW_PERF_MODE=thresholds, puis PW_PERF_MODE=test. Ses seuils vont dans un dossier temporaire supprimé à la fin ; vos fichiers de seuils ne sont pas touchés.',
-  checkQuestion: 'Lancer la vérification maintenant ?',
-  checkManual: 'Lancez-la vous-même : {command}',
+    'La vérification lance votre commande de tests comme les vraies exécutions, mais avec 2 passes : d’abord PW_PERF_MODE=thresholds, puis PW_PERF_MODE=test. Ses seuils vont dans un dossier temporaire supprimé à la fin ; vos fichiers de seuils ne sont pas touchés.',
+  checkQuestion: 'Lancer la vérification maintenant ?',
+  checkManual: 'Lancez-la vous-même : {command}',
   checkExit: 'La vérification avec PW_PERF_MODE={mode} s’est terminée avec le code {code}.',
-  boxTitle: 'Action requise : rien n’est encore mesuré',
+  boxTitle: 'Action requise : rien n’est encore mesuré',
   boxWhy:
-    'Sans la fixture perf, le paquet ne mesure aucune requête. L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
-  boxTitleSteps: 'Action requise : les endpoints ne sont pas encore mesurés',
+    'Sans la fixture perf, le paquet ne mesure aucune requête. L’assistant ne modifie pas vos fichiers de test ; ajoutez à la main l’une de ces variantes :',
+  boxTitleSteps: 'Action requise : endpoints pas encore mesurés',
   boxWhySteps:
-    'Sans la fixture perf, le paquet ne mesure aucune requête (les durées des test.step sont mesurées). L’assistant ne modifie pas vos fichiers de tests ; ajoutez à la main l’une de ces variantes :',
-  boxFixtures: 'Si vous avez un fichier de fixtures qui exporte test :',
+    'Sans la fixture perf, le paquet ne mesure aucune requête (les durées des test.step sont mesurées). L’assistant ne modifie pas vos fichiers de test ; ajoutez à la main l’une de ces variantes :',
+  boxFixtures: 'Si vous avez un fichier de fixtures qui exporte test :',
   boxFixturesFiles:
-    'Fichiers avec .extend() et le nombre de fichiers de test qui importent chacun :',
+    'Fichiers avec .extend() et le nombre de fichiers de test qui importent chacun :',
   boxImports:
-    'Si vos tests importent test depuis @playwright/test (fichiers : {count}), changez l’import dans chacun :',
-  boxDocs: 'Autres structures (mergeTests, plusieurs objets test, playwright-bdd) : {url}',
-  runLine: 'Lancer : {command}',
+    'Si vos tests importent test depuis @playwright/test (fichiers : {count}), changez l’import dans chacun :',
+  boxDocs: 'Autres structures (mergeTests, plusieurs objets test, playwright-bdd) : {url}',
+  runLine: 'Lancer : {command}',
   runLesson: 'Une mesure est votre commande de tests habituelle avec PW_PERF_MODE.',
   nextCheck:
-    '{command} : voyez ce qui sera mesuré et combien de temps dure une exécution complète.',
+    '{command} : voyez ce qui sera mesuré et combien de temps dure une exécution complète.',
   nextThresholds:
-    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront : lancez le job manuel de seuils (ou cette commande là-bas) et téléchargez les fichiers de seuils depuis son artefact. Tant qu’ils n’existent pas, les mesures utilisent les seuils par défaut, larges. {estimate}',
+    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront : lancez le job manuel de seuils (ou cette commande là-bas) et téléchargez les fichiers de seuils depuis son artefact. Tant qu’ils n’existent pas, les mesures utilisent les seuils larges par défaut. {estimate}',
   nextThresholdsNoCi:
-    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront (voir {url}). Tant que les fichiers de seuils n’existent pas, les mesures utilisent les seuils par défaut, larges. {estimate}',
+    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront (voir {url}). Tant que les fichiers de seuils n’existent pas, les mesures utilisent les seuils larges par défaut. {estimate}',
   estimateUnknown: '(La commande de vérification donne une estimation.)',
   estimateAbove:
     '(Le cadre de démarrage de l’exécution donne une estimation du temps d’après la dernière exécution.)',
   nextCommit: 'Commitez {files}.',
   nextTest:
-    '{command} : une mesure qui échoue en cas de régression. Résultats : {report} ; détail du code de sortie : {outcome}.',
+    '{command} : une mesure qui échoue en cas de régression. Résultats : {report} ; détail du code de sortie : {outcome}.',
   nextCiJobs:
     'Le job de mesure dans {path} s’exécute une fois par semaine et peut être lancé à la main.',
-  windowsNote: 'Formes de ces commandes pour PowerShell et cmd : docs/cli.md.',
-  boxWrapThis: "Enveloppez celui qu'importent vos tests : {file}",
+  windowsNote: 'Formes de ces commandes pour PowerShell et cmd : docs/cli.md.',
+  boxWrapThis: 'Enveloppez celui qu’importent vos tests : {file}',
   boxWorkspace:
-    '{file} se trouve dans le paquet du workspace {pkg} : installez {self} à la racine du workspace (par ex. pnpm add -Dw) ou aussi dans ce paquet.',
+    '{file} se trouve dans le paquet du workspace {pkg} : installez {self} à la racine du workspace (par ex. pnpm add -Dw) ou aussi dans ce paquet.',
   manualDirectImports:
-    'Les fichiers de test qui importent test directement depuis @playwright/test ne sont pas mesurés ({count}) : {files}.',
-  manualDirectImportsHint: "Modifiez l'import dans chacun d'eux :",
+    'Les fichiers de test qui importent test directement depuis @playwright/test ne sont pas mesurés ({count}) : {files}.',
+  manualDirectImportsHint: 'Modifiez l’import dans chacun d’eux :',
   manualDirectImportsModuleHint:
-    "Importez-y test depuis {module}, ou modifiez l'import dans chacun d'eux :",
+    'Importez-y test depuis {module}, ou modifiez l’import dans chacun d’eux :',
   passesSetup:
-    "globalSetup et les projets de setup s'exécutent aussi une fois par passe et leurs requêtes ne sont pas mesurées : rendez l'initialisation des données idempotente.",
+    'globalSetup et les projets de setup s’exécutent aussi une fois par passe et leurs requêtes ne sont pas mesurées : rendez l’initialisation des données idempotente.',
   commandReporter:
-    "Cette commande ou son script définit --reporter : un run de mesure ou de seuils s'arrête alors avec RUN_REPORTER_FLAG. Utilisez une commande sans --reporter pour la mesure.",
+    'Cette commande ou son script définit --reporter : une exécution de mesure ou de seuils s’arrête alors avec RUN_REPORTER_FLAG. Utilisez une commande sans --reporter pour la mesure.',
   commandEveryPass:
-    "Le script exécute ceci avant playwright test, et cela s'exécute à chaque passe : {prep}. Déplacez une longue préparation dans son propre script et indiquez ici un script sans elle.",
+    'Le script exécute ceci avant playwright test, et cela s’exécute à chaque passe : {prep}. Déplacez une longue préparation dans son propre script et indiquez ici un script sans elle.',
   noConfigFound:
-    'playwright.config trouvé dans des sous-dossiers ; lancez la configuration dans le dossier de chacun de ceux que vous voulez mesurer :',
-  checkCause: 'Cause la plus probable : {cause}',
+    'playwright.config trouvé dans des sous-dossiers ; lancez la configuration dans le dossier de chacun de ceux que vous voulez mesurer :',
+  checkCause: 'Cause la plus probable : {cause}',
   formatNote: 'Formatez les fichiers modifiés avec votre formateur (par ex. prettier --write).',
   manualNewContext:
-    "Les requêtes des contextes créés avec request.newContext() ne sont pas mesurées tant que chaque contexte n'est pas suivi ({count}) : {files}.",
-  manualNewContextHint: 'Suivez chaque contexte juste après sa création :',
+    'Les requêtes des contextes créés avec request.newContext() ne sont pas mesurées tant que chaque contexte n’est pas suivi ({count}) : {files}.',
+  manualNewContextHint: 'Suivez chaque contexte juste après sa création :',
 };
 
 const it: Messages = {
@@ -830,7 +830,7 @@ const it: Messages = {
   declinedDocs: 'Guida: {url}',
   declinedLater: 'Esegui {init} in qualsiasi momento per la configurazione guidata.',
   noTerminal:
-    'nessun terminale: vengono usate le risposte predefinite e non viene scritto nulla Esegui di nuovo la configurazione in un terminale per scrivere le modifiche.',
+    'nessun terminale: vengono usate le risposte predefinite e non viene scritto nulla. Esegui di nuovo la configurazione in un terminale per scrivere le modifiche.',
   dryRun: 'simulazione: vengono mostrate le modifiche previste e non viene scritto nulla.',
   interrupted: 'interrotto.',
   answerAgain: 'Rispondi di nuovo: quel valore non è valido qui.',
@@ -850,8 +850,8 @@ const it: Messages = {
   scopeAll: 'tutti',
   stepPasses: 'Passaggi',
   passesLesson:
-    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passaggi. Il comando dei test, con i suoi passi di preparazione, viene eseguito una volta per passaggio.',
-  passesQuestion: 'Passaggi del comando dei test nelle misurazioni?',
+    'Ogni regola richiede un numero minimo di campioni per endpoint (minSamples), e i campioni sono chiamate per test × test × passaggi. Il comando di test, con i suoi passi di preparazione, viene eseguito una volta per passaggio.',
+  passesQuestion: 'Passaggi del comando di test nelle misurazioni?',
   stepMeasure: 'Cosa misurare',
   measureApi:
     'api: tempi di risposta delle richieste al backend inviate dalle pagine e delle chiamate request nei test API, raggruppati in chiavi di endpoint come "GET /api/users/:id".',
@@ -865,7 +865,7 @@ const it: Messages = {
   measureQuestion: 'Cosa misurare? [{all}/api/steps]',
   onlyStepsNoSteps:
     'Solo step, ma nessun test.step trovato: non viene misurato nulla finché non aggiungi blocchi test.step.',
-  stepCommand: 'Comando dei test',
+  stepCommand: 'Comando di test',
   commandLesson1:
     'Scrivi il comando con cui esegui di solito i test, ad es. npm run e2e:qa. La procedura mette PW_PERF_MODE davanti nei comandi qui sotto, lo scrive nei job di CI e lo esegue per la verifica.',
   commandLesson2:
@@ -938,15 +938,15 @@ const it: Messages = {
   usageCommand:
     'Il comando di test è quello che usi già (es. npm run e2e o npx playwright test). Viene misurato ogni progetto di playwright.config che esegue: aggiungi --project <nome> per misurare un solo browser.',
   variablesTitle: 'Altre variabili:',
-  varCheck: 'un controllo rapido della configurazione su pochi test, senza file delle soglie',
-  varMaxTests: 'test eseguiti da un controllo (predefinito 10)',
+  varCheck: 'una verifica rapida della configurazione su pochi test, senza file delle soglie',
+  varMaxTests: 'test eseguiti da una verifica (predefinito 10)',
   varEnv: 'etichetta di ambiente: file delle soglie separati per ogni ambiente',
   varPasses: 'passaggi del comando di test in questa esecuzione',
   varPrune:
     'in un’esecuzione delle soglie: rimuove le voci degli endpoint che questa esecuzione non ha visto',
   filesTitle: 'File:',
   fileConfig: 'impostazioni del pacchetto; da committare',
-  fileThresholds: 'soglie (passi di test in .steps.json); da committare',
+  fileThresholds: 'soglie (step dei test in .steps.json); da committare',
   fileReport: 'report HTML e dati dell’ultima esecuzione; da non committare (in .gitignore)',
   oldScripts:
     'Gli script perf:* di una procedura precedente ({names}) non funzionano più; rimuovili.',
@@ -967,14 +967,14 @@ const it: Messages = {
   ciQuestion: 'Aggiungere i job di CI per soglie e misure ({platform})?',
   stepCheck: 'Verifica',
   checkLesson:
-    'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passate: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file di soglie non vengono toccati.',
+    'La verifica esegue il tuo comando di test come le esecuzioni reali, ma con 2 passaggi: prima PW_PERF_MODE=thresholds, poi PW_PERF_MODE=test. Le sue soglie vanno in una cartella temporanea eliminata alla fine; i tuoi file di soglie non vengono toccati.',
   checkQuestion: 'Eseguire la verifica adesso?',
   checkManual: 'Eseguila tu: {command}',
   checkExit: 'La verifica con PW_PERF_MODE={mode} è terminata con il codice {code}.',
   boxTitle: 'Azione richiesta: per ora non si misura nulla',
   boxWhy:
     'Senza la fixture perf il pacchetto non misura alcuna richiesta. La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
-  boxTitleSteps: 'Azione richiesta: gli endpoint non sono ancora misurati',
+  boxTitleSteps: 'Azione richiesta: endpoint non ancora misurati',
   boxWhySteps:
     'Senza la fixture perf il pacchetto non misura alcuna richiesta (le durate dei test.step sono misurate). La procedura non modifica i tuoi file di test; aggiungi a mano una di queste varianti:',
   boxFixtures: 'Se hai un file di fixture che esporta test:',
@@ -986,9 +986,9 @@ const it: Messages = {
   runLesson: 'Una misura è il tuo solito comando di test con PW_PERF_MODE.',
   nextCheck: '{command}: guarda cosa verrà misurato e quanto dura un’esecuzione completa.',
   nextThresholds:
-    '{command}: prima calcola le soglie sulle macchine di CI che misureranno: avvia il job manuale delle soglie (o questo comando lì) e scarica i file delle soglie dal suo artefatto. Finché non esistono, le misure usano le soglie predefinite, larghe. {estimate}',
+    '{command}: prima calcola le soglie sulle macchine di CI che misureranno: avvia il job manuale delle soglie (o questo comando lì) e scarica i file delle soglie dal suo artefatto. Finché non esistono, le misure usano le soglie larghe predefinite. {estimate}',
   nextThresholdsNoCi:
-    '{command}: prima calcola le soglie sulle macchine di CI che misureranno (vedi {url}). Finché i file delle soglie non esistono, le misure usano le soglie predefinite, larghe. {estimate}',
+    '{command}: prima calcola le soglie sulle macchine di CI che misureranno (vedi {url}). Finché i file delle soglie non esistono, le misure usano le soglie larghe predefinite. {estimate}',
   estimateUnknown: '(Il comando di verifica fornisce una stima.)',
   estimateAbove:
     '(Il riquadro iniziale dell’esecuzione mostra una stima del tempo basata sull’ultima esecuzione.)',
@@ -1003,15 +1003,15 @@ const it: Messages = {
     '{file} è nel pacchetto del workspace {pkg}: installa {self} nella radice del workspace (ad es. pnpm add -Dw) o anche in quel pacchetto.',
   manualDirectImports:
     'I file di test che importano test direttamente da @playwright/test non vengono misurati ({count}): {files}.',
-  manualDirectImportsHint: "Cambia l'import in ciascuno di essi:",
+  manualDirectImportsHint: 'Cambia l’import in ciascuno di essi:',
   manualDirectImportsModuleHint:
-    "Importa in essi test da {module}, oppure cambia l'import in ciascuno:",
+    'Importa in essi test da {module}, oppure cambia l’import in ciascuno:',
   passesSetup:
-    "globalSetup e i progetti di setup vengono eseguiti anch'essi una volta per passata e le loro richieste non sono misurate: rendi idempotente il seeding dei dati.",
+    'globalSetup e i progetti di setup vengono eseguiti anch’essi una volta per passaggio e le loro richieste non sono misurate: rendi idempotente il seeding dei dati.',
   commandReporter:
-    "Questo comando o il suo script imposta --reporter: un'esecuzione di misura o di soglie si ferma con RUN_REPORTER_FLAG. Usa un comando senza --reporter per la misura.",
+    'Questo comando o il suo script imposta --reporter: un’esecuzione di misura o di soglie si ferma con RUN_REPORTER_FLAG. Usa un comando senza --reporter per la misura.',
   commandEveryPass:
-    'Lo script esegue questo prima di playwright test, e viene eseguito a ogni passata: {prep}. Sposta una preparazione lunga in uno script a parte e indica qui uno script senza di essa.',
+    'Lo script esegue questo prima di playwright test, e viene eseguito a ogni passaggio: {prep}. Sposta una preparazione lunga in uno script a parte e indica qui uno script senza di essa.',
   noConfigFound:
     'Trovato playwright.config in sottocartelle; esegui la configurazione nella cartella di ciascuno che vuoi misurare:',
   checkCause: 'Causa più probabile: {cause}',
@@ -1031,7 +1031,7 @@ const uk: Messages = {
   declinedDocs: 'Посібник: {url}',
   declinedLater: 'Запустіть {init} будь-коли для налаштування з підказками.',
   noTerminal:
-    'немає термінала: використовуються типові відповіді, нічого не записується Запустіть налаштування ще раз у терміналі, щоб записати зміни.',
+    'немає термінала: використовуються типові відповіді, нічого не записується. Запустіть налаштування ще раз у терміналі, щоб записати зміни.',
   dryRun: 'пробний запуск: показано заплановані зміни, нічого не записується.',
   interrupted: 'перервано.',
   answerAgain: 'Відповідайте ще раз: це значення тут не підходить.',
@@ -1042,7 +1042,7 @@ const uk: Messages = {
   noShort: 'н',
   stepTests: 'Які тести',
   testsLesson:
-    'Вимірювання триває приблизно (тести × проходи) запусків тестів на 1 worker, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
+    'Вимірювання триває приблизно (тести × проходи) запусків тестів на 1 воркері, тож вимірюйте тести, що викликають важливі ендпоінти бекенду.',
   taggedFiles: 'Файли з тестами з тегом @perf: {count}.',
   noTaggedMessage: 'Жоден тест ще не має тегу @perf; вимірюються всі тести.',
   noTaggedHint:
@@ -1055,7 +1055,7 @@ const uk: Messages = {
   passesQuestion: 'Скільки проходів команди тестів під час вимірювання?',
   stepMeasure: 'Що вимірювати',
   measureApi:
-    'api: час відповіді запитів до бекенду, які надсилають сторінки, і викликів request в API-тестах, згрупований у ключі endpoint, наприклад "GET /api/users/:id".',
+    'api: час відповіді запитів до бекенду, які надсилають сторінки, і викликів request в API-тестах, згрупований у ключі ендпоінтів, наприклад "GET /api/users/:id".',
   measureSteps:
     'steps: тривалість ваших блоків test.step без змін у тестах; кожен крок стає ключем, наприклад "checkout › pay", з власним файлом порогів.',
   stepsPrivacy:
@@ -1129,7 +1129,7 @@ const uk: Messages = {
     '{pkg} вимірює час відповіді ендпоінтів бекенду (і за бажанням ваших блоків test.step) у наявних e2e-тестах, без змін у тестах.',
   stepProject: 'Що робить пакет і як його запускати',
   about2:
-    'Пакет сам обчислює пороги з ваших запусків, валить запуск при регресії продуктивності й залишає HTML-звіт.',
+    'Пакет сам обчислює пороги з ваших запусків, завершує запуск помилкою при регресії продуктивності й залишає HTML-звіт.',
   usageTitle: 'Як запускати:',
   usageCommandPlaceholder: '<ваша команда тестів>',
   usageThresholds: 'виконує тести кілька разів на 1 воркері й записує файли порогів;',
@@ -1227,7 +1227,7 @@ const ru: Messages = {
   declinedDocs: 'Руководство: {url}',
   declinedLater: 'Запустите {init} в любой момент для настройки с подсказками.',
   noTerminal:
-    'нет терминала: используются ответы по умолчанию, ничего не записывается Запустите настройку ещё раз в терминале, чтобы записать изменения.',
+    'нет терминала: используются ответы по умолчанию, ничего не записывается. Запустите настройку ещё раз в терминале, чтобы записать изменения.',
   dryRun: 'пробный запуск: показаны запланированные изменения, ничего не записывается.',
   interrupted: 'прервано.',
   answerAgain: 'Ответьте ещё раз: это значение здесь не подходит.',
@@ -1238,7 +1238,7 @@ const ru: Messages = {
   noShort: 'н',
   stepTests: 'Какие тесты',
   testsLesson:
-    'Измерение занимает примерно (тесты × проходы) запусков тестов на 1 worker, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
+    'Измерение занимает примерно (тесты × проходы) запусков тестов на 1 воркере, поэтому измеряйте тесты, которые вызывают важные эндпоинты бэкенда.',
   taggedFiles: 'Файлы с тестами с тегом @perf: {count}.',
   noTaggedMessage: 'Ни у одного теста пока нет тега @perf; измеряются все тесты.',
   noTaggedHint:
@@ -1251,7 +1251,7 @@ const ru: Messages = {
   passesQuestion: 'Сколько проходов команды тестов при измерении?',
   stepMeasure: 'Что измерять',
   measureApi:
-    'api: время ответа запросов к бэкенду, которые отправляют страницы, и вызовов request в API-тестах, сгруппированное в ключи endpoint, например "GET /api/users/:id".',
+    'api: время ответа запросов к бэкенду, которые отправляют страницы, и вызовов request в API-тестах, сгруппированное в ключи эндпоинтов, например "GET /api/users/:id".',
   measureSteps:
     'steps: длительность ваших блоков test.step без изменений в тестах; каждый шаг становится ключом, например "checkout › pay", с собственным файлом порогов.',
   stepsPrivacy:
@@ -1325,7 +1325,7 @@ const ru: Messages = {
     '{pkg} измеряет время ответа эндпоинтов бэкенда (и по желанию ваших блоков test.step) в уже существующих e2e-тестах, без изменений в тестах.',
   stepProject: 'Что делает пакет и как его запускать',
   about2:
-    'Пакет сам вычисляет пороги по вашим запускам, валит запуск при регрессии производительности и оставляет HTML-отчёт.',
+    'Пакет сам вычисляет пороги по вашим запускам, завершает запуск с ошибкой при регрессии производительности и оставляет HTML-отчёт.',
   usageTitle: 'Как запускать:',
   usageCommandPlaceholder: '<ваша команда тестов>',
   usageThresholds: 'выполняет тесты несколько раз на 1 воркере и записывает файлы порогов;',

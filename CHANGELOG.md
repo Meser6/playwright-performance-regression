@@ -182,6 +182,11 @@ details: performance failed (code 2) in …/outcome.json`.
 
 ### Fixed
 
+- Wizard translations reviewed: the no-terminal note has its missing full stop in every
+  language; one term per idea in each language (es "tests", it "passaggi" and "verifica",
+  uk/ru "воркер" and endpoint keys); French uses a no-break space before `:` `;` `?` `!` and
+  French and Italian use typographic apostrophes; the red box title fits 80 columns in every
+  language (it was cut in es, fr, pl and it).
 - `CONFIG_SLOW_MO` warns only about projects measured in the run. A run with `--project=api`
   warned about the `slowMo` of an e2e project that did not run (and of setup projects), in every
   run.

@@ -29,6 +29,28 @@ describe('init wizard texts', () => {
     }
   });
 
+  test('04-AC-23 the red box title line fits 80 columns in every language', () => {
+    // The title line is "✖ INIT_TEST_OBJECT_MANUAL · <title>" inside a box with 76 inner columns
+    // and is cut, not wrapped, when it is longer.
+    const prefix = '✖ INIT_TEST_OBJECT_MANUAL · '.length;
+    for (const lang of LANGUAGES) {
+      for (const key of ['boxTitle', 'boxTitleSteps'] as const) {
+        expect(prefix + MESSAGES[lang][key].length, `${lang}.${key}`).toBeLessThanOrEqual(76);
+      }
+    }
+  });
+
+  test('04-AC-23 typography: no-break space before French : ; ? ! and typographic apostrophes', () => {
+    for (const [key, text] of Object.entries(MESSAGES.fr)) {
+      expect(text, `fr.${key}`).not.toMatch(/ [:;?!](?:\s|$)/u);
+    }
+    for (const lang of ['fr', 'it'] as const) {
+      for (const [key, text] of Object.entries(MESSAGES[lang])) {
+        expect(text, `${lang}.${key}`).not.toMatch(/\p{L}'\p{L}/u);
+      }
+    }
+  });
+
   test('format fills the placeholders and keeps other braces', () => {
     expect(format('{a} and {b}, defineConfig({...})', { a: 'x', b: 2 })).toBe(
       'x and 2, defineConfig({...})',
