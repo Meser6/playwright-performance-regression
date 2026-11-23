@@ -216,6 +216,8 @@ export class RunSession {
   private startedAt: Date;
   private runId: string;
   private configDir: string;
+  /** Package name or config path for the report (02-REQ-42). */
+  private suite: { name: string; source: 'package' | 'config' } | null = null;
   private maxFailures = 0;
   private measured: ReadonlySet<string> = new Set();
   /** Projects that are only dependencies or teardowns of other projects (08-REQ-31). */
@@ -260,6 +262,8 @@ export class RunSession {
   /** Measured projects with a non-skipped test that has a batch, and those with requests. */
   private readonly instrumentedProjects = new Set<string>();
   private readonly projectsWithRequests = new Set<string>();
+  /** Measured projects with browser samples; the others with requests are request only (02-REQ-42). */
+  private readonly projectsWithBrowserRequests = new Set<string>();
   private playwrightVersion = '';
 
   constructor(host: ReporterHost, settings: RunSettings, options: SessionOptions = {}) {
@@ -341,6 +345,7 @@ export class RunSession {
     this.configDir =
       config.configFile === undefined ? config.rootDir : io.directoryOf(config.configFile);
     this.rootDir = config.rootDir;
+    this.suite = io.readSuite(this.configDir, config.configFile);
     // The outcome of an earlier run must never be read by a CI job (04-REQ-62); pass files of an
     // earlier run must never be merged (02-REQ-36). Passes 2…N leave both alone.
     if (this.passIndex === 1) {
@@ -555,6 +560,7 @@ export class RunSession {
       // Browser requests and APIRequestContext calls both count as requests (09-REQ-33, 15-REQ-13).
       const requestCount = batch.requests.length + batch.apiRequests.length;
       if (measured && requestCount > 0) this.projectsWithRequests.add(project);
+      if (measured && batch.requests.length > 0) this.projectsWithBrowserRequests.add(project);
       if (measured) {
         const n = this.checkRun.requests.get(project) ?? 0;
         this.checkRun.requests.set(project, n + requestCount);
@@ -662,6 +668,15 @@ export class RunSession {
     };
   }
 
+  /** A measured project with request calls and no browser sample (02-REQ-42). */
+  private requestOnly(p: { name: string; role: string }): boolean {
+    return (
+      p.role === 'measured' &&
+      this.projectsWithRequests.has(p.name) &&
+      !this.projectsWithBrowserRequests.has(p.name)
+    );
+  }
+
   private source(): RunSource {
     const browsers = this.conditions.projects
       .filter((p) => p.role === 'measured' && p.browserName !== null)
@@ -693,6 +708,7 @@ export class RunSession {
         finishedAt: finishedAt.toISOString(),
         env: this.settings.config.run.env,
         configDir: this.configDir,
+        ...(this.suite === null ? {} : { suite: this.suite }),
         ci: this.host.ci,
         host: this.host.host,
         playwright: { version: this.playwrightVersion },
@@ -705,7 +721,12 @@ export class RunSession {
         completed: this.completedPasses,
         failed: [...this.failedPasses],
       },
-      runConditions: this.conditions,
+      runConditions: {
+        ...this.conditions,
+        projects: this.conditions.projects.map((p) =>
+          this.requestOnly(p) ? { ...p, requestOnly: true as const } : p,
+        ),
+      },
       tests: this.testsResult(status),
       aggregates,
       evaluation,
@@ -779,6 +800,7 @@ export class RunSession {
         withArtifacts: this.withArtifacts,
         instrumentedProjects: [...this.instrumentedProjects].sort(),
         projectsWithRequests: [...this.projectsWithRequests].sort(),
+        projectsWithBrowserRequests: [...this.projectsWithBrowserRequests].sort(),
         pending: Object.fromEntries([...this.pending].sort((a, b) => (a[0] < b[0] ? -1 : 1))),
       },
       warnings: this.warnings.slice(this.beginWarnings),
@@ -913,6 +935,7 @@ export class RunSession {
     this.withArtifacts += c.withArtifacts;
     for (const p of c.instrumentedProjects) this.instrumentedProjects.add(p);
     for (const p of c.projectsWithRequests) this.projectsWithRequests.add(p);
+    for (const p of c.projectsWithBrowserRequests ?? []) this.projectsWithBrowserRequests.add(p);
     for (const [key, n] of Object.entries(c.pending)) {
       this.pending.set(key, (this.pending.get(key) ?? 0) + n);
     }
@@ -1262,6 +1285,7 @@ export class RunSession {
             name: p.name,
             role: p.role,
             browserName: p.browserName,
+            requestOnly: this.requestOnly(p),
             baseURL: config?.projects[i]?.use.baseURL ?? null,
             requests: c.requests.get(p.name) ?? 0,
             tests: c.tests.get(p.name) ?? 0,

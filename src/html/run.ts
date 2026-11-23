@@ -57,6 +57,14 @@ function card(id: string, title: string, ...content: HtmlValue[]): SafeHtml {
 function runSection(report: RunReport): SafeHtml {
   const { ci, host } = report;
   const items: [string, HtmlValue][] = [
+    ...(report.suite === undefined
+      ? []
+      : [
+          [
+            'Suite',
+            html`<code>${report.suite.name}</code> (${report.suite.source === 'package' ? 'package name' : 'config path'})`,
+          ] as [string, HtmlValue],
+        ]),
     ['Package', html`<code>${report.tool.name} v${report.tool.version}</code>`],
     ['Run ID', html`<code>${report.runId}</code>`],
     ['Started', formatDate(report.startedAt)],
@@ -208,7 +216,7 @@ function conditionsSection(report: RunReport): SafeHtml {
   const project = (p: RunReport['runConditions']['projects'][number]): SafeHtml =>
     join(
       html`<tr><th scope="row">${p.name === '' ? '(default)' : p.name}</th><td>${p.role}</td>`,
-      html`<td>${p.browserName ?? DASH}</td><td class="num">${p.repeatEach}</td><td class="num">${p.retries}</td></tr>`,
+      html`<td>${p.requestOnly === true ? 'no browser' : (p.browserName ?? DASH)}</td><td class="num">${p.repeatEach}</td><td class="num">${p.retries}</td></tr>`,
     );
   return card(
     'conditions-h',

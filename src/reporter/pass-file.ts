@@ -36,6 +36,8 @@ export interface PassCounters {
   withArtifacts: number;
   instrumentedProjects: string[];
   projectsWithRequests: string[];
+  /** Measured projects with browser request samples (02-REQ-42); the rest had request calls only. */
+  projectsWithBrowserRequests?: string[];
   pending: Record<string, number>;
 }
 

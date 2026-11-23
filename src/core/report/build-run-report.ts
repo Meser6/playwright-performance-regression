@@ -53,6 +53,7 @@ export interface RunReportInput {
     | 'finishedAt'
     | 'env'
     | 'configDir'
+    | 'suite'
     | 'ci'
     | 'host'
     | 'playwright'
@@ -263,6 +264,7 @@ export function buildRunReport(input: RunReportInput): RunReport {
     finishedAt: meta.finishedAt,
     env: meta.env,
     configDir: meta.configDir,
+    ...(meta.suite === undefined ? {} : { suite: { ...meta.suite } }),
     config: structuredClone(input.config),
     normalization: input.normalization,
     stepNormalization: input.stepNormalization,

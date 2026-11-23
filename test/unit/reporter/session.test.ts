@@ -957,6 +957,49 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
     expect(codes(report.warnings)).not.toContain('RUN_PROJECT_NO_REQUESTS');
   });
 
+  test('02-AC-23 suite from package.json or the config path; requestOnly for request-only projects', async () => {
+    const call = {
+      method: 'GET',
+      url: 'http://app.test/api/a',
+      status: 200 as const,
+      startTime: 1_763_460_000_000,
+      duration: 210.5,
+      source: 'request' as const,
+    };
+    // The config directory one level below a repository root, without package.json.
+    mkdirSync(join(dir, '.git'));
+    const app = join(dir, 'apps', 'web');
+    mkdirSync(app, { recursive: true });
+    const run = async (): Promise<RunReport> => {
+      const s = session(fakeHost(app), registered({}, { mode: 'test' }, ['chromium', 'api']));
+      s.begin(fakeConfig(app, { projects: [project('chromium'), project('api')] }), ROOT);
+      s.testBegin();
+      s.testEnd(fakeTest(app), result([batch([request('/api/b', 50)])]));
+      s.testBegin();
+      s.testEnd(
+        fakeTest(app, { project: 'api' }),
+        result([JSON.stringify(batch([], { apiRequests: [call] }))]),
+      );
+      await s.end({ status: 'passed' });
+      const text = readFileSync(join(app, 'reports/pw-perf', 'report.json'), 'utf8');
+      expect(validReport(JSON.parse(text)), JSON.stringify(validReport.errors)).toBe(true);
+      return JSON.parse(text) as RunReport;
+    };
+    let report = await run();
+    expect(report.suite).toEqual({ name: 'apps/web/playwright.config.ts', source: 'config' });
+    expect(report.runConditions.projects.map((p) => [p.name, p.requestOnly])).toEqual([
+      ['chromium', undefined],
+      ['api', true],
+    ]);
+    writeFileSync(join(app, 'package.json'), JSON.stringify({ name: '@acme/web' }));
+    report = await run();
+    expect(report.suite).toEqual({ name: '@acme/web', source: 'package' });
+    // A report without both fields stays valid.
+    const { suite: _suite, ...rest } = report;
+    rest.runConditions.projects = rest.runConditions.projects.map(({ requestOnly: _r, ...p }) => p);
+    expect(validReport(rest)).toBe(true);
+  });
+
   test('03-AC-15 an empty or "undefined" baseURL of a measured project warns, a dependency does not', async () => {
     for (const baseURL of ['', 'https://undefined.example.com']) {
       const d = tempDir();

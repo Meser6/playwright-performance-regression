@@ -83,6 +83,11 @@ export interface ReporterIo {
   removeFileSync(path: string): void;
   /** Nearest package.json scripts and lock files (09-REQ-32). */
   readPackageInfo(dir: string): PackageInfo;
+  /** Package name or config path of the run's config (02-REQ-42). */
+  readSuite(
+    configDir: string,
+    configFile: string | undefined,
+  ): { name: string; source: 'package' | 'config' } | null;
   /** A path in the temporary directory (04-REQ-49). */
   tempPath(name: string): string;
   /** Text of a file, null when missing (pass files, 02-REQ-36). */

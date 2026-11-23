@@ -11,6 +11,8 @@ export interface CheckProject {
   name: string;
   role: 'measured' | 'dependency' | 'teardown';
   browserName: string | null;
+  /** Request calls only, no browser sample (04-REQ-50, 02-REQ-42). */
+  requestOnly?: boolean;
   baseURL: string | null;
   requests: number;
   tests: number;
@@ -81,7 +83,12 @@ export function formatCheckSummary(
   lines.push(paint('Projects:', 'bold'));
   for (const p of s.projects) {
     if (p.role === 'measured') {
-      const browser = p.browserName === null ? '' : ` (${p.browserName})`;
+      const browser =
+        p.requestOnly === true
+          ? ' (no browser)'
+          : p.browserName === null
+            ? ''
+            : ` (${p.browserName})`;
       lines.push(
         `  measured    ${p.name}${browser} · baseURL ${p.baseURL ?? '(not set)'} · ${plural(p.requests, 'request')} in ${plural(p.tests, 'test')}`,
       );

@@ -568,6 +568,11 @@ export const runReport = obj(
     finishedAt: timestamp,
     env: envLabelOrNull,
     configDir: nonEmpty,
+    // Optional (02-REQ-42): left out when neither a package name nor a repository root is known.
+    suite: obj(
+      { name: nonEmpty, source: enumOf(['package', 'config']) },
+      { required: ['name', 'source'] },
+    ),
     config: packageConfig,
     normalization: fingerprint,
     stepNormalization: oneOf(fingerprint, nul),
@@ -614,6 +619,7 @@ export const runReport = obj(
               browserName: oneOf(str(), nul),
               repeatEach: int({ minimum: 1 }),
               retries: int({ minimum: 0 }),
+              requestOnly: constant(true),
             },
             { required: ['name', 'role', 'browserName', 'repeatEach', 'retries'] },
           ),

@@ -168,6 +168,54 @@ describe('04-AC-35 estimate and output', () => {
     expect(text).toBe(readFileSync(file, 'utf8'));
   });
 
+  test('04-AC-65 a project with request calls only is (no browser) in the check', () => {
+    const base: CheckSummary = {
+      packageName: 'pw-perf',
+      ran: 2,
+      selected: 2,
+      passed: 2,
+      failed: 0,
+      skippedByCheck: 0,
+      projects: [
+        {
+          name: 'api',
+          role: 'measured',
+          browserName: 'chromium',
+          requestOnly: true,
+          baseURL: null,
+          requests: 4,
+          tests: 1,
+        },
+        {
+          name: 'web',
+          role: 'measured',
+          browserName: 'chromium',
+          requestOnly: false,
+          baseURL: null,
+          requests: 3,
+          tests: 1,
+        },
+      ],
+      reporters: { kept: [], replaced: [], removed: [] },
+      requests: 7,
+      apiKeys: 2,
+      stepKeys: 0,
+      origins: [],
+      topKeys: [],
+      thresholdsFiles: [],
+      warnings: [],
+      toolErrors: [],
+      estimate: 'not available (no measured test ran)',
+    };
+    const text = formatCheckSummary(base, { width: 120, color: false });
+    expect(text).toContain(
+      '  measured    api (no browser) · baseURL (not set) · 4 requests in 1 test\n',
+    );
+    expect(text).toContain(
+      '  measured    web (chromium) · baseURL (not set) · 3 requests in 1 test\n',
+    );
+  });
+
   test('a measured project with 1 test and 1 request uses the singular', () => {
     const one: CheckSummary = {
       packageName: 'pw-perf',
