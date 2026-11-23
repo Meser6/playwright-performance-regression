@@ -61,7 +61,9 @@ export function reportDirRefusal(io: ReporterIo, input: ReportDirGuardInput): st
   }
   for (const entry of entries) {
     const name = entry.slice(entry.lastIndexOf('/') + 1);
-    if (isThresholdsFile(name, input.thresholdsPrefix))
+    // Directly in report.dir it is the copy of a thresholds run (10-REQ-24); the real files are
+    // protected through thresholds.dir above.
+    if (entry.includes('/') && isThresholdsFile(name, input.thresholdsPrefix))
       return `contains a thresholds file (${entry})`;
     if (isProjectMarker(name)) return `contains ${entry}, so it looks like a project folder`;
   }

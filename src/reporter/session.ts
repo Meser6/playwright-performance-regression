@@ -1438,8 +1438,9 @@ export class RunSession {
 
   /**
    * Derivation in thresholds mode (10, chapter 3): refusals and write errors are tool errors, so
-   * nothing is written for an incomplete run (04-REQ-36); the diff file failing is a warning.
-   * Returns the diffs and the absolute path of each thresholds file.
+   * nothing is written for an incomplete run (04-REQ-36); the copies in report.dir (10-REQ-24) and
+   * the diff file failing are warnings. Returns the diffs and the absolute path of each thresholds
+   * file.
    */
   private async deriveAndWrite(
     report: RunReport,
@@ -1462,6 +1463,8 @@ export class RunSession {
     }
     warnings.push(...derived.value.warnings);
     const absolute = io.thresholdsFilePaths(location);
+    const reportDir = io.resolvePath(this.configDir, cfg.report.dir);
+    let writeFailed = false;
     for (const file of derived.value.files) {
       if (file.content === null || !file.changed) continue;
       try {
@@ -1472,6 +1475,7 @@ export class RunSession {
           entries: Object.keys(file.content.entries).length,
         });
       } catch (error) {
+        writeFailed = true;
         toolErrors.push({
           code: 'THRESHOLDS_WRITE_FAILED',
           message: `The thresholds file ${loaded[file.kind].path} could not be written: ${error instanceof Error ? error.message : String(error)}`,
@@ -1483,10 +1487,15 @@ export class RunSession {
       diffThresholds(loaded[file.kind], file, report, cfg),
     );
     const filePaths = derived.value.files.map((file) => absolute[file.kind]);
-    const diffPath = io.resolvePath(
-      io.resolvePath(this.configDir, cfg.report.dir),
-      'thresholds-diff.md',
-    );
+    // No copies after a failed write (old files would look ready to commit) or in the wizard's
+    // check, whose thresholds are temporary (10-REQ-24).
+    if (!writeFailed && this.settings.mode.thresholdsDir === undefined) {
+      const copies = io.thresholdsFilePaths({ ...location, configDir: reportDir, dir: '.' });
+      for (const file of derived.value.files) {
+        await this.copyThresholdsFile(absolute[file.kind], copies[file.kind], warnings);
+      }
+    }
+    const diffPath = io.resolvePath(reportDir, 'thresholds-diff.md');
     try {
       await io.writeTextAtomic(
         diffPath,
@@ -1504,6 +1513,24 @@ export class RunSession {
       });
     }
     return { diffs, paths: filePaths };
+  }
+
+  /**
+   * A byte-identical copy of a thresholds file in report.dir, for the CI artifact (10-REQ-24).
+   * A missing file (a kind that was never written) has no copy; a failure is a warning.
+   */
+  private async copyThresholdsFile(from: string, to: string, warnings: Issue[]): Promise<void> {
+    const io = this.host.io;
+    try {
+      const text = await io.readTextFile(from);
+      if (text !== null) await io.writeTextAtomic(to, text);
+    } catch (error) {
+      warnings.push({
+        code: 'THRESHOLDS_COPY_FAILED',
+        message: `The thresholds file ${from} could not be copied to ${to}: ${error instanceof Error ? error.message : String(error)}`,
+        hint: 'The thresholds file itself is written; commit it from thresholds.dir or check that report.dir is writable.',
+      });
+    }
   }
 
   /** The outcome when building the report failed: exit code 3 with the error (02-REQ-27). */

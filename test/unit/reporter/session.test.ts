@@ -848,6 +848,91 @@ describe('reporter session in thresholds mode', () => {
   });
 });
 
+describe('10-AC-23 copies of the thresholds files in report.dir (10-REQ-24)', () => {
+  const reportDir = (): string => join(dir, 'reports/pw-perf');
+  // Compact JSON without a final newline: the copy must keep the bytes, not re-serialize.
+  const EMPTY_STEPS = '{"schemaVersion":1,"kind":"step","generated":null,"entries":{}}';
+
+  async function derive(
+    options: {
+      thresholds?: { dir: string };
+      mode?: { thresholdsDir: string };
+      block?: string;
+    } = {},
+  ): Promise<Outcome> {
+    const captured = fakeHost(dir);
+    const mode = { mode: 'thresholds' as const, env: 'qa', ...options.mode };
+    const input = options.thresholds === undefined ? {} : { thresholds: options.thresholds };
+    const s = session(captured, registered(input, mode));
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 30, PATHS, steady);
+    if (options.block !== undefined) {
+      // A directory where the copy goes, created after the cleaning of report.dir.
+      mkdirSync(join(reportDir(), options.block, 'inside'), { recursive: true });
+    }
+    await s.end({ status: 'passed' });
+    return readOutcome(join(reportDir(), 'outcome.json'));
+  }
+
+  test('written and unchanged files of the run env are copied byte for byte, other envs are not', async () => {
+    writeFileSync(join(dir, 'pw-perf-thresholds.steps.qa.json'), EMPTY_STEPS);
+    writeFileSync(join(dir, 'pw-perf-thresholds.json'), EMPTY_STEPS.replace('step', 'api'));
+    const outcome = await derive();
+    expect(outcome.exitCode).toBe(0);
+    // Only the api file changed; the step file stays as it was and is copied too.
+    expect(outcome.paths.thresholds).toEqual([join(dir, 'pw-perf-thresholds.qa.json')]);
+    for (const name of ['pw-perf-thresholds.qa.json', 'pw-perf-thresholds.steps.qa.json']) {
+      expect(
+        readFileSync(join(reportDir(), name)).equals(readFileSync(join(dir, name))),
+        name,
+      ).toBe(true);
+    }
+    expect(readFileSync(join(reportDir(), 'pw-perf-thresholds.steps.qa.json'), 'utf8')).toBe(
+      EMPTY_STEPS,
+    );
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.json'))).toBe(false);
+  });
+
+  test('a missing file of a kind is not copied', async () => {
+    await derive();
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.qa.json'))).toBe(true);
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.steps.qa.json'))).toBe(false);
+  });
+
+  test('a failed copy is the warning THRESHOLDS_COPY_FAILED and the run still exits with 0', async () => {
+    const outcome = await derive({ block: 'pw-perf-thresholds.qa.json' });
+    expect(outcome.exitCode).toBe(0);
+    expect(outcome.toolErrors).toEqual([]);
+    expect(existsSync(join(dir, 'pw-perf-thresholds.qa.json'))).toBe(true);
+    const report = readReport();
+    const warning = report.warnings.find((w) => w.code === 'THRESHOLDS_COPY_FAILED');
+    expect(warning?.message).toContain('could not be copied to');
+    expect(existsSync(join(reportDir(), 'thresholds-diff.md'))).toBe(true);
+  });
+
+  test('THRESHOLDS_WRITE_FAILED and the check of the wizard leave no copies', async () => {
+    writeFileSync(join(dir, 'blocked'), 'a file');
+    const failed = await derive({ thresholds: { dir: 'blocked' } });
+    expect(codes(failed.toolErrors)).toEqual(['THRESHOLDS_WRITE_FAILED']);
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.qa.json'))).toBe(false);
+
+    const temp = join(dir, 'check-thresholds');
+    const check = await derive({ thresholds: { dir: temp }, mode: { thresholdsDir: temp } });
+    expect(check.paths.thresholds).toEqual([join(temp, 'pw-perf-thresholds.qa.json')]);
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.qa.json'))).toBe(false);
+  });
+
+  test('04-AC-51 the next run empties report.dir despite the copies', async () => {
+    await derive();
+    writeFileSync(join(reportDir(), 'stale.txt'), 'old');
+    const outcome = await derive();
+    expect(codes(readReport().warnings)).not.toContain('RUN_REPORT_DIR_NOT_CLEANED');
+    expect(existsSync(join(reportDir(), 'stale.txt'))).toBe(false);
+    expect(outcome.exitCode).toBe(0);
+    expect(existsSync(join(reportDir(), 'pw-perf-thresholds.qa.json'))).toBe(true);
+  });
+});
+
 describe('environment mode without the CLI (04-REQ-62, 04-REQ-35)', () => {
   const outcomeJson = (): string => join(dir, 'reports/pw-perf', 'outcome.json');
 

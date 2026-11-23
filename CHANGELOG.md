@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Thresholds files in the report folder.** A thresholds run (`PW_PERF_MODE=thresholds`) writes
+  the thresholds files as before and also copies them, byte for byte and under the same names
+  (with the environment label), into `report.dir` (`reports/pw-perf/pw-perf-thresholds.json`,
+  `reports/pw-perf/pw-perf-thresholds.steps.json`): every file of the measured kinds, also when
+  this run left it unchanged, so one CI artifact of `reports/pw-perf/` holds everything to commit
+  next to `thresholds-diff.md`. No copies when writing a thresholds file failed or in the check of
+  the guided setup. A failed copy is the warning `THRESHOLDS_COPY_FAILED` and does not change the
+  exit code. The copies directly in `report.dir` no longer stop it from being emptied at the start
+  of the next run. The CI recipes in `examples/ci/` now upload only `reports/pw-perf/` in the
+  thresholds job (Azure: the `pw-perf-report` artifact in both modes).
 - **JUnit XML report.** A measurement run (`PW_PERF_MODE=test`) writes `reports/pw-perf/junit.xml`
   next to `report.json`, so GitLab, Jenkins and Azure DevOps show the result in their test views:
   one test case per endpoint and step key, a failure only for a blocking violation (exit code 2),

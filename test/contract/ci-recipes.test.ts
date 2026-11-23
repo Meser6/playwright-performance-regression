@@ -87,7 +87,8 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       expect(upload?.if).toBe('always()');
       const path = String(obj(upload?.with, 'with').path);
       expect(path).toContain('reports/pw-perf/');
-      if (id === 'thresholds') expect(path).toContain('pw-perf-thresholds*.json');
+      // The thresholds run copies its files into reports/pw-perf (10-REQ-24): one folder is enough.
+      expect(path).toBe('reports/pw-perf/');
     }
   });
 
@@ -118,7 +119,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     }
     const thresholds = obj(file['perf-thresholds'], 'perf-thresholds');
     expect(list(thresholds.rules, 'rules')).toEqual([{ when: 'manual' }]);
-    expect(obj(thresholds.artifacts, 'artifacts').paths).toContain('pw-perf-thresholds*.json');
+    expect(obj(thresholds.artifacts, 'artifacts').paths).toEqual(['reports/pw-perf/']);
     const perf = obj(file.perf, 'perf');
     expect(obj(list(perf.rules, 'rules')[0], 'rule').if).toBe('$CI_PIPELINE_SOURCE == "schedule"');
     expect(obj(perf.allow_failure, 'allow_failure').exit_codes).toBe(2);
@@ -158,9 +159,8 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
       const run = steps.find((s) => RUN.test(String(s.bash)));
       expect(run?.bash).toContain('##vso[task.complete result=SucceededWithIssues;]');
       expect(steps.find((s) => s.publish === 'reports/pw-perf')?.condition).toBe('always()');
-      expect(steps.find((s) => s.publish === 'pw-perf-thresholds')?.condition).toContain(
-        "'thresholds'",
-      );
+      // Both modes publish reports/pw-perf, which holds the thresholds files copies (10-REQ-24).
+      expect(steps.filter((s) => s.publish !== undefined)).toHaveLength(1);
     }
   });
 
@@ -231,8 +231,6 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     expect(text).toContain("cron('H 3 * * 1')");
     expect(text).toContain("sh(script: 'npm run e2e', returnStatus: true)");
     expect(text).toMatch(/if \(code == '2'\) \{\s+unstable\(/u);
-    expect(text).toMatch(
-      /always \{\s+archiveArtifacts artifacts: 'pw-perf-thresholds\*\.json, reports\/pw-perf\/\*\*'/u,
-    );
+    expect(text).toMatch(/always \{\s+archiveArtifacts artifacts: 'reports\/pw-perf\/\*\*'/u);
   });
 });
