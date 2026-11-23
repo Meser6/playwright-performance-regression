@@ -97,6 +97,6 @@ describe('init IMPORTANT box', () => {
     expect(stripAnsi(colored)).toBe(importantBox(input('en'), plain));
     const extra = importantBox(input('pl', { fixFirst: true, windows: true }), plain);
     expect(extra).toContain('Najpierw dodaj fixture perf (czerwona ramka wyżej)');
-    expect(extra).toContain('Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.');
+    expect(extra).toContain('Wersje tych poleceń dla PowerShell i cmd: docs/cli.md.');
   });
 });

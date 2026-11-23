@@ -2,8 +2,8 @@
 │ Qué hacer ahora, en este orden:                                              │
 │                                                                              │
 │ 1. Calcula los umbrales en CI, en el entorno donde se ejecutarán los tests   │
-│    (los tiempos de un portátil no sirven). Puede tardar varias horas: tu     │
-│    comando de tests se ejecuta varias veces en 1 worker.                     │
+│    (los tiempos medidos en un portátil no sirven). Puede tardar varias       │
+│    horas: tu comando de tests se ejecuta varias veces en 1 worker.           │
 │    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
 │                                                                              │
 │ 2. Descarga los archivos de umbrales de los artefactos de CI: la ejecución   │
