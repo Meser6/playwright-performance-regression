@@ -1,7 +1,7 @@
 ────────────────────────────────────────────────────────────
 playwright-performance-regression · mode: test · env: qa · 128 tests (127 passed, 1 failed, 2 skipped) · main@3f2a91c
 
-╭─ ⚠ Warnings (4) ─────────────────────────────────────────╮
+╭─ ⚠ Warnings (5) ─────────────────────────────────────────╮
 │ ⚠ TESTS_FAILED: 1 of 128 test executions failed; their   │
 │   samples are counted and the performance result still   │
 │   decides.                                               │
@@ -12,6 +12,14 @@ playwright-performance-regression · mode: test · env: qa · 128 tests (127 pas
 │   run.                                                   │
 │   Hint: Run the full suite, or remove stale entries with │
 │         `npx pw-perf thresholds --prune`.                │
+│ ⚠ THRESHOLDS_KEYS_ON_DEFAULTS: 1 endpoint key has no     │
+│   entry in pw-perf-thresholds.api.qa.json and is         │
+│   evaluated with default thresholds: GET /api/users/:id. │
+│   Hint: New endpoints or steps, or keys renamed by a     │
+│         code or normalization change, get the default    │
+│         thresholds. Add entries with                     │
+│         `PW_PERF_MODE=thresholds <your test command>`    │
+│         (environment "qa"); locked entries are kept.     │
 │ ⚠ THRESHOLDS_ENTRIES_NOT_EVALUATED: 1 key with an entry  │
 │   in the thresholds file had too few samples and was not │
 │   evaluated.                                             │
@@ -36,6 +44,13 @@ playwright-performance-regression · mode: test · env: qa · 128 tests (127 pas
 │ file entries not seen                │         3 │
 └──────────────────────────────────────┴───────────┘
 Muted: POST /api/reports/export until 2026-12-31 — "Depends on report service, tracked in backlog"
+
+On default thresholds (no entry in the thresholds file):
+┌────┬──────┬────────────────────────────────┬───┬────────┬───────┬────────────────┬────────┐
+│    │ kind │ key                            │ n │ median │   p95 │          limit │ result │
+├────┼──────┼────────────────────────────────┼───┼────────┼───────┼────────────────┼────────┤
+│ ✅ │ api  │ GET /api/users/:id             │ 8 │  90 ms │ 90 ms │ 2000 / 2000 ms │ pass   │
+└────┴──────┴────────────────────────────────┴───┴────────┴───────┴────────────────┴────────┘
 
 ┌────┬──────┬────────────────────────────────┬────────┬───────────────┬─────────┬────────┬─────┬──────┬───────┐
 │    │ kind │ key                            │ rule   │        actual │   limit │   over │   n │ src  │ flag  │

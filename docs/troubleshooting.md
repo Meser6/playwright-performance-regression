@@ -547,6 +547,17 @@ such empty files; a thresholds run fills them. It is reported only in test mode 
 kind that has keys in the run. Derive thresholds with `PW_PERF_MODE=thresholds npm run e2e` and
 commit the file. See [thresholds.md](thresholds.md).
 
+### THRESHOLDS_KEYS_ON_DEFAULTS
+
+**Warning.** The thresholds file of a kind (endpoints or steps) has entries, but some keys of this
+run have none, so they were evaluated with the default limits from `checks.*.limit`. These are
+usually new endpoints or steps, or keys renamed by a code or normalization change. The message
+gives the number of keys and up to three of them; the console lists them in a table under the
+counters (at most 10 rows) and the report shows them with the source `default`. It is reported
+only in test mode; keys with too few samples to be evaluated are not counted. Derive thresholds
+again with `PW_PERF_MODE=thresholds npm run e2e` to add entries (locked entries are kept) and
+commit the file. See [thresholds.md](thresholds.md#keys-without-an-entry).
+
 ### THRESHOLDS_FILE_OUTDATED
 
 **Warning.** The thresholds file has an older format version and was migrated while reading. The

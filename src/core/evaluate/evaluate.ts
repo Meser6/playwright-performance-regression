@@ -16,6 +16,7 @@ import {
   fileInfo,
   generatedWarnings,
   emptyFileWarning,
+  keysOnDefaultsWarning,
   missingFileWarning,
   outdatedWarning,
   plural,
@@ -234,6 +235,17 @@ export function evaluate(
         .filter((key) => !Object.hasOwn(byKind[kind], key))
         .sort(compareText);
       if (unseen.length > 0) warnings.push(unseenWarning(file.path, unseen));
+      // Evaluated keys without an entry in a file with entries (09-REQ-36): only in test mode;
+      // a thresholds run adds the entries itself, an empty file has THRESHOLDS_FILE_EMPTY.
+      if (opts.mode === 'test' && Object.keys(file.file.entries).length > 0) {
+        const onDefaults = Object.entries(perKey[kind])
+          .filter(([, e]) => e.thresholdSource === 'default' && e.result !== 'not-evaluated')
+          .map(([key]) => key)
+          .sort(compareText);
+        if (onDefaults.length > 0) {
+          warnings.push(keysOnDefaultsWarning(file.path, kind, onDefaults, opts.env));
+        }
+      }
     }
     unseenCount[kind] = unseen.length;
     thresholdFiles.push(fileInfo(file, unseen));

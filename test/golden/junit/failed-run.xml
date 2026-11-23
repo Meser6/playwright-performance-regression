@@ -18,9 +18,10 @@
       <system-out>Mode: test (env qa)
 Tests: 127 passed, 1 failed, 0 flaky, 2 skipped; passes 1/1
 Evaluation: failed (exit code 2)
-Warnings: 4
+Warnings: 5
 TESTS_FAILED: 1 of 128 test executions failed; their samples are counted and the performance result still decides.
 THRESHOLDS_UNSEEN_ENTRIES: 3 entries in pw-perf-thresholds.api.qa.json were not seen in this run.
+THRESHOLDS_KEYS_ON_DEFAULTS: 1 endpoint key has no entry in pw-perf-thresholds.api.qa.json and is evaluated with default thresholds: GET /api/users/:id.
 THRESHOLDS_ENTRIES_NOT_EVALUATED: 1 key with an entry in the thresholds file had too few samples and was not evaluated.
 THRESHOLDS_MUTED: 1 key is muted; its violations do not block.</system-out>
     </testcase>

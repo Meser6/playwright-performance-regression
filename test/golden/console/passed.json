@@ -362,7 +362,7 @@
           "muted": null,
           "reason": null,
           "result": "pass",
-          "thresholdSource": "default"
+          "thresholdSource": "file"
         },
         "fromFailedTests": 0,
         "samples": {
@@ -417,8 +417,8 @@
         "api": {
           "blockingViolations": 0,
           "fileEntriesNotEvaluated": 0,
-          "fromDefaults": 1,
-          "fromFile": 1,
+          "fromDefaults": 0,
+          "fromFile": 2,
           "keys": 2,
           "medianOnly": 1,
           "muted": 0,

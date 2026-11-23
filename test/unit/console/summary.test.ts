@@ -43,6 +43,73 @@ function expectGolden(name: string, width: number): void {
   expect(text).toBe(readFileSync(file, 'utf8'));
 }
 
+describe('09-AC-36 table of the keys on default thresholds (09-REQ-37)', () => {
+  /** failed-run with `count` more api keys on default thresholds; `fail` of them fail. */
+  function withDefaults(count: number, fail: { blocking: boolean }[] = []): RunReport {
+    const r = structuredClone(report('failed-run'));
+    const base = r.endpoints['GET /api/users/:id'];
+    if (base === undefined) throw new Error('no base key');
+    for (let i = 0; i < count; i += 1) {
+      const a = structuredClone(base);
+      const f = fail[i];
+      const median = a.evaluation.checks[0];
+      if (f !== undefined && median !== undefined) {
+        a.evaluation.result = 'fail';
+        a.evaluation.checks = [{ ...median, actual: 2500, passed: false, blocking: f.blocking }];
+      }
+      r.endpoints[`GET /api/new-${String(i).padStart(2, '0')}`] = a;
+    }
+    return r;
+  }
+  const rowsOf = (text: string): string[] =>
+    text
+      .split('\n')
+      .filter((l) => /^│ (✅|⚠|❌) +│ api +│ .*│ (pass|fail) +│$/u.test(l))
+      .map((l) => l.replace(/\s*│\s*/gu, '|').replace(/^\||\|$/gu, ''));
+
+  test('keys with a violation first, then passed ones, with n, median, percentile and limits', () => {
+    const text = formatSummary(withDefaults(3, [{ blocking: false }, { blocking: true }]), {
+      width: 120,
+      color: false,
+    });
+    expect(text).toContain('On default thresholds (no entry in the thresholds file):');
+    expect(rowsOf(text)).toEqual([
+      '❌|api|GET /api/new-01|8|90 ms|90 ms|2000 / 2000 ms|fail',
+      '⚠|api|GET /api/new-00|8|90 ms|90 ms|2000 / 2000 ms|fail',
+      '✅|api|GET /api/new-02|8|90 ms|90 ms|2000 / 2000 ms|pass',
+      '✅|api|GET /api/users/:id|8|90 ms|90 ms|2000 / 2000 ms|pass',
+    ]);
+    const header = text.split('\n').find((l) => l.includes('│ median │'));
+    expect(header?.replace(/\s*│\s*/gu, '|')).toBe('||kind|key|n|median|p95|limit|result|');
+  });
+
+  test('at most 10 rows, then the "more" line', () => {
+    const text = formatSummary(withDefaults(11), { width: 120, color: false });
+    expect(rowsOf(text)).toHaveLength(10);
+    expect(text).toContain('  … and 2 more keys on default thresholds (see report)');
+    const dumb = formatSummary(withDefaults(1), { width: 120, color: false, ascii: true });
+    expect(dumb).toContain('| ✔ | api  | GET /api/new-00');
+  });
+
+  test('no table in thresholds mode, with a missing file or a file without entries', () => {
+    const title = 'On default thresholds';
+    const thresholds = withDefaults(1);
+    thresholds.mode = 'thresholds';
+    expect(formatSummary(thresholds, { width: 120, color: false })).not.toContain(title);
+    const missingFile = withDefaults(1);
+    missingFile.thresholdFiles = missingFile.thresholdFiles.map((f) => ({
+      ...f,
+      status: 'missing' as const,
+    }));
+    expect(formatSummary(missingFile, { width: 120, color: false })).not.toContain(title);
+    // No key from the file and no unseen entries: the file is empty (THRESHOLDS_FILE_EMPTY).
+    const empty = withDefaults(1);
+    empty.thresholdFiles = empty.thresholdFiles.map((f) => ({ ...f, unseenKeys: [] }));
+    for (const a of Object.values(empty.endpoints)) a.evaluation.thresholdSource = 'default';
+    expect(formatSummary(empty, { width: 120, color: false })).not.toContain(title);
+  });
+});
+
 describe('console summary golden files', () => {
   test('golden reports are valid run reports', () => {
     for (const [name] of CASES) {
@@ -140,7 +207,7 @@ describe('console summary golden files', () => {
       new RegExp(`^${ESC}\\[1mplaywright-performance-regression · mode: test`, 'u'),
     );
     // Boxes: yellow frame with a bold title for warnings, red for errors.
-    expect(colored).toContain(`${ESC}[33m╭─ ${ESC}[0m${ESC}[1m⚠ Warnings (4)${ESC}[0m${ESC}[33m ─`);
+    expect(colored).toContain(`${ESC}[33m╭─ ${ESC}[0m${ESC}[1m⚠ Warnings (5)${ESC}[0m${ESC}[33m ─`);
     expect(colored).toContain(`${ESC}[1mMuted:${ESC}[0m`);
     expect(colored).toContain(`${ESC}[1mReport:${ESC}[0m`);
     expect(colored).toContain(`${ESC}[33m⚠ TESTS_FAILED${ESC}[0m: `);
@@ -175,12 +242,12 @@ describe('console summary golden files', () => {
 
   test('09-AC-29 NO_COLOR keeps frames and emoji; TERM=dumb gives ASCII frames and text marks', () => {
     const plain = formatSummary(report('failed-run'), { width: 120, color: false });
-    expect(plain).toContain('╭─ ⚠ Warnings (4) ─');
+    expect(plain).toContain('╭─ ⚠ Warnings (5) ─');
     expect(plain).toContain('│ ❌ │ api  │ GET /api/health');
     expect(plain).toContain('│ ❌  FAILED  9 blocking violations in 5 keys (tolerance: 0) │');
     const dumb = formatSummary(report('failed-run'), { width: 120, color: false, ascii: true });
-    expect(dumb).toMatch(/^[\x20-\x7e✖!─·…—›\n]*$/u);
-    expect(dumb).toContain('+- Warnings (4) -');
+    expect(dumb).toMatch(/^[\x20-\x7e✔✖!─·…—›\n]*$/u);
+    expect(dumb).toContain('+- Warnings (5) -');
     expect(dumb).toContain('| ✖ | api  | GET /api/health');
     expect(dumb).toContain('| ! | api  | POST /api/reports/export');
     expect(dumb).toContain('| ✖  FAILED  9 blocking violations in 5 keys (tolerance: 0) |');
@@ -242,8 +309,7 @@ describe('console summary golden files', () => {
         .map((l) => l.replace(/\s*│\s*/gu, '|').replace(/^\||\|$/gu, ''));
     expect(rows(formatSummary(report('passed'), { width: 120, color: false }))).toEqual([
       'keys|2',
-      'from file|1',
-      'on default thresholds|1',
+      'from file|2',
       'checked by median only (few samples)|1',
     ]);
     expect(rows(formatSummary(report('failed-run'), { width: 120, color: false }))).toEqual([

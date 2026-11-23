@@ -184,3 +184,11 @@ run; the thresholds run that creates the file does not. The guided setup creates
 (no entries); until a thresholds run fills them, a test-mode run warns with
 `THRESHOLDS_FILE_EMPTY` in the same way, and the thresholds run fills them without treating them as
 hand-written.
+
+When the file has entries but some keys of the run do not (usually new endpoints or steps, or
+keys renamed by a code or normalization change), a test-mode run warns with
+`THRESHOLDS_KEYS_ON_DEFAULTS`, once per kind, and the console prints a table of those keys under
+the counters: kind, key, samples, median, the evaluated percentile, the default limits applied
+(median / percentile) and the result, keys with a violation first, at most 10 rows. Derive
+thresholds again (`PW_PERF_MODE=thresholds npm run e2e`) to add entries for them; locked entries
+are kept.

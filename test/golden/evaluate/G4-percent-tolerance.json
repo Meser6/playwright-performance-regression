@@ -103,7 +103,7 @@
       {"kind":"api","key":"GET /api/c","rule":"percentile","actual":1500,"limit":1400,"hardLimitExceeded":false,"blocking":true}
     ],
     "notEvaluated": [],
-    "warnings": [],
+    "warnings": ["THRESHOLDS_KEYS_ON_DEFAULTS"],
     "toolErrors": []
   }
 }

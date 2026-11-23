@@ -50,6 +50,30 @@ export function emptyFileWarning(path: string, kind: Kind, env: string | null): 
   };
 }
 
+/** Keys named in the THRESHOLDS_KEYS_ON_DEFAULTS message; the console table lists them (09-REQ-36). */
+export const MAX_KEYS_IN_MESSAGE = 3;
+
+/**
+ * THRESHOLDS_KEYS_ON_DEFAULTS (09-REQ-36, 09-D-22): keys evaluated with default thresholds
+ * because a file with entries has no entry for them; one warning per kind. `keys` are sorted.
+ */
+export function keysOnDefaultsWarning(
+  path: string,
+  kind: Kind,
+  keys: readonly string[],
+  env: string | null,
+): Issue {
+  const one = keys.length === 1;
+  const named = keys.slice(0, MAX_KEYS_IN_MESSAGE).join(', ');
+  const rest = keys.length - MAX_KEYS_IN_MESSAGE;
+  const list = rest > 0 ? `${named} and ${plural(rest, 'other key')}` : named;
+  return {
+    code: 'THRESHOLDS_KEYS_ON_DEFAULTS',
+    message: `${plural(keys.length, `${KIND_NOUN[kind]} key`)} ${one ? 'has' : 'have'} no entry in ${path} and ${one ? 'is' : 'are'} evaluated with default thresholds: ${list}.`,
+    hint: `New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}; locked entries are kept.`,
+  };
+}
+
 /** major.minor of a version such as 1.57.2 (09-REQ-04). */
 export function majorMinor(version: string): string {
   return version.split('.').slice(0, 2).join('.');

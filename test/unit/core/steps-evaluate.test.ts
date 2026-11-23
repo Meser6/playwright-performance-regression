@@ -226,3 +226,72 @@ describe('10-AC-22 derivation over the empty files of the wizard', () => {
     expect(result.value.files.find((f) => f.kind === 'step')?.changed).toBe(false);
   });
 });
+
+describe('09-AC-36 keys without an entry on default thresholds (09-REQ-36)', () => {
+  const ENDPOINTS = aggregates({
+    'GET /api/entry': { durations: [[30, 100]] },
+    'GET /api/a': { durations: [[30, 100]] },
+    'GET /api/b': { durations: [[30, 100]] },
+    'GET /api/c': { durations: [[30, 100]] },
+    'GET /api/slow': { durations: [[30, 3000]] },
+    'GET /api/rare': { durations: [[2, 100]] },
+  }).endpoints;
+  const withEntry = () => loaded('api', { 'GET /api/entry': { median: 500 } });
+  const run = (
+    api: ReturnType<typeof loaded>,
+    mode: 'test' | 'thresholds' = 'test',
+    env: string | null = null,
+  ) =>
+    evaluate(
+      { endpoints: ENDPOINTS },
+      files(api, missing('step')),
+      STEPS_OFF,
+      options({ mode, env }),
+    );
+  const onDefaults = (e: ReturnType<typeof run>) =>
+    e.warnings.filter((w) => w.code === 'THRESHOLDS_KEYS_ON_DEFAULTS');
+
+  test('one warning per kind with the count, three keys and the derive hint', () => {
+    const e = run(withEntry());
+    expect(onDefaults(e)).toEqual([
+      {
+        code: 'THRESHOLDS_KEYS_ON_DEFAULTS',
+        message:
+          '4 endpoint keys have no entry in pw-perf-thresholds.json and are evaluated with default thresholds: GET /api/a, GET /api/b, GET /api/c and 1 other key.',
+        hint: 'New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with `PW_PERF_MODE=thresholds <your test command>`; locked entries are kept.',
+      },
+    ]);
+    // The key with too few samples took no limit and is not counted.
+    expect(e.perKey.api['GET /api/rare']?.result).toBe('not-evaluated');
+    expect(e.counts.api.fromDefaults).toBe(4);
+    // The warning does not change the evaluation: the default-limit violation still blocks.
+    expect(e.status).toBe('failed');
+    expect(onDefaults(run(withEntry(), 'test', 'qa'))[0]?.hint).toContain(
+      '<your test command>` (environment "qa"); locked',
+    );
+  });
+
+  test('one key, and step keys', () => {
+    const one = evaluate(
+      {
+        endpoints: aggregates({ 'GET /api/a': { durations: [[30, 100]] } }).endpoints,
+        steps: STEP,
+      },
+      files(loaded('api', { 'GET /api/x': {} }), loaded('step', { 'other › step': {} })),
+      STEPS_ON,
+      options(),
+    );
+    expect(onDefaults(one).map((w) => w.message)).toEqual([
+      '1 endpoint key has no entry in pw-perf-thresholds.json and is evaluated with default thresholds: GET /api/a.',
+      '1 step key has no entry in pw-perf-thresholds.steps.json and is evaluated with default thresholds: login › submit.',
+    ]);
+  });
+
+  test('none in thresholds mode, with a missing file or with an empty file', () => {
+    expect(onDefaults(run(withEntry(), 'thresholds'))).toEqual([]);
+    expect(onDefaults(run(missing('api')))).toEqual([]);
+    const empty = run(loaded('api'));
+    expect(onDefaults(empty)).toEqual([]);
+    expect(empty.warnings.map((w) => w.code)).toContain('THRESHOLDS_FILE_EMPTY');
+  });
+});

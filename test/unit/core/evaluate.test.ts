@@ -576,7 +576,11 @@ describe('counters (09, chapter 7)', () => {
       blockingViolations: 2,
       muted: 0,
     });
-    expect(codes(e)).toEqual(['THRESHOLDS_UNSEEN_ENTRIES', 'THRESHOLDS_ENTRIES_NOT_EVALUATED']);
+    expect(codes(e)).toEqual([
+      'THRESHOLDS_UNSEEN_ENTRIES',
+      'THRESHOLDS_KEYS_ON_DEFAULTS',
+      'THRESHOLDS_ENTRIES_NOT_EVALUATED',
+    ]);
   });
 
   test('09-AC-17 unseen entries: sorted, locked included, one warning, n = 0 is seen', () => {
@@ -734,7 +738,7 @@ describe('muting (09, chapter 6.5)', () => {
   function run(until: string, startedAt = '2026-11-18T23:59:59.000Z'): Evaluation {
     return evaluate(
       aggregates({ [KEY]: { durations: [[20, 3000]] }, 'GET /other': { durations: [[20, 100]] } }),
-      files(loaded('api', { [KEY]: muted(until) })),
+      files(loaded('api', { [KEY]: muted(until), 'GET /other': {} })),
       config(),
       options({ startedAt }),
     );

@@ -102,7 +102,7 @@
       {"kind":"api","key":"POST /api/orders","rule":"percentile","actual":1600,"limit":1400,"hardLimitExceeded":false,"blocking":false}
     ],
     "notEvaluated": [],
-    "warnings": [],
+    "warnings": ["THRESHOLDS_KEYS_ON_DEFAULTS"],
     "toolErrors": []
   }
 }
