@@ -725,3 +725,26 @@ describe('report details after F2 (11, chapters 6.3–6.14)', () => {
     expect(page(report)).not.toContain('TTFB p50</button>');
   });
 });
+
+describe('suite in the header (11-REQ-49, 02-REQ-42)', () => {
+  test('11-AC-42 the suite names the report in the header, title and Run; without it the package', () => {
+    const report = fullRun();
+    report.suite = { name: '@acme/web', source: 'package' };
+    report.runConditions.projects.push({
+      ...(report.runConditions.projects[0] as RunReport['runConditions']['projects'][number]),
+      name: 'api',
+      requestOnly: true,
+    });
+    const html = page(report);
+    expect(html).toContain('<title>@acme/web · Performance report run-1</title>');
+    expect(html).toContain('<b class="suite" title="@acme/web">@acme/web</b>');
+    expect(html).toContain('<dt>Suite</dt><dd><code>@acme/web</code> (package name)</dd>');
+    expect(html).toMatch(/<th scope="row">api<\/th><td>measured<\/td><td>no browser<\/td>/u);
+    const plain = page(fullRun());
+    expect(plain).toContain('<title>Performance report run-1</title>');
+    expect(plain).toContain(
+      '<b>playwright-performance-regression</b> <span class="ver">v0.1.0</span>',
+    );
+    expect(plain).not.toContain('<dt>Suite</dt>');
+  });
+});

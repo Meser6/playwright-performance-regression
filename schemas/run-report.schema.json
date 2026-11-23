@@ -45,6 +45,16 @@
       "type": "string",
       "minLength": 1
     },
+    "suite": {
+      "description": "What the report is about (02-REQ-42, 11-REQ-49): the name of the package.json in configDir (source package), else the Playwright config path relative to the repository root (source config). Left out when neither is known.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "source": {"enum": ["package", "config"]}
+      }
+    },
     "config": {
       "description": "Effective package config after merging with defaults (00, 4.4), in JSON form (02-REQ-17, 03).",
       "$ref": "config.schema.json"
@@ -125,7 +135,11 @@
               },
               "browserName": {"oneOf": [{"type": "string"}, {"type": "null"}]},
               "repeatEach": {"type": "integer", "minimum": 1},
-              "retries": {"type": "integer", "minimum": 0}
+              "retries": {"type": "integer", "minimum": 0},
+              "requestOnly": {
+                "description": "true for a measured project that recorded request calls and no browser sample (02-REQ-42); left out otherwise.",
+                "const": true
+              }
             }
           }
         },

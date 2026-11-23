@@ -18,7 +18,7 @@ export {
 export { writeJsonStable, writeTextAtomic } from './json.ts';
 export { runPass } from './process.ts';
 export type { PassExit } from './process.ts';
-export { readPackageInfo } from './package-info.ts';
+export { readPackageInfo, readSuite } from './package-info.ts';
 export type { PackageInfo } from './package-info.ts';
 export { readCiInfo, readHostInfo } from './run-metadata.ts';
 export { loadThresholds, thresholdsFileName, thresholdsFilePaths } from './thresholds.ts';

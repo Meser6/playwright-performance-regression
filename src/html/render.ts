@@ -50,7 +50,10 @@ function header(report: RunReport): SafeHtml {
   const ci = report.ci;
   return join(
     html`<header class="appbar"><div class="wrap">`,
-    html`<p class="brand">${logo()}<b>${report.tool.name}</b> <span class="ver">v${report.tool.version}</span></p>`,
+    // The suite tells reports of several configs apart (11-REQ-49, F2 decision 19).
+    report.suite === undefined
+      ? html`<p class="brand">${logo()}<b>${report.tool.name}</b> <span class="ver">v${report.tool.version}</span></p>`
+      : html`<p class="brand">${logo()}<b class="suite" title="${report.suite.name}">${report.suite.name}</b></p>`,
     // Focusable: the chips scroll sideways on narrow screens (11-REQ-18).
     html`<div class="meta" role="group" aria-label="Run details" tabindex="0">`,
     report.env === null ? null : chip('env', html`env <b>${report.env}</b>`),
@@ -213,7 +216,7 @@ export function renderHtmlReport(report: RunReport): string {
     html`<meta name="viewport" content="width=device-width, initial-scale=1">`,
     html`<meta name="color-scheme" content="light dark">`,
     html`<meta name="generator" content="${`${PACKAGE_NAME} ${report.tool.version}`}">`,
-    html`<link rel="icon" type="image/svg+xml" href="${FAVICON_URI}"><title>Performance report ${report.runId}</title>`,
+    html`<link rel="icon" type="image/svg+xml" href="${FAVICON_URI}"><title>${report.suite === undefined ? '' : `${report.suite.name} · `}Performance report ${report.runId}</title>`,
     html`<style>${trustedHtml(STYLES)}</style></head>`,
   );
   const main = join(

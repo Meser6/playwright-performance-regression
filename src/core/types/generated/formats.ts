@@ -893,6 +893,13 @@ export interface RunReport {
    * Absolute directory of the Playwright config file; base for relative paths (01-REQ-21).
    */
   configDir: string;
+  /**
+   * What the report is about (02-REQ-42, 11-REQ-49): the name of the package.json in configDir (source package), else the Playwright config path relative to the repository root (source config). Left out when neither is known.
+   */
+  suite?: {
+    name: string;
+    source: 'package' | 'config';
+  };
   config: PackageConfig;
   /**
    * Normalization fingerprint of this run (07-REQ-21); copied to generated.normalization of derived thresholds files and compared with it (09-REQ-04).
@@ -975,6 +982,10 @@ export interface RunReport {
       browserName: string | null;
       repeatEach: number;
       retries: number;
+      /**
+       * true for a measured project that recorded request calls and no browser sample (02-REQ-42); left out otherwise.
+       */
+      requestOnly?: true;
     }[];
     /**
      * Playwright settings changed by withPerf(), e.g. 'use.video', 'retries' (01-REQ-37).

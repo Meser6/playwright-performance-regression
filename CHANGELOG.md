@@ -41,6 +41,12 @@ chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.proj
 
 ### Changed
 
+- The report names what it is about: the run report has an optional `suite` (the package name
+  from `package.json` next to the Playwright config, else the config path from the repository
+  root), shown in the HTML header, the page title and Run & config. A measured project with only
+  `request` calls is marked `requestOnly` and reads "no browser" in Run & config and in the
+  `PW_PERF_MODE=check` output.
+
 - HTML report: a key without timed samples shows its other statuses under Samples and in its
   details, e.g. "5 × 404 (not timed)"; the Endpoints and Steps tab counts are neutral with a red
   badge of keys with violations; the thresholds file source is shortened to the version and the
