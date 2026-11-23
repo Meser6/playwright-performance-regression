@@ -5,7 +5,8 @@
 #   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
 #   3. The pipeline runs every Monday with mode "test" and fails on a regression.
 # The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) ends the job
-# as "succeeded with issues", 3 (tool or config error) fails it.
+# as "succeeded with issues", 3 (tool or config error) fails it. In mode "test" the run also
+# publishes reports/pw-perf/junit.xml to the Tests tab; that step never fails the job.
 trigger: none
 pr: none
 
@@ -57,6 +58,15 @@ jobs:
         artifact: pw-perf-thresholds
         condition: and(always(), eq('${{ parameters.mode }}', 'thresholds'))
         displayName: Publish the thresholds files
+      - task: PublishTestResults@2
+        condition: and(always(), eq('${{ parameters.mode }}', 'test'))
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: reports/pw-perf/junit.xml
+          testRunTitle: pw-perf
+          failTaskOnFailedTests: false
+          failTaskOnMissingResultsFile: false
+        displayName: Publish the test results
       - publish: reports/pw-perf
         artifact: pw-perf-report
         condition: always()

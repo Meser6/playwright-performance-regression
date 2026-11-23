@@ -69,6 +69,7 @@ measurement did not work. See [exit codes](cli.md#exit-codes) for all codes.
   sample of the first blocking keys.
 - `reports/pw-perf/report.html` is a self-contained page: download the artifact and open it.
 - `reports/pw-perf/report.json` is the machine-readable report.
+- `reports/pw-perf/junit.xml` is the result in JUnit XML (see below).
 
 Platform notes on the HTML report:
 
@@ -79,6 +80,40 @@ Platform notes on the HTML report:
 - **Azure Pipelines** does not display HTML artifacts in the browser. Download the
   `pw-perf-report` artifact and open `report.html` locally.
 - **GitHub Actions** and **GitLab CI** offer the artifact as a download.
+
+## Test results in the CI (JUnit)
+
+A measurement run (`PW_PERF_MODE=test`) also writes `reports/pw-perf/junit.xml`, and the recipes
+publish it, so the result shows up next to your functional tests:
+
+| Platform        | Where                                                                 | Recipe step                                                 |
+| --------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| GitLab CI       | the pipeline's **Tests** tab and the merge request widget             | `artifacts: reports: junit:` in the `perf` job              |
+| Jenkins         | **Test Result** of the build, and the JUnit trend chart               | `junit` in `post { always { ... } }`                        |
+| Azure Pipelines | the **Tests** tab of the run                                          | `PublishTestResults@2`, in mode `test` only                 |
+| GitHub Actions  | no test view of its own: the file is in the `pw-perf-report` artifact | an optional test report action, commented out in the recipe |
+
+How to read it:
+
+- There is one test per endpoint and step key, named exactly like its entry in the thresholds
+  file, plus one test `measurement run` for the run as a whole.
+- **A failed test means what exit code 2 or 3 means.** A key fails only on a blocking violation;
+  `measurement run` has an error when the run had a tool error (exit code 3). The message shows
+  the rule, the measured value, the limit and how much it is over, e.g.
+  `p95 1500 ms > limit 1400 ms (+7%), 240 samples, thresholds file`.
+- Violations that do not block (within `gate.tolerance`, default thresholds with
+  `gate.defaultThresholds: 'warn'`) are passed tests with the violation in their output. Muted
+  keys and keys with too few samples are skipped, with the reason.
+- The test time of a key is its median.
+- The job status still comes from `outcome.json` only: the recipes publish the file without
+  letting it fail or mark the job (Jenkins `skipMarkingBuildUnstable: true`, Azure
+  `failTaskOnFailedTests: false`).
+- Thresholds runs and checks write no `junit.xml`; Jenkins allows empty results for
+  `MODE=thresholds`, and Azure publishes only in mode `test`.
+
+With your own [`report.dir`](configuration.md#reportdir), change the path in the recipe step. To
+turn the file off, set [`report.junit`](configuration.md#reportjunit) to `false` (and remove the
+step, or leave it: GitLab only warns about a missing file, Jenkins and Azure accept it).
 
 ## Isolation of the environment and the runner
 

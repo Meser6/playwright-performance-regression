@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/.github/workflows/perf.yml
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,85 @@
 +# Performance runs with playwright-performance-regression (pw-perf). Save as
 +# .github/workflows/perf.yml. Recommended path (docs/ci.md):
 +#   1. Run the "thresholds" job by hand (Actions > Performance > Run workflow, mode: thresholds).
@@ -78,6 +78,14 @@
 +          name: pw-perf-report
 +          path: reports/pw-perf/
 +          retention-days: 30
++      # Optional: GitHub has no test view of its own; reports/pw-perf/junit.xml is in the
++      # pw-perf-report artifact. To show it as a check run, add "permissions: checks: write" to
++      # this job and uncomment a test report action, e.g.:
++      # - name: Show the JUnit result
++      #   if: always()
++      #   uses: mikepenz/action-junit-report@v5
++      #   with:
++      #     report_paths: reports/pw-perf/junit.xml
 --- a/.gitignore
 +++ b/.gitignore
 @@ -1,2 +1,3 @@

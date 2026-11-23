@@ -4,14 +4,15 @@
 +reports/pw-perf/
 --- /dev/null
 +++ b/Jenkinsfile.perf
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +// Performance runs with playwright-performance-regression (pw-perf). Use as the script of a
 +// pipeline job, e.g. "Jenkinsfile.perf". Recommended path (docs/ci.md):
 +//   1. Build with parameters, MODE=thresholds. Thresholds come from the same agents that measure.
 +//   2. Download the archived pw-perf-thresholds*.json files and commit them.
 +//   3. The job runs every Monday with MODE=test and fails on a regression.
 +// The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) marks the
-+// build UNSTABLE, 3 (tool or config error) fails it.
++// build UNSTABLE, 3 (tool or config error) fails it. The JUnit plugin shows
++// reports/pw-perf/junit.xml (MODE=test) as Test Result; it never changes the build status.
 +pipeline {
 +  agent any
 +  parameters {
@@ -47,6 +48,7 @@
 +  post {
 +    always {
 +      archiveArtifacts artifacts: 'pw-perf-thresholds*.json, reports/pw-perf/**', allowEmptyArchive: true
++      junit testResults: 'reports/pw-perf/junit.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true
 +    }
 +  }
 +}

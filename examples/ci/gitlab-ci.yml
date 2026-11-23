@@ -5,7 +5,9 @@
 #   3. The "perf" job runs in scheduled pipelines (create a weekly schedule) and can be started by
 #      hand; it fails on a regression.
 # The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) is a soft
-# failure, 3 (tool or config error) fails the job.
+# failure, 3 (tool or config error) fails the job. The perf job also publishes
+# reports/pw-perf/junit.xml: the Tests tab of the pipeline and the merge request widget show each
+# endpoint and step; the job status still comes from outcome.json only.
 .perf:
   image: node:22
   before_script:
@@ -46,4 +48,6 @@ perf:
     when: always
     paths:
       - reports/pw-perf/
+    reports:
+      junit: reports/pw-perf/junit.xml
     expire_in: 30 days

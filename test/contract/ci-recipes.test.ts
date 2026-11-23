@@ -164,6 +164,41 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     }
   });
 
+  test('16-AC-09 the recipes publish reports/pw-perf/junit.xml without changing the job status', () => {
+    const JUNIT = 'reports/pw-perf/junit.xml';
+    // GitLab: the perf job reports it next to the artifact paths, always.
+    const gitlab = yaml('gitlab-ci.yml');
+    const perf = obj(obj(gitlab.perf, 'perf').artifacts, 'artifacts');
+    expect(perf.when).toBe('always');
+    expect(obj(perf.reports, 'reports').junit).toBe(JUNIT);
+    expect(obj(gitlab['perf-thresholds'], 'perf-thresholds').artifacts).not.toHaveProperty(
+      'reports',
+    );
+    // Jenkins: the JUnit step in post/always, empty results allowed, status from outcome.json.
+    expect(read('Jenkinsfile')).toMatch(
+      /always \{[^}]*junit testResults: 'reports\/pw-perf\/junit\.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true/u,
+    );
+    // Azure: PublishTestResults@2 in mode test only, never failing the task.
+    const azure = yaml('azure-pipelines.yml');
+    const steps = list(obj(list(azure.jobs, 'jobs')[0], 'job').steps, 'steps').map((s, i) =>
+      obj(s, `step ${i}`),
+    );
+    const publish = steps.find((s) => s.task === 'PublishTestResults@2');
+    expect(publish?.condition).toBe("and(always(), eq('${{ parameters.mode }}', 'test'))");
+    expect(obj(publish?.inputs, 'inputs')).toEqual({
+      testResultsFormat: 'JUnit',
+      testResultsFiles: JUNIT,
+      testRunTitle: 'pw-perf',
+      failTaskOnFailedTests: false,
+      failTaskOnMissingResultsFile: false,
+    });
+    // GitHub: the file is in the artifact; a test report action only as a comment (16-D-05).
+    const github = read('github-actions.yml');
+    expect(github).toContain(`#     report_paths: ${JUNIT}`);
+    expect(github).not.toMatch(/^\s+uses: mikepenz\//mu);
+    expect(github).not.toMatch(/^\s+checks: write/mu);
+  });
+
   test('04-AC-49 Jenkins: balanced declarative pipeline, MODE parameter, UNSTABLE on 2, archive always', () => {
     const text = read('Jenkinsfile');
     // Lexical check: strings and comments removed, then brackets must balance.
