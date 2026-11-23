@@ -247,7 +247,7 @@ export interface PackageConfig {
         }
     )[];
     /**
-     * Requests whose URL matches any pattern are skipped. Applied after include.
+     * Requests whose URL matches any pattern are skipped. Applied after include. The default skips the HTTP transports of socket.io, SockJS, SignalR and Blazor Server (handshakes, long polling, streaming).
      *
      * Items: A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.
      */

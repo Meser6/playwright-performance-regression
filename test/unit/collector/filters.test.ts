@@ -79,6 +79,27 @@ describe('shouldTrack', () => {
     expect(shouldTrack(thirdParty, measure({ excludeKnownThirdParty: false }))).toBe(true);
   });
 
+  test('03-D-16 default exclude skips realtime transports, not similar API paths', () => {
+    const m = perfDefaults.measure;
+    const skipped = [
+      'http://app.test/socket.io/?EIO=4&transport=polling',
+      'http://app.test/sockjs/info?cb=x1',
+      'http://app.test/sockjs/123/abcd/xhr_streaming',
+      'http://localhost:3000/sockjs-node/info?t=1',
+      'http://app.test/signalr/negotiate?clientProtocol=2.1',
+      'http://app.test/signalr/poll?transport=longPolling',
+      'http://app.test/_blazor/negotiate?negotiateVersion=1',
+    ];
+    for (const url of skipped) expect(shouldTrack(req(url, 'xhr'), m), url).toBe(false);
+    const measured = [
+      'http://app.test/api/sockjs-status',
+      'http://app.test/api/signalrs/1',
+      'http://app.test/hubs/chat/negotiate',
+      'http://app.test/api/blazor/items',
+    ];
+    for (const url of measured) expect(shouldTrack(req(url, 'xhr'), m), url).toBe(true);
+  });
+
   test('an empty ignoreExtensions list keeps static paths', () => {
     expect(shouldTrack(req('http://app.test/app.js'), measure({ ignoreExtensions: [] }))).toBe(
       true,

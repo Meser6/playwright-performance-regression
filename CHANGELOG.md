@@ -42,6 +42,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **More realtime transports skipped by default.** The default `measure.exclude` is now
+  `['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/']`: besides socket.io it
+  skips the HTTP requests of SockJS (also Meteor and the webpack-dev-server 3 reload client),
+  classic ASP.NET SignalR and Blazor Server. These are handshakes, long polling and streams, not
+  backend endpoints, and gave long or `PENDING` samples. Effect on existing projects: keys under
+  these paths no longer appear in the report; their entries in a thresholds file stay and are
+  reported as not seen (`THRESHOLDS_UNSEEN_ENTRIES`) until a thresholds run with
+  `PW_PERF_PRUNE=1` removes them. Other keys and the normalization fingerprint do not change, so
+  thresholds files stay valid. A config file that sets `measure.exclude` (the guided setup writes
+  it) keeps its own list: add the new patterns there or use `[...perfDefaults.measure.exclude,
+...]`. The guided setup now writes the longer default list.
 - **Wording of the guided setup in es, fr, it, pl, uk and ru.** A review of every translated
   text: the question about passes now asks how many passes per measurement (es, fr, it); one word
   for a pass in Italian ("passata", no longer "passaggio", which also means a step) and for a

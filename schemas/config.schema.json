@@ -126,10 +126,10 @@
           "default": []
         },
         "exclude": {
-          "description": "Requests whose URL matches any pattern are skipped. Applied after include.",
+          "description": "Requests whose URL matches any pattern are skipped. Applied after include. The default skips the HTTP transports of socket.io, SockJS, SignalR and Blazor Server (handshakes, long polling, streaming).",
           "type": "array",
           "items": {"$ref": "#/$defs/urlPattern"},
-          "default": ["/socket.io/"]
+          "default": ["/socket.io/", "/sockjs/", "/sockjs-node/", "/signalr/", "/_blazor/"]
         },
         "excludeKnownThirdParty": {
           "description": "Skip requests to the built-in list of analytics, tag manager, monitoring and chat hosts (05).",

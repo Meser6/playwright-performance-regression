@@ -276,10 +276,10 @@ When not empty, only requests whose URL matches at least one pattern are measure
 
 ### `measure.exclude`
 
-Requests whose URL matches any pattern are skipped. Applied after include.
+Requests whose URL matches any pattern are skipped. Applied after include. The default skips the HTTP transports of socket.io, SockJS, SignalR and Blazor Server (handshakes, long polling, streaming).
 
 - Type: array of [URL pattern](#url-patterns)
-- Default: `["/socket.io/"]`
+- Default: `["/socket.io/","/sockjs/","/sockjs-node/","/signalr/","/_blazor/"]`
 
 ### `measure.excludeKnownThirdParty`
 
