@@ -95,7 +95,7 @@
     },
     "violations": [{"kind":"api","key":"GET /api/search","rule":"apdex","actual":0.7811,"limit":0.85,"hardLimitExceeded":false,"blocking":true}],
     "notEvaluated": [],
-    "warnings": [],
+    "warnings": ["THRESHOLDS_KEYS_ON_DEFAULTS"],
     "toolErrors": []
   }
 }

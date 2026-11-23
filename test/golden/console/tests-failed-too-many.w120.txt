@@ -12,8 +12,7 @@ playwright-performance-regression · mode: test · 101 tests (71 passed, 30 fail
 │                                      │ Endpoints │
 ├──────────────────────────────────────┼───────────┤
 │ keys                                 │         2 │
-│ from file                            │         1 │
-│ on default thresholds                │         1 │
+│ from file                            │         2 │
 │ checked by median only (few samples) │         1 │
 └──────────────────────────────────────┴───────────┘
 

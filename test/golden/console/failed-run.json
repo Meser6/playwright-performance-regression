@@ -1518,6 +1518,11 @@
         "message": "3 entries in pw-perf-thresholds.api.qa.json were not seen in this run."
       },
       {
+        "code": "THRESHOLDS_KEYS_ON_DEFAULTS",
+        "message": "1 endpoint key has no entry in pw-perf-thresholds.api.qa.json and is evaluated with default thresholds: GET /api/users/:id.",
+        "hint": "New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with `PW_PERF_MODE=thresholds <your test command>` (environment \"qa\"); locked entries are kept."
+      },
+      {
         "code": "THRESHOLDS_ENTRIES_NOT_EVALUATED",
         "hint": "Run more repetitions (run.repeat or `npx pw-perf test --repeat`), or accept that the endpoint is called rarely.",
         "message": "1 key with an entry in the thresholds file had too few samples and was not evaluated."

@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Warning and table for keys on default thresholds.** When a thresholds file has entries but
+  some endpoints or steps of a measurement run (`PW_PERF_MODE=test`) have none, the run warns
+  with the new `THRESHOLDS_KEYS_ON_DEFAULTS` (one per kind, with the number of keys and up to
+  three of them) and the console prints a table of those keys under the counters: samples,
+  median, the evaluated percentile, the default limits applied and the result, keys with a
+  violation first, at most 10 rows and a "… and N more" line. The warning also appears in
+  `report.json`, the HTML report and `junit.xml`; its hint suggests a thresholds run to add the
+  entries. Not in thresholds mode, and not for a missing or empty file (`THRESHOLDS_FILE_MISSING`
+  and `THRESHOLDS_FILE_EMPTY` cover those). It does not change the evaluation or the exit code.
 - **Thresholds files in the report folder.** A thresholds run (`PW_PERF_MODE=thresholds`) writes
   the thresholds files as before and also copies them, byte for byte and under the same names
   (with the environment label), into `report.dir` (`reports/pw-perf/pw-perf-thresholds.json`,

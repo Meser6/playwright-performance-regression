@@ -36,6 +36,8 @@ export const MAX_WARNINGS = 10;
 export const MAX_VIOLATION_ROWS = 20;
 /** Slowest-sample lines for at most this many blocking keys (09-REQ-21). */
 export const MAX_SLOWEST_LINES = 5;
+/** At most this many rows in the table of keys on default thresholds (09-REQ-37). */
+export const MAX_DEFAULT_ROWS = 10;
 /** Minimum width of the key column (09-REQ-22). */
 export const MIN_KEY_WIDTH = 30;
 
@@ -211,6 +213,94 @@ function mutedLines(report: RunReport, paint: Paint): string[] {
     }
   }
   return lines;
+}
+
+interface DefaultKey {
+  kind: Kind;
+  key: string;
+  aggregate: RunReport['endpoints'][string];
+  /** 2: a blocking violation, 1: a violation that does not block, 0: passed. */
+  rank: number;
+}
+
+/**
+ * Keys evaluated with default thresholds although the file of their kind has entries, as for
+ * THRESHOLDS_KEYS_ON_DEFAULTS (09-REQ-36), taken from the report alone (09-REQ-37): test mode,
+ * a loaded file with entries (a key from the file or unseen entries). Sorted for the table.
+ */
+function keysOnDefaults(report: RunReport): DefaultKey[] {
+  if (report.mode !== 'test') return [];
+  const list: DefaultKey[] = [];
+  for (const kind of KINDS) {
+    const file = report.thresholdFiles.find((f) => f.kind === kind);
+    if (file?.status !== 'loaded') continue;
+    const aggregates = Object.entries(aggregatesOf(report, kind));
+    const hasEntries =
+      file.unseenKeys.length > 0 ||
+      aggregates.some(([, a]) => a.evaluation.thresholdSource === 'file');
+    if (!hasEntries) continue;
+    for (const [key, aggregate] of aggregates) {
+      const e = aggregate.evaluation;
+      if (e.thresholdSource !== 'default' || e.result === 'not-evaluated') continue;
+      const failed = e.checks.filter((c) => !c.passed);
+      const rank = failed.some((c) => c.blocking) ? 2 : failed.length > 0 ? 1 : 0;
+      list.push({ kind, key, aggregate, rank });
+    }
+  }
+  // Blocking violations first, then other violations, then passed; by kind and key (09-REQ-37).
+  return list.sort(
+    (a, b) =>
+      b.rank - a.rank || KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || compareText(a.key, b.key),
+  );
+}
+
+/** Table of the keys on default thresholds (09-REQ-37), under the counters. */
+function defaultKeyLines(report: RunReport, opts: FrameOptions, m: Marks, paint: Paint): string[] {
+  const list = keysOnDefaults(report);
+  if (list.length === 0) return [];
+  const level = report.config.checks?.time?.percentile?.level ?? 'percentile';
+  const ms = (value: number | undefined): string => (value === undefined ? '—' : formatMs(value));
+  const columns: TableColumn[] = [
+    { header: '' },
+    { header: 'kind' },
+    { header: 'key', flex: true, minWidth: MIN_KEY_WIDTH },
+    { header: 'n', align: 'right' },
+    { header: 'median', align: 'right' },
+    { header: level, align: 'right' },
+    { header: 'limit', align: 'right' },
+    { header: 'result' },
+  ];
+  const shown = list.slice(0, MAX_DEFAULT_ROWS);
+  const rows: TableRow[] = shown.map(({ kind, key, aggregate, rank }) => {
+    const limits = aggregate.evaluation.limits;
+    const percentiles = aggregate.stats?.percentiles;
+    return {
+      cells: [
+        rank === 2 ? m.error : rank === 1 ? m.warn : m.ok,
+        kind,
+        key,
+        String(aggregate.successCount),
+        ms(percentiles?.['p50']),
+        ms(percentiles?.[level]),
+        `${Math.round(limits.median)} / ${formatMs(limits.percentile)}`,
+        rank === 0 ? 'pass' : 'fail',
+      ],
+      ...(rank === 2 ? { style: 'red' } : rank === 1 ? { style: 'yellow' } : {}),
+    };
+  });
+  const lines = [
+    paint('On default thresholds (no entry in the thresholds file):', 'bold'),
+    ...table(columns, rows, opts),
+  ];
+  if (list.length > shown.length) {
+    const more = plural(
+      list.length - shown.length,
+      'more key on default thresholds',
+      'more keys on default thresholds',
+    );
+    lines.push(paint(`  … and ${more} (see report)`, 'dim'));
+  }
+  return [...lines, ''];
 }
 
 function tableLines(
@@ -415,6 +505,7 @@ export function formatSummary(report: RunReport, opts: SummaryOptions): string {
   lines.push(...issueBox('error', report.toolErrors, Infinity, frame));
   lines.push(...issueBox('warning', report.warnings, MAX_WARNINGS, frame));
   lines.push(...counterLines(report, frame), ...mutedLines(report, paint), '');
+  lines.push(...defaultKeyLines(report, frame, m, paint));
   if (list.length > 0) {
     lines.push(...tableLines(report, list, frame, m, paint));
     const slowest = slowestLines(report, list);
