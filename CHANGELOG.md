@@ -7,6 +7,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-23
+
+The first stable release, published under the `latest` dist-tag: install with
+`npm init playwright-performance-regression`. From now on the project follows semantic versioning
+strictly (breaking changes only in a new major version). Upgrading from `0.1.0-next.4`: see
+[Upgrading](docs/upgrading.md#from-010-nextx-to-100); in short, prune the thresholds entries of
+the newly skipped realtime transports and keep or copy your CI jobs yourself.
+
+### Breaking
+
+- **More realtime transports skipped by default.** The default `measure.exclude` is now
+  `['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/']`: besides socket.io it
+  skips the HTTP requests of SockJS (also Meteor and the webpack-dev-server 3 reload client),
+  classic ASP.NET SignalR and Blazor Server. These are handshakes, long polling and streams, not
+  backend endpoints, and gave long or `PENDING` samples. Keys under these paths no longer appear
+  in the report; their entries in a thresholds file stay and are reported as not seen
+  (`THRESHOLDS_UNSEEN_ENTRIES`). Other keys and the normalization fingerprint do not change, so
+  thresholds files stay valid. Migration: run a thresholds run of the full suite with
+  `PW_PERF_PRUNE=1` to remove the old entries. A config file that sets `measure.exclude` (an
+  earlier guided setup wrote it) keeps its own list: add the new patterns there or use
+  `[...perfDefaults.measure.exclude, ...]`. The guided setup now writes the longer default list.
+- **The guided setup adds no CI jobs.** The CI step is gone (steps are now `[n/9]`) and the wizard
+  no longer writes `.github/workflows/perf.yml`, `.gitlab/perf.gitlab-ci.yml`, `Jenkinsfile.perf`
+  or `azure-pipelines.perf.yml`; it still adds no scripts. Your test command is only used in the
+  commands printed at the end and for the check, and the step says so. Migration: CI files written
+  by an earlier wizard are left as they are and keep working; copy the recipes from
+  `examples/ci/` and [CI](docs/ci.md) for new projects or to pick up the changes below (thresholds
+  artifact of `reports/pw-perf/` only, `junit.xml`).
+
 ### Added
 
 - **Warning and table for keys on default thresholds.** When a thresholds file has entries but
@@ -48,17 +77,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with the mode in its top edge, labels on the left and values on the right (long values are
   shortened in the middle). `NO_COLOR` only drops the colors; `TERM=dumb` draws the tables with
   `+`, `-` and `|`.
-- **More realtime transports skipped by default.** The default `measure.exclude` is now
-  `['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/']`: besides socket.io it
-  skips the HTTP requests of SockJS (also Meteor and the webpack-dev-server 3 reload client),
-  classic ASP.NET SignalR and Blazor Server. These are handshakes, long polling and streams, not
-  backend endpoints, and gave long or `PENDING` samples. Effect on existing projects: keys under
-  these paths no longer appear in the report; their entries in a thresholds file stay and are
-  reported as not seen (`THRESHOLDS_UNSEEN_ENTRIES`) until a thresholds run with
-  `PW_PERF_PRUNE=1` removes them. Other keys and the normalization fingerprint do not change, so
-  thresholds files stay valid. A config file that sets `measure.exclude` (the guided setup writes
-  it) keeps its own list: add the new patterns there or use `[...perfDefaults.measure.exclude,
-...]`. The guided setup now writes the longer default list.
 - **Clearer labels in the HTML report.** The checks table of a key shows Raw (the value measured
   in the run) and Bound (the 95% confidence bound that Apdex, slow share and error rate compare
   with the limit) instead of Actual and Observed, with a one-line legend; `report.json` keeps the
@@ -100,12 +118,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   never changed. A measurement run with an empty file warns with the new `THRESHOLDS_FILE_EMPTY`
   and suggests a thresholds run (as for a missing file), a check shows `0 entries` and the same
   next step, and the thresholds run fills the files without `THRESHOLDS_MANUAL_FILE`.
-- **The guided setup adds no CI jobs.** The CI step is gone (steps are now `[n/9]`) and the wizard
-  no longer writes `.github/workflows/perf.yml`, `.gitlab/perf.gitlab-ci.yml`, `Jenkinsfile.perf`
-  or `azure-pipelines.perf.yml`; it still adds no scripts. Your test command is only used in the
-  commands printed at the end and for the check, and the step says so. The recipes stay in
-  `examples/ci/` and [CI](docs/ci.md) for you to copy; the summary links to them. CI files written
-  by an earlier wizard are left as they are.
 - **The config file of the guided setup lists every option as code.** `pw-perf.config.ts` (or
   `.js`) now sets all 15 listed options: your answers and the default value of every other
   option, so you edit a value instead of uncommenting lines and objects. Each section has a
@@ -126,7 +138,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **No limit for rules that were not evaluated.** A key with too few samples for p95 or p99 showed
   their limits (in red when above), although those rules decided nothing. The key table now shows
   "/ —" with a footnote, and the details say "p95 · not evaluated".
-
 - **Start box closes on every line.** The title line of the start box used ⏱️ (a character with
   the emoji variation selector U+FE0F), whose width terminals count differently, so its right
   edge stood one column off in VS Code and Terminal.app. The title now uses ⏳, which every modern

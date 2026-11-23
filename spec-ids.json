@@ -1,5 +1,5 @@
 {
-  "specCommit": "pw-benchmark-docs@3406189",
+  "specCommit": "pw-benchmark-docs@ec98992",
   "ids": [
     {"id":"01-AC-01","kind":"AC"},
     {"id":"01-AC-02","kind":"AC"},
@@ -1077,6 +1077,7 @@
     {"id":"13-D-18","kind":"D"},
     {"id":"13-D-19","kind":"D"},
     {"id":"13-D-20","kind":"D"},
+    {"id":"13-D-21","kind":"D"},
     {"id":"13-REQ-01","kind":"REQ"},
     {"id":"13-REQ-02","kind":"REQ"},
     {"id":"13-REQ-03","kind":"REQ"},
@@ -1105,6 +1106,7 @@
     {"id":"13-REQ-24","kind":"REQ"},
     {"id":"13-REQ-25","kind":"REQ"},
     {"id":"13-REQ-26","kind":"REQ"},
+    {"id":"13-REQ-27","kind":"REQ"},
     {"id":"14-D-01","kind":"D"},
     {"id":"14-D-02","kind":"D"},
     {"id":"14-D-03","kind":"D"},

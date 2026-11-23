@@ -113,17 +113,29 @@ only be done by the owner.
    most 10 minutes. Record the time in the pull request of the next step.
 10. **Enable GitHub Pages**: Settings → Pages → Source "GitHub Actions"; then run the
     `Demo report` workflow by hand (Actions → Demo report → Run workflow) and open the page.
-11. **Release `0.1.0`**: a pull request with `"version": "0.1.0"` in both `package.json` files and
-    a `## [0.1.0] - YYYY-MM-DD` CHANGELOG section; after the merge, tag and push `v0.1.0` as in
-    step 7 (`check-release.mjs` prints `latest`). The workflow publishes under `latest` and
-    deploys the demo report.
+11. **Release `1.0.0`** (the first stable release; there is no `0.1.0`): a pull request with
+    `"version": "1.0.0"` in both `package.json` files and a `## [1.0.0] - YYYY-MM-DD` CHANGELOG
+    section; after the merge, run `pnpm install --frozen-lockfile && pnpm build && pnpm test:perf`
+    on `main`, then tag and push `v1.0.0` as in step 7 (`check-release.mjs` prints `latest`). The
+    workflow stages both packages under `latest` and deploys the demo report.
+12. **After approving `1.0.0`**: mark the placeholders as deprecated and move `next` to the stable
+    version, so `@next` never installs something older than `@latest`:
+
+    ```sh
+    for pkg in playwright-performance-regression create-playwright-performance-regression; do
+      npm deprecate "$pkg@0.0.0" "Placeholder. Install $pkg@1.0.0 or later."
+      npm deprecate "$pkg@0.0.0-stage" "Placeholder. Install $pkg@1.0.0 or later."
+      npm dist-tag add "$pkg@1.0.0" next
+    done
+    ```
 
 ## Later releases
 
 1. A pull request with the new version in both `package.json` files (13-REQ-01) and the CHANGELOG
    section (breaking changes under `Breaking` with migration steps, 13-REQ-05).
-2. After the merge: `node scripts/check-release.mjs vX.Y.Z`, then tag and push `vX.Y.Z` (or
-   `vX.Y.Z-next.N` to try a release under `next` first).
+2. After the merge, on `main`: `pnpm install --frozen-lockfile && pnpm build && pnpm test:perf`
+   and `node scripts/check-release.mjs vX.Y.Z`, then tag and push `vX.Y.Z` (or `vX.Y.Z-next.N` to
+   try a release under `next` first): `git tag -m "vX.Y.Z" vX.Y.Z && git push origin vX.Y.Z`.
 3. Approve the staged versions and run the post-release checks ("Approving a release").
 4. If staging fails after the tag was pushed, re-run the failed jobs of the same `Release`
    run; versions already on npm are skipped.
