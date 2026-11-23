@@ -5,16 +5,7 @@
     "answers": null
   },
   "expected": {
-    "manualSteps": [
-      {
-        "code": "INIT_MANUAL_STEP",
-        "message": ".gitlab-ci.yml was not changed: include the new job file in it."
-      },
-      {
-        "code": "INIT_MANUAL_STEP",
-        "message": ".gitlab/perf.gitlab-ci.yml installs the dependencies with npm."
-      }
-    ],
+    "manualSteps": [],
     "testObject": null
   }
 }

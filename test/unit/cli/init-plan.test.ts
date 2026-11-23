@@ -1,5 +1,6 @@
 // Init wizard, pure parts (04, chapter 4.10): detection, change plan with golden diffs (12,
-// chapter 8: test/golden/init/), recognized layouts and the CI templates (13-AC-11).
+// chapter 8: test/golden/init/), recognized layouts and the CI recipes the wizard does not write
+// (04-D-53).
 import {
   mkdirSync,
   mkdtempSync,
@@ -13,15 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import typescript from 'typescript';
 import { describe, expect, test } from 'vitest';
-import {
-  CI_COMMAND,
-  CI_PATHS,
-  ciFile,
-  groovySingleQuoted,
-  yamlScalar,
-} from '../../../src/cli/init/ci.ts';
 import { detectProject } from '../../../src/cli/init/detect.ts';
-import { CI_TEMPLATES } from '../../../src/cli/init/generated/ci-templates.ts';
 import { defaultAnswers, planInitChanges, unifiedDiff } from '../../../src/cli/init/index.ts';
 import type { InitAnswers, InitPlan } from '../../../src/cli/init/index.ts';
 import {
@@ -77,7 +70,6 @@ const ANSWERS: InitAnswers = {
   measure: 'all',
   preset: 'normal',
   command: 'npx playwright test',
-  addCi: false,
   runCheck: false,
 };
 
@@ -86,7 +78,7 @@ const activeLines = (config: string): string[] =>
   config.split('\n').filter((l) => !/^\s*(\/\/|$)/u.test(l));
 
 describe('detectProject', () => {
-  test('reads the project as text: config, version, package manager, module type, tests, CI', async () => {
+  test('reads the project as text: config, version, package manager, module type, tests', async () => {
     const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
     expect(info.playwrightConfig?.path).toBe('playwright.config.ts');
     expect(info.playwrightVersion).toBe('1.57.0');
@@ -96,7 +88,7 @@ describe('detectProject', () => {
     expect(info.filesImportingPlaywrightTest).toEqual(['tests/fixtures.ts']);
     expect(info.filesWithExtend).toEqual(['tests/fixtures.ts']);
     expect(info.taggedPerfTestFiles).toBe(0);
-    expect(info.ciPlatform).toBe('github');
+    expect(info).not.toHaveProperty('ciPlatform');
     expect(info.existing).toEqual({
       perfConfig: null,
       wrappedConfig: false,
@@ -105,20 +97,15 @@ describe('detectProject', () => {
     });
 
     const cjs = await detectDir(join(PROJECTS, 'init-cjs-js'));
-    expect([cjs.packageManager, cjs.moduleType, cjs.ciPlatform]).toEqual(['pnpm', 'cjs', 'gitlab']);
+    expect([cjs.packageManager, cjs.moduleType]).toEqual(['pnpm', 'cjs']);
     const swap = await detectDir(join(PROJECTS, 'init-import-swap'));
-    expect([swap.packageManager, swap.ciPlatform, swap.taggedPerfTestFiles]).toEqual([
-      'npm',
-      'azure',
-      1,
-    ]);
+    expect([swap.packageManager, swap.taggedPerfTestFiles]).toEqual(['npm', 1]);
     expect(swap.filesImportingPlaywrightTest).toEqual([
       'tests/auth.setup.ts',
       'tests/home.spec.ts',
       'tests/shop.spec.ts',
     ]);
     const existing = await detectDir(join(PROJECTS, 'init-existing-project'));
-    expect(existing.ciPlatform).toBe('jenkins');
     expect(existing.filesWithExtend).toEqual(['tests/a11y.ts', 'tests/fixtures.ts']);
   });
 
@@ -848,77 +835,61 @@ describe('recognized layouts (04-REQ-39)', () => {
   });
 });
 
-describe('CI templates', () => {
-  const RECIPES = {
-    github: 'github-actions.yml',
-    gitlab: 'gitlab-ci.yml',
-    jenkins: 'Jenkinsfile',
-    azure: 'azure-pipelines.yml',
-  } as const;
-
-  test('13-AC-11 the templates of the wizard are byte for byte the files in examples/ci', () => {
-    expect(Object.keys(CI_TEMPLATES).sort()).toEqual(Object.keys(RECIPES).sort());
-    for (const [platform, file] of Object.entries(RECIPES)) {
-      const recipe = readFileSync(join(ROOT, 'examples/ci', file), 'utf8').replaceAll('\r\n', '\n');
-      expect(CI_TEMPLATES[platform as keyof typeof RECIPES], file).toBe(recipe);
-    }
-    expect(readdirSync(join(ROOT, 'examples/ci')).sort()).toEqual(Object.values(RECIPES).sort());
-  });
+describe('CI recipes', () => {
+  const RECIPES = ['azure-pipelines.yml', 'github-actions.yml', 'gitlab-ci.yml', 'Jenkinsfile'];
+  const recipe = (file: string): string =>
+    readFileSync(join(ROOT, 'examples/ci', file), 'utf8').replaceAll('\r\n', '\n');
 
   test('04-AC-49 every recipe has a manual thresholds job and a weekly measurement job', () => {
-    for (const [platform, file] of Object.entries(RECIPES)) {
-      const recipe = CI_TEMPLATES[platform as keyof typeof RECIPES];
-      expect(recipe, file).toContain(CI_COMMAND);
-      expect(recipe, file).toMatch(/thresholds/u);
-      expect(recipe, file).toContain('pw-perf-thresholds');
+    expect(
+      readdirSync(join(ROOT, 'examples/ci'), { withFileTypes: true })
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+        .sort(),
+    ).toEqual([...RECIPES].sort());
+    for (const file of RECIPES) {
+      const text = recipe(file);
+      expect(text, file).toContain('npm run e2e');
+      expect(text, file).toMatch(/thresholds/u);
+      expect(text, file).toContain('pw-perf-thresholds');
       // GitLab schedules live in the project settings; the others have a weekly cron.
-      expect(recipe, file).toMatch(platform === 'gitlab' ? /"schedule"/u : /\* \* 1'/u);
-      expect(recipe, file).toContain('outcome.json');
-      expect(recipe, file).not.toMatch(/npx pw-perf|pw-perf (test|thresholds)/u);
+      expect(text, file).toMatch(file === 'gitlab-ci.yml' ? /"schedule"/u : /\* \* 1'/u);
+      expect(text, file).toContain('outcome.json');
+      expect(text, file).not.toMatch(/npx pw-perf|pw-perf (test|thresholds)/u);
     }
-    expect(CI_TEMPLATES.github).toContain('PW_PERF_MODE: thresholds');
-    expect(CI_TEMPLATES.github).toContain('PW_PERF_MODE: test');
-    expect(CI_TEMPLATES.github).toContain('workflow_dispatch');
-    expect(CI_TEMPLATES.gitlab).toContain('PW_PERF_MODE: thresholds');
-    expect(CI_TEMPLATES.gitlab).toContain('when: manual');
-    expect(CI_TEMPLATES.jenkins).toContain("choices: ['test', 'thresholds']");
-    expect(CI_TEMPLATES.azure).toContain('PW_PERF_MODE: ${{ parameters.mode }}');
+    expect(recipe('github-actions.yml')).toContain('PW_PERF_MODE: thresholds');
+    expect(recipe('github-actions.yml')).toContain('PW_PERF_MODE: test');
+    expect(recipe('github-actions.yml')).toContain('workflow_dispatch');
+    expect(recipe('gitlab-ci.yml')).toContain('PW_PERF_MODE: thresholds');
+    expect(recipe('gitlab-ci.yml')).toContain('when: manual');
+    expect(recipe('Jenkinsfile')).toContain("choices: ['test', 'thresholds']");
+    expect(recipe('azure-pipelines.yml')).toContain('PW_PERF_MODE: ${{ parameters.mode }}');
   });
 
-  test('04-AC-30 04-AC-49 the wizard writes the recipe with the project command only', async () => {
-    for (const platform of Object.keys(RECIPES) as (keyof typeof RECIPES)[]) {
-      expect(ciFile(platform, CI_COMMAND)).toEqual({
-        path: CI_PATHS[platform],
-        text: CI_TEMPLATES[platform],
-      });
-      const qa = ciFile(platform, 'npm run e2e:qa');
-      expect(qa.text).toBe(CI_TEMPLATES[platform].replaceAll(CI_COMMAND, 'npm run e2e:qa'));
+  test('04-AC-30 04-AC-49 the wizard writes no CI file, also in projects with a CI configuration', async () => {
+    // GitHub Actions, GitLab CI, Azure Pipelines and Jenkins projects (04-D-53).
+    for (const name of [
+      'init-esm-ts',
+      'init-cjs-js',
+      'init-import-swap',
+      'init-existing-project',
+    ]) {
+      const info = await detectDir(join(PROJECTS, name));
+      for (const answers of [
+        defaultAnswers(info),
+        { ...defaultAnswers(info), command: 'npm run e2e:qa' },
+      ]) {
+        const plan = planInitChanges(info, answers);
+        const paths = plan.changes.map((c) => c.path);
+        expect(paths, name).not.toContainEqual(
+          expect.stringMatching(/^\.(github|gitlab)\/|Jenkinsfile|azure-pipelines|\.gitlab-ci/u),
+        );
+        expect(paths, name).not.toContain('package.json');
+        expect(plan.manualSteps.map((m) => m.message).join('\n'), name).not.toMatch(
+          /CI|gitlab|npm ci/u,
+        );
+      }
     }
-    const info = await detectDir(join(PROJECTS, 'init-esm-ts'));
-    const plan = planInitChanges(info, defaultAnswers(info));
-    expect(plan.changes.find((c) => c.path === '.github/workflows/perf.yml')?.after).toBe(
-      CI_TEMPLATES.github.replaceAll(CI_COMMAND, 'npx playwright test'),
-    );
-  });
-});
-
-describe('04-REQ-55 test command of step 6 in the CI files', () => {
-  test('04-AC-52 GitHub and Azure take the command literally, GitLab and Jenkins quote it', () => {
-    const cmd = `npm run e2e -- --grep "@smoke" --project 'a: b' \\x`;
-    expect(ciFile('github', cmd).text).toContain(`          ${cmd} || true\n`);
-    expect(ciFile('azure', cmd).text).toContain(`          ${cmd} || true\n`);
-    expect(ciFile('gitlab', cmd).text).toContain(
-      `    - 'npm run e2e -- --grep "@smoke" --project ''a: b'' \\x || true'\n`,
-    );
-    expect(ciFile('jenkins', cmd).text).toContain(
-      `sh(script: 'npm run e2e -- --grep "@smoke" --project \\'a: b\\' \\\\x', returnStatus: true)`,
-    );
-    // Plain commands stay plain; a command containing the placeholder is replaced once.
-    expect(ciFile('gitlab', 'npm run e2e:qa').text).toContain('    - npm run e2e:qa || true\n');
-    expect(ciFile('jenkins', 'npm run e2e:qa').text).toContain("sh(script: 'npm run e2e:qa',");
-    expect(yamlScalar('# x')).toBe("'# x'");
-    expect(yamlScalar('npx playwright test || true')).toBe('npx playwright test || true');
-    expect(groovySingleQuoted("a'b\\c")).toBe("a\\'b\\\\c");
   });
 });
 

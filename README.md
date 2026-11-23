@@ -36,7 +36,9 @@ package installed, `npx pw-perf` starts it too). It asks which tests to measure,
 to measure (endpoints, `test.step` blocks or both), the threshold headroom and your usual test
 command, then shows a diff of every change before writing it: it creates `pw-perf.config.ts`
 (`pw-perf.config.js` in a JavaScript project) with the most important options, wraps your
-Playwright config and your fixtures module, ignores `reports/pw-perf/` and can add the CI jobs.
+Playwright config and your fixtures module, ignores `reports/pw-perf/`. It adds no CI jobs and no scripts: your
+test command is only used in the commands it prints at the end and for the check; the
+[CI recipes](docs/ci.md) are yours to copy.
 Without a fixtures module, it switches the `@playwright/test` imports of your test files to
 `playwright-performance-regression/test`, one confirmed diff per file; when it cannot change the
 test object, it shows the code to paste. `package.json` is never changed. At the end it offers a

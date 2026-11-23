@@ -18,7 +18,6 @@ export function defaultAnswers(info: ProjectInfo): InitAnswers {
     preset: DEFAULT_CONFIG.thresholds.preset,
     // The only script with playwright test, else the package manager's command (04-REQ-55).
     command: defaultTestCommand(info.packageManager, info.scriptTexts),
-    addCi: info.ciPlatform !== null,
     // Never without a terminal (04-REQ-58).
     runCheck: false,
   };

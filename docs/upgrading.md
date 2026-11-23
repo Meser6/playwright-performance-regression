@@ -106,5 +106,5 @@ Custom measurements are gone. To upgrade:
 3. In `playwright.config` remove `withPerf(...)` around the config and the `pw-perf.config`
    import.
 4. Delete `pw-perf.config.*`, the `pw-perf-thresholds*.json` files, any `perf:*` scripts from an
-   earlier wizard, the CI jobs and the `reports/pw-perf/` line in `.gitignore`.
+   earlier wizard, the CI jobs you added (or an earlier wizard wrote) and the `reports/pw-perf/` line in `.gitignore`.
 5. `npm uninstall playwright-performance-regression`.

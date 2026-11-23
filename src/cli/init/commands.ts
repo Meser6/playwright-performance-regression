@@ -1,6 +1,6 @@
 // Run commands of the init wizard (04-REQ-55, 04-REQ-58; D-35): the test command C (the answer of
 // step 6, by default the command of the detected package manager), the commands of every mode
-// shown by the wizard and written to the CI jobs, and the runs and process of the wizard's check.
+// shown by the wizard (no CI jobs, 04-D-53), and the runs and process of the wizard's check.
 // Nothing is executed here. Pure.
 import type { CliIssue, Result } from '../../core/types/index.ts';
 import { writeModeState } from '../../mode/index.ts';
