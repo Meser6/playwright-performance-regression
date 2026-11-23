@@ -1,7 +1,7 @@
 // Documented constants of the built-in normalization (07; P-13).
 
 /** Version of the built-in rules; part of the normalization fingerprint (07-REQ-21). */
-export const NORMALIZE_RULES_VERSION = 1;
+export const NORMALIZE_RULES_VERSION = 2;
 /** Longer keys are truncated, in UTF-16 code units (07-REQ-18). */
 export const MAX_KEY_LENGTH = 2000;
 /** Keys from one template that trigger NORMALIZE_HIGH_CARDINALITY (07-REQ-22). */

@@ -184,7 +184,7 @@ No telemetry. The package never makes network requests.
 What ends up where:
 
 - **Thresholds files and `report.json` / `report.html`** contain normalized endpoint keys: numbers,
-  UUIDs, long hex strings, tokens, mixed-case ids and e-mail addresses in the path are replaced
+  UUIDs, long hex strings, tokens, mixed-case ids, prefixed ids (`ORD-1000`, `inv_58`) and e-mail addresses in the path are replaced
   with `:id` or `:email`, and query values are dropped (only parameter names stay). Path segments
   that match none of these patterns, such as user names, stay in the key; add patterns with
   `keys.extraIdPatterns`. The report also contains test titles, file names, the operating system, CPU model
