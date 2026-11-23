@@ -1,0 +1,21 @@
+╭─ ⚠ IMPORTANTE ───────────────────────────────────────────────────────────────╮
+│ Qué hacer ahora, en este orden:                                              │
+│                                                                              │
+│ 1. Calcula los umbrales en CI, en el entorno donde se ejecutarán los tests   │
+│    (los tiempos de un portátil no sirven). Puede tardar varias horas: tu     │
+│    comando de tests se ejecuta varias veces en 1 worker.                     │
+│    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
+│                                                                              │
+│ 2. Descarga los archivos de umbrales de los artefactos de CI: la ejecución   │
+│    de umbrales también los copia a la carpeta del informe reports/pw-perf.   │
+│    Ejemplos de CI: docs/ci.md.                                               │
+│                                                                              │
+│ 3. Haz commit de ellos: pw-perf-thresholds.json,                             │
+│    pw-perf-thresholds.steps.json.                                            │
+│                                                                              │
+│ 4. A partir de entonces ejecuta los tests con este comando; falla ante una   │
+│    regresión:                                                                │
+│    PW_PERF_MODE=test npm run e2e:qa                                          │
+│    Resultados: reports/pw-perf/report.html; detalles del código de salida:   │
+│    reports/pw-perf/outcome.json.                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯

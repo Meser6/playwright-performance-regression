@@ -43,7 +43,9 @@ Without a fixtures module, it switches the `@playwright/test` imports of your te
 `playwright-performance-regression/test`, one confirmed diff per file; when it cannot change the
 test object, it shows the code to paste. `package.json` is never changed. At the end it offers a
 check: your test command runs with `PW_PERF_MODE=thresholds`, then `PW_PERF_MODE=test`, both with
-2 passes, and the check's thresholds files are deleted afterwards. `pnpm create` and `yarn create`
+2 passes, and the check's thresholds files are deleted afterwards. It ends with an IMPORTANT box
+of the next steps: thresholds on CI (can take several hours), download, commit, then
+`PW_PERF_MODE=test`. `pnpm create` and `yarn create`
 work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as `@next` with
 `yarn create`). The guided setup speaks English, Spanish, French, Polish, Italian, Ukrainian and
 Russian (it asks at the start). It takes no arguments; `PW_PERF_LANG`, `PW_PERF_DRY_RUN` and

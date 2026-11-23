@@ -1,0 +1,20 @@
+╭─ ⚠ IMPORTANTE ───────────────────────────────────────────────────────────────╮
+│ Cosa fare ora, in questo ordine:                                             │
+│                                                                              │
+│ 1. Calcola le soglie in CI, nell’ambiente in cui verranno eseguiti i test (i │
+│    tempi di un portatile non valgono). Può richiedere diverse ore: il tuo    │
+│    comando di test viene eseguito più volte su 1 worker.                     │
+│    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
+│                                                                              │
+│ 2. Scarica i file delle soglie dagli artefatti di CI: l’esecuzione delle     │
+│    soglie li copia anche nella cartella del report reports/pw-perf. Esempi   │
+│    di CI: docs/ci.md.                                                        │
+│                                                                              │
+│ 3. Fanne commit: pw-perf-thresholds.json, pw-perf-thresholds.steps.json.     │
+│                                                                              │
+│ 4. Da quel momento esegui i test con questo comando; fallisce in caso di     │
+│    regressione:                                                              │
+│    PW_PERF_MODE=test npm run e2e:qa                                          │
+│    Risultati: reports/pw-perf/report.html; dettagli del codice di uscita:    │
+│    reports/pw-perf/outcome.json.                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯

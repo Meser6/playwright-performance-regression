@@ -1,0 +1,19 @@
+╭─ ⚠ WAŻNE ────────────────────────────────────────────────────────────────────╮
+│ Co dalej, w tej kolejności:                                                  │
+│                                                                              │
+│ 1. Wyznacz progi na CI, na tym środowisku, na którym będą uruchamiane testy  │
+│    (czasy z laptopa się nie przenoszą). Może to potrwać kilka godzin:        │
+│    polecenie testów wykonuje się kilka razy na 1 workerze.                   │
+│    PW_PERF_MODE=thresholds npm run e2e:qa                                    │
+│                                                                              │
+│ 2. Ściągnij pliki progów z artefaktów CI: run progów kopiuje je też do       │
+│    folderu raportu reports/pw-perf. Przepisy CI: docs/ci.md.                 │
+│                                                                              │
+│ 3. Zacommituj je: pw-perf-thresholds.json, pw-perf-thresholds.steps.json.    │
+│                                                                              │
+│ 4. Od tej pory uruchamiaj testy tym poleceniem; kończy się błędem przy       │
+│    regresji:                                                                 │
+│    PW_PERF_MODE=test npm run e2e:qa                                          │
+│    Wyniki: reports/pw-perf/report.html; szczegóły kodu wyjścia:              │
+│    reports/pw-perf/outcome.json.                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯

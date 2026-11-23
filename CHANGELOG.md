@@ -23,6 +23,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The guided setup ends with an IMPORTANT box.** After it writes the setup, the wizard ends
+  with a framed box (in the chosen language, at most 80 columns, ASCII with `TERM=dumb`) of the
+  next steps with your exact commands: derive the thresholds on CI, on the environment where the
+  tests will run (`PW_PERF_MODE=thresholds <your command>`; it can take several hours), download
+  the thresholds files from the CI artifacts (the report folder `reports/pw-perf`), commit them,
+  and from then on run `PW_PERF_MODE=test <your command>`. It replaces the `Run:` line and the
+  "Next steps" list; when the check did not run, one line suggests `PW_PERF_MODE=check` first.
+  Without a terminal or with `PW_PERF_DRY_RUN=1` the summary is as before.
 - **The guided setup creates empty thresholds files.** It always adds `pw-perf-thresholds.json`
   and `pw-perf-thresholds.steps.json` next to the Playwright config, without entries and whatever
   you chose to measure, each with its own diff and confirmation; an existing thresholds file is

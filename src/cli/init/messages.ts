@@ -165,14 +165,19 @@ const en = {
   boxDocs: 'Other layouts (mergeTests, several test objects, playwright-bdd): {url}',
   runLine: 'Run: {command}',
   runLesson: 'A measurement is your usual test command with PW_PERF_MODE set.',
-  nextCheck: '{command}: see what will be measured and how long a full run takes.',
-  nextThresholds:
-    '{command}: derive thresholds first, on the CI machines that will measure (see {url}). Until the thresholds files exist, measurement runs use the loose default thresholds. {estimate}',
-  estimateUnknown: '(Run the check command for an estimate.)',
-  estimateAbove: '(The start box of the run shows a time estimate from the last run.)',
-  nextCommit: 'Commit {files}.',
-  nextTest:
-    '{command}: a measurement run that fails on a regression. Results: {report}; exit code details: {outcome}.',
+  importantTitle: 'IMPORTANT',
+  importantIntro: 'What to do next, in this order:',
+  importantFixFirst:
+    'First add the perf fixture (red box above): until then no endpoint is measured.',
+  importantThresholds:
+    'Derive the thresholds on CI, on the environment where the tests will run (times from a laptop do not carry over). It can take several hours: your test command runs several times on 1 worker.',
+  importantDownload:
+    'Download the thresholds files from the CI artifacts: the thresholds run also copies them to the report folder {dir}. CI recipes: docs/ci.md.',
+  importantCommit: 'Commit them: {files}.',
+  importantTest: 'From then on run the tests with this command; it fails on a regression:',
+  importantResults: 'Results: {report}; exit code details: {outcome}.',
+  tryCheck:
+    'Try it locally first: {command} shows what will be measured and how long a full run takes.',
   windowsNote: 'PowerShell and cmd forms of these commands: docs/cli.md.',
   boxWrapThis: 'Wrap the one your tests import: {file}',
   boxWorkspace:
@@ -345,14 +350,19 @@ const pl: Messages = {
   boxDocs: 'Inne układy (mergeTests, kilka obiektów test, playwright-bdd): {url}',
   runLine: 'Uruchomienie: {command}',
   runLesson: 'Pomiar to Twoje zwykłe polecenie testów z ustawionym PW_PERF_MODE.',
-  nextCheck: '{command}: zobacz, co zostanie zmierzone i ile potrwa pełny run.',
-  nextThresholds:
-    '{command}: najpierw wyznacz progi na maszynach CI, które będą mierzyć (zobacz {url}). Dopóki plików progów nie ma, runy pomiarowe używają luźnych progów domyślnych. {estimate}',
-  estimateUnknown: '(Szacunek czasu da polecenie sprawdzenia.)',
-  estimateAbove: '(Ramka startowa runu podaje szacunek czasu z ostatniego runu.)',
-  nextCommit: 'Zacommituj {files}.',
-  nextTest:
-    '{command}: run pomiarowy, który kończy się błędem przy regresji. Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
+  importantTitle: 'WAŻNE',
+  importantIntro: 'Co dalej, w tej kolejności:',
+  importantFixFirst:
+    'Najpierw dodaj fixture perf (czerwona ramka wyżej): do tego czasu żaden endpoint nie jest mierzony.',
+  importantThresholds:
+    'Wyznacz progi na CI, na tym środowisku, na którym będą uruchamiane testy (czasy z laptopa się nie przenoszą). Może to potrwać kilka godzin: polecenie testów wykonuje się kilka razy na 1 workerze.',
+  importantDownload:
+    'Ściągnij pliki progów z artefaktów CI: run progów kopiuje je też do folderu raportu {dir}. Przepisy CI: docs/ci.md.',
+  importantCommit: 'Zacommituj je: {files}.',
+  importantTest: 'Od tej pory uruchamiaj testy tym poleceniem; kończy się błędem przy regresji:',
+  importantResults: 'Wyniki: {report}; szczegóły kodu wyjścia: {outcome}.',
+  tryCheck:
+    'Najpierw spróbuj lokalnie: {command} pokazuje, co zostanie zmierzone i ile potrwa pełny run.',
   windowsNote: 'Postacie tych poleceń dla PowerShell i cmd: docs/cli.md.',
   boxWrapThis: 'Owiń ten, który importują Twoje testy: {file}',
   boxWorkspace:
@@ -527,15 +537,20 @@ const es: Messages = {
   boxDocs: 'Otras estructuras (mergeTests, varios objetos test, playwright-bdd): {url}',
   runLine: 'Ejecutar: {command}',
   runLesson: 'Una medición es tu comando de tests habitual con PW_PERF_MODE.',
-  nextCheck: '{command}: mira qué se medirá y cuánto dura una ejecución completa.',
-  nextThresholds:
-    '{command}: primero calcula los umbrales en las máquinas de CI que van a medir (ver {url}). Mientras no existan los archivos de umbrales, las mediciones usan los umbrales amplios por defecto. {estimate}',
-  estimateUnknown: '(El comando de comprobación da una estimación.)',
-  estimateAbove:
-    '(El recuadro de inicio de la ejecución muestra una estimación de tiempo según la última ejecución.)',
-  nextCommit: 'Haz commit de {files}.',
-  nextTest:
-    '{command}: una medición que falla ante una regresión. Resultados: {report}; detalles del código de salida: {outcome}.',
+  importantTitle: 'IMPORTANTE',
+  importantIntro: 'Qué hacer ahora, en este orden:',
+  importantFixFirst:
+    'Primero añade el fixture perf (recuadro rojo de arriba): hasta entonces no se mide ningún endpoint.',
+  importantThresholds:
+    'Calcula los umbrales en CI, en el entorno donde se ejecutarán los tests (los tiempos de un portátil no sirven). Puede tardar varias horas: tu comando de tests se ejecuta varias veces en 1 worker.',
+  importantDownload:
+    'Descarga los archivos de umbrales de los artefactos de CI: la ejecución de umbrales también los copia a la carpeta del informe {dir}. Ejemplos de CI: docs/ci.md.',
+  importantCommit: 'Haz commit de ellos: {files}.',
+  importantTest:
+    'A partir de entonces ejecuta los tests con este comando; falla ante una regresión:',
+  importantResults: 'Resultados: {report}; detalles del código de salida: {outcome}.',
+  tryCheck:
+    'Pruébalo antes en local: {command} muestra qué se medirá y cuánto dura una ejecución completa.',
   windowsNote: 'Formas de estos comandos para PowerShell y cmd: docs/cli.md.',
   boxWrapThis: 'Envuelve el que importan tus tests: {file}',
   boxWorkspace:
@@ -713,16 +728,20 @@ const fr: Messages = {
   boxDocs: 'Autres structures (mergeTests, plusieurs objets test, playwright-bdd) : {url}',
   runLine: 'Lancer : {command}',
   runLesson: 'Une mesure est votre commande de tests habituelle avec PW_PERF_MODE.',
-  nextCheck:
-    '{command} : voyez ce qui sera mesuré et combien de temps dure une exécution complète.',
-  nextThresholds:
-    '{command} : calculez d’abord les seuils sur les machines de CI qui mesureront (voir {url}). Tant que les fichiers de seuils n’existent pas, les mesures utilisent les seuils larges par défaut. {estimate}',
-  estimateUnknown: '(La commande de vérification donne une estimation.)',
-  estimateAbove:
-    '(Le cadre de démarrage de l’exécution donne une estimation du temps d’après la dernière exécution.)',
-  nextCommit: 'Commitez {files}.',
-  nextTest:
-    '{command} : une mesure qui échoue en cas de régression. Résultats : {report} ; détail du code de sortie : {outcome}.',
+  importantTitle: 'IMPORTANT',
+  importantIntro: 'Que faire ensuite, dans cet ordre :',
+  importantFixFirst:
+    'Ajoutez d’abord la fixture perf (cadre rouge ci-dessus) : jusque-là, aucun endpoint n’est mesuré.',
+  importantThresholds:
+    'Calculez les seuils en CI, sur l’environnement où les tests seront lancés (les temps d’un portable ne se transposent pas). Cela peut prendre plusieurs heures : votre commande de tests s’exécute plusieurs fois sur 1 worker.',
+  importantDownload:
+    'Téléchargez les fichiers de seuils depuis les artefacts de CI : l’exécution des seuils les copie aussi dans le dossier du rapport {dir}. Exemples de CI : docs/ci.md.',
+  importantCommit: 'Commitez-les : {files}.',
+  importantTest:
+    'Ensuite, lancez les tests avec cette commande ; elle échoue en cas de régression :',
+  importantResults: 'Résultats : {report} ; détail du code de sortie : {outcome}.',
+  tryCheck:
+    'Essayez d’abord en local : {command} montre ce qui sera mesuré et combien de temps dure une exécution complète.',
   windowsNote: 'Formes de ces commandes pour PowerShell et cmd : docs/cli.md.',
   boxWrapThis: 'Enveloppez celui qu’importent vos tests : {file}',
   boxWorkspace:
@@ -896,15 +915,20 @@ const it: Messages = {
   boxDocs: 'Altre strutture (mergeTests, più oggetti test, playwright-bdd): {url}',
   runLine: 'Esegui: {command}',
   runLesson: 'Una misura è il tuo solito comando di test con PW_PERF_MODE.',
-  nextCheck: '{command}: guarda cosa verrà misurato e quanto dura un’esecuzione completa.',
-  nextThresholds:
-    '{command}: prima calcola le soglie sulle macchine di CI che misureranno (vedi {url}). Finché i file delle soglie non esistono, le misure usano le soglie larghe predefinite. {estimate}',
-  estimateUnknown: '(Il comando di verifica fornisce una stima.)',
-  estimateAbove:
-    '(Il riquadro iniziale dell’esecuzione mostra una stima del tempo basata sull’ultima esecuzione.)',
-  nextCommit: 'Fai commit di {files}.',
-  nextTest:
-    '{command}: una misura che fallisce in caso di regressione. Risultati: {report}; dettagli del codice di uscita: {outcome}.',
+  importantTitle: 'IMPORTANTE',
+  importantIntro: 'Cosa fare ora, in questo ordine:',
+  importantFixFirst:
+    'Prima aggiungi la fixture perf (riquadro rosso sopra): fino ad allora nessun endpoint viene misurato.',
+  importantThresholds:
+    'Calcola le soglie in CI, nell’ambiente in cui verranno eseguiti i test (i tempi di un portatile non valgono). Può richiedere diverse ore: il tuo comando di test viene eseguito più volte su 1 worker.',
+  importantDownload:
+    'Scarica i file delle soglie dagli artefatti di CI: l’esecuzione delle soglie li copia anche nella cartella del report {dir}. Esempi di CI: docs/ci.md.',
+  importantCommit: 'Fanne commit: {files}.',
+  importantTest:
+    'Da quel momento esegui i test con questo comando; fallisce in caso di regressione:',
+  importantResults: 'Risultati: {report}; dettagli del codice di uscita: {outcome}.',
+  tryCheck:
+    'Prova prima in locale: {command} mostra cosa verrà misurato e quanto dura un’esecuzione completa.',
   windowsNote: 'Forme di questi comandi per PowerShell e cmd: docs/cli.md.',
   boxWrapThis: 'Avvolgi quello che importano i tuoi test: {file}',
   boxWorkspace:
@@ -1075,14 +1099,20 @@ const uk: Messages = {
   boxDocs: 'Інші структури (mergeTests, кілька об’єктів test, playwright-bdd): {url}',
   runLine: 'Запуск: {command}',
   runLesson: 'Вимірювання — це ваша звичайна команда тестів із PW_PERF_MODE.',
-  nextCheck: '{command}: подивіться, що буде виміряно і скільки триватиме повний запуск.',
-  nextThresholds:
-    '{command}: спершу обчисліть пороги на машинах CI, які будуть вимірювати (див. {url}). Поки файлів порогів немає, вимірювання використовують широкі типові пороги. {estimate}',
-  estimateUnknown: '(Оцінку часу дасть команда перевірки.)',
-  estimateAbove: '(Стартова рамка запуску показує оцінку часу за останнім запуском.)',
-  nextCommit: 'Закомітьте {files}.',
-  nextTest:
-    '{command}: вимірювальний запуск, що падає при регресії. Результати: {report}; подробиці коду виходу: {outcome}.',
+  importantTitle: 'ВАЖЛИВО',
+  importantIntro: 'Що робити далі, у такому порядку:',
+  importantFixFirst:
+    'Спершу додайте фікстуру perf (червона рамка вище): доти жоден endpoint не вимірюється.',
+  importantThresholds:
+    'Обчисліть пороги в CI, на тому середовищі, де запускатимуться тести (час із ноутбука не переноситься). Це може тривати кілька годин: ваша команда тестів виконується кілька разів на 1 воркері.',
+  importantDownload:
+    'Завантажте файли порогів з артефактів CI: запуск порогів також копіює їх у папку звіту {dir}. Приклади для CI: docs/ci.md.',
+  importantCommit: 'Закомітьте їх: {files}.',
+  importantTest:
+    'Відтепер запускайте тести цією командою; вона завершується помилкою при регресії:',
+  importantResults: 'Результати: {report}; подробиці коду виходу: {outcome}.',
+  tryCheck:
+    'Спершу спробуйте локально: {command} показує, що буде виміряно і скільки триватиме повний запуск.',
   windowsNote: 'Форми цих команд для PowerShell і cmd: docs/cli.md.',
   boxWrapThis: 'Обгорніть той, який імпортують ваші тести: {file}',
   boxWorkspace:
@@ -1252,14 +1282,20 @@ const ru: Messages = {
   boxDocs: 'Другие структуры (mergeTests, несколько объектов test, playwright-bdd): {url}',
   runLine: 'Запуск: {command}',
   runLesson: 'Измерение — это ваша обычная команда тестов с PW_PERF_MODE.',
-  nextCheck: '{command}: посмотрите, что будет измерено и сколько займёт полный запуск.',
-  nextThresholds:
-    '{command}: сначала вычислите пороги на машинах CI, которые будут измерять (см. {url}). Пока файлов порогов нет, измерения используют широкие пороги по умолчанию. {estimate}',
-  estimateUnknown: '(Оценку времени даст команда проверки.)',
-  estimateAbove: '(Стартовая рамка запуска показывает оценку времени по последнему запуску.)',
-  nextCommit: 'Закоммитьте {files}.',
-  nextTest:
-    '{command}: измерительный запуск, который падает при регрессии. Результаты: {report}; подробности кода выхода: {outcome}.',
+  importantTitle: 'ВАЖНО',
+  importantIntro: 'Что делать дальше, в таком порядке:',
+  importantFixFirst:
+    'Сначала добавьте фикстуру perf (красная рамка выше): до этого ни один endpoint не измеряется.',
+  importantThresholds:
+    'Вычислите пороги в CI, на том окружении, где будут запускаться тесты (время с ноутбука не переносится). Это может занять несколько часов: ваша команда тестов выполняется несколько раз на 1 воркере.',
+  importantDownload:
+    'Скачайте файлы порогов из артефактов CI: запуск порогов также копирует их в папку отчёта {dir}. Примеры для CI: docs/ci.md.',
+  importantCommit: 'Закоммитьте их: {files}.',
+  importantTest:
+    'С этого момента запускайте тесты этой командой; она завершается с ошибкой при регрессии:',
+  importantResults: 'Результаты: {report}; подробности кода выхода: {outcome}.',
+  tryCheck:
+    'Сначала попробуйте локально: {command} показывает, что будет измерено и сколько займёт полный запуск.',
   windowsNote: 'Формы этих команд для PowerShell и cmd: docs/cli.md.',
   boxWrapThis: 'Оберните тот, который импортируют ваши тесты: {file}',
   boxWorkspace:

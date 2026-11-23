@@ -89,11 +89,13 @@ describe('init wizard', () => {
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toEqual({
       typecheck: 'tsc --noEmit',
     });
-    expect(out).toContain('Run: PW_PERF_MODE=test npx playwright test');
-    expect(out).toContain('PW_PERF_MODE=check npx playwright test: see what will be measured');
+    expect(out).toContain('│    PW_PERF_MODE=test npx playwright test');
+    expect(out).toContain(
+      'Try it locally first: PW_PERF_MODE=check npx playwright test shows what will be measured',
+    );
     expect(out).toContain('reports/pw-perf/report.html');
     expect(out).toContain('reports/pw-perf/outcome.json');
-    expect(out).toContain('Commit pw-perf-thresholds.json.');
+    expect(out).toContain('3. Commit them: pw-perf-thresholds.json.');
     expect(out).not.toMatch(/warnOnly|warn-only/u);
   });
 
@@ -186,7 +188,7 @@ describe('init wizard', () => {
     expect(all.asked).toContain('  What to measure? [all/api/steps] (all) ');
     expect(all.config).toContain('  measure: {\n    api: true,\n');
     expect(all.config).toMatch(/^ {4}steps: true,$/mu);
-    const commit = (out: string): string | undefined => /Commit (.*)\./u.exec(out)?.[1];
+    const commit = (out: string): string | undefined => /Commit them: (\S*)\./u.exec(out)?.[1];
     expect(commit(all.out)).toBe('pw-perf-thresholds.json');
     expect(all.out).not.toContain('Only steps');
 
@@ -244,6 +246,70 @@ describe('init wizard', () => {
     expect(second.written).toEqual([]);
     expect(snapshot(dir)).toEqual(after);
     expect(second.stdout.join('')).toContain('Nothing to change');
+  });
+
+  test('04-AC-67 after a write the summary ends with the IMPORTANT box instead of the Run line and the next steps', async () => {
+    const dir = copyProject('init-esm-ts');
+    const first = defaultsHost(dir);
+    expect(await main([], first.host)).toBe(0);
+    const out = first.stdout.join('');
+    const box = out.slice(out.indexOf('✔ Setup finished.'));
+    expect(box).toMatch(/^✔ Setup finished\.\n\n╭─ ⚠ IMPORTANT ─+╮\n/u);
+    expect(box.trimEnd().endsWith('╯')).toBe(true);
+    expect(box).toContain('│    PW_PERF_MODE=thresholds npx playwright test');
+    expect(box).toContain('It can take several hours');
+    for (const line of box.trimEnd().split('\n')) expect([...line].length).toBeLessThanOrEqual(80);
+    expect(out).not.toContain('Run: PW_PERF_MODE');
+    expect(out).not.toContain('Next steps:');
+    expect(out.indexOf('Try it locally first')).toBeLessThan(out.indexOf('✔ Setup finished.'));
+    // A project that is already set up gets the box too.
+    const second = defaultsHost(dir);
+    expect(await main([], second.host)).toBe(0);
+    expect(second.stdout.join('')).toContain('⚠ IMPORTANT');
+    expect(second.stdout.join('')).not.toContain('Apply the changes above');
+
+    // Every change declined: no box, the Run line and "apply the changes".
+    const declined = fakeCliHost({
+      cwd: copyProject('init-esm-ts'),
+      playwright: null,
+      env: { NO_COLOR: '1' },
+      prompt: () => ({
+        ask: async (question) => (/Apply this change\?/u.test(question) ? 'n' : ''),
+        close: () => undefined,
+      }),
+    });
+    expect(await main([], declined.host)).toBe(0);
+    const none = declined.stdout.join('');
+    expect(none).not.toContain('IMPORTANT');
+    expect(none).toContain('Run: PW_PERF_MODE=test npx playwright test');
+    expect(none).toContain('1. Apply the changes above');
+
+    // Without a terminal and with PW_PERF_DRY_RUN=1: no box.
+    const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
+    expect(await main([], noTty.host)).toBe(0);
+    expect(noTty.stdout.join('')).not.toContain('IMPORTANT');
+    expect(noTty.stdout.join('')).toContain('Run: PW_PERF_MODE=test npx playwright test');
+    const dry = fakeCliHost({
+      cwd: copyProject('init-esm-ts'),
+      playwright: null,
+      prompt: scriptedPrompt([]).prompt,
+      env: { PW_PERF_DRY_RUN: '1', NO_COLOR: '1' },
+    });
+    expect(await main([], dry.host)).toBe(0);
+    expect(dry.stdout.join('')).not.toContain('IMPORTANT');
+
+    // With the red box the IMPORTANT box starts with the fixture; TERM=dumb gives ASCII.
+    const red = fakeCliHost({
+      cwd: boxProject(),
+      playwright: null,
+      env: { TERM: 'dumb' },
+      prompt: scriptedPrompt([]).prompt,
+    });
+    expect(await main([], red.host)).toBe(0);
+    const redOut = red.stdout.join('');
+    expect(redOut).toContain('INIT_TEST_OBJECT_MANUAL');
+    expect(redOut).toMatch(/\+- ! IMPORTANT -+\+/u);
+    expect(redOut).toContain('| First add the perf fixture (red box above)');
   });
 
   test('04-AC-19 without a terminal, and with PW_PERF_DRY_RUN=1 in one, nothing is written', async () => {
@@ -341,7 +407,9 @@ describe('init wizard', () => {
     expect(fake.stdout.join('')).toContain(
       'Type the command without PW_PERF_ variables: the wizard adds PW_PERF_MODE itself.',
     );
-    expect(fake.stdout.join('')).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
+    expect(stripAnsi(fake.stdout.join(''))).toContain(
+      '│    PW_PERF_MODE=test npm run e2e -- --grep "@smoke"',
+    );
     const golden = readFileSync(join(INIT_GOLDEN, 'esm-ts-answers.diff'), 'utf8');
     expect(snapshotDiff(before, snapshot(dir))).toBe(golden);
   });
@@ -452,9 +520,9 @@ describe('init wizard', () => {
     expect(out).not.toContain('PW_PERF_MIN_SAMPLES');
     expect(out).toContain('The check with PW_PERF_MODE=thresholds ended with exit code 1.');
     expect(out).toContain('The check with PW_PERF_MODE=test ended with exit code 0.');
-    // The check ran: no check step in the next steps.
-    expect(out).not.toContain('PW_PERF_MODE=check npx playwright test: see what');
-    expect(out).toContain('(The start box of the run shows a time estimate from the last run.)');
+    // The check ran: no "try it locally" line; the IMPORTANT box is still there (04-AC-67).
+    expect(out).not.toContain('Try it locally first');
+    expect(out).toContain('⚠ IMPORTANT');
 
     // Ctrl+C in the thresholds run: no test run, the temporary dir is removed, code 130.
     const stopped = fakeCliHost({
@@ -514,7 +582,8 @@ describe('init wizard', () => {
     expect(out).toContain(
       '$ PW_PERF_MODE=thresholds PW_PERF_PASSES=2 npm run e2e -- --grep "@smoke"',
     );
-    expect(out).toContain('Run: PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
+    expect(out).toContain('│    PW_PERF_MODE=test npm run e2e -- --grep "@smoke"');
+    expect(out).toContain('│    PW_PERF_MODE=thresholds npm run e2e -- --grep "@smoke"');
     expect(out).not.toContain('chains several commands');
     // The command is used only in the commands and the check: no CI file, no script (04-D-53).
     expect(existsSync(join(typed.fake.host.cwd, '.github/workflows/perf.yml'))).toBe(false);
@@ -524,7 +593,8 @@ describe('init wizard', () => {
     const win = session('npm run e2e', { platform: 'win32' });
     expect(await main([], win.fake.host)).toBe(0);
     expect(win.fake.spawned[0]?.options.shell).toBe(true);
-    expect(win.fake.stdout.join('')).toContain('Run: npx cross-env PW_PERF_MODE=test npm run e2e');
+    expect(win.fake.stdout.join('')).toContain('│    npx cross-env PW_PERF_MODE=test npm run e2e');
+    expect(win.fake.stdout.join('')).toContain('PowerShell and cmd forms of these commands');
 
     // A chain gets the yellow line.
     const chain = session('npm run seed && npx playwright test');
@@ -539,8 +609,8 @@ describe('init wizard', () => {
     expect(skip.asked).not.toContain('  Run a check now? (Y/n) ');
     expect(skip.fake.spawned).toEqual([]);
     const skipped = skip.fake.stdout.join('');
-    expect(skipped).toContain('PW_PERF_MODE=check npx playwright test: see what will be measured');
-    expect(skipped).toContain('Run: PW_PERF_MODE=test npx playwright test');
+    expect(skipped).toContain('Try it locally first: PW_PERF_MODE=check npx playwright test');
+    expect(skipped).toContain('│    PW_PERF_MODE=test npx playwright test');
 
     // Without a terminal: the default command, no check.
     const noTty = fakeCliHost({ cwd: copyProject('init-esm-ts'), playwright: null });
@@ -703,7 +773,7 @@ describe('init wizard', () => {
     expect(one.stdout.join('')).toContain(
       'Which command do you usually run your tests with? (npm run e2e)',
     );
-    expect(one.stdout.join('')).toContain('Run: PW_PERF_MODE=test npm run e2e');
+    expect(one.stdout.join('')).toContain('│    PW_PERF_MODE=test npm run e2e');
     withScripts({
       e2e: 'playwright test',
       'e2e:ci': 'npm run reset && playwright test --reporter=dot',
@@ -922,7 +992,7 @@ export default defineConfig({
     const out = fakePl.stdout.join('');
     expect(out).toContain('[1/9] Co robi paczka i jak ją uruchamiać');
     expect(out).toContain('Zastosować tę zmianę?');
-    expect(out).toContain('Następne kroki:');
+    expect(out).toContain('⚠ WAŻNE');
     expect(out).not.toContain('Apply this change?');
     // Diffs, codes, file and option names stay in English.
     expect(out).toContain('+++ b/pw-perf.config.ts');
