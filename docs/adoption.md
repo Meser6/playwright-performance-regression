@@ -104,20 +104,21 @@ but TypeScript knows the `perf` fixture only in tests and in fixtures added afte
 
 ## What the guided setup changes by itself
 
-The guided setup (`npm init playwright-performance-regression`) reads your project as text and changes only layouts it recognises. It never changes
-your test files or `package.json`. Everything else is printed as an `INIT_MANUAL_STEP` instruction
+The guided setup (`npm init playwright-performance-regression`) reads your project as text and
+changes only layouts it recognises, each after a diff you confirm. It never changes
+`package.json`, and test files only by their import of `test`. Everything else is printed as an `INIT_MANUAL_STEP` instruction
 from the table above, or, for the test object, as a red box with the code to paste
 (`INIT_TEST_OBJECT_MANUAL`).
 
-| File                  | Recognised layout                                                                                                                                                           | Change                                                                                                                                     |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `playwright.config.*` | `export default defineConfig({...})`, `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as the last statement                      | wraps it in `withPerf(..., perfConfig)` and adds the imports (CommonJS: `require('./pw-perf.config').default`)                             |
-| fixtures module       | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`, in a file without tests | wraps it in `withPerfFixtures(...)`                                                                                                        |
-| test files            | never changed                                                                                                                                                               | when the tests import `test` from `@playwright/test`, the wizard shows the import to use instead: `playwright-performance-regression/test` |
-| `pw-perf.config.ts`   | missing                                                                                                                                                                     | created with the 15 most important options: the answers that differ from the defaults as code, the others commented out with their default |
-| `.gitignore`          | any                                                                                                                                                                         | adds `reports/pw-perf/`                                                                                                                    |
-| `package.json`        | never changed                                                                                                                                                               | the wizard shows the commands with `PW_PERF_MODE` before your test command                                                                 |
-| CI                    | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                                              | adds a separate file from [the CI recipes](ci.md): a manual thresholds job and a weekly measurement job running your test command          |
+| File                                                | Recognised layout                                                                                                                                                           | Change                                                                                                                                                                                   |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `playwright.config.*`                               | `export default defineConfig({...})`, `export default {...}`, `module.exports = defineConfig({...})` or `module.exports = {...}` as the last statement                      | wraps it in `withPerf(..., perfConfig)` and adds the imports (CommonJS: `require('./pw-perf.config').default`)                                                                           |
+| fixtures module                                     | exactly one `.extend(` call in the project (not `expect.extend`), written as `export const test = X.extend(...)` or `exports.test = X.extend(...)`, in a file without tests | wraps it in `withPerfFixtures(...)`                                                                                                                                                      |
+| test files                                          | tests that import `test` from `@playwright/test` and no fixtures module in the project (setup files are left alone)                                                         | the import changes to `playwright-performance-regression/test` (`test` and `expect`; other names stay), one diff per file; with a fixtures module the wizard only names the file to wrap |
+| `pw-perf.config.ts` (`.js` in a JavaScript project) | missing                                                                                                                                                                     | created with the 15 most important options: the answers that differ from the defaults as code, the others commented out with their default                                               |
+| `.gitignore`                                        | any                                                                                                                                                                         | adds `reports/pw-perf/`                                                                                                                                                                  |
+| `package.json`                                      | never changed                                                                                                                                                               | the wizard shows the commands with `PW_PERF_MODE` before your test command                                                                                                               |
+| CI                                                  | GitHub Actions, GitLab CI, Jenkins or Azure Pipelines detected                                                                                                              | adds a separate file from [the CI recipes](ci.md): a manual thresholds job and a weekly measurement job running your test command                                                        |
 
 Not recognised, so left to you: other config wrappers, several test objects, `mergeTests`, a
 `.json` package config, and existing CI files with other content. Running `init` again
@@ -192,6 +193,11 @@ measured tests, or guard them with `process.env.PW_PERF_MODE === undefined`.
 `retries` are not changed: the value of your Playwright config (or of
 `test.describe.configure({ retries })`) applies in perf mode too. Every attempt is measured, and a
 test that passes on a retry counts as passed (flaky).
+
+`use.launchOptions.slowMo` is not changed either: it delays every browser action, so a measured
+project with `slowMo` warns with [`CONFIG_SLOW_MO`](troubleshooting.md#config_slow_mo). Set
+`run: { overrideSlowMo: true }` in `pw-perf.config.ts` to make perf mode set it to 0 in every
+measured project.
 
 ## Long polling, streaming and server-sent events
 

@@ -7,66 +7,176 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Removed
+Upgrading from `0.1.0-next.3`: see [Upgrading](docs/upgrading.md). In short, run your test
+command with `PW_PERF_*` variables instead of `pw-perf` commands, move `pw-perf-results/` to
+`reports/pw-perf/`, remove `run.projects` and `--reporter` from the measurement command, and
+re-derive the thresholds files (the keys changed).
 
-- **Breaking:** the `pw-perf` commands and options are gone: `pw-perf test`, `thresholds`,
-  `check`, `report`, `init`, `thresholds --from`, `--env`, `--passes`, `--prune`, `--max-tests`,
-  `--config`, `--input`, `--output`, `--help` and `--version`. Run your test command with the
-  variables instead, e.g. `PW_PERF_MODE=test PW_PERF_PASSES=3 npx playwright test`. The HTML
-  report is written by every run, so there is no command to render it again; thresholds come
-  from a `PW_PERF_MODE=thresholds` run (the CI thresholds job and its artifact). The codes of the
-  runner (`CLI_INVALID_OPTION`, `CLI_OUTCOME_MISSING`, `CONFIG_FILE_LOAD_FAILED`, …) are removed.
-  `perf:*` scripts written by an early wizard no longer work; remove them.
-- **Breaking:** the wizard takes no options. `npx pw-perf` without arguments starts it in a
-  project with the package installed (any argument is `CLI_UNKNOWN_COMMAND` with the help), and
-  `npm init playwright-performance-regression` takes no arguments either. Use
-  `PW_PERF_LANG=<code>` instead of `--lang`, `PW_PERF_DRY_RUN=1` instead of `--dry-run` and
-  `PW_PERF_NO_TUTORIAL=1` instead of `--no-tutorial`. `--yes` has no replacement: the wizard
-  writes changes only in a terminal (press Enter for each default); without one it shows the
-  plan.
-- The `Continue? (Y/n)` question under the start banner is gone, and so is `PW_PERF_YES`: the
-  banner only informs and the run starts right away in every mode (press Ctrl+C to stop it). A
-  set `PW_PERF_YES` is ignored.
-- **Breaking:** `run.projects` is gone. The measured projects are the ones your test command
-  selects (`--project`; all projects without it), except setup and teardown projects (named in
+### Breaking
+
+- **No commands or options, only variables.** The `pw-perf` commands and options are gone:
+  `pw-perf test`, `thresholds`, `check`, `report`, `init`, `thresholds --from`, `--env`,
+  `--passes`, `--prune`, `--max-tests`, `--config`, `--input`, `--output`, `--help` and
+  `--version`. Run your test command with the variables instead, e.g.
+  `PW_PERF_MODE=test PW_PERF_PASSES=3 npx playwright test`. Every run writes the HTML report, so
+  there is no command to render it again; thresholds come from a `PW_PERF_MODE=thresholds` run (the
+  CI thresholds job and its artifact). The runner codes (`CLI_INVALID_OPTION`,
+  `CLI_OUTCOME_MISSING`, `CONFIG_FILE_LOAD_FAILED`, …) are removed. `perf:*` scripts written by an
+  early wizard no longer work; remove them. Hints, the help, the `Next:` line, the wizard, the
+  README and `docs/` show only `PW_PERF_*=… <your test command>`; `docs/cli.md` is now "Running".
+- **The wizard takes no options.** `npx pw-perf` without arguments starts it in a project with the
+  package installed, and `npm init playwright-performance-regression` takes no arguments either
+  (any argument is `CLI_UNKNOWN_COMMAND` with the help). Use `PW_PERF_LANG=<code>` instead of
+  `--lang`, `PW_PERF_DRY_RUN=1` instead of `--dry-run` and `PW_PERF_NO_TUTORIAL=1` instead of
+  `--no-tutorial`. `--yes` has no replacement: the wizard writes changes only in a terminal (press
+  Enter for each default); without one it shows the plan.
+- **`run.projects` is gone.** The measured projects are the ones your test command selects
+  (`--project`; all projects without it), except setup and teardown projects (named in
   `dependencies` or `teardown` of another project), which run once per pass and are not measured.
   `withPerf()` no longer removes projects from the run and the browser engine no longer decides:
   select one engine with `--project`, e.g. `PW_PERF_MODE=test npx playwright test --project
 chromium` (samples of several engines give `STATS_MULTIPLE_BROWSERS`). `run.projects` in the
   config is `CONFIG_UNKNOWN_OPTION`; `CONFIG_UNKNOWN_PROJECT` and `CONFIG_MULTIPLE_ENGINES` are
   removed, and `CONFIG_NO_MEASURED_PROJECT` now comes from the reporter when the command runs only
-  setup or teardown projects. The wizard no longer asks which projects to measure. Run reports
-  have `schemaVersion` 4; version 3 reports are migrated (their `config.run.projects` is
-  dropped).
+  setup or teardown projects. Run reports have `schemaVersion` 4; version 3 reports are migrated
+  (their `config.run.projects` is dropped).
+- **Report folder `reports/pw-perf/`.** The default `report.dir` is now `reports/pw-perf/` (was
+  `pw-perf-results/`); `report.html`, `report.json`, `outcome.json`, `pass-<k>.json` and
+  `thresholds-diff.md` are written directly into it. Every `test` and `thresholds` run empties it
+  when its first test starts, so reports of earlier runs never stay next to the new ones; the
+  parent `reports/` folder and the reports of other tools in it are never touched. A guard keeps
+  the folder when it is the project directory, the `playwright.config` directory, the home
+  directory, the filesystem root, `thresholds.dir`, a folder containing one of them, or a folder
+  with thresholds files, `package.json`, `playwright.config.*` or `.git`; the run then warns with
+  `RUN_REPORT_DIR_NOT_CLEANED`. A check and a run without started tests remove nothing. To
+  migrate: replace `pw-perf-results` with `reports/pw-perf` in `.gitignore` and in your CI jobs
+  (the artifact path and the `outcome.json` path; the GitHub and Azure artifact is now named
+  `pw-perf-report`), and delete the old `pw-perf-results/` folder, or set
+  `report: { dir: 'pw-perf-results' }` to keep it.
+- **Endpoint and step keys changed** (F2 findings). Prefixed ids in URLs are replaced with `:id` by
+  the new built-in pattern `keys.idPatterns.prefixed`: 2–5 capital letters, `-` and at least 3
+  digits (`/orders/ORD-1000` → `/orders/:id`), or 1–8 lowercase letters, `_` and at least 2 digits
+  or 8–32 letters and digits with a digit (`/invoices/inv_58` → `/invoices/:id`); short names such
+  as `api_v2`, `step_2fa` or `UTF-8` stay. In step titles, bare integers shorter than 9 digits
+  become `:num` instead of `:id` (`Transfer 1500 PLN` → `Transfer :num PLN`, the same key as
+  `Transfer 120.50 PLN`); number segments of paths in titles stay `:id`. Both fingerprints change,
+  so existing thresholds files give `THRESHOLDS_SOURCE_MISMATCH` until re-derived; see
+  [Upgrading](docs/upgrading.md#from-010-next3-endpoint-and-step-keys-changed).
+- **`--reporter` stops a measurement run.** A `--reporter` option without the pw-perf reporter in
+  the test command (also in an npm script) now stops a `PW_PERF_MODE=test` or `thresholds` run
+  before the tests with exit code 1 (`RUN_REPORTER_FLAG`). It used to be a warning on stderr and
+  the run ended with exit code 0 although nothing was measured. A check still only warns. Remove
+  `--reporter` from the measurement command or add `,playwright-performance-regression/reporter`
+  to its value.
+- **`test.step` blocks are measured by default** (`measure.steps` is `true`): they give step keys,
+  a `pw-perf-thresholds.steps.json` file and fail the run like endpoints, without any config. Set
+  `measure: { steps: false }` to measure only backend requests. A run without any `test.step`
+  prints one informational line instead of the `STEPS_NONE_FOUND` warning, which is removed.
+- **No start question.** The `Continue? (Y/n)` question under the start banner is gone, and so is
+  `PW_PERF_YES`: the banner only informs and the run starts right away in every mode (press Ctrl+C
+  to stop it). A set `PW_PERF_YES` is ignored.
+
+### Added
+
+- **`request` calls are measured.** Calls of Playwright's `request` fixture, `page.request` and
+  `context.request` (API tests and data setup in UI tests) are measured with `measure.api` on (the
+  default). They get their own keys with the prefix `request`, e.g.
+  `request GET /api/orders/:id`, next to the browser's `GET /api/orders/:id`: the two are timed
+  differently (worker clock vs browser timing), so each gets its own entry in
+  `pw-perf-thresholds.json` and its own limits. Contexts from `playwright.request.newContext()` are
+  measured after `perf.trackRequestContext(context)` or `trackRequestContext(context)` from
+  `playwright-performance-regression/fixture`. API tests must import `test` from the wrapped test
+  object, otherwise `TESTS_NOT_INSTRUMENTED` names them. The sample batch attachment moves to
+  schema version 3 (`apiRequests`); the run report and the thresholds files keep their versions.
+  If you excluded API-only projects from the measurement command because of
+  `RUN_PROJECT_NO_REQUESTS`, you can add them back.
+- `measure.api` (default `true`): set it to `false` to measure only `test.step` durations. No
+  request is recorded, the endpoint thresholds file is neither read nor written, and tests do not
+  need to import `test` from a wrapped test object (no `TESTS_NOT_INSTRUMENTED`). Turning off both
+  `measure.api` and `measure.steps` is `CONFIG_INVALID_VALUE`.
+- `run.overrideSlowMo` (default `false`): when `true`, perf mode sets `use.launchOptions.slowMo`
+  to 0 in every measured project and lists `slowMo` in the "perf mode overrides …" line. With
+  `false`, the `CONFIG_SLOW_MO` warning stays and now points to the option.
+- Wizard, new and changed steps (`[n/10]`):
+  - right after the language question it checks for `playwright.config`; without one it lists the
+    configs it finds in subfolders (up to 3 levels) with `cd <folder> && npx pw-perf` for each;
+  - step 1 says what the package does, how to run it (`PW_PERF_MODE=thresholds <your test
+command>`, commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally
+    and in CI, with `--project <name>` to measure one browser), the other `PW_PERF_*` variables
+    and which files to commit, instead of listing what it detected; the Playwright version shows
+    up only as an error when it is too old;
+  - step 4 asks "What to measure? [all/api/steps]" in every project, also without `test.step`
+    calls: `all` (the default) keeps both kinds on, `api` writes `measure: { steps: false }` and
+    `steps` writes `measure: { api: false }`; the `api` lesson says that it also covers `request`
+    calls in API tests;
+  - step 6 asks for your usual test command, with the plain Playwright command of your package
+    manager as the default (Enter) and `skip` to skip the check; it suggests `npm run <script>`
+    (or the pnpm/yarn form) when exactly one `package.json` script runs `playwright test`, and
+    warns when the command or its script sets `--reporter` or runs other commands before
+    `playwright test`, since they run in every pass. The typed command is used as typed in the
+    summary commands, in the CI jobs (quoted for GitLab YAML and Jenkins Groovy) and for the
+    check. The wizard no longer asks which test script runs your tests (`INIT_SCRIPT_FLAG` and
+    `INIT_SCRIPT_LATER_STEPS` are removed);
+  - when the tests take `test` straight from `@playwright/test` and there is no fixtures module,
+    the changes step rewrites the imports of the test files: `test` and `expect` come from
+    `playwright-performance-regression/test`, other names stay. Each file is a diff you confirm;
+    setup files are left alone. The red box appears only when you decline one of them;
+  - step 9, the check, runs your test command like the real runs: first with
+    `PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`,
+    through your shell. Its thresholds go to a temporary folder that is deleted afterwards (your
+    thresholds files are not touched), a key needs only 2 successful samples, and the wizard shows
+    the exit code of each run and the most likely cause of a failure from `outcome.json`. There is
+    no check when the red "Action needed: nothing is measured yet" box is shown (with the answer
+    `steps` there is no red box, because steps are measured without the `perf` fixture);
+  - the wizard says that `globalSetup` and setup projects run once per pass, warns about
+    `request.newContext()` contexts that are not passed to `trackRequestContext()`, warns about
+    test files that still import `test` straight from `@playwright/test` after wrapping your
+    fixtures module, and reminds you to format the changed files.
+- The wizard writes `pw-perf.config.js` in a JavaScript project (a `playwright.config.js`,
+  `.mjs` or `.cjs` without `tsconfig.json`): an ES module or CommonJS like the Playwright config,
+  with `// @ts-check`. A CommonJS config requires it without `.default`. TypeScript projects keep
+  `pw-perf.config.ts`.
+- Warning `CONFIG_FILE_NOT_PASSED`: a `pw-perf.config.*` file next to the Playwright config is no
+  longer ignored silently when `withPerf(config)` gets no second argument; the run still uses the
+  defaults, and the hint shows how to pass the file.
+- HTML report: a stopwatch logo in the header and as the page icon (an inline `data:` URI, no
+  extra files); a Source column (`browser` / `request`) in the Endpoints table.
+- The report names what it is about: the run report has an optional `suite` (the package name from
+  `package.json` next to the Playwright config, else the config path from the repository root),
+  shown in the HTML header, the page title and Run & config. A measured project with only
+  `request` calls is marked `requestOnly` and reads "no browser" in Run & config and in the
+  `PW_PERF_MODE=check` output.
+- Docs: installing in a pnpm monorepo (`pnpm add -Dw` or in every importing package,
+  `pnpm --filter <app> exec playwright test`, `--no-bail` for `pnpm -r`), `globalSetup` and setup
+  projects running once per pass, `trackRequestContext()` in fixtures, several test objects in one
+  chain (wrapping both is safe: an integration test shows every request is recorded once), an
+  example of `keys.extraIdPatterns`, and the upgrade steps from `0.1.0-next.3`.
 
 ### Changed
 
-- **Breaking:** endpoint keys and step keys change in two places (F2 findings). Prefixed ids in
-  URLs are replaced with `:id` by the new built-in pattern `keys.idPatterns.prefixed`: 2–5 capital
-  letters, `-` and at least 3 digits (`/orders/ORD-1000` → `/orders/:id`), or 1–8 lowercase
-  letters, `_` and at least 2 digits or 8–32 letters and digits with a digit
-  (`/invoices/inv_58` → `/invoices/:id`); short names such as `api_v2`, `step_2fa` or `UTF-8`
-  stay. In step titles, bare integers shorter than 9 digits become `:num` instead of `:id`
-  (`Transfer 1500 PLN` → `Transfer :num PLN`, the same key as `Transfer 120.50 PLN`); number
-  segments of paths in titles stay `:id`. Both fingerprints change, so existing thresholds files
-  give `THRESHOLDS_SOURCE_MISMATCH` until re-derived; see
-  [Upgrading](docs/upgrading.md#from-010-next3-endpoint-and-step-keys-changed).
-
-- The report names what it is about: the run report has an optional `suite` (the package name
-  from `package.json` next to the Playwright config, else the config path from the repository
-  root), shown in the HTML header, the page title and Run & config. A measured project with only
-  `request` calls is marked `requestOnly` and reads "no browser" in Run & config and in the
-  `PW_PERF_MODE=check` output.
-
-- HTML report: a key without timed samples shows its other statuses under Samples and in its
-  details, e.g. "5 × 404 (not timed)"; the Endpoints and Steps tab counts are neutral with a red
-  badge of keys with violations; the thresholds file source is shortened to the version and the
-  date (full text on hover); Top keys in the Tests tab put the time under each key; "Most
+- `pw-perf.config.ts` written by the wizard is short: the 15 most important options (including
+  `measure.api`, `measure.steps` and `run.overrideSlowMo`), each with a short comment, and a link
+  to the full option list in `docs/configuration.md`. The "Most important settings" block and the
+  comments for every other option are gone.
+- The wizard's commands and CI jobs use your test command from step 6, or the plain Playwright
+  command of your package manager (`npx playwright test`, `pnpm exec playwright test`,
+  `yarn playwright test`); it adds `reports/pw-perf/` to `.gitignore` unless `reports/` is
+  ignored already.
+- The wizard's red box lists the files with `.extend()` with the number of test files that import
+  each, the most imported first, and names the one to wrap. A fixtures module of a workspace
+  package is listed too, with a note to install the package in the workspace root. Nested git
+  repositories (submodules) are no longer scanned unless your sources import from them.
+- HTML report: the view switch (Overview, Endpoints, Steps, Tests, …) is a row of tabs. The
+  selected tab has an accent underline and background, every tab is at least 44 px high, and on a
+  narrow screen the bar scrolls to show the selected tab. The Endpoints and Steps tab counts are
+  neutral with a red badge of keys with violations.
+- HTML report details: a key without timed samples shows its other statuses under Samples and in
+  its details, e.g. "5 × 404 (not timed)"; the thresholds file source is shortened to the version
+  and the date (full text on hover); Top keys in the Tests tab put the time under each key; "Most
   expensive tests" names the project when more than one is measured; the TTFB column is hidden
   when no key has TTFB; a step without a location reads "boxed step (no location)".
-
-- Violations are counted the same way in the console and the HTML report: failed checks with
-  the number of keys (`8 blocking violations in 7 keys`); the Violations tile counts failed checks
+- Violations are counted the same way in the console and the HTML report: failed checks with the
+  number of keys (`8 blocking violations in 7 keys`); the Violations tile counts failed checks
   too. Apdex, slow share (wilson) and error rate over the limit read in percentage points
   (`+81 pp`) instead of a relative percent that showed `>999%`.
 - `Next:` after a `test` or `check` run repeats the arguments you added (`PW_PERF_MODE=test npm
@@ -83,214 +193,67 @@ details: performance failed (code 2) in …/outcome.json`.
 - The thresholds diff lists the skipped keys with the reason (`no successful samples, 5 needed
 (5 × 404)`): up to 5 in the console, all in `thresholds-diff.md`. The Apdex T limit reads
   `apdex T 500 ms` instead of `t 500`.
-- Samples from a project that is only a dependency or teardown of other projects (a usual
-  `setup` project) no longer give the `STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS` warning.
-
-- The wizard checks for `playwright.config` right after the language question. Without one, it
-  lists the configs it finds in subfolders (up to 3 levels) with `cd <folder> && npx pw-perf`
-  for each.
-- Step 6 of the wizard suggests `npm run <script>` (or the pnpm/yarn form) when exactly one
-  `package.json` script runs `playwright test`. It warns when the command or its script sets
-  `--reporter` (a measurement run stops with `RUN_REPORTER_FLAG`) and when the script runs other
-  commands before `playwright test`, since they run in every pass.
-- The wizard says that `globalSetup` and setup projects run once per pass, warns about
-  `request.newContext()` contexts that are not passed to `trackRequestContext()`, gives the most
-  likely cause of a failed check run from `outcome.json`, and reminds you to format the changed
-  files.
-- The wizard changes the imports of your test files when they take `test` straight from
-  `@playwright/test` and there is no fixtures module: `test` and `expect` come from
-  `playwright-performance-regression/test`, other names stay. Each file is a diff you confirm;
-  setup files are left alone. The red box appears only when you decline one of them.
-- The wizard's red box lists the files with `.extend()` with the number of test files that
-  import each, the most imported first, and names the one to wrap. A fixtures module of a
-  workspace package is listed too, with a note to install the package in the workspace root.
-  Nested git repositories (submodules) are no longer scanned unless your sources import from them.
-- After wrapping your fixtures module, the wizard warns about test files that still import
-  `test` straight from `@playwright/test`, since they are not measured.
-- The wizard writes `pw-perf.config.js` in a JavaScript project (a `playwright.config.js`,
-  `.mjs` or `.cjs` without `tsconfig.json`): an ES module or CommonJS like the Playwright config,
-  with `// @ts-check`. A CommonJS config requires it without `.default`. TypeScript projects keep
-  `pw-perf.config.ts`.
-- **Breaking:** a `--reporter` option without the pw-perf reporter in the test command (also in
-  an npm script) now stops a `PW_PERF_MODE=test` or `thresholds` run before the tests with exit
-  code 1 (`RUN_REPORTER_FLAG`). It used to be a warning on stderr and the run ended with exit code
-  0 although nothing was measured. A check still only warns. Remove `--reporter` from the
-  measurement command or add `,playwright-performance-regression/reporter` to its value.
-- Wizard, step "What to measure": the `api` lesson says that it also covers `request` calls in
-  API tests (all seven languages).
-- **Breaking:** the default `report.dir` is now `reports/pw-perf/` (was `pw-perf-results/`).
-  `report.html`, `report.json`, `outcome.json`, `pass-<k>.json` and `thresholds-diff.md` are
-  written directly into it. Only `reports/pw-perf/` is emptied when a run starts; the parent
-  `reports/` folder and the reports of other tools in it are never touched. To migrate: replace
-  `pw-perf-results` with `reports/pw-perf` in `.gitignore` and in your CI jobs (the artifact path
-  and the `outcome.json` path; the GitHub and Azure artifact is now named `pw-perf-report`), and
-  delete the old `pw-perf-results/` folder. To keep the old folder, set
-  `report: { dir: 'pw-perf-results' }`. The wizard adds `reports/pw-perf/` to `.gitignore` unless
-  `reports/` is ignored already.
-- HTML report: the view switch (Overview, Endpoints, Steps, Tests, …) is a row of tabs. The
-  selected tab has an accent underline and background, every tab is at least 44 px high, and on a
-  narrow screen the bar scrolls to show the selected tab.
-- `pw-perf.config.ts` written by the wizard is short: the 15 most important options (including
-  `measure.api`, `measure.steps` and `run.overrideSlowMo`), each with a short comment, and a link
-  to the full option list in `docs/configuration.md`. The "Most important settings" block and the
-  comments for every other option are gone.
-- The check at the end of the wizard runs your test command like the real runs: first with
-  `PW_PERF_MODE=thresholds`, then with `PW_PERF_MODE=test`, both with `PW_PERF_PASSES=2`, instead
-  of once with `PW_PERF_MODE=check`. The thresholds of the check go to a temporary folder that is
-  deleted afterwards; your thresholds files are not touched. The wizard shows the exit code of
-  each run.
-- The wizard no longer shows the check step when it shows the red "Action needed: nothing is
-  measured yet" box; the summary still suggests the check. With the answer `steps` to "What to
-  measure?" there is no red box, because steps are measured without the `perf` fixture.
-- The wizard no longer asks which test script runs your tests and has nine steps (`[n/9]`). The
-  commands it shows and writes to the CI jobs use the plain Playwright command of your package
-  manager (`npx playwright test`, `pnpm exec playwright test`, `yarn playwright test`); put your
-  own test command in its place, e.g. `PW_PERF_MODE=test npm run e2e:qa`. The check at the end
-  runs the Playwright CLI. The warnings `INIT_SCRIPT_FLAG` and `INIT_SCRIPT_LATER_STEPS` are
-  removed.
-- The wizard asks for your usual test command (new step 6, steps `[n/10]`), with the command of
-  your package manager as the default (Enter) and `skip` to skip the check. The typed command is
-  used as typed in the summary commands, in the CI jobs (quoted for GitLab YAML and Jenkins
-  Groovy) and for the check, which runs it through your shell with `PW_PERF_MODE=check`.
-- Step 4 of the wizard asks "What to measure? [all/api/steps]" instead of whether to measure
-  `test.step` blocks, and is asked in every project, also without `test.step` calls. `all` (the
-  default) keeps both kinds on, `api` writes `measure: { steps: false }` and `steps` writes
-  `measure: { api: false }`.
-- Step 1 of the wizard no longer lists what it detected (files, `baseURL`, projects, CI). It
-  says what the package does, how to run it (`PW_PERF_MODE=thresholds <your test command>`,
-  commit the thresholds files, then `PW_PERF_MODE=test <your test command>` locally and in CI,
-  with `--project <name>` to measure one browser), the other `PW_PERF_*` variables and which
-  files to commit. The Playwright version shows up only as an error when it is too old.
-- Every `test` and `thresholds` run empties `report.dir` (default `reports/pw-perf/`) when its
-  first test starts, so reports of earlier runs never stay next to the new ones. A guard keeps
-  the folder when it is the project directory, the `playwright.config` directory, the home
-  directory, the filesystem root, `thresholds.dir`, a folder containing one of them, or a folder
-  with thresholds files, `package.json`, `playwright.config.*` or `.git`; the run then warns with
-  `RUN_REPORT_DIR_NOT_CLEANED`. A check and a run without started tests remove nothing.
-
-- `measure.steps` is on by default: `test.step` blocks give step keys, a
-  `pw-perf-thresholds.steps.json` file and fail the run like endpoints, without any config.
-  Set `measure: { steps: false }` to measure only backend requests. A run without any
-  `test.step` prints one informational line instead of the `STEPS_NONE_FOUND` warning, which is
-  removed.
-- Hints, the help, the `Next:` line, the wizard, the README and `docs/` show only the
-  environment form, `PW_PERF_*=… <your test command>`, and
-  `npm init playwright-performance-regression` for the guided setup; they no longer suggest `npx pw-perf`
-  commands or their options (e.g. `THRESHOLDS_FILE_MISSING` now says "Derive thresholds with
-  `PW_PERF_MODE=thresholds <your test command>`"). `docs/cli.md` is now "Running". The examples
-  run with `PW_PERF_MODE=… npm test` instead of `perf:*` scripts.
+- Samples from a project that is only a dependency or teardown of other projects (a usual `setup`
+  project) no longer give the `STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS` warning.
+- `TESTS_NOT_INSTRUMENTED` counts tests instead of test results and names up to three files, e.g.
+  `2 tests in tests/api.spec.ts import test without withPerfFixtures() …`; a crashed worker is
+  mentioned only when a worker actually crashed.
+- The examples run with `PW_PERF_MODE=… npm test` instead of `perf:*` scripts.
 
 ### Fixed
 
-- Wizard translations reviewed: the no-terminal note has its missing full stop in every
-  language; one term per idea in each language (es "tests", it "passaggi" and "verifica",
-  uk/ru "воркер" and endpoint keys); French uses a no-break space before `:` `;` `?` `!` and
-  French and Italian use typographic apostrophes; the red box title fits 80 columns in every
-  language (it was cut in es, fr, pl and it).
-- `CONFIG_SLOW_MO` warns only about projects measured in the run. A run with `--project=api`
-  warned about the `slowMo` of an e2e project that did not run (and of setup projects), in every
-  run.
-- The wizard no longer adds `reports/pw-perf/` to a `.gitignore` that already ignores it with a
-  glob such as `/reports/**/*` or `reports/*`.
-- A thresholds run that selects a subset of the tests (`--grep`, `--project`, file filters) no
-  longer ends with "Run with PW_PERF_PRUNE=1 to remove them": pruning is ignored in such a run
-  (`RUN_PRUNE_SKIPPED`). The line now says that the run selects a subset of the tests.
-- The hint of `RUN_PROJECT_NO_REQUESTS` names `trackRequestContext()`: API tests that call only
-  their own clients from `request.newContext()` recorded nothing, and the hint did not say why.
-- `docs/adoption.md` no longer says that `request` calls in API-only tests are not measured;
-  it has a row for API clients made with `request.newContext()` (`trackRequestContext()`). The
-  note of the Endpoints tab in the HTML report mentions request calls, not only browser
-  requests.
-- The wizard's red box no longer says "nothing is measured yet" when you answer `all` and your
-  tests use `test.step`: the step durations are measured, so the box now says "Endpoints are not
-  measured yet" (in all 7 languages), and the wizard offers the check (step 9).
-- The wizard's check works on small test suites: with 2 passes its thresholds run often derived
-  nothing (`THRESHOLDS_NOTHING_TO_DERIVE`, "1 tool error") and the test run had nothing to
-  compare with. In the check, a key now needs 2 successful samples instead of
-  `checks.time.median.minSamples` (5 by default); real runs are unchanged.
-- The wizard's check no longer asks you to commit its temporary thresholds files: its
-  thresholds run showed `Thresholds: ../../…/T/pw-perf-check-…/pw-perf-thresholds.json`,
-  "Review the changes and commit the thresholds files" and `Next: commit …`. It now shows the
-  absolute path, says the files are temporary and has no `Next:` line.
-- Types of `playwright-performance-regression/config`, `/fixture`, `/test` and `/reporter`
-  resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
-  `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
-  wrapped `test` keeps its fixture types instead of `any`.
 - Collector: with Playwright 1.57 (Chromium) a `fetch` answered with `204 No Content` was
   recorded as `ABORTED` with no time, so endpoints such as `DELETE /api/items/:id` were never
   measured. A 204, 205 or 304 response followed by `requestfailed` is now a sample with its status
   and time.
-- Collector: a request whose response arrived but whose body was then aborted (typically a
-  login or form `fetch` followed at once by `location.href = …`) was recorded as `ABORTED`, so
+- Collector: a request whose response arrived but whose body was then aborted (typically a login
+  or form `fetch` followed at once by `location.href = …`) was recorded as `ABORTED`, so
   successful logins were never measured and the key kept only the failed attempts. A response
   followed by an abort (`net::ERR_ABORTED`, `NS_BINDING_ABORTED`, …) is now a sample with its
-  status and time (up to the end of the body, or to the headers when the body was cut off);
-  other failures after a response stay `FAILED`.
-- Setup wizard: project detection reads the whole project, not only `testDir`, so fixtures
-  modules and page objects next to the test directory (e.g. `testDir: './tests/specs'` with
+  status and time (up to the end of the body, or to the headers when the body was cut off); other
+  failures after a response stay `FAILED`.
+- Types of `playwright-performance-regression/config`, `/fixture`, `/test` and `/reporter`
+  resolve in TypeScript projects without `exports` support (`"module": "commonjs"` with no
+  `moduleResolution`, i.e. `node10`): `tsc` no longer fails with `Cannot find module`, and a
+  wrapped `test` keeps its fixture types instead of `any`.
+- With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2 as
+  `npm run npx` ("Missing script"): a package script runs again only when `package.json` has it.
+  The `Next:` hint no longer suggests `npm run npx` either.
+- `CONFIG_SLOW_MO` warns only about projects measured in the run. A run with `--project=api`
+  warned about the `slowMo` of an e2e project that did not run (and of setup projects), in every
+  run.
+- A thresholds run that selects a subset of the tests (`--grep`, `--project`, file filters) no
+  longer ends with "Run with PW_PERF_PRUNE=1 to remove them": pruning is ignored in such a run
+  (`RUN_PRUNE_SKIPPED`). The line now says that the run selects a subset of the tests.
+- A `PW_PERF_MODE=thresholds` run no longer warns with `THRESHOLDS_FILE_MISSING` about the
+  thresholds file it is creating.
+- `PW_PERF_MODE=check` uses the singular for one item (`1 sample · 1 test`, `5 requests in 1
+test`, `1 of 1 test run`, `1 api key`) instead of `1 samples · 1 tests`.
+- HTML report: long endpoint and step names no longer run into the next column. In the Endpoints
+  and Steps tables the name wraps inside the Key cell; in the Overview cards it is cut with an
+  ellipsis and the full name is shown on hover.
+- HTML report: the key labels of a waterfall (Tests tab) are monospace with the method in its
+  colour again; in Chromium they were unstyled and a long method such as `DELETE` overlapped the
+  path.
+- Setup wizard: project detection reads the whole project, not only `testDir`, so fixtures modules
+  and page objects next to the test directory (e.g. `testDir: './tests/specs'` with
   `tests/fixtures/`) are found: a single fixtures module there is wrapped, and the "nothing is
   measured yet" box lists the files with `.extend(`. `.extend(` in application code (e.g. zod
   schemas) no longer counts as a fixtures module, and the box counts only test files that import
   `test` from `@playwright/test`, not page objects or fixtures modules.
-- `PW_PERF_MODE=check`: the top keys say `1 sample · 1 test` instead of `1 samples · 1 tests`.
-- `PW_PERF_MODE=check`: the project lines, the header and the requests line use the singular too
-  (`5 requests in 1 test`, `1 of 1 test run`, `1 api key`) instead of `1 tests`.
-- Setup wizard: the "nothing is measured yet" box counts the test files as `(files: 1)` instead
-  of `(1 files)` (English, Spanish, French, Italian).
-- HTML report: the Source column of the Endpoints table (`browser`, `request`) is an ordinary
-  cell, aligned with the rest of the row, instead of a badge stuck to the top of the row.
-- The wizard's red box (`INIT_TEST_OBJECT_MANUAL`) is full width in a pseudo-terminal that reports
-  0 columns (e.g. `expect`, `docker -t`) instead of being cut to 40 columns.
-- HTML report: the key labels of a waterfall (Tests tab) are monospace with the method in its
-  colour again; in Chromium they were unstyled and a long method such as `DELETE` overlapped the
-  path.
-- `request` calls of a browser context with its own `baseURL` (`browser.newContext({ baseURL })`
-  with `perf.track()` or `trackContext()`) get keys of that origin: relative URLs no longer
-  resolve against the test's `baseURL`; such calls take the URL of the response.
-- HTML report: long endpoint and step names no longer run into the next column. In the
-  Endpoints and Steps tables the name wraps inside the Key cell; in the Overview cards it is cut
-  with an ellipsis and the full name is shown on hover.
-- A `PW_PERF_MODE=thresholds` run no longer warns with `THRESHOLDS_FILE_MISSING` about the
-  thresholds file it is creating.
-- With `PW_PERF_PASSES` above 1, `PW_PERF_MODE=… npx playwright test` no longer starts pass 2
-  as `npm run npx` ("Missing script"): a package script runs again only when `package.json` has
-  it. The `Next:` hint no longer suggests `npm run npx` either.
-- `TESTS_NOT_INSTRUMENTED` counts tests instead of test results and names up to three files,
-  e.g. `2 tests in tests/api.spec.ts import test without withPerfFixtures() …`; a crashed worker
-  is mentioned only when a worker actually crashed.
-
-### Added
-
-- Docs: installing in a pnpm monorepo (`pnpm add -Dw` or in every importing package,
-  `pnpm --filter <app> exec playwright test`, `--no-bail` for `pnpm -r`), `globalSetup` and setup
-  projects running once per pass, `trackRequestContext()` in fixtures, several test objects in one
-  chain (wrapping both is safe: an integration test shows every request is recorded once) and an
-  example of `keys.extraIdPatterns`.
-- Warning `CONFIG_FILE_NOT_PASSED`: a `pw-perf.config.*` file next to the Playwright config is
-  no longer ignored silently when `withPerf(config)` gets no second argument; the run still uses
-  the defaults, and the hint shows how to pass the file.
-- Calls of Playwright's `request` fixture, `page.request` and `context.request` are measured
-  (API tests and data setup in UI tests), with `measure.api` on (the default). They get their own
-  keys with the prefix `request`, e.g. `request GET /api/orders/:id`, next to the browser's
-  `GET /api/orders/:id`: the two are timed differently (worker clock vs browser timing), so each
-  gets its own entry in `pw-perf-thresholds.json` and its own limits. The Endpoints table of the
-  HTML report has a Source column (`browser` / `request`). Contexts from
-  `playwright.request.newContext()` are measured after `perf.trackRequestContext(context)` or
-  `trackRequestContext(context)` from `playwright-performance-regression/fixture`. API tests must
-  import `test` from the wrapped test object, otherwise `TESTS_NOT_INSTRUMENTED` names them.
-  The sample batch attachment moves to schema version 3 (`apiRequests`); the run report and the
-  thresholds files keep their versions. If you excluded API-only projects from the measurement
-  command because of `RUN_PROJECT_NO_REQUESTS`, you can add them back.
-- The HTML report has a stopwatch logo in its header and as the page icon (an inline
-  `data:` URI, no extra files).
-- `run.overrideSlowMo` (default `false`): when `true`, perf mode sets
-  `use.launchOptions.slowMo` to 0 in every measured project and lists `slowMo` in the
-  "perf mode overrides …" line. With `false`, the `CONFIG_SLOW_MO` warning stays and now points
-  to the option.
-- `measure.api` (default `true`): set it to `false` to measure only `test.step` durations. No
-  request is recorded, the endpoint thresholds file is neither read nor written, and tests do
-  not need to import `test` from a wrapped test object (no `TESTS_NOT_INSTRUMENTED`). Turning
-  off both `measure.api` and `measure.steps` is `CONFIG_INVALID_VALUE`.
+- Setup wizard: the red box no longer says "nothing is measured yet" when you answer `all` and your
+  tests use `test.step`: the step durations are measured, so the box says "Endpoints are not
+  measured yet" (in all 7 languages), and the wizard offers the check.
+- Setup wizard: the red box (`INIT_TEST_OBJECT_MANUAL`) is full width in a pseudo-terminal that
+  reports 0 columns (e.g. `expect`, `docker -t`) instead of being cut to 40 columns, and counts
+  the test files as `(files: 1)` instead of `(1 files)` (English, Spanish, French, Italian).
+- Setup wizard: no `.gitignore` entry is added when the file already ignores the report folder
+  with a glob such as `/reports/**/*` or `reports/*`.
+- Setup wizard translations reviewed: the no-terminal note has its missing full stop in every
+  language; one term per idea in each language (es "tests", it "passaggi" and "verifica", uk/ru
+  "воркер" and endpoint keys); French uses a no-break space before `:` `;` `?` `!` and French and
+  Italian use typographic apostrophes; the red box title fits 80 columns in every language (it
+  was cut in es, fr, pl and it).
 
 ## [0.1.0-next.3] - 2026-11-21
 

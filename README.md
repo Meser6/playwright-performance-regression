@@ -11,9 +11,10 @@ Catch backend performance regressions from the Playwright tests you already have
 
 ## How it works
 
-1. **Measures** the backend requests your browser makes while your existing e2e tests run, in a
-   separate measurement run (`PW_PERF_MODE=test npm run e2e`): your test command runs a few times
-   in a row (passes), and all passes are evaluated together.
+1. **Measures** the backend requests your browser makes (and the `request` calls of API tests)
+   while your existing e2e tests run, in a separate measurement run
+   (`PW_PERF_MODE=test npm run e2e`): your test command runs a few times in a row (passes), and
+   all passes are evaluated together.
 2. **Groups** the requests into endpoint keys such as `GET /api/orders/:id`, and computes
    statistics per key: median, p95, p99, error rate and more.
 3. **Derives thresholds** from a run and writes them to JSON files that you review and commit like
@@ -30,14 +31,21 @@ npm init playwright-performance-regression@next
 ```
 
 This installs the package as a dev dependency and starts a short guided setup (after `0.1.0`:
-`npm init playwright-performance-regression`; run it again at any time). It shows a diff of every change
-before writing anything: it wraps your Playwright config and your fixtures module, creates
-`pw-perf.config.ts`, ignores `reports/pw-perf/` and can add the CI jobs. It never changes your test
-files or `package.json`: when it cannot wrap your `test` object, it shows the code to paste. At the
-end it runs a short check of what will be measured. `pnpm create` and
-`yarn create` work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as
-`@next` with `yarn create`). The guided setup speaks English, Spanish, French, Polish, Italian,
-Ukrainian and Russian (it asks at the start).
+`npm init playwright-performance-regression`; run it again at any time; in a project with the
+package installed, `npx pw-perf` starts it too). It asks which tests to measure, the passes, what
+to measure (endpoints, `test.step` blocks or both), the threshold headroom and your usual test
+command, then shows a diff of every change before writing it: it creates `pw-perf.config.ts`
+(`pw-perf.config.js` in a JavaScript project) with the most important options, wraps your
+Playwright config and your fixtures module, ignores `reports/pw-perf/` and can add the CI jobs.
+Without a fixtures module, it switches the `@playwright/test` imports of your test files to
+`playwright-performance-regression/test`, one confirmed diff per file; when it cannot change the
+test object, it shows the code to paste. `package.json` is never changed. At the end it offers a
+check: your test command runs with `PW_PERF_MODE=thresholds`, then `PW_PERF_MODE=test`, both with
+2 passes, and the check's thresholds files are deleted afterwards. `pnpm create` and `yarn create`
+work too (Yarn 2 or later; Yarn 1 cannot install a specific version such as `@next` with
+`yarn create`). The guided setup speaks English, Spanish, French, Polish, Italian, Ukrainian and
+Russian (it asks at the start). It takes no arguments; `PW_PERF_LANG`, `PW_PERF_DRY_RUN` and
+`PW_PERF_NO_TUTORIAL` change it ([Guided setup](docs/cli.md#guided-setup)).
 
 <details>
 <summary>Manual setup</summary>
@@ -74,7 +82,8 @@ import { test, expect } from 'playwright-performance-regression/test';
 ```
 
 Optionally add `pw-perf.config.ts` and pass it as the second argument of `withPerf()`; see
-[Configuration](docs/configuration.md).
+[Configuration](docs/configuration.md). Remove `--reporter` from the command you measure with:
+it replaces the package reporter, so a measurement run stops with `RUN_REPORTER_FLAG`.
 
 </details>
 
@@ -98,8 +107,9 @@ On Windows: `npx cross-env PW_PERF_MODE=test npm run e2e` (PowerShell and cmd fo
 
 The exit code is Playwright's own; the cause of a failure (a regression, failed tests, a config
 error) is in `reports/pw-perf/outcome.json`. The result is also printed in the terminal and written
-to `reports/pw-perf/report.json` and `reports/pw-perf/report.html`. All variables are described in
-[Running](docs/cli.md).
+to `reports/pw-perf/report.json` and `reports/pw-perf/report.html` (tabs Overview, Endpoints,
+Steps, Tests and Run & config). Every `test` and `thresholds` run empties `reports/pw-perf/` first,
+so it holds only the last run. All variables are described in [Running](docs/cli.md).
 
 Derive thresholds on the same machines that run the check, usually your CI runners (see
 [CI](#ci) below); thresholds measured on a laptop do not fit CI. How much headroom they get is one
@@ -109,12 +119,13 @@ setting, `thresholds: { preset: 'strict' | 'normal' | 'loose' }`. See
 ## Step timings
 
 Your existing `test.step` blocks are measured too, without changing the tests (on by default;
-`measure: { steps: false }` in `pw-perf.config.ts` turns it off).
+`measure: { steps: false }` in `pw-perf.config.ts` turns it off, `measure: { api: false }` measures
+only the steps).
 
 A step `submit` inside a step `login` becomes the key `login › submit`, with its own statistics,
 checks and thresholds file `pw-perf-thresholds.steps.json`. Step titles are sanitized: ids,
-e-mails, URLs and secrets never reach the keys or the reports, also inside quotes. See
-[Step timings](docs/steps.md).
+e-mails, URLs and secrets never reach the keys or the reports, also inside quotes; numbers in
+words become `:num` (`Transfer 1500 PLN` → `Transfer :num PLN`). See [Step timings](docs/steps.md).
 
 ## CI
 
@@ -164,8 +175,10 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
 
 - REST only: every GraphQL query goes to the same endpoint key.
 - Requests made by the browser and calls of Playwright's `request` fixture, `page.request` and
-  `context.request` are measured; other HTTP clients (Node `fetch`, axios) are not. API tests are
-  measured only when they import `test` from the wrapped test object.
+  `context.request` are measured (keys such as `request GET /api/orders/:id`, separate from the
+  browser's); other HTTP clients (Node `fetch`, axios) are not. API tests are measured only when
+  they import `test` from the wrapped test object, and contexts from `request.newContext()` only
+  after `trackRequestContext(context)` ([Adoption](docs/adoption.md)).
 - The projects your test command selects are measured (all without `--project`), except setup and
   teardown projects. Chromium is supported; Firefox and WebKit are best effort, so select one engine
   with `--project`.
