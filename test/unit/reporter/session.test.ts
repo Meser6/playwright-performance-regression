@@ -6,6 +6,7 @@ import type { Issue, Outcome, RunReport } from '../../../src/core/types/index.ts
 import { generateRunId } from '../../../src/mode/index.ts';
 import { stripAnsi } from '../../../src/console/color.ts';
 import { renderHtmlReport } from '../../../src/html/index.ts';
+import { buildJunitXml } from '../../../src/core/report/index.ts';
 import { configFileNotPassedWarning, runSettings } from '../../../src/reporter/session.ts';
 import { createAjv, validator } from '../../contract/schemas.ts';
 import {
@@ -656,6 +657,80 @@ describe('reporter session: HTML report', () => {
     expect(codes(outcome.toolErrors)).toEqual(['HTML_WRITE_FAILED']);
     expect(codes(readReport().toolErrors)).toEqual(['HTML_WRITE_FAILED']);
     expect(out).toContain('HTML_WRITE_FAILED');
+  });
+});
+
+describe('reporter session: junit.xml (16)', () => {
+  const junitPath = (): string => join(dir, 'reports/pw-perf', 'junit.xml');
+
+  async function run(
+    input: Parameters<typeof registered>[0],
+    options: Parameters<typeof session>[2] = {},
+    mode: 'test' | 'thresholds' = 'test',
+  ): Promise<{ outcome: Outcome; out: string }> {
+    const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
+    const captured = fakeHost(dir);
+    const s = session(captured, registered(input, { mode }), options);
+    s.begin(fakeConfig(dir), ROOT);
+    runTests(s, dir, 20, PATHS, steady);
+    await s.end({ status: 'passed' });
+    return { outcome: readOutcome(outcomeFile), out: captured.stdout.join('') };
+  }
+
+  test('16-REQ-01 16-REQ-04 test mode writes junit.xml from the written report; outcome.json is unchanged', async () => {
+    const { outcome } = await run({});
+    expect(outcome.exitCode).toBe(0);
+    expect(readFileSync(junitPath(), 'utf8')).toBe(buildJunitXml(readReport()));
+    // 16-REQ-15: no junit path in the outcome file (version 1).
+    expect(Object.keys(outcome.paths).sort()).toEqual([
+      'reportHtml',
+      'reportJson',
+      'thresholds',
+      'thresholdsDiff',
+    ]);
+  });
+
+  test('16-REQ-02 with report.junit false no junit.xml is written', async () => {
+    const { outcome } = await run({ report: { junit: false } });
+    expect(outcome.exitCode).toBe(0);
+    expect(existsSync(junitPath())).toBe(false);
+  });
+
+  test('16-REQ-14 thresholds mode writes no junit.xml', async () => {
+    await run({}, {}, 'thresholds');
+    expect(existsSync(junitPath())).toBe(false);
+  });
+
+  test('16-AC-08 a directory in place of junit.xml gives REPORT_JUNIT_WRITE_FAILED in report.json and exit code 3', async () => {
+    const { outcome, out } = await run(
+      {},
+      {
+        buildJunit: (report) => {
+          mkdirSync(junitPath(), { recursive: true });
+          return buildJunitXml(report);
+        },
+      },
+    );
+    expect(outcome.exitCode).toBe(3);
+    expect(codes(outcome.toolErrors)).toEqual(['REPORT_JUNIT_WRITE_FAILED']);
+    expect(codes(readReport().toolErrors)).toEqual(['REPORT_JUNIT_WRITE_FAILED']);
+    expect(out).toContain('REPORT_JUNIT_WRITE_FAILED');
+  });
+
+  test('16-AC-08 an exception while building the XML gives REPORT_JUNIT_WRITE_FAILED with its text', async () => {
+    const { outcome } = await run(
+      {},
+      {
+        buildJunit: () => {
+          throw new Error('junit bug');
+        },
+      },
+    );
+    expect(outcome.exitCode).toBe(3);
+    expect(existsSync(junitPath())).toBe(false);
+    const report = readReport();
+    expect(codes(report.toolErrors)).toEqual(['REPORT_JUNIT_WRITE_FAILED']);
+    expect(report.toolErrors[0]?.message).toContain('junit bug');
   });
 });
 

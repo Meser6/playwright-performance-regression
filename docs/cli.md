@@ -262,13 +262,14 @@ with [`CLI_UNKNOWN_COMMAND`](troubleshooting.md#cli_unknown_command).
 
 ## Output files
 
-| File                                      | Written by                                |
-| ----------------------------------------- | ----------------------------------------- |
-| `reports/pw-perf/report.json`             | every run (`report.dir`)                  |
-| `reports/pw-perf/report.html`             | every run unless `report.html` is `false` |
-| `reports/pw-perf/outcome.json`            | every `test` and `thresholds` run         |
-| `reports/pw-perf/thresholds-diff.md`      | thresholds runs                           |
-| `pw-perf-thresholds[.steps][.<env>].json` | thresholds runs (in `thresholds.dir`)     |
+| File                                      | Written by                                   |
+| ----------------------------------------- | -------------------------------------------- |
+| `reports/pw-perf/report.json`             | every run (`report.dir`)                     |
+| `reports/pw-perf/report.html`             | every run unless `report.html` is `false`    |
+| `reports/pw-perf/junit.xml`               | `test` runs unless `report.junit` is `false` |
+| `reports/pw-perf/outcome.json`            | every `test` and `thresholds` run            |
+| `reports/pw-perf/thresholds-diff.md`      | thresholds runs                              |
+| `pw-perf-thresholds[.steps][.<env>].json` | thresholds runs (in `thresholds.dir`)        |
 
 Paths are relative to the directory of `playwright.config` and follow
 [`report.dir`](configuration.md#reportdir), [`thresholds.dir`](configuration.md#thresholdsdir) and

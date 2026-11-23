@@ -206,7 +206,7 @@ export const packageConfig = obj({
     hysteresis: obj({ relative: unit, ratio: num({ minimum: 0, maximum: 0.01 }) }),
     loosenWarnRelative: num({ minimum: 0, maximum: 100 }),
   }),
-  report: obj({ dir: str({ minLength: 1 }), html: bool, rawUrls: bool }),
+  report: obj({ dir: str({ minLength: 1 }), html: bool, junit: bool, rawUrls: bool }),
   advanced: obj({
     maxSamplesPerKey: int({ minimum: 100, maximum: 100000 }),
     seed: int({ minimum: 0, maximum: 4294967295 }),

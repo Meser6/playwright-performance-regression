@@ -108,7 +108,8 @@ On Windows: `npx cross-env PW_PERF_MODE=test npm run e2e` (PowerShell and cmd fo
 The exit code is Playwright's own; the cause of a failure (a regression, failed tests, a config
 error) is in `reports/pw-perf/outcome.json`. The result is also printed in the terminal and written
 to `reports/pw-perf/report.json` and `reports/pw-perf/report.html` (tabs Overview, Endpoints,
-Steps, Tests and Run & config). Every `test` and `thresholds` run empties `reports/pw-perf/` first,
+Steps, Tests and Run & config); a `test` run also writes `reports/pw-perf/junit.xml` for the test
+views of CI systems. Every `test` and `thresholds` run empties `reports/pw-perf/` first,
 so it holds only the last run. All variables are described in [Running](docs/cli.md).
 
 Derive thresholds on the same machines that run the check, usually your CI runners (see

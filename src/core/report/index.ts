@@ -17,6 +17,14 @@ export {
 export type { HintFacts, HintOptions } from './hints.ts';
 export { collapseIssues } from './issues.ts';
 export {
+  JUNIT_FILE,
+  JUNIT_MAX_WARNINGS,
+  JUNIT_MESSAGE_MAX,
+  JUNIT_TEXT_MAX,
+  buildJunitXml,
+  truncateEnd,
+} from './junit.ts';
+export {
   nextHint,
   packageManager,
   perfCommand,

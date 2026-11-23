@@ -785,13 +785,17 @@ export interface PackageConfig {
    */
   report?: {
     /**
-     * Directory of report.json and report.html, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.
+     * Directory of report.json, report.html and junit.xml, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.
      */
     dir?: string;
     /**
      * Write the HTML report.
      */
     html?: boolean;
+    /**
+     * Write junit.xml next to report.json in test mode (16).
+     */
+    junit?: boolean;
     /**
      * Include raw URLs of the slowest samples in the run report (D-11).
      */

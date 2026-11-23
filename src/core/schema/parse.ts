@@ -483,18 +483,20 @@ export function checkRunReport(document: JsonObject, sink: Sink): void {
 }
 
 /**
- * Run report v3 → v4 (02-REQ-39, D-44, D-45, D-46): run.projects was removed, so the config
- * snapshot loses it, and run.overrideSlowMo and measure.api were added with their defaults false
- * and true, all without a warning; everything else stays.
+ * Run report v3 → v4 (02-REQ-39, 02-REQ-41, D-44, D-45, D-46, D-49): run.projects was removed, so
+ * the config snapshot loses it, and run.overrideSlowMo, measure.api and report.junit were added
+ * with false, true and false (old runs wrote no junit.xml), all without a warning; everything else
+ * stays.
  */
 export function migrateRunReportV3(document: JsonObject): JsonObject {
   const config = document.config;
   if (!isRecord(config) || !isRecord(config.run)) return document;
   const { projects: _projects, ...run } = config.run;
   const measure = isRecord(config.measure) ? { api: true, ...config.measure } : config.measure;
+  const report = isRecord(config.report) ? { ...config.report, junit: false } : config.report;
   return {
     ...document,
-    config: { ...config, run: { ...run, overrideSlowMo: false }, measure },
+    config: { ...config, run: { ...run, overrideSlowMo: false }, measure, report },
   };
 }
 

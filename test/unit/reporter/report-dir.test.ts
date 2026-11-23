@@ -84,7 +84,12 @@ describe('04-REQ-71 emptying report.dir', () => {
     expect(readFileSync(outside, 'utf8')).toBe('keep me');
     const report = await run.end();
     expect(report.warnings.map((w) => w.code)).not.toContain('RUN_REPORT_DIR_NOT_CLEANED');
-    expect(readdirSync(results).sort()).toEqual(['outcome.json', 'report.html', 'report.json']);
+    expect(readdirSync(results).sort()).toEqual([
+      'junit.xml',
+      'outcome.json',
+      'report.html',
+      'report.json',
+    ]);
     expect(readFileSync(join(results, 'report.html'), 'utf8')).not.toBe('old report');
   });
 
@@ -107,6 +112,7 @@ describe('04-REQ-71 emptying report.dir', () => {
     expect(existsSync(join(dir, 'reports'))).toBe(false);
     await run.end();
     expect(readdirSync(join(dir, RESULTS)).sort()).toEqual([
+      'junit.xml',
       'outcome.json',
       'report.html',
       'report.json',

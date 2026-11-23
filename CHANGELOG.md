@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **JUnit XML report.** A measurement run (`PW_PERF_MODE=test`) writes `reports/pw-perf/junit.xml`
+  next to `report.json`, so GitLab, Jenkins and Azure DevOps show the result in their test views:
+  one test case per endpoint and step key, a failure only for a blocking violation (exit code 2),
+  muted and not evaluated keys as skipped, tool errors as an error of the `measurement run` test
+  case. Not written in thresholds mode or by a check. Turn it off with `report.junit: false`; a
+  failed write is the tool error `REPORT_JUNIT_WRITE_FAILED` (exit code 3).
+
 ## [0.1.0-next.4] - 2026-11-23
 
 Upgrading from `0.1.0-next.3`: see [Upgrading](docs/upgrading.md). In short, run your test

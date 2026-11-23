@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pw-perf" tests="10" failures="5" errors="0" time="300.000">
+  <testsuite name="pw-perf run" tests="1" failures="0" errors="0" skipped="0" time="0" timestamp="2026-11-18T10:00:00.000Z">
+    <properties>
+      <property name="pw-perf.runId" value="2026-11-18T10-00-00-a1b2"/>
+      <property name="pw-perf.mode" value="test"/>
+      <property name="pw-perf.env" value="qa"/>
+      <property name="pw-perf.toolVersion" value="0.1.0"/>
+      <property name="pw-perf.evaluation" value="failed"/>
+      <property name="pw-perf.exitCode" value="2"/>
+      <property name="pw-perf.passes" value="1/1"/>
+      <property name="pw-perf.shards" value="0"/>
+      <property name="pw-perf.commit" value="3f2a91c0d4e5b6a7c8d9e0f1a2b3c4d5e6f7a8b9"/>
+      <property name="pw-perf.branch" value="main"/>
+      <property name="pw-perf.buildUrl" value=""/>
+    </properties>
+    <testcase classname="pw-perf.run" name="measurement run" time="0">
+      <system-out>Mode: test (env qa)
+Tests: 127 passed, 1 failed, 0 flaky, 2 skipped; passes 1/1
+Evaluation: failed (exit code 2)
+Warnings: 4
+TESTS_FAILED: 1 of 128 test executions failed; their samples are counted and the performance result still decides.
+THRESHOLDS_UNSEEN_ENTRIES: 3 entries in pw-perf-thresholds.api.qa.json were not seen in this run.
+THRESHOLDS_ENTRIES_NOT_EVALUATED: 1 key with an entry in the thresholds file had too few samples and was not evaluated.
+THRESHOLDS_MUTED: 1 key is muted; its violations do not block.</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf endpoints" tests="9" failures="5" errors="0" skipped="2" time="6.600" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.endpoints" name="GET /api/health" time="0.050">
+      <failure type="median" message="median 50 ms &gt; limit 1 ms (&gt;999%), 20 samples, thresholds file, HARD limit">median 50 ms &gt; limit 1 ms (&gt;999%), 20 samples, thresholds file, HARD limit (blocking)
+p95 50 ms &gt; limit 1 ms (&gt;999%), 20 samples, thresholds file, HARD limit (blocking)
+Limits: median 1 ms, p95 1 ms, p99 10 ms, errors &lt;= 0.050
+Samples: 20, errors 0
+Slowest: 50 ms in &quot;health&quot; (tests/health.spec.ts:3)
+Details: report.html (key &quot;GET /api/health&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&amp;include&amp;page&amp;sort" time="2.600">
+      <failure type="median" message="median 2600 ms &gt; limit 2000 ms (+30%), 20 samples, thresholds file">median 2600 ms &gt; limit 2000 ms (+30%), 20 samples, thresholds file (blocking)
+p95 2600 ms &gt; limit 2500 ms (+4%), 20 samples, thresholds file (blocking)
+Limits: median 2000 ms, p95 2500 ms, p99 4000 ms, errors &lt;= 0.050
+Samples: 20, errors 0
+Slowest: 2600 ms in &quot;deployments › list&quot; (tests/deployments.spec.ts:120)
+Details: report.html (key &quot;GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&amp;include&amp;page&amp;sort&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/rare" time="0.300">
+      <skipped message="not evaluated: too few samples (2, the median rule needs 5)"/>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/search" time="0.200">
+      <failure type="wilson" message="wilson 0.309 (0.400) &gt; limit 0.100 (+21 pp), 100 samples, thresholds file">wilson 0.309 (0.400) &gt; limit 0.100 (+21 pp), 100 samples, thresholds file (blocking)
+apdex 0.781 (0.700) &lt; limit 0.900 (+12 pp), 100 samples, thresholds file (blocking)
+Limits: median 500 ms, p95 2000 ms, p99 4000 ms, errors &lt;= 0.050, T 300 ms, apdex &gt;= 0.900, wilson &lt;= 0.100
+Samples: 100, errors 0
+Slowest: 1500 ms in &quot;search › full text&quot; (tests/search.spec.ts:8)
+Details: report.html (key &quot;GET /api/search&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/tickets/:id?search" time="0.890">
+      <failure type="median" message="median 890 ms &gt; limit 700 ms (+27%), 40 samples, thresholds file">median 890 ms &gt; limit 700 ms (+27%), 40 samples, thresholds file (blocking)
+p95 1712 ms &gt; limit 1400 ms (+22%), 40 samples, thresholds file (blocking)
+Limits: median 700 ms, p95 1400 ms, p99 4000 ms, errors &lt;= 0.050, T 2000 ms, apdex &gt;= 0.850, wilson &lt;= 0.150
+Samples: 40, errors 0
+Slowest: 2431 ms in &quot;tickets › search by id&quot; (tests/tickets.spec.ts:42)
+Details: report.html (key &quot;GET /api/tickets/:id?search&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/users" time="0.120"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/users/:id" time="0.090"/>
+    <testcase classname="pw-perf.endpoints" name="POST /api/orders" time="0.200">
+      <failure type="errors" message="errors 0.118 (0.400) &gt; limit 0.050 (+7 pp), 5 samples, thresholds file">errors 0.118 (0.400) &gt; limit 0.050 (+7 pp), 5 samples, thresholds file (blocking)
+Limits: median 2000 ms, p95 3000 ms, p99 4000 ms, errors &lt;= 0.050
+Samples: 5, errors 2
+Slowest: 212 ms in &quot;orders › place order&quot; (tests/orders.spec.ts:17)
+Details: report.html (key &quot;POST /api/orders&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="POST /api/reports/export" time="2.150">
+      <skipped message="muted until 2026-12-31: Depends on report service, tracked in backlog; p95 2150 ms &gt; limit 2000 ms (+7%), 20 samples, thresholds file">p95 2150 ms &gt; limit 2000 ms (+7%), 20 samples, thresholds file (not blocking)
+Limits: median 2500 ms, p95 2000 ms, p99 4000 ms, errors &lt;= 0.050
+Samples: 20, errors 0
+Details: report.html (key &quot;POST /api/reports/export&quot;)</skipped>
+    </testcase>
+  </testsuite>
+</testsuites>

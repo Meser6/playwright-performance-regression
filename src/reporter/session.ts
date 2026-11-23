@@ -28,6 +28,8 @@ import {
 import { estimateText, msPerTest, randomHostIssue, startEstimate } from '../core/check/index.ts';
 import type { CommandContext, PerfMode, WrittenFile } from '../core/report/index.ts';
 import { StepRecorder } from './steps.ts';
+import { writeJunitFile } from './junit.ts';
+import type { JunitBuilder } from './junit.ts';
 import type { RunReportInput } from '../core/report/index.ts';
 import {
   SCHEMA_VERSIONS,
@@ -205,6 +207,8 @@ function plural(n: number, word: string, many = `${word}s`): string {
 export interface SessionOptions {
   /** Renders report.html from the run report (11); renderHtmlReport by default. */
   renderHtml?: ((report: RunReport) => string) | undefined;
+  /** Builds junit.xml from the run report (16); buildJunitXml by default. */
+  buildJunit?: JunitBuilder | undefined;
 }
 
 export class RunSession {
@@ -1038,6 +1042,16 @@ export class RunSession {
       if (issue !== null) {
         // The JSON report stays and records the HTML error (11, chapter 12; exit code 3).
         toolErrors.push(issue);
+        report = build();
+        if (paths.reportJson !== null) await writeJson();
+      }
+    }
+    // junit.xml in test mode after report.html, before outcome.json (16-REQ-03, 16-REQ-14).
+    if (this.mode === 'test' && cfg.report.junit) {
+      const junit = await writeJunitFile(io, report, reportDir, this.options.buildJunit);
+      if ('issue' in junit) {
+        // report.json is written again with the error (16-REQ-16; exit code 3).
+        toolErrors.push(junit.issue);
         report = build();
         if (paths.reportJson !== null) await writeJson();
       }

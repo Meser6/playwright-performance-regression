@@ -173,6 +173,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
 - [`report`](#report)
   - [`report.dir`](#reportdir)
   - [`report.html`](#reporthtml)
+  - [`report.junit`](#reportjunit)
   - [`report.rawUrls`](#reportrawurls)
 - [`advanced`](#advanced)
   - [`advanced.maxSamplesPerKey`](#advancedmaxsamplesperkey)
@@ -1014,11 +1015,11 @@ Warn (THRESHOLDS_LOOSENED_MUCH) when a derived time limit grows by more than thi
 
 Run outputs.
 
-Options: [`dir`](#reportdir), [`html`](#reporthtml), [`rawUrls`](#reportrawurls).
+Options: [`dir`](#reportdir), [`html`](#reporthtml), [`junit`](#reportjunit), [`rawUrls`](#reportrawurls).
 
 ### `report.dir`
 
-Directory of report.json and report.html, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.
+Directory of report.json, report.html and junit.xml, relative to the Playwright config directory. Emptied when the first test of a test or thresholds run starts; never the project directory or a folder with thresholds files.
 
 - Type: string (at least 1 character)
 - Default: `"reports/pw-perf"`
@@ -1026,6 +1027,13 @@ Directory of report.json and report.html, relative to the Playwright config dire
 ### `report.html`
 
 Write the HTML report.
+
+- Type: boolean
+- Default: `true`
+
+### `report.junit`
+
+Write junit.xml next to report.json in test mode.
 
 - Type: boolean
 - Default: `true`

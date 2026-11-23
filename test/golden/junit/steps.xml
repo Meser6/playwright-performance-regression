@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pw-perf" tests="5" failures="2" errors="0" time="300.000">
+  <testsuite name="pw-perf run" tests="1" failures="0" errors="0" skipped="0" time="0" timestamp="2026-11-18T10:00:00.000Z">
+    <properties>
+      <property name="pw-perf.runId" value="run-1"/>
+      <property name="pw-perf.mode" value="test"/>
+      <property name="pw-perf.env" value="qa"/>
+      <property name="pw-perf.toolVersion" value="0.1.0"/>
+      <property name="pw-perf.evaluation" value="failed"/>
+      <property name="pw-perf.exitCode" value="2"/>
+      <property name="pw-perf.passes" value="1/1"/>
+      <property name="pw-perf.shards" value="0"/>
+      <property name="pw-perf.commit" value="abc123"/>
+      <property name="pw-perf.branch" value="main"/>
+      <property name="pw-perf.buildUrl" value="https://github.com/o/r/actions/runs/1"/>
+    </properties>
+    <testcase classname="pw-perf.run" name="measurement run" time="0">
+      <system-out>Mode: test (env qa)
+Tests: 3 passed, 0 failed, 0 flaky, 0 skipped; passes 1/1
+Evaluation: failed (exit code 2)
+Warnings: 1
+THRESHOLDS_MUTED: 1 key is muted.</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf endpoints" tests="2" failures="1" errors="0" skipped="0" time="0.180" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.endpoints" name="GET /api/tickets/:id" time="0.180">
+      <system-out>muted until 2026-12-31: Known slow</system-out>
+    </testcase>
+    <testcase classname="pw-perf.endpoints" name="POST /api/orders" time="0">
+      <failure type="errors" message="errors 0.600 (1.000) &gt; limit 0.010 (+59 pp), 5 samples, default thresholds">errors 0.600 (1.000) &gt; limit 0.010 (+59 pp), 5 samples, default thresholds (blocking)
+Limits: median 900 ms, p95 1400 ms, p99 2100 ms, errors &lt;= 0.050
+Samples: 5, errors 5
+Details: report.html (key &quot;POST /api/orders&quot;)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf steps" tests="2" failures="1" errors="0" skipped="0" time="0.180" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.steps" name="&lt;img src=x onerror=alert(1)&gt;" time="0">
+      <failure type="errors" message="errors 0.600 (1.000) &gt; limit 0.010 (+59 pp), 5 samples, default thresholds">errors 0.600 (1.000) &gt; limit 0.010 (+59 pp), 5 samples, default thresholds (blocking)
+Limits: median 900 ms, p95 1400 ms, p99 2100 ms, errors &lt;= 0.050
+Samples: 5, errors 5
+Details: report.html (key &quot;&lt;img src=x onerror=alert(1)&gt;&quot;)</failure>
+    </testcase>
+    <testcase classname="pw-perf.steps" name="login › submit" time="0.180">
+      <system-out>muted until 2026-12-31: Known slow</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>
