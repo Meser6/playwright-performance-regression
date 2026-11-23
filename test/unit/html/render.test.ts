@@ -48,10 +48,18 @@ function embedded(page: string): unknown {
   return JSON.parse(match[1] ?? '');
 }
 
+/**
+ * The full key in a details header (`.fk`) as escaped text: an endpoint is shown with its method
+ * badge and origin token (11-REQ-53), whose text content is the key.
+ */
+function fkText(markup: string): string {
+  return (/<code class="fk">(.*?)<\/code>/su.exec(markup)?.[1] ?? '').replace(/<[^>]+>/gu, '');
+}
+
 /** The table row of a key: the first <tr> of the tbody whose details show the key. */
 function rowOf(page: string, key: string): string {
   const bodies = page.split('<tbody data-g=');
-  const body = bodies.find((b) => b.includes(`<code class="fk">${escapeHtml(key)}</code>`)) ?? '';
+  const body = bodies.find((b) => fkText(b) === escapeHtml(key)) ?? '';
   return /<tr class="[^"]+">(.*?)<\/tr>/su.exec(body)?.[1] ?? '';
 }
 
@@ -174,9 +182,9 @@ describe('renderHtmlReport', () => {
     const table = page.slice(page.indexOf('id="table-api"'), page.indexOf('id="tab-tests"'));
     const rendered = [
       ...table.matchAll(
-        /<tbody data-g="(\d)".*?<details id="key-api-(\d+)".*?<code class="fk">(.*?)<\/code>/gsu,
+        /<tbody data-g="(\d)".*?<details id="key-api-(\d+)".*?(<code class="fk">.*?<\/code>)/gsu,
       ),
-    ].map((m) => ({ key: m[3], n: Number(m[2]), group: Number(m[1]) }));
+    ].map((m) => ({ key: fkText(m[3] ?? ''), n: Number(m[2]), group: Number(m[1]) }));
     expect(rendered.map((r) => r.key)).toEqual(order.map(escapeHtml));
     expect(rendered.map((r) => r.n)).toEqual(order.map((_, i) => i + 1));
     const groups = rendered.map((r) => r.group);
@@ -320,7 +328,7 @@ describe('renderHtmlReport', () => {
     expect(page).toContain('<dl class="subst">');
     expect(results(page)).toEqual([
       ['Performance', 'd-bad', 'failed 1 blocking · 1 muted'],
-      ['Tests', 'd-ok', 'passed 3 tests'],
+      ['Tests', 'd-ok', 'passed 3 test runs'],
       ['Tool errors', 'd-ok', 'none'],
     ]);
     const thresholds = renderHtmlReport(
@@ -334,7 +342,7 @@ describe('renderHtmlReport', () => {
     const error = renderHtmlReport(report);
     expect(results(error)).toEqual([
       ['Performance', 'd-bad', 'error 1 blocking · 1 muted'],
-      ['Tests', 'd-warn', 'timed out 3 tests · too many failed: result not trustworthy'],
+      ['Tests', 'd-warn', 'timed out 3 test runs · too many failed: result not trustworthy'],
       ['Tool errors', 'd-bad', '1'],
     ]);
     expect(error).toContain('class="wl hl-err"');
@@ -374,7 +382,9 @@ describe('renderHtmlReport', () => {
     expect(page).toContain(`<span class="key" title="${long}">${shortPath}</span>`);
     expect(Array.from(`GET ${shortPath}`)).toHaveLength(80);
     expect(short.length).toBeGreaterThan(0);
-    expect(page).toContain(`<code class="fk">${long}</code>`);
+    expect(page).toContain(
+      `<code class="fk"><b class="m GET">GET</b> <span class="key">${path}</span></code>`,
+    );
   });
 
   test('11-REQ-11 a migrated report shows the percentile bar instead of the histogram', () => {

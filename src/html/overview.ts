@@ -13,6 +13,7 @@ import {
   keyLink,
   limitRatio,
   rowGroup,
+  decidingCheck,
   topCheck,
 } from './context.ts';
 import type { Ctx, LinkKind } from './context.ts';
@@ -174,7 +175,8 @@ function verdictResults(report: RunReport): SafeHtml {
   const t = report.tests;
   const untrustworthy = report.toolErrors.some((i) => i.code === 'TESTS_FAILED_TOO_MANY');
   const testParts = [
-    plural(t.expected + t.unexpected + t.flaky, 'test'),
+    // Playwright results: every pass, repetition, setup and teardown is one test run (11-REQ-08).
+    plural(t.expected + t.unexpected + t.flaky, 'test run'),
     t.unexpected > 0 ? `${String(t.unexpected)} failed` : null,
     t.flaky > 0 ? `${String(t.flaky)} flaky` : null,
     t.skipped > 0 ? `${String(t.skipped)} skipped` : null,
@@ -270,6 +272,11 @@ function clock(iso: string): string {
   return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 }
 
+/** Keys of a kind with a violation (Steps field, 11-REQ-28). */
+function overLimit(data: Record<string, HtmlAggregate>): number {
+  return Object.values(data).filter((a) => a.evaluation.result === 'fail').length;
+}
+
 /** Keys of a kind that pass with a headroom of at least 0.9 (Steps field). */
 function nearLimit(data: Record<string, HtmlAggregate>): number {
   return Object.values(data).filter((a) => {
@@ -326,9 +333,13 @@ export function kpis(ctx: Ctx): SafeHtml {
     ),
     // Steps when the report has step keys, otherwise Tests (11-REQ-28).
     steps > 0
-      ? field('Steps', steps, `${String(nearLimit(ctx.data.steps))} near limit`)
+      ? field(
+          'Steps',
+          steps,
+          `${String(overLimit(ctx.data.steps))} over limit · ${String(nearLimit(ctx.data.steps))} near limit`,
+        )
       : field(
-          'Tests',
+          'Test runs',
           t.expected + t.unexpected + t.flaky,
           `${String(t.unexpected)} failed · ${String(t.flaky)} flaky · ${String(t.skipped)} skipped`,
         ),
@@ -398,7 +409,7 @@ export function badge(n: number, tone = ''): SafeHtml {
 /** A violation card (11-REQ-52). */
 function violationCard(ctx: Ctx, e: Entry): SafeHtml {
   const ev = e.agg.evaluation;
-  const top = topCheck(ev.checks.filter((c) => !c.passed)) ?? topCheck(ev.checks);
+  const top = decidingCheck(ev.checks) ?? topCheck(ev.checks);
   const hint = ctx.migrated ? undefined : e.agg.hints[0];
   const muted = ev.muted !== null && !ev.muted.expired;
   return join(
@@ -409,7 +420,7 @@ function violationCard(ctx: Ctx, e: Entry): SafeHtml {
       : html`<p class="rule"><span>${ruleLabel(top.rule, ctx.level)} <b>${checkValue(top, top.actual)}</b> · limit ${checkValue(top, top.limit)}</span>${ctx.migrated ? null : usageMeter(top)}</p>`,
     hint === undefined
       ? null
-      : html`<p class="hint">${icon('bulb')}<span>${hintText(hint, ctx.level, ev.muted)}</span></p>`,
+      : html`<p class="hint">${icon('bulb')}<span>${hintText(hint, ctx.level, ev.muted, e.kind)}</span></p>`,
     html`</article>`,
   );
 }

@@ -152,12 +152,16 @@ function sourceCell(file: ThresholdFileInfo): SafeHtml {
 function thresholdsFileRow(file: ThresholdFileInfo, report: RunReport): SafeHtml {
   const percentile = textOf(field(file.generated, 'evaluatedPercentile'));
   const fingerprint = textOf(field(file.generated, 'normalization'));
+  // A step file carries the step fingerprint (06-REQ-25), an endpoint file the URL one (07-REQ-21).
+  const run = file.kind === 'step' ? report.stepNormalization : report.normalization;
   let normalization: SafeHtml;
-  if (fingerprint === null) normalization = html`run <code>${report.normalization}</code>`;
-  else if (fingerprint === report.normalization)
-    normalization = html`<code>${fingerprint}</code> matches this run`;
+  if (run === null)
+    normalization = fingerprint === null ? html`${DASH}` : html`file <code>${fingerprint}</code>`;
+  else if (fingerprint === null) normalization = html`run <code>${run}</code>`;
+  else if (fingerprint === run) normalization = html`<code>${fingerprint}</code> matches this run`;
   else
-    normalization = html`file <code>${fingerprint}</code>, run <code>${report.normalization}</code> ${pill('w', 'differs: keys may not match')}`;
+    // The reporter reports the difference as THRESHOLDS_SOURCE_MISMATCH (09-REQ-04).
+    normalization = html`file <code>${fingerprint}</code>, run <code>${run}</code> ${pill('w', 'differs: keys may not match')} (see Warnings)`;
   const status =
     file.status === 'loaded'
       ? pill('p', 'loaded')

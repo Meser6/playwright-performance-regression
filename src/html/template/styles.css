@@ -1806,6 +1806,13 @@ td.tk2 > * {
   font-weight: 600;
 }
 
+/* The full key of the details header wraps (11-REQ-53), unlike the one-line key of lists. */
+.fk .key {
+  white-space: normal;
+  overflow: visible;
+  font-size: inherit;
+}
+
 .pills {
   display: flex;
   gap: 6px;
@@ -1920,7 +1927,7 @@ td.tk2 > * {
   text-align: left;
 }
 
-.ck tr.ov td:nth-child(2) {
+.ck td.ov {
   color: var(--bad);
   font-weight: 600;
 }
@@ -2081,9 +2088,15 @@ td.tk2 > * {
   margin-right: auto;
 }
 
+/* The title names the dialog and takes the focus; the key itself is shown by the moved header
+   (.fkl), with the method badge and the origin token (11-REQ-53). */
 #dlg-title {
-  font: 600 14px/20px var(--mono);
-  word-break: break-all;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* The title takes the focus when the dialog opens; it is not in the tab order. */
@@ -2093,10 +2106,6 @@ td.tk2 > * {
 
 .dh .kh {
   padding-top: 0;
-}
-
-.dh .fkl {
-  display: none;
 }
 
 .db {

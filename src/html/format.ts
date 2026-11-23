@@ -65,30 +65,38 @@ function basisPoints(usage: number): number {
   return Math.round(usage * 1e4);
 }
 
-/** Whole percent of the limit, rounded down: 0.8799 → 87 (11-REQ-30). */
+/** Headroom from which a passing check counts as near its limit (11-REQ-30, HINT_NEAR_LIMIT). */
+const NEAR_LIMIT_BP = 9_000;
+
+/**
+ * Whole percent of the limit used by a passing check, rounded (11-REQ-30, 11-D-27): 0.558 → 56;
+ * never across a threshold it is compared with: at most 100, and at most 89 below 0.9.
+ */
 export function usagePercent(usage: number): number {
-  return Math.floor(basisPoints(usage) / 100);
+  const bp = basisPoints(usage);
+  const pct = Math.round(bp / 100);
+  if (bp < NEAR_LIMIT_BP) return Math.min(89, pct);
+  return bp <= 10_000 ? Math.min(100, pct) : pct;
 }
 
-/** Percent over the limit, rounded up and at least 1: 1.35 → 35, 1.00001 → 1 (11-REQ-30). */
+/** Percent over the limit, rounded and at least 1: 1.35 → 35, 1.00001 → 1 (11-REQ-30, 09-REQ-19). */
 export function overPercent(usage: number): number {
-  return Math.max(1, Math.ceil((basisPoints(usage) - 10_000) / 100));
+  return Math.max(1, Math.round((basisPoints(usage) - 10_000) / 100));
 }
 
 /**
  * Headroom of a check or key (11-REQ-30): `87%` within the limit, `+35% over` for a failed check,
  * `over (limit 0)` for null and `>999%` from 1000%. A failed check at a rounded usage of 1 is
- * `+1% over`. `long` adds "of limit" to the first form. `points`: the excess of a failed share rule
- * in percentage points, shown as `+81 pp over`.
+ * `+1% over`. `long` adds "of limit" to the first form. `over`: the text of the console column
+ * `over` of a failed check (09-REQ-19, e.g. `+81 pp` or `+111%`), shown with " over".
  */
 export function usageText(
   usage: number | null,
   failed: boolean,
   long = false,
-  points?: number,
+  over?: string,
 ): string {
-  // A failed share rule: the excess in percentage points (11-REQ-30, 09-REQ-19).
-  if (failed && points !== undefined) return `+${String(points)} pp over`;
+  if (failed && over !== undefined) return `${over} over`;
   if (usage === null) return 'over (limit 0)';
   const suffix = long ? ' of limit' : '';
   if (basisPoints(usage) >= 100_000) return `>999%${suffix}`;

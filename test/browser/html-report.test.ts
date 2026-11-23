@@ -178,7 +178,7 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
     }
     await pw(page.locator('.subst dd')).toHaveText([
       'failed 1 blocking · 1 muted',
-      'passed 3 tests',
+      'passed 3 test runs',
       'none',
     ]);
     const data = toHtmlReportData(report);
@@ -802,7 +802,8 @@ describe('HTML report in Chromium', { timeout: 120_000 }, () => {
           return {
             text: key?.textContent,
             wide: d.scrollWidth - d.clientWidth,
-            right: key?.getBoundingClientRect().right ?? NaN,
+            // The visible key is the moved details header; the title only names the dialog.
+            right: d.querySelector('.dh .fk')?.getBoundingClientRect().right ?? NaN,
             dialogRight: d.getBoundingClientRect().right,
           };
         });

@@ -4,12 +4,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { buildOutcome } from '../../../src/core/evaluate/index.ts';
-import type { Hint, RunReport } from '../../../src/core/types/index.ts';
+import { formatFactor, overText } from '../../../src/core/format/violation.ts';
+import type { Check, Hint, RunReport } from '../../../src/core/types/index.ts';
 import { histogramX, waterfallSvg } from '../../../src/html/charts.ts';
 import { toHtmlReportData, stableJson } from '../../../src/html/data.ts';
 import { escapeHtml } from '../../../src/html/escape.ts';
-import { formatMs, formatPercent, usageText } from '../../../src/html/format.ts';
-import { pointsOver } from '../../../src/html/keys.ts';
+import { decidingCheck } from '../../../src/html/context.ts';
+import { formatMs, formatPercent, usagePercent, usageText } from '../../../src/html/format.ts';
+import { overOf } from '../../../src/html/keys.ts';
 import { hintText } from '../../../src/html/hints.ts';
 import { renderHtmlReport } from '../../../src/html/index.ts';
 import { banner } from '../../../src/html/render.ts';
@@ -151,7 +153,7 @@ describe('verdict banner and KPI tiles (11-REQ-27, 11-REQ-28)', () => {
         String(endpoints.length),
         `${api.fromFile + api.fromDefaults} evaluated · ${api.tooFewSamples} too few`,
       ],
-      ['Tests', '3', '0 failed · 0 flaky · 0 skipped'],
+      ['Test runs', '3', '0 failed · 0 flaky · 0 skipped'],
       // Failed checks, with their keys; muted counts failed checks of muted keys (11-AC-40).
       ['Violations', '1', 'in 1 key · 1 blocking · 0 muted'],
       ['Error rate', formatPercent(errors / requests), `${errors} of ${requests} requests`],
@@ -273,10 +275,17 @@ describe('Overview: rankings and headroom (11-REQ-29 – 11-REQ-31)', () => {
   });
 
   test('11-AC-40 violations are failed checks with their keys; share rules over the limit in points', () => {
-    expect(pointsOver({ rule: 'wilson', actual: 0.839, limit: 0.03, passed: false })).toBe(81);
-    expect(usageText(28, true, false, 81)).toBe('+81 pp over');
-    expect(pointsOver({ rule: 'wilson', actual: 0.02, limit: 0.03, passed: true })).toBeUndefined();
-    expect(pointsOver({ rule: 'p99', actual: 900, limit: 800, passed: false })).toBeUndefined();
+    const wilson = { rule: 'wilson', actual: 0.839, limit: 0.03, usage: 27.9667 } as const;
+    expect(overOf({ ...wilson, passed: false })).toBe('+81 pp');
+    expect(usageText(28, true, false, '+81 pp')).toBe('+81 pp over');
+    expect(overOf({ ...wilson, actual: 0.02, passed: true })).toBeUndefined();
+    // Time rules: the console text, rounded (09-REQ-19); a limit of 0 keeps "over (limit 0)".
+    expect(overOf({ rule: 'p99', actual: 900, limit: 800, usage: 1.125, passed: false })).toBe(
+      '+13%',
+    );
+    expect(
+      overOf({ rule: 'p99', actual: 9, limit: 0, usage: null, passed: false }),
+    ).toBeUndefined();
     // 8 blocking failed checks in 7 keys.
     const report = fullRun();
     const [key, agg] = Object.entries(report.endpoints).find(([, a]) =>
@@ -393,8 +402,14 @@ describe('charts (11-REQ-32, 11-REQ-33)', () => {
     );
     expect(widths[0]).toBeCloseTo((640 * ttfb.p50) / (ttfb.p50 + ttfb.otherP50), 1);
     expect((widths[0] ?? 0) + (widths[1] ?? 0)).toBeCloseTo(640, 1);
-    expect(html).toContain(
-      `Medians of each part: their sum (${formatMs(ttfb.p50 + ttfb.otherP50)}) can differ from p50 of the duration (180 ms).`,
+    // The note only when the sum and p50 differ once formatted (11-REQ-33).
+    expect(formatMs(ttfb.p50 + ttfb.otherP50)).toBe('180 ms');
+    expect(html).not.toContain('Medians of each part');
+    const stats = report.endpoints['GET /api/tickets/:id']?.stats;
+    if (stats == null) throw new Error('fixture');
+    stats.percentiles['p50'] = 190;
+    expect(page(report)).toContain(
+      'Medians of each part: their sum (180 ms) can differ from p50 of the duration (190 ms).',
     );
     expect(page(migratedCase())).not.toContain('class="split"');
   });
@@ -579,7 +594,7 @@ describe('size budget (11-REQ-43)', () => {
     assets: kB(60),
     keyData: kB(3.2),
     keyRow: kB(0.75),
-    keyDetails: kB(6.6),
+    keyDetails: kB(7.1),
     histogram: kB(1.1),
     checks: kB(1.8),
     hints: kB(0.55),
@@ -746,5 +761,166 @@ describe('suite in the header (11-REQ-49, 02-REQ-42)', () => {
       '<b>playwright-performance-regression</b> <span class="ver">v0.1.0</span>',
     );
     expect(plain).not.toContain('<dt>Suite</dt>');
+  });
+});
+
+describe('owner notes on the demo report (11-AC-43, v5 item 10b)', () => {
+  const check = (rule: Check['rule'], over: Partial<Check> = {}): Check => ({
+    rule,
+    actual: 100,
+    limit: 200,
+    n: 20,
+    observed: rule === 'median' || rule === 'percentile' || rule === 'p99' ? null : 0,
+    passed: true,
+    blocking: false,
+    hardLimitExceeded: false,
+    usage: 0.5,
+    ...over,
+  });
+  /** fullRun() with GET /api/tickets/:id evaluated by the given checks and limits. */
+  function withChecks(checks: Check[], t: number | null = null): RunReport {
+    const report = fullRun();
+    const agg = report.endpoints['GET /api/tickets/:id'];
+    if (agg === undefined) throw new Error('fixture');
+    agg.evaluation.checks = checks;
+    agg.evaluation.result = checks.every((c) => c.passed) ? 'pass' : 'fail';
+    agg.evaluation.limits.t = t;
+    return report;
+  }
+
+  test('11-AC-43 multiples and percentages are rounded, never across the threshold', () => {
+    expect(formatFactor(2.6733, 2)).toBe('2.67');
+    expect(formatFactor(2.0499, 2)).toBe('2.05');
+    expect(formatFactor(2.0001, 2)).toBe('2.01');
+    expect(formatFactor(2.05)).toBe('2.05');
+    const hard: Hint = {
+      code: 'HINT_HARD_LIMIT',
+      params: { rule: 'median', usage: 2.7145, factor: 2 },
+    };
+    expect(hintText(hard, 'p95', null)).toBe(
+      'Median is 2.71× its limit, above the hard limit of 2×: it fails the run regardless of tolerance.',
+    );
+    // The same text as the console and junit.xml (09-REQ-19).
+    const p95 = {
+      rule: 'percentile',
+      actual: 543.4,
+      limit: 258,
+      usage: 2.1062,
+      passed: false,
+    } as const;
+    expect(overText(p95)).toBe('+111%');
+    expect(overOf(p95)).toBe('+111%');
+    expect(usageText(0.558, false, true)).toBe('56% of limit');
+    expect(usagePercent(0.8996)).toBe(89);
+    expect(usagePercent(0.9)).toBe(90);
+    expect(usagePercent(0.9996)).toBe(100);
+  });
+
+  test('11-AC-43 the violation card shows the rule that decided: hard limit first', () => {
+    const checks = [
+      check('median', { actual: 405.9, limit: 229, usage: 1.7725, passed: false, blocking: true }),
+      check('percentile', {
+        actual: 543.4,
+        limit: 258,
+        usage: 2.1062,
+        passed: false,
+        blocking: true,
+        hardLimitExceeded: true,
+      }),
+      check('wilson', {
+        actual: 0.0807,
+        limit: 0.03,
+        observed: 0.2,
+        usage: 2.69,
+        passed: false,
+        blocking: true,
+      }),
+    ];
+    expect(decidingCheck(checks)?.rule).toBe('percentile');
+    expect(decidingCheck(checks.map((c) => ({ ...c, hardLimitExceeded: false })))?.rule).toBe(
+      'wilson',
+    );
+    const html = section(page(withChecks(checks)), 'viol-h');
+    expect(text(html)).toContain('p95 543 ms · limit 258 ms');
+  });
+
+  test('11-AC-43 checks table: Raw and Bound with a legend, Limit used, T at its minimum', () => {
+    const checks = [
+      check('median', {
+        actual: 803.5,
+        limit: 296,
+        usage: 2.7145,
+        passed: false,
+        blocking: true,
+        hardLimitExceeded: true,
+      }),
+      check('apdex', { actual: 1, observed: 1, limit: 0.95, usage: 0 }),
+      check('wilson', {
+        actual: 0.0807,
+        observed: 0.2,
+        limit: 0.03,
+        usage: 2.69,
+        passed: false,
+        blocking: true,
+      }),
+    ];
+    const report = withChecks(checks, 640);
+    const html = page(report);
+    expect(html).toContain(
+      '<th scope="col" class="num">Raw</th><th scope="col" class="num">Bound</th>',
+    );
+    expect(html).not.toContain('>Actual<');
+    expect(html).not.toContain('>Observed<');
+    expect(html).toContain('<th scope="col">Limit used</th>');
+    expect(html).not.toContain('Headroom');
+    // Raw of the slow share is the observed share, Bound the confidence bound (red: it failed).
+    expect(html).toContain('<td>0.200</td><td class="ov">0.081</td>');
+    expect(html).toContain('Share rules compare Bound, the 95% confidence bound');
+    expect(html).toContain('T = 640 ms: slower samples count as slow.');
+    // The fixture's thresholds were derived with derivation.t.min 500 ms.
+    expect(page(withChecks(checks, 500))).toContain(
+      'T = 500 ms, the lowest allowed for endpoints: faster samples count as satisfied, so Apdex and slow share can pass while the percentiles fail.',
+    );
+  });
+
+  test('11-AC-43 limits of rules that were not evaluated are not shown', () => {
+    // GET /api/tickets/:id has median and errors checks only (n = 10).
+    const html = page(fullRun());
+    const body = html.slice(html.indexOf('<tbody data-g="2"'));
+    expect(body).toMatch(/<td class="num">\d+<span class="lim"> \/ —<\/span><\/td>/u);
+    expect(html).toContain('/ — : rule not evaluated (too few samples or rule off)');
+    expect(html).toContain('<dt>p95 · not evaluated</dt>');
+  });
+
+  test('11-AC-43 wording: test runs, samples for steps, origin token, step fingerprint', () => {
+    const hint: Hint = { code: 'HINT_SLOWDOWN', params: { usage: 1.5 } };
+    expect(hintText(hint, 'p95', null, 'step')).toBe(
+      'The median is 50% over its limit: most samples are slower, not only the tail.',
+    );
+    expect(hintText(hint, 'p95', null)).toContain('most responses are slower');
+    const report = stepsRun();
+    const html = page(report);
+    expect(text(section(html, 'vh'))).not.toContain('passed 3 tests');
+    expect(html).toMatch(
+      /<dt>Steps<\/dt><dd class="kv">2<\/dd><dd class="ks">\d+ over limit · \d+ near limit<\/dd>/u,
+    );
+    // An endpoint behind a labelled origin: the label is a token, also in the dialog header.
+    const labelled = fullRun();
+    labelled.origins.push({ label: 'api', origin: 'http://localhost:3001', requestCount: 1 });
+    const agg = labelled.endpoints['GET /api/tickets/:id'];
+    if (agg === undefined) throw new Error('fixture');
+    labelled.endpoints = { ...labelled.endpoints, 'GET api/api/prices': structuredClone(agg) };
+    expect(page(labelled)).toContain(
+      '<code class="fk"><b class="m GET">GET</b> <span class="key"><span class="o" title="origin label: http://localhost:3001">api</span>/api/prices</span></code>',
+    );
+    // A step thresholds file is compared with the step fingerprint (06-REQ-25).
+    const steps = stepsRun();
+    steps.stepNormalization = '1ce40951042b97';
+    const file = structuredClone(steps.thresholdFiles[0]);
+    if (file === undefined || file.generated === null) throw new Error('fixture');
+    file.kind = 'step';
+    (file.generated as { normalization: string }).normalization = '1ce40951042b97';
+    steps.thresholdFiles.push(file);
+    expect(page(steps)).toContain('<code>1ce40951042b97</code> matches this run');
   });
 });

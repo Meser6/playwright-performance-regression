@@ -25,8 +25,9 @@ export function exceedance(check: Pick<Check, 'rule' | 'actual' | 'limit'>): num
 }
 
 /**
- * Column `over`: Math.round((r − 1) · 100) with "+" and "%", or ">999%" (09-REQ-19, 09-D-15);
- * for the share rules the difference in percentage points, at least 1: "+81 pp" (09-D-20).
+ * Column `over`: max(1, Math.round((r − 1) · 100)) with "+" and "%", or ">999%" (09-REQ-19,
+ * 09-D-15); for the share rules the difference in percentage points, at least 1: "+81 pp"
+ * (09-D-20). The HTML report shows the same text with " over" (11-REQ-30, 11-D-27).
  */
 export function overText(check: Pick<Check, 'rule' | 'actual' | 'limit'>): string {
   if (SHARE_RULES.has(check.rule)) {
@@ -35,8 +36,23 @@ export function overText(check: Pick<Check, 'rule' | 'actual' | 'limit'>): strin
   }
   const r = exceedance(check);
   if (!Number.isFinite(r)) return '>999%';
-  const over = Math.round((r - 1) * 100);
-  return over > 999 ? '>999%' : `+${over}%`;
+  const over = Math.max(1, Math.round((r - 1) * 100));
+  return over > 999 ? '>999%' : `+${String(over)}%`;
+}
+
+/**
+ * A multiple of a limit with two decimals, rounded, e.g. 2.6733 → "2.67" (11-REQ-34, 11-D-27).
+ * When the rounded value is not above `threshold` (the hard limit factor it is compared with),
+ * it is rounded up instead, so a text never reads "2.00× … above the hard limit of 2×".
+ */
+export function formatFactor(ratio: number, threshold: number | null = null): string {
+  // ratio · 10⁶ is rounded first, which removes float errors such as 2.05 · 100 = 204.99999….
+  const scaled = Math.round(ratio * 1e6) / 1e4;
+  let hundredths = Math.round(scaled);
+  if (threshold !== null && hundredths / 100 <= threshold && ratio > threshold) {
+    hundredths = Math.ceil(scaled);
+  }
+  return (hundredths / 100).toFixed(2);
 }
 
 /** A duration in whole milliseconds: "412 ms". */

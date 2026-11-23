@@ -1,6 +1,7 @@
 // Key tables and key details (11, chapters 6.4–6.9, 8a): one row per key in the default order
 // (11-REQ-09) and its details block, a <details> under the row that the script shows in the key
 // dialog (11-REQ-37).
+import { overText } from '../core/format/violation.ts';
 import type { Check, KeyEvaluation, RunReport } from '../core/types/index.ts';
 import { percentileBar } from './bar.ts';
 import { histogramSvg, ttfbSplitSvg } from './charts.ts';
@@ -24,7 +25,7 @@ import type { HtmlValue, SafeHtml } from './escape.ts';
 import { formatDate, formatMs, formatPercent, formatRatio, plural, usageText } from './format.ts';
 import { hintText, ruleLabel } from './hints.ts';
 import { icon } from './icons.ts';
-import { endpointSource, stepDepth } from './keyview.ts';
+import { endpointSource, keyView, stepDepth } from './keyview.ts';
 
 export { KEY_COLUMN_MAX } from './context.ts';
 
@@ -91,19 +92,23 @@ function usageClass(usage: number | null, failed: boolean): string {
   return usage >= NEAR_LIMIT ? 'nr' : '';
 }
 
-/** Rules on shares: a failed check shows the excess in percentage points (11-REQ-30). */
+/** Rules on shares: the gate compares a confidence bound with the limit (09-REQ-09). */
 const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'apdex',
   'wilson',
   'errors',
 ]);
 
-/** Percentage points over the limit of a failed share rule, at least 1; undefined otherwise. */
-export function pointsOver(
-  check: Pick<Check, 'rule' | 'actual' | 'limit' | 'passed'>,
-): number | undefined {
-  if (check.passed || !SHARE_RULES.has(check.rule)) return undefined;
-  return Math.max(1, Math.round(Math.abs(check.actual - check.limit) * 100));
+/**
+ * The excess of a failed check as in the console column `over` (09-REQ-19, 11-REQ-30): `+111%`
+ * or `+81 pp`; undefined for a passed check and for a time rule with limit 0 ("over (limit 0)").
+ */
+export function overOf(
+  check: Pick<Check, 'rule' | 'actual' | 'limit' | 'passed' | 'usage'>,
+): string | undefined {
+  if (check.passed) return undefined;
+  if (!SHARE_RULES.has(check.rule) && check.usage === null) return undefined;
+  return overText(check);
 }
 
 /**
@@ -118,7 +123,7 @@ export function usageMeter(
   const failed = !check.passed;
   const value = usage === null ? 1.25 : Math.min(usage, 1.25);
   const cls = usageClass(usage, failed);
-  return html`<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="${value}"></meter><b${cls === '' ? null : html` class="${cls}"`}>${usageText(usage, failed, long, pointsOver(check))}</b></label>`;
+  return html`<label class="hr"><meter max="1.25" low="0.9" high="1" optimum="0" value="${value}"></meter><b${cls === '' ? null : html` class="${cls}"`}>${usageText(usage, failed, long, overOf(check))}</b></label>`;
 }
 
 /**
@@ -163,7 +168,40 @@ function checkPill(c: Check): SafeHtml {
   return c.blocking ? pill('fb', 'blocking') : pill('f', 'fail');
 }
 
-function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
+/** The lowest T of derived thresholds of a kind (10, `derivation.t.min`), or null. */
+function lowestT(report: RunReport, kind: LinkKind): number | null {
+  // `generated` is free-form in the run report schema: read it field by field.
+  let value: unknown = report.thresholdFiles.find((f) => f.kind === kind)?.generated;
+  for (const name of ['derivation', 't', 'min']) {
+    value =
+      typeof value === 'object' && value !== null
+        ? (value as Record<string, unknown>)[name]
+        : undefined;
+  }
+  return typeof value === 'number' ? value : null;
+}
+
+/** Legend under the checks table: what Raw and Bound are, and T (11, chapter 6.5). */
+function checksLegend(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml | null {
+  const checks = agg.evaluation.checks;
+  const lines: string[] = [];
+  if (checks.some((c) => SHARE_RULES.has(c.rule))) {
+    lines.push(
+      'Raw is measured in this run; time rules compare it with the limit. Share rules compare Bound, the 95% confidence bound (upper for Apdex, lower otherwise), so chance alone does not fail them.',
+    );
+  }
+  const t = agg.evaluation.limits.t;
+  if (t !== null && checks.some((c) => c.rule === 'apdex' || c.rule === 'wilson')) {
+    lines.push(
+      lowestT(ctx.report, kind) === t
+        ? `T = ${formatMs(t)}, the lowest allowed for ${kind === 'step' ? 'steps' : 'endpoints'}: faster samples count as satisfied, so Apdex and slow share can pass while the percentiles fail.`
+        : `T = ${formatMs(t)}: slower samples count as slow.`,
+    );
+  }
+  return lines.length === 0 ? null : html`<p class="legend">${lines.join(' ')}</p>`;
+}
+
+function checksTable(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
   const ev = agg.evaluation;
   if (ev.result === 'not-evaluated') {
     const reason = reasonText(ev.reason);
@@ -180,27 +218,34 @@ function checksTable(ctx: Ctx, agg: HtmlAggregate): SafeHtml {
   }
   const ns = new Set(ev.checks.map((c) => c.n));
   const commonN = ns.size === 1 ? [...ns][0] : undefined;
-  const observed = ev.checks.some((c) => c.observed !== null);
-  const row = (c: Check): SafeHtml =>
-    join(
-      html`<tr${c.passed ? null : html` class="ov"`}><th scope="row">${ruleLabel(c.rule, ctx.level)}</th>`,
+  // Raw: the value measured in this run; Bound: the confidence bound of a share rule (09-REQ-09).
+  const bound = ev.checks.some((c) => SHARE_RULES.has(c.rule));
+  const row = (c: Check): SafeHtml => {
+    const share = SHARE_RULES.has(c.rule);
+    // The value the gate compared with the limit is red when the check failed.
+    const ov = c.passed ? null : html` class="ov"`;
+    const raw = share ? c.observed : c.actual;
+    return join(
+      html`<tr><th scope="row">${ruleLabel(c.rule, ctx.level)}</th>`,
       // Numbers are right-aligned by the table style, without a class per cell.
       commonN === undefined ? html`<td>${c.n}</td>` : null,
-      html`<td>${checkValue(c, c.actual)}</td>`,
-      observed ? html`<td>${c.observed === null ? null : checkValue(c, c.observed)}</td>` : null,
+      html`<td${share ? null : ov}>${raw === null ? null : checkValue(c, raw)}</td>`,
+      bound ? html`<td${share ? ov : null}>${share ? checkValue(c, c.actual) : null}</td>` : null,
       html`<td>${checkValue(c, c.limit)}</td><td>`,
       ctx.migrated ? DASH : usageMeter(c, true),
       html`</td><td>${checkPill(c)}</td></tr>`,
     );
+  };
   return part(
     'Checks',
     commonN === undefined ? null : `n = ${String(commonN)} for every rule`,
     html`<div class="ct" tabindex="0"><table class="ck"><caption>Checks</caption><thead><tr><th scope="col">Rule</th>`,
     commonN === undefined ? html`<th scope="col" class="num">n</th>` : null,
-    html`<th scope="col" class="num">Actual</th>`,
-    observed ? html`<th scope="col" class="num">Observed</th>` : null,
-    html`<th scope="col" class="num">Limit</th><th scope="col">Headroom</th><th scope="col">Result</th></tr></thead>`,
+    html`<th scope="col" class="num">Raw</th>`,
+    bound ? html`<th scope="col" class="num">Bound</th>` : null,
+    html`<th scope="col" class="num">Limit</th><th scope="col">Limit used</th><th scope="col">Result</th></tr></thead>`,
     html`<tbody>${ev.checks.map(row)}</tbody></table></div>`,
+    checksLegend(ctx, kind, agg),
   );
 }
 
@@ -232,6 +277,19 @@ export function notTimedNote(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): stri
 
 const NOT_TIMED_LABELS = 3;
 
+/**
+ * The limit of a time rule when the rule was evaluated, null when it has no check (too few samples
+ * for its minSamples, rule off or key not evaluated, 09-REQ-07): the page shows "not evaluated"
+ * or "/ —" instead of a limit that decided nothing (11, chapters 6.4 and 6.5).
+ */
+function evaluatedLimit(
+  agg: HtmlAggregate,
+  rule: Check['rule'],
+  limit: number | null,
+): number | null {
+  return agg.evaluation.checks.some((c) => c.rule === rule) ? limit : null;
+}
+
 /** p50, the evaluated percentile and p99 with their limits, and max (11-REQ-60). */
 function statsGrid(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
   const stats = agg.stats;
@@ -240,15 +298,29 @@ function statsGrid(ctx: Ctx, kind: LinkKind, agg: HtmlAggregate): SafeHtml {
     return html`<div class="ds"><p>No successful timed samples${note === null ? '' : `: ${note}`}.</p></div>`;
   }
   const limits = agg.evaluation.limits;
-  const cell = (label: string, value: number | undefined, limit: number | null): SafeHtml => {
-    const over = value !== undefined && limit !== null && value > limit;
-    return html`<div${over ? html` class="ov"` : null}><dt>${label}${limit === null ? null : ` · limit ${formatMs(limit)}`}</dt><dd>${value === undefined ? DASH : msValue(value)}</dd></div>`;
+  const cell = (
+    label: string,
+    value: number | undefined,
+    limit: number | null | undefined,
+  ): SafeHtml => {
+    const over = value !== undefined && limit != null && value > limit;
+    const note =
+      limit === undefined
+        ? null
+        : limit === null
+          ? ' · not evaluated'
+          : ` · limit ${formatMs(limit)}`;
+    return html`<div${over ? html` class="ov"` : null}><dt>${label}${note}</dt><dd>${value === undefined ? DASH : msValue(value)}</dd></div>`;
   };
   return html`<div class="ds"><dl class="stats">${[
-    cell('p50', stats.percentiles['p50'], null),
-    cell(ctx.level, stats.percentiles[ctx.level], limits.percentile),
-    cell('p99', stats.percentiles['p99'], limits.p99),
-    cell('max', stats.max, null),
+    cell('p50', stats.percentiles['p50'], undefined),
+    cell(
+      ctx.level,
+      stats.percentiles[ctx.level],
+      evaluatedLimit(agg, 'percentile', limits.percentile),
+    ),
+    cell('p99', stats.percentiles['p99'], evaluatedLimit(agg, 'p99', limits.p99)),
+    cell('max', stats.max, undefined),
   ]}</dl></div>`;
 }
 
@@ -298,13 +370,17 @@ function ttfbSplit(agg: HtmlAggregate): SafeHtml | null {
   if (ttfb === null || ttfb.otherP50 === null || agg.stats === null) return null;
   const svg = ttfbSplitSvg(ttfb.p50, ttfb.otherP50);
   if (svg === null) return null;
-  const sum = Math.round((ttfb.p50 + ttfb.otherP50) * 10) / 10;
+  const sum = formatMs(Math.round((ttfb.p50 + ttfb.otherP50) * 10) / 10);
+  const p50 = formatMs(agg.stats.percentiles['p50'] ?? 0);
   return part(
     'Server wait vs rest',
     'p50 of each part',
     svg,
     html`<p class="legend"><span><i class="s-acc"></i>Server wait (TTFB p50) ${formatMs(ttfb.p50)}</span><span><i class="s-trk"></i>Rest (p50 of duration − TTFB) ${formatMs(ttfb.otherP50)}</span></p>`,
-    html`<p class="sub">Medians of each part: their sum (${formatMs(sum)}) can differ from p50 of the duration (${formatMs(agg.stats.percentiles['p50'] ?? 0)}).</p>`,
+    // Only when the numbers differ (11-REQ-33).
+    sum === p50
+      ? null
+      : html`<p class="sub">Medians of each part: their sum (${sum}) can differ from p50 of the duration (${p50}).</p>`,
   );
 }
 
@@ -316,9 +392,12 @@ function isErrorStatus(label: string, statuses: readonly string[]): boolean {
 }
 
 /** The header of a details block: full key, pills and counts (11-REQ-60). */
-function keyHeader(kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
+function keyHeader(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
   const ev = agg.evaluation;
-  return html`<div class="kh"><p class="fkl"><code class="fk">${key}</code></p><p class="pills">${[
+  // An endpoint with its method badge and the origin label as a token (11-REQ-53).
+  const full =
+    kind === 'api' ? keyView(kind, key, Number.MAX_SAFE_INTEGER, false, ctx.report.origins) : key;
+  return html`<div class="kh"><p class="fkl"><code class="fk">${full}</code></p><p class="pills">${[
     resultPill(ev),
     kindToken(kind),
     sourceToken(ev.thresholdSource),
@@ -373,13 +452,13 @@ export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggre
   const hints = ctx.migrated ? [] : agg.hints;
   return join(
     html`<div class="kd">`,
-    keyHeader(kind, key, agg),
+    keyHeader(ctx, kind, key, agg),
     hints.length === 0
       ? null
-      : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted)}</li>`)}</ul>`,
+      : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted, kind)}</li>`)}</ul>`,
     statsGrid(ctx, kind, agg),
     distribution(ctx, agg),
-    checksTable(ctx, agg),
+    checksTable(ctx, kind, agg),
     kind === 'api' ? ttfbSplit(agg) : null,
     statusesPart(ctx, kind, key, agg),
     agg.slowest.length === 0
@@ -430,11 +509,14 @@ function timeCell(value: number | undefined): SafeHtml {
     : html`<td class="num">${Math.round(value)}</td>`;
 }
 
-/** Percentile with its limit, `1240 / 900`; red and bold over the limit. */
+/**
+ * Percentile with its limit, `1240 / 900`; red and bold over the limit; `/ —` when the rule was
+ * not evaluated (11, chapter 6.4).
+ */
 function limitCell(value: number | undefined, limit: number | null): SafeHtml {
   if (value === undefined) return html`<td class="num z">${DASH}</td>`;
   const over = limit !== null && value > limit;
-  return html`<td class="num${over ? ' ov' : ''}">${Math.round(value)}${limit === null ? null : html`<span class="lim"> / ${Math.round(limit)}</span>`}</td>`;
+  return html`<td class="num${over ? ' ov' : ''}">${Math.round(value)}<span class="lim"> / ${limit === null ? DASH : Math.round(limit)}</span></td>`;
 }
 
 /** Headroom cell: the key's largest usage (11-REQ-30); — without checks or in a v1 report. */
@@ -477,8 +559,15 @@ function keyRow(
       ? html`<td class="num"></td>`
       : html`<td class="num e">${agg.errorCount}</td>`,
     timeCell(s?.percentiles['p50']),
-    s === null ? timeCell(undefined) : limitCell(s.percentiles[ctx.level], ev.limits.percentile),
-    s === null ? timeCell(undefined) : limitCell(s.percentiles['p99'], ev.limits.p99),
+    s === null
+      ? timeCell(undefined)
+      : limitCell(
+          s.percentiles[ctx.level],
+          evaluatedLimit(agg, 'percentile', ev.limits.percentile),
+        ),
+    s === null
+      ? timeCell(undefined)
+      : limitCell(s.percentiles['p99'], evaluatedLimit(agg, 'p99', ev.limits.p99)),
     timeCell(s?.max),
     ttfb ? timeCell(agg.ttfb?.p50) : null,
     kind === 'step' ? html`<td class="loc">${locationText(agg)}</td>` : null,
@@ -533,7 +622,7 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
     // Browser traffic or APIRequestContext calls (15-REQ-15).
     ...(kind === 'api' ? [['source', 'Source'] as [string, string]] : []),
     ['result', 'Result'],
-    ['headroom', 'Headroom'],
+    ['headroom', 'Limit used'],
     ['samples', 'Samples'],
     ['errors', 'Errors'],
     ['p50', 'p50'],
@@ -554,10 +643,18 @@ export function keyTable(ctx: Ctx, kind: LinkKind, title: string): SafeHtml {
     'ttfb',
     'tests',
   ]);
+  // `/ —`: a rule without a check, e.g. fewer samples than its minSamples (09-REQ-07).
+  const notEvaluated = keys.some((key) => {
+    const agg = aggregates[key];
+    if (agg?.stats == null) return false;
+    const rules = new Set(agg.evaluation.checks.map((c) => c.rule));
+    return !rules.has('percentile') || !rules.has('p99');
+  });
   const notes = [
     'All times in ms',
-    'the tick on each headroom bar marks the limit',
+    'the tick on each limit used bar marks the limit',
     `${ctx.level} is the evaluated percentile`,
+    notEvaluated ? '/ — : rule not evaluated (too few samples or rule off)' : null,
     kind === 'step' ? 'step keys are title paths joined with ›' : null,
   ].filter((n) => n !== null);
   return join(
