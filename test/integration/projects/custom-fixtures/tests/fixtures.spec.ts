@@ -1,4 +1,14 @@
-import { accountTest, call, expect, lateTest, ownPageTest, rolesTest, test } from './fixtures.ts';
+import {
+  accountTest,
+  call,
+  chainTest,
+  expect,
+  lateTest,
+  ownPageTest,
+  rolesTest,
+  test,
+  testNoAuth,
+} from './fixtures.ts';
 
 test('own fixture on the overridden base context', async ({ shop }) => {
   expect(await call(shop, '/api/cf/base-context')).toEqual({ path: '/api/cf/base-context' });
@@ -44,4 +54,15 @@ accountTest.describe('worker-scoped account', () => {
       await page.close();
     });
   }
+});
+
+testNoAuth('inner test object of a wrapped chain', async ({ page }) => {
+  await page.goto('/page');
+  await call(page, '/api/cf/chain-inner');
+});
+
+chainTest('outer test object of a wrapped chain', async ({ page, request }) => {
+  await page.goto('/page');
+  await call(page, '/api/cf/chain-page');
+  expect((await request.get('/api/cf/chain-request')).ok()).toBe(true);
 });

@@ -79,14 +79,15 @@ constant, so each source gets limits from its own measurements and a slower back
 but the numbers of the two sources must not be mixed.
 
 A context made with `playwright.request.newContext()` is measured after
-`perf.trackRequestContext(context)` (in a test) or `trackRequestContext(context)` from
-`playwright-performance-regression/fixture` (also in a worker fixture). Other HTTP clients (Node
+`trackRequestContext(context)` from `playwright-performance-regression/fixture` (in any fixture,
+also a worker fixture) or `perf.trackRequestContext(context)` (in a test). In a fixture of the
+object you pass to `withPerfFixtures()`, use the import: the `perf` fixture is typed only in tests
+and in fixtures added after `withPerfFixtures()`, so `tsc` reports `perf` as missing there. Other HTTP clients (Node
 `fetch`, axios) are not measured. To skip data setup calls, exclude their URLs with
 `measure.exclude`.
 
 ## Does the package change my normal test runs?
 
 No. Outside a measurement run `withPerf()` returns your config unchanged and `withPerfFixtures()`
-only adds the `perf` fixture, whose methods still work (`perf.measure()` runs the function and
-returns its result). Measurement runs are started by your test command with `PW_PERF_MODE=test` or
+only adds the `perf` fixture, whose methods do nothing there. Measurement runs are started by your test command with `PW_PERF_MODE=test` or
 `PW_PERF_MODE=thresholds` in front of it.

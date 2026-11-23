@@ -77,3 +77,14 @@ export const accountTest = test.extend<object, { account: BrowserContext }>({
     { scope: 'worker' },
   ],
 });
+
+// Two exported test objects in one chain, both wrapped (F2): the second extends the first. The
+// fixtures of the outer wrapper override the inner ones, so every request is recorded once.
+export const testNoAuth = withPerfFixtures(base);
+export const chainTest = withPerfFixtures(
+  testNoAuth.extend({
+    request: async ({ request }, use) => {
+      await use(request);
+    },
+  }),
+);
