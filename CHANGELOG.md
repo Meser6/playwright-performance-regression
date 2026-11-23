@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0-next.4] - 2026-11-23
+
 Upgrading from `0.1.0-next.3`: see [Upgrading](docs/upgrading.md). In short, run your test
 command with `PW_PERF_*` variables instead of `pw-perf` commands, move `pw-perf-results/` to
 `reports/pw-perf/`, remove `run.projects` and `--reporter` from the measurement command, and
