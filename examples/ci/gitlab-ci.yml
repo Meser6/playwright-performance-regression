@@ -1,7 +1,8 @@
 # Performance runs with playwright-performance-regression (pw-perf). Save as
 # .gitlab/perf.gitlab-ci.yml and include it from .gitlab-ci.yml. Recommended path (docs/ci.md):
 #   1. Start the manual "perf-thresholds" job. Thresholds come from the same runners that measure.
-#   2. Download its artifacts and commit the pw-perf-thresholds*.json files.
+#   2. Download its artifacts (reports/pw-perf: the thresholds run copies the thresholds files there,
+#      next to thresholds-diff.md) and commit the pw-perf-thresholds*.json files.
 #   3. The "perf" job runs in scheduled pipelines (create a weekly schedule) and can be started by
 #      hand; it fails on a regression.
 # The exit code comes from reports/pw-perf/outcome.json: 2 (performance regression) is a soft
@@ -29,7 +30,6 @@ perf-thresholds:
   artifacts:
     when: always
     paths:
-      - pw-perf-thresholds*.json
       - reports/pw-perf/
     expire_in: 30 days
 

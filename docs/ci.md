@@ -19,11 +19,15 @@ or `yarn`).
 ## The recommended path
 
 1. **Thresholds job, started by hand.** It runs your test command with `PW_PERF_MODE=thresholds`
-   on the same runners that will measure (times from a laptop do not carry over) and keeps the
-   `pw-perf-thresholds*.json` files as an artifact (GitHub: Actions → Performance → Run workflow,
+   on the same runners that will measure (times from a laptop do not carry over) and uploads
+   `reports/pw-perf/` as an artifact: the thresholds run copies the `pw-perf-thresholds*.json`
+   files there, next to `thresholds-diff.md` (GitHub: Actions → Performance → Run workflow,
    mode `thresholds`; GitLab: the manual `perf-thresholds` job; Jenkins and Azure: the `MODE` /
    `mode` parameter).
-2. **Commit the files.** Download the artifact and commit the thresholds files. Until they exist,
+2. **Commit the files.** Download the artifact (GitHub: `pw-perf-thresholds`; GitLab: the job
+   artifacts; Jenkins: the archived `reports/pw-perf/`; Azure: `pw-perf-report`), review
+   `thresholds-diff.md` and commit the thresholds files next to the Playwright config (or in
+   `thresholds.dir`). Until they exist,
    measurement runs use the loose default thresholds.
 3. **Measurement job, every week.** It runs with `PW_PERF_MODE=test` (cron `0 3 * * 1`; on GitLab
    create a weekly pipeline schedule) and can be started by hand. It fails on a regression.
@@ -43,7 +47,8 @@ changes; review the diff before committing.
   file (3 when it is missing: the measurement did not run).
 - **Uploads `reports/pw-perf/` always**, also when the run fails, because that is when you need the
   report: GitHub `if: always()`, GitLab `artifacts: when: always`, Jenkins `post { always { ... } }`,
-  Azure `condition: always()`. The thresholds job also uploads `pw-perf-thresholds*.json`.
+  Azure `condition: always()`. In the thresholds job this folder also holds the copies of the
+  thresholds files, so no other path is uploaded.
 - **Has a time limit** (60 minutes for measuring, 120 for thresholds, which use more passes).
 
 ## Not ready to block builds?

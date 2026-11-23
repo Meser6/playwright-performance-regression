@@ -135,8 +135,9 @@ words become `:num` (`Transfer 1500 PLN` → `Transfer :num PLN`). See [Step tim
 ## CI
 
 The recommended path: (1) a CI job you start by hand runs with `PW_PERF_MODE=thresholds` and keeps
-the thresholds files as an artifact, (2) you commit them, (3) a weekly job runs with
-`PW_PERF_MODE=test` and fails on a regression. In GitHub Actions, shortened:
+`reports/pw-perf/` as an artifact (the run copies the thresholds files there), (2) you commit the
+thresholds files, (3) a weekly job runs with `PW_PERF_MODE=test` and fails on a regression. In
+GitHub Actions, shortened:
 
 ```yaml
 name: Performance
@@ -157,7 +158,7 @@ jobs:
       - run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: always()
-        with: { name: pw-perf-thresholds, path: pw-perf-thresholds*.json }
+        with: { name: pw-perf-thresholds, path: reports/pw-perf/ }
   measure:
     if: github.event_name == 'schedule' || inputs.mode == 'test'
     runs-on: ubuntu-latest

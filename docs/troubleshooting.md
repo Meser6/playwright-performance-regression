@@ -651,6 +651,12 @@ not accept a regression before you commit them.
 **Tool error (exit code 3).** A thresholds file could not be written in a thresholds run. Check
 that `thresholds.dir` is writable, then derive again.
 
+### THRESHOLDS_COPY_FAILED
+
+**Warning.** The thresholds files were written to `thresholds.dir`, but a copy could not be written
+to `report.dir` (a thresholds run copies them there for the CI artifact). The exit code does not
+change. Check that `report.dir` is writable, or commit the files from `thresholds.dir`.
+
 ### THRESHOLDS_DIFF_WRITE_FAILED
 
 **Warning.** The thresholds files were written, but `thresholds-diff.md` could not be written to

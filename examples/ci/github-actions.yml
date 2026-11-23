@@ -2,7 +2,9 @@
 # .github/workflows/perf.yml. Recommended path (docs/ci.md):
 #   1. Run the "thresholds" job by hand (Actions > Performance > Run workflow, mode: thresholds).
 #      Thresholds come from the same machines that measure.
-#   2. Download the pw-perf-thresholds artifact and commit its pw-perf-thresholds*.json files.
+#   2. Download the pw-perf-thresholds artifact (reports/pw-perf: the thresholds run copies the
+#      thresholds files there, next to thresholds-diff.md) and commit its pw-perf-thresholds*.json
+#      files.
 #   3. The "measure" job runs every Monday (or by hand, mode: test) and fails on a regression.
 # The exit code comes from reports/pw-perf/outcome.json: 0 ok, 2 performance regression, 3 tool or
 # config error. Not ready to block builds? Add "continue-on-error: true" to the measure job.
@@ -44,9 +46,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pw-perf-thresholds
-          path: |
-            pw-perf-thresholds*.json
-            reports/pw-perf/
+          path: reports/pw-perf/
           retention-days: 30
 
   measure:

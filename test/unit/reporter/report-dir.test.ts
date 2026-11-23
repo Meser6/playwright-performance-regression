@@ -125,6 +125,15 @@ describe('04-REQ-71 emptying report.dir', () => {
     expect(readdirSync(results)).toEqual([]);
   });
 
+  test('04-AC-51 copies of thresholds files directly in report.dir do not stop the cleaning (10-REQ-24)', () => {
+    const results = earlierRun();
+    writeFileSync(join(results, 'pw-perf-thresholds.json'), '{}');
+    writeFileSync(join(results, 'pw-perf-thresholds.steps.qa.json'), '{}');
+    const run = start({}, { mode: 'thresholds' });
+    expect(run.warnings()).toEqual([]);
+    expect(readdirSync(results)).toEqual([]);
+  });
+
   test('04-AC-50 a run without a started test, a check and a later pass remove nothing', () => {
     const results = earlierRun();
     const before = readdirSync(results).sort();
@@ -212,7 +221,7 @@ describe('04-REQ-71 guard', () => {
         'sub/pw-perf-thresholds.steps.qa.json',
         'contains a thresholds file (sub/pw-perf-thresholds.steps.qa.json)',
       ],
-      ['pw-perf-thresholds.json', 'contains a thresholds file (pw-perf-thresholds.json)'],
+      ['sub/pw-perf-thresholds.json', 'contains a thresholds file (sub/pw-perf-thresholds.json)'],
       ['package.json', 'contains package.json, so it looks like a project folder'],
       ['a/playwright.config.ts', 'contains a/playwright.config.ts'],
       ['.git/HEAD', 'contains .git'],

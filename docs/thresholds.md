@@ -66,10 +66,15 @@ and the limits would be wrong in both directions.
    ```
 
    It runs the measured tests (10 passes by default), never fails on violations, and writes the
-   thresholds files, `reports/pw-perf/report.json` and `reports/pw-perf/thresholds-diff.md`.
+   thresholds files, `reports/pw-perf/report.json` and `reports/pw-perf/thresholds-diff.md`. It
+   also copies the thresholds files into the report folder under the same names (for example
+   `reports/pw-perf/pw-perf-thresholds.json` and `reports/pw-perf/pw-perf-thresholds.steps.json`,
+   with the environment label when one is set): every file of the measured kinds, also the ones
+   this run left unchanged, so the folder alone has everything to commit.
 
-2. Download the artifact of that job (the recipes keep the `pw-perf-thresholds*.json` files and
-   `reports/pw-perf/`).
+2. Download the artifact of that job: the recipes upload `reports/pw-perf/`, with the copies of
+   the thresholds files and `thresholds-diff.md`. Copy the thresholds files into your repository
+   (next to the Playwright config, or into `thresholds.dir`).
 3. Review the diff and commit the thresholds files.
 
 Locally you can still run `PW_PERF_MODE=thresholds npm run e2e` to try the setup, but do not
