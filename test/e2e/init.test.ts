@@ -130,7 +130,18 @@ describe('setup wizard', () => {
         expect(run.stdout).toContain('thresholds derived');
         expect(readdirSync(dir).filter((f) => f.startsWith('pw-perf-thresholds.'))).toEqual([
           'pw-perf-thresholds.json',
+          'pw-perf-thresholds.steps.json',
         ]);
+        // 04-REQ-75: the wizard's empty step file stays empty without test.step blocks (10-REQ-14).
+        const steps = JSON.parse(
+          readFileSync(join(dir, 'pw-perf-thresholds.steps.json'), 'utf8'),
+        ) as { entries: object };
+        expect(steps.entries).toEqual({});
+        const api = JSON.parse(readFileSync(join(dir, 'pw-perf-thresholds.json'), 'utf8')) as {
+          entries: object;
+        };
+        expect(Object.keys(api.entries).length).toBeGreaterThan(0);
+        expect(run.stdout + run.stderr).not.toContain('THRESHOLDS_MANUAL_FILE');
       },
       RUN_TIMEOUT,
     );

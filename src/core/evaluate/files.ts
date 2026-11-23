@@ -38,6 +38,18 @@ export function missingFileWarning(
   };
 }
 
+/**
+ * THRESHOLDS_FILE_EMPTY (09-REQ-02, 09-D-21): a loaded file without entries, e.g. the empty file
+ * the wizard creates (04-REQ-75); the hint is the one of a missing file.
+ */
+export function emptyFileWarning(path: string, kind: Kind, env: string | null): Issue {
+  return {
+    code: 'THRESHOLDS_FILE_EMPTY',
+    message: `Thresholds file ${path} has no entries; ${KIND_NOUN[kind]} keys are evaluated with default thresholds.`,
+    hint: `Derive thresholds with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}.`,
+  };
+}
+
 /** major.minor of a version such as 1.57.2 (09-REQ-04). */
 export function majorMinor(version: string): string {
   return version.split('.').slice(0, 2).join('.');

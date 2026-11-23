@@ -23,6 +23,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The guided setup creates empty thresholds files.** It always adds `pw-perf-thresholds.json`
+  and `pw-perf-thresholds.steps.json` next to the Playwright config, without entries and whatever
+  you chose to measure, each with its own diff and confirmation; an existing thresholds file is
+  never changed. A measurement run with an empty file warns with the new `THRESHOLDS_FILE_EMPTY`
+  and suggests a thresholds run (as for a missing file), a check shows `0 entries` and the same
+  next step, and the thresholds run fills the files without `THRESHOLDS_MANUAL_FILE`.
 - **The guided setup adds no CI jobs.** The CI step is gone (steps are now `[n/9]`) and the wizard
   no longer writes `.github/workflows/perf.yml`, `.gitlab/perf.gitlab-ci.yml`, `Jenkinsfile.perf`
   or `azure-pipelines.perf.yml`; it still adds no scripts. Your test command is only used in the

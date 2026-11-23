@@ -35,6 +35,7 @@ import {
   ts,
 } from '../../../src/cli/init/perf-config.ts';
 import { DEFAULT_CONFIG, resolveConfig } from '../../../src/core/config/index.ts';
+import { parseThresholdsFile } from '../../../src/core/schema/index.ts';
 import { addImports, matchBracket } from '../../../src/cli/init/scan.ts';
 import { detectDir, INIT_GOLDEN, planDiff, PROJECTS } from './init-helpers.ts';
 
@@ -153,7 +154,7 @@ describe('detectProject', () => {
 
 describe('planInitChanges golden diffs (test/golden/init)', () => {
   for (const file of goldenFiles) {
-    test(`04-AC-17 04-AC-18 04-AC-20 golden ${file}`, async () => {
+    test(`04-AC-17 04-AC-18 04-AC-20 04-AC-66 golden ${file}`, async () => {
       const golden = readGolden(file);
       const info = await detectDir(join(PROJECTS, golden.input.project));
       const plan = planInitChanges(info, golden.input.answers ?? defaultAnswers(info));
@@ -873,6 +874,44 @@ describe('recognized layouts (04-REQ-39)', () => {
       expect(ignores(`node_modules\n${text}`, dir), text).toBe(false);
     // A negation cannot re-include a file under an excluded folder (no glob).
     expect(ignores('reports/\n!reports/keep.txt\n', dir)).toBe(true);
+  });
+
+  test('04-AC-66 empty thresholds files for api and steps whatever is measured; existing ones are kept', () => {
+    const project = {
+      'playwright.config.ts': 'export default defineConfig({});\n',
+      'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
+    };
+    const expected = (kind: string): string =>
+      `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 2\n}\n`;
+    for (const measure of ['all', 'api', 'steps'] as const) {
+      const plan = planInitChanges(detectProject(files(project)), { ...ANSWERS, measure });
+      const created = plan.changes.filter((c) => c.path.startsWith('pw-perf-thresholds'));
+      expect(
+        created.map((c) => [c.path, c.kind, c.before]),
+        measure,
+      ).toEqual([
+        ['pw-perf-thresholds.json', 'create', null],
+        ['pw-perf-thresholds.steps.json', 'create', null],
+      ]);
+      for (const [change, kind] of created.map((c, i) => [c, i === 0 ? 'api' : 'step'] as const)) {
+        expect(change.after).toBe(expected(kind));
+        const parsed = parseThresholdsFile(change.after, change.path, kind);
+        expect(parsed.ok && parsed.value).toEqual({
+          file: { schemaVersion: 2, kind, generated: null, entries: {} },
+          migratedFrom: null,
+        });
+      }
+    }
+    // An existing file (with entries or invalid) is never changed; the missing one is created.
+    for (const existing of [
+      '{"schemaVersion":2,"kind":"api","generated":null,"entries":{"GET /a":{"t":null}}}',
+      'not json',
+    ]) {
+      const info = detectProject(files({ ...project, 'pw-perf-thresholds.json': existing }));
+      const paths = planInitChanges(info, ANSWERS).changes.map((c) => c.path);
+      expect(paths).not.toContain('pw-perf-thresholds.json');
+      expect(paths).toContain('pw-perf-thresholds.steps.json');
+    }
   });
 });
 

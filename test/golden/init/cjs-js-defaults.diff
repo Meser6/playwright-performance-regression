@@ -19,6 +19,24 @@
 -});
 +}), require('./pw-perf.config'));
 --- /dev/null
++++ b/pw-perf-thresholds.json
+@@ -0,0 +1,6 @@
++{
++  "entries": {},
++  "generated": null,
++  "kind": "api",
++  "schemaVersion": 2
++}
+--- /dev/null
++++ b/pw-perf-thresholds.steps.json
+@@ -0,0 +1,6 @@
++{
++  "entries": {},
++  "generated": null,
++  "kind": "step",
++  "schemaVersion": 2
++}
+--- /dev/null
 +++ b/pw-perf.config.js
 @@ -0,0 +1,87 @@
 +// @ts-check

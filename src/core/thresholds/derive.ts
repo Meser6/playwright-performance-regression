@@ -186,7 +186,12 @@ function deriveKind(
   }
 
   const loaded = file.status === 'loaded' ? file : null;
-  if (loaded !== null && loaded.file.generated === null) {
+  // A file without entries (the wizard's empty file, 04-REQ-75) has nothing written by hand.
+  if (
+    loaded !== null &&
+    loaded.file.generated === null &&
+    Object.keys(loaded.file.entries).length > 0
+  ) {
     warnings.push({
       code: 'THRESHOLDS_MANUAL_FILE',
       message: `${loaded.path} was written by hand (generated: null); its complete entries that are not locked are recomputed.`,

@@ -90,7 +90,7 @@
     },
     "violations": [{"kind":"api","key":"GET /api/reports","rule":"percentile","actual":4500,"limit":2000,"hardLimitExceeded":true,"blocking":false}],
     "notEvaluated": [],
-    "warnings": [],
+    "warnings": ["THRESHOLDS_FILE_EMPTY"],
     "toolErrors": []
   }
 }

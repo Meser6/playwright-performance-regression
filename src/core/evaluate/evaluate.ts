@@ -15,6 +15,7 @@ import {
   compareText,
   fileInfo,
   generatedWarnings,
+  emptyFileWarning,
   missingFileWarning,
   outdatedWarning,
   plural,
@@ -206,6 +207,14 @@ export function evaluate(
     } else if (file.status === 'invalid') {
       toolErrors.push(...file.issues.map(schemaIssueToIssue));
     } else {
+      // An empty file (the wizard's, 04-REQ-75) is like a missing one for the hint (09-D-21).
+      if (
+        opts.mode === 'test' &&
+        Object.keys(file.file.entries).length === 0 &&
+        Object.keys(byKind[kind]).length > 0
+      ) {
+        warnings.push(emptyFileWarning(file.path, kind, opts.env));
+      }
       if (file.migratedFrom !== undefined) {
         warnings.push(outdatedWarning(file.path, file.migratedFrom, SCHEMA_VERSIONS.thresholds));
       }

@@ -4,6 +4,8 @@
 // wizard shows the red box of INIT_TEST_OBJECT_MANUAL. package.json is never changed (D-35).
 // Idempotent: a project that already has a change gets no second one. Pure.
 import { DEFAULT_CONFIG } from '../../core/config/index.ts';
+import { stringifyStable } from '../../core/format/index.ts';
+import { SCHEMA_VERSIONS } from '../../core/schema/index.ts';
 import { PACKAGE_NAME } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
 import { EXTEND_CALL, PERF_CONFIG_NAMES, SOURCE_FILE } from './detect.ts';
@@ -371,6 +373,36 @@ function planGitignore(info: ProjectInfo, plan: InitPlan): void {
 }
 
 /**
+ * Names of the thresholds files the wizard creates empty (04-REQ-75): the default thresholds.dir
+ * (the config directory) and filePrefix of the config file it writes, without an environment
+ * label (the wizard does not know one).
+ */
+export function emptyThresholdsFiles(): { path: string; kind: 'api' | 'step' }[] {
+  const prefix = DEFAULT_CONFIG.thresholds.filePrefix;
+  return [
+    { path: `${prefix}.json`, kind: 'api' },
+    { path: `${prefix}.steps.json`, kind: 'step' },
+  ];
+}
+
+/**
+ * Empty thresholds files for api and steps whatever step 4 answered (04-REQ-75, 04-D-55): valid
+ * against the schema, without entries; an existing file is never changed.
+ */
+function planThresholdsFiles(info: ProjectInfo, plan: InitPlan): void {
+  for (const { path, kind } of emptyThresholdsFiles()) {
+    if (info.files.has(path)) continue;
+    const after = stringifyStable({
+      schemaVersion: SCHEMA_VERSIONS.thresholds,
+      kind,
+      generated: null,
+      entries: {},
+    });
+    plan.changes.push({ path, kind: 'create', before: null, after });
+  }
+}
+
+/**
  * Pure plan of the init changes; unrecognized layouts give manual steps (04-REQ-39) in the wizard
  * language (04-REQ-43). The file changes do not depend on the language.
  */
@@ -386,6 +418,7 @@ export function planInitChanges(
   planTestObject(info, answers, plan, t);
   planRequestContexts(info, answers, plan, t);
   planGitignore(info, plan);
+  planThresholdsFiles(info, plan);
   return plan;
 }
 

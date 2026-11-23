@@ -773,7 +773,7 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
     const r = deriveThresholds(
       report,
       cfg(),
-      existing(file('api', {}, null)),
+      existing(file('api', { 'GET /api/hand-written': { median: 500 } }, null)),
       deriveOptions({ env: 'qa' }),
     );
     if (!r.ok) throw new Error('refused');

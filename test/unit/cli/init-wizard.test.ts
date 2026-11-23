@@ -235,8 +235,9 @@ describe('init wizard', () => {
     const dir = copyProject('init-esm-ts');
     const first = defaultsHost(dir);
     expect(await main([], first.host)).toBe(0);
-    // pw-perf.config.ts, playwright.config.ts, tests/fixtures.ts, .gitignore; no CI file (04-D-53).
-    expect(first.written.length).toBe(4);
+    // pw-perf.config.ts, playwright.config.ts, tests/fixtures.ts, .gitignore and the two empty
+    // thresholds files (04-REQ-75); no CI file (04-D-53).
+    expect(first.written.length).toBe(6);
     const after = snapshot(dir);
     const second = defaultsHost(dir);
     expect(await main([], second.host)).toBe(0);
@@ -314,6 +315,8 @@ describe('init wizard', () => {
       '', // playwright.config.ts
       '', // tests/fixtures.ts
       '', // .gitignore
+      '', // pw-perf-thresholds.json (04-REQ-75)
+      '', // pw-perf-thresholds.steps.json
       'n', // no check
     ];
     const input = new PassThrough();

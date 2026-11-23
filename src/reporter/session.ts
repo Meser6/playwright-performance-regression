@@ -1273,9 +1273,14 @@ export class RunSession {
               : `invalid (${file.issues[0]?.code ?? 'SCHEMA_VALIDATION_FAILED'})`;
         return { kind, name: file.path, state };
       });
-    const missingFile = (['api', 'step'] as const).some(
-      (kind) => kindsWithKeys[kind] && loaded[kind].status !== 'loaded',
-    );
+    // A file without entries (the wizard's empty file, 04-REQ-75) still needs a thresholds run.
+    const missingFile = (['api', 'step'] as const).some((kind) => {
+      const file = loaded[kind];
+      return (
+        kindsWithKeys[kind] &&
+        (file.status !== 'loaded' || Object.keys(file.file.entries).length === 0)
+      );
+    });
 
     const meanMs =
       c.durations.length === 0 ? null : c.durations.reduce((a, b) => a + b, 0) / c.durations.length;
