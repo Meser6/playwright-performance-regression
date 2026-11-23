@@ -4,13 +4,13 @@
     {
       "id": "T01",
       "input": "Open order 4711",
-      "expected": "Open order :id",
+      "expected": "Open order :num",
       "redacted": []
     },
     {
       "id": "T02",
       "input": "Open order #4711:",
-      "expected": "Open order #:id:",
+      "expected": "Open order #:num:",
       "redacted": []
     },
     {
@@ -136,7 +136,7 @@
     {
       "id": "T21",
       "input": "Add 2 items",
-      "expected": "Add :id items",
+      "expected": "Add :num items",
       "redacted": []
     },
     {
@@ -287,7 +287,7 @@
     {
       "id": "T39",
       "input": "Search \"Order 4711\"",
-      "expected": "Search \"Order :id\"",
+      "expected": "Search \"Order :num\"",
       "redacted": []
     },
     {
@@ -312,6 +312,36 @@
       "options": {
         "redactQuotedValues": true
       }
+    },
+    {
+      "id": "T43",
+      "input": "transfer 120.50 PLN to Anna",
+      "expected": "transfer :num PLN to Anna",
+      "redacted": []
+    },
+    {
+      "id": "T44",
+      "input": "transfer 999999 PLN to Anna",
+      "expected": "transfer :num PLN to Anna",
+      "redacted": []
+    },
+    {
+      "id": "T45",
+      "input": "Find user 123456789",
+      "expected": "Find user :id",
+      "redacted": []
+    },
+    {
+      "id": "T46",
+      "input": "Open order ORD-1000",
+      "expected": "Open order :id",
+      "redacted": []
+    },
+    {
+      "id": "T47",
+      "input": "Pay invoice inv_58",
+      "expected": "Pay invoice :id",
+      "redacted": []
     }
   ]
 }

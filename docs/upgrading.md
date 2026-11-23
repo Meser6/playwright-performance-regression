@@ -25,6 +25,25 @@ changes and are always listed with migration steps:
 After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
 and review the diff before committing anything.
 
+### From 0.1.0-next.3: endpoint and step keys changed
+
+The built-in normalization changed (rules version 2 for URLs and for step titles):
+
+- URL segments with a prefixed id, such as `ORD-1000` or `inv_58`, become `:id`
+  (`keys.idPatterns.prefixed`).
+- In step titles, numbers shorter than 9 digits become `:num` instead of `:id`, e.g.
+  `Open order 4711` → `Open order :num`.
+
+Every thresholds file gives `THRESHOLDS_SOURCE_MISMATCH` (normalization) until it is derived
+again, and keys that contained such values give `THRESHOLDS_UNSEEN_ENTRIES`. To upgrade:
+
+1. Run the thresholds job on CI and commit the new files; add `PW_PERF_PRUNE=1` to a thresholds run
+   of the full suite to remove the old keys.
+2. Update `measure.steps.include` / `exclude` patterns written against the old step keys
+   (`Open order :id` → `Open order :num`).
+3. To keep the old URL keys, set `keys: { idPatterns: { prefixed: false } }`. The step rule has
+   no switch.
+
 ### From 0.1.0-next.3: report folder moved to `reports/pw-perf/`
 
 The default `report.dir` is now `reports/pw-perf/` instead of `pw-perf-results/`; the files in it

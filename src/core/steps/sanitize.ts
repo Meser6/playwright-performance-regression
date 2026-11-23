@@ -74,6 +74,8 @@ const MERIDIEM_RE = /^(?:AM|PM)$/iu;
 const NUMBER_RES = [
   /^[+-]?[0-9]+(?:[.,][0-9]+)+[A-Za-zµ%°]{0,4}$/u,
   /^[+-]?[0-9]+[A-Za-zµ%°]{1,4}$/u,
+  // Bare integers shorter than 9 digits; longer ones are ids of rule P9 (06-D-28).
+  /^[+-]?[0-9]{1,8}$/u,
 ];
 
 /** Quote pairs of rule K2: opening → closing (06-REQ-35). */

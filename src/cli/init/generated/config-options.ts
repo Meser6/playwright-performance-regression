@@ -173,6 +173,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: true,
   },
   {
+    path: 'keys.idPatterns.prefixed',
+    description:
+      "Ids with a prefix: 2-5 capital letters, '-' and at least 3 digits (ORD-1000), or 1-8 lowercase letters, '_' and at least 2 digits or 8-32 letters and digits with a digit (inv_58).",
+    leaf: true,
+    default: true,
+  },
+  {
     path: 'keys.idPatterns.email',
     description: "E-mail addresses, replaced with ':email'.",
     leaf: true,

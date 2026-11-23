@@ -71,7 +71,8 @@ points to its step by `file:line` ("Defined at").
 
 | Title                                          | Key                                   |
 | ---------------------------------------------- | ------------------------------------- |
-| `Open order 4711`                              | `Open order :id`                      |
+| `Open order 4711`                              | `Open order :num`                     |
+| `Open order ORD-1000`                          | `Open order :id`                      |
 | `Login as jan.kowalski@example.com`            | `Login as :email`                     |
 | `Open https://app.example/orders/42?token=abc` | `Open :url`                           |
 | `Authorize with Bearer abc.def-123`            | `Authorize with Bearer :secret`       |
@@ -81,12 +82,16 @@ points to its step by `file:line` ("Defined at").
 | `Pay 1,299.00 PLN with 10% discount`           | `Pay :num PLN with :num discount`     |
 | `Search ${query}`                              | `Search :value`                       |
 | `Click "Save"`                                 | `Click "Save"`                        |
-| `Search "Order 4711"`                          | `Search "Order :id"`                  |
+| `Search "Order 4711"`                          | `Search "Order :num"`                 |
 
 URLs, tokens, e-mail addresses, phone numbers, IP addresses and secrets are always replaced, also
 inside quotes and with `normalizeTitles: false`. A URL or a secret in a title gives the warning
 `STEPS_SECRET_REDACTED` with the locations of the steps: such data also reaches Playwright's own
 reports and traces, so remove it from the title.
+
+Numbers in words become `:num` (`Transfer 1500 PLN` and `Transfer 120.50 PLN` share one key);
+numbers with 9 or more digits and ids matching `keys.idPatterns` become `:id`, and so do number
+segments of paths (`/orders/4711`).
 
 Quoted values stay in the keys by default, because they are usually button or field labels:
 `Click "Save"` and `Click "Cancel"` are two keys. If your titles put test data in quotes (names,

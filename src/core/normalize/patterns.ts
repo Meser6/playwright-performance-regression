@@ -11,6 +11,8 @@ export const ID_PATTERNS: Readonly<Record<BuiltInPattern, RegExp>> = {
   token:
     /^(?=[^0-9]*[0-9])(?:[A-Za-z0-9~=]{24,}|(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])[A-Za-z0-9_.~=-]{24,})$/,
   mixed: /^(?=[^0-9]*[0-9])(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])[A-Za-z0-9_-]{16,}$/,
+  prefixed:
+    /^(?:[A-Z]{2,5}-[0-9]{3,}|[a-z]{1,8}_(?:[0-9]{2,32}|(?=[A-Za-z]*[0-9])[A-Za-z0-9]{8,32}))$/,
   email: /^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/,
 };
 
@@ -24,7 +26,7 @@ export type IdMatcher = (text: string) => ':id' | ':email' | null;
 export function compileIdMatcher(keys: ResolvedConfig['keys']): IdMatcher {
   const email = keys.idPatterns.email ? ID_PATTERNS.email : undefined;
   const ids: ((text: string) => boolean)[] = [];
-  for (const name of ['number', 'uuid', 'hex', 'token', 'mixed'] as const) {
+  for (const name of ['number', 'uuid', 'hex', 'token', 'mixed', 'prefixed'] as const) {
     if (keys.idPatterns[name]) {
       const re = ID_PATTERNS[name];
       ids.push((text) => re.test(text));

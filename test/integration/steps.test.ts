@@ -59,7 +59,7 @@ describe('steps project', () => {
       expect(run.status, run.output).toBe(0);
       const keys = Object.keys(run.report?.steps ?? {});
       expect(keys).toEqual(
-        expect.arrayContaining(['Login as :email', 'Open :url', 'Use :secret', 'Open order :id']),
+        expect.arrayContaining(['Login as :email', 'Open :url', 'Use :secret', 'Open order :num']),
       );
       expect(warningCodes(run)).toContain('STEPS_SECRET_REDACTED');
       const results = join(dir, 'reports/pw-perf');

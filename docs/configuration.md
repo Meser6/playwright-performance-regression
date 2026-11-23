@@ -73,6 +73,7 @@ export default withPerf(defineConfig({/* your config */}), perfConfig);
     - [`keys.idPatterns.hex`](#keysidpatternshex)
     - [`keys.idPatterns.token`](#keysidpatternstoken)
     - [`keys.idPatterns.mixed`](#keysidpatternsmixed)
+    - [`keys.idPatterns.prefixed`](#keysidpatternsprefixed)
     - [`keys.idPatterns.email`](#keysidpatternsemail)
   - [`keys.extraIdPatterns`](#keysextraidpatterns)
   - [`keys.query`](#keysquery)
@@ -324,7 +325,7 @@ Origin to label mapping, e.g. {"https://api.example.com": "api"}. A key with `*`
 
 Built-in path segment patterns replaced with ':id'.
 
-Options: [`number`](#keysidpatternsnumber), [`uuid`](#keysidpatternsuuid), [`hex`](#keysidpatternshex), [`token`](#keysidpatternstoken), [`mixed`](#keysidpatternsmixed), [`email`](#keysidpatternsemail).
+Options: [`number`](#keysidpatternsnumber), [`uuid`](#keysidpatternsuuid), [`hex`](#keysidpatternshex), [`token`](#keysidpatternstoken), [`mixed`](#keysidpatternsmixed), [`prefixed`](#keysidpatternsprefixed), [`email`](#keysidpatternsemail).
 
 ### `keys.idPatterns.number`
 
@@ -357,6 +358,13 @@ Tokens of at least 24 characters containing a digit, without separators or with 
 ### `keys.idPatterns.mixed`
 
 Random-looking ids of at least 16 characters with a digit, a lowercase and an uppercase letter, e.g. nanoid.
+
+- Type: boolean
+- Default: `true`
+
+### `keys.idPatterns.prefixed`
+
+Ids with a prefix: 2-5 capital letters, '-' and at least 3 digits (ORD-1000), or 1-8 lowercase letters, '_' and at least 2 digits or 8-32 letters and digits with a digit (inv_58).
 
 - Type: boolean
 - Default: `true`
