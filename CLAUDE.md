@@ -13,7 +13,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 ## Specification
 
 - The specification lives in a **separate private repository**, expected as a sibling checkout:
-  `../pw-benchmark/` (`spec/`, `v4_todo.md`, `HANDOFF.md`). Read the relevant spec files before working on a task.
+  `../npm-spec/perfo/` (`spec/`, `v4_todo.md`, `HANDOFF.md`). Read the relevant spec files before working on a task.
 - The spec is the source of truth. If code and spec disagree, the spec wins; if the spec is wrong,
   it is changed and merged in the spec repository **first**, then the code follows.
 - Never copy spec text, roadmap or business details into this public repository. Refer to spec
@@ -59,7 +59,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
   <body: what and why, wrapped at 72>
 
   Refs: 05-REQ-14, 05-AC-09
-  Spec: pw-benchmark-docs@<short spec commit>
+  Spec: npm-spec@<short spec commit>
   Co-Authored-By: Claude <model> <noreply@anthropic.com>
   ```
 
@@ -98,6 +98,6 @@ pnpm publint && pnpm attw    # package exports check (run after `pnpm build`)
 
 - Never edit `src/core/types/generated/` by hand: change the schema and run `pnpm gen:types`.
 - `spec-ids.json` is regenerated, never edited: run
-  `node ../pw-benchmark/scripts/export-spec-ids.mjs --out spec-ids.json` from this repository.
+  `node ../npm-spec/perfo/scripts/export-spec-ids.mjs --out spec-ids.json` from this repository.
 - When a work package implements acceptance criteria, add them (or the whole spec file prefix) to
   `scripts/ac-scope.json`; manual or out-of-CI criteria go to `scripts/ac-manual.json`.
