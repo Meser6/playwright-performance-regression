@@ -7,6 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-25
+
+A hotfix release.
+
 ### Fixed
 
 - **Later passes repeat your script when it calls `npx playwright test`.** A script such as
