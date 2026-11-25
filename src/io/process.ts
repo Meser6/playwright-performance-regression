@@ -1,6 +1,6 @@
 // Processes for the reporter (01-REQ-43, 04-REQ-64): the reporter session stays free of node:*
 // imports, so starting a pass lives here.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 export interface PassExit {
   /** Exit code, or null when the process ended by a signal or did not start. */
@@ -58,4 +58,24 @@ export function runPass(
       });
     }
   });
+}
+
+/**
+ * The process table, `ps -A -o pid=,ppid=,args=` (04-REQ-63 point 2): no shell, 2 s limit. Null on
+ * Windows and when `ps` fails, so the next pass falls back to the Playwright command line.
+ */
+export function readProcessTable(): string | null {
+  if (process.platform === 'win32') return null;
+  try {
+    const out = spawnSync('ps', ['-A', '-o', 'pid=,ppid=,args='], {
+      encoding: 'utf8',
+      timeout: 2000,
+      shell: false,
+      windowsHide: true,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    return out.status === 0 && typeof out.stdout === 'string' ? out.stdout : null;
+  } catch {
+    return null;
+  }
 }

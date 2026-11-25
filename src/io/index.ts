@@ -16,7 +16,7 @@ export {
   tempPath,
 } from './files.ts';
 export { writeJsonStable, writeTextAtomic } from './json.ts';
-export { runPass } from './process.ts';
+export { readProcessTable, runPass } from './process.ts';
 export type { PassExit } from './process.ts';
 export { readPackageInfo, readSuite } from './package-info.ts';
 export type { PackageInfo } from './package-info.ts';

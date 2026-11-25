@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Later passes repeat your script when it calls `npx playwright test`.** A script such as
+  `"e2e:qa": "npm run prep && npx playwright test --grep …"` ran later passes as the bare
+  `npx playwright test …` command, because `npx` hides the name of the outer script. The reporter
+  now finds the `npm run e2e:qa` process above Playwright and runs `npm run e2e:qa` again, so the
+  steps before Playwright run in every pass too. On Windows the behaviour is unchanged.
+
 ## [1.0.0] - 2026-11-23
 
 The first stable release, published under the `latest` dist-tag: install with

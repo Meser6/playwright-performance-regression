@@ -25,6 +25,7 @@ import {
   relativeSlashPath,
   removeFileSync,
   resolvePath,
+  readProcessTable,
   runPass,
   scanDirSync,
   tempPath,
@@ -71,6 +72,8 @@ function processHost(): ReporterHost {
     ci: readCiInfo(env),
     host: readHostInfo(env),
     execPath: process.execPath,
+    pid: process.pid,
+    processTable: readProcessTable,
     runPass: (command, passEnv) => runPass(command, passEnv, process.cwd()),
   };
 }

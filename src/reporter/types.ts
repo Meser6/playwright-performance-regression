@@ -140,6 +140,10 @@ export interface ReporterHost {
   host: RunReport['host'];
   /** process.execPath, for the command of the next pass (04-REQ-63). */
   execPath: string;
+  /** process.pid, to find the script that started Playwright (04-REQ-63 point 2). */
+  pid?: number;
+  /** `ps` output of the process table, or null when unavailable (04-REQ-63 point 2). */
+  processTable?(): string | null;
   /** Runs one pass and waits for it (04-REQ-64). */
   runPass(
     command: { file: string; args: readonly string[] },

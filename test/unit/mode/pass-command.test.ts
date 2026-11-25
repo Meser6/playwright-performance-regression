@@ -1,6 +1,11 @@
 // Command of the next pass (04-REQ-63).
 import { describe, expect, test } from 'vitest';
-import { passCommand } from '../../../src/mode/index.ts';
+import {
+  ancestorScript,
+  parseProcessTable,
+  passCommand,
+  scriptEnv,
+} from '../../../src/mode/index.ts';
 
 const NODE = '/usr/bin/node';
 const PW = '/p/node_modules/@playwright/test/cli.js';
@@ -171,5 +176,86 @@ describe('passCommand (04-REQ-63)', () => {
         passCommand({ execPath: NODE, argv: [NODE, PW, 'test'], env, scripts: null }).args,
       ).toEqual([npm, 'run', 'e2e']);
     });
+  });
+});
+
+describe('script of an ancestor (04-REQ-63 point 2)', () => {
+  const NPM = '/usr/lib/node_modules/npm/bin/npm-cli.js';
+  const SCRIPTS = {
+    'tic:qa': 'node tic.mjs',
+    'e2e:qa': 'npm run tic:qa && INSTANCE=QA npx playwright test --project=E2E --grep "$(echo @a)"',
+  };
+  const TABLE = [
+    '  100     1 -zsh',
+    '  200   100 node /usr/local/bin/npm run e2e:qa',
+    '  300   200 sh -c npm run tic:qa && INSTANCE=QA npx playwright test --project=E2E --grep "$(echo @a)"',
+    '  400   300 node /usr/lib/node_modules/npm/bin/npm-cli.js exec playwright test --project=E2E --grep @a',
+    '  500   400 node /p/node_modules/.bin/playwright test --project=E2E --grep @a',
+  ].join('\n');
+  const env = {
+    npm_lifecycle_event: 'npx',
+    npm_lifecycle_script: 'playwright test',
+    npm_execpath: NPM,
+  };
+  const argv = [NODE, PW, 'test', '--project=E2E', '--grep', '@a'];
+
+  function command(table: string | null, extraArgv: string[] = []) {
+    const resolved = scriptEnv({
+      env,
+      scripts: SCRIPTS,
+      pid: 500,
+      processTable: () => table,
+    });
+    return passCommand({
+      execPath: NODE,
+      argv: [...argv, ...extraArgv],
+      env: resolved,
+      scripts: SCRIPTS,
+    });
+  }
+
+  test('04-AC-68 npx inside a script repeats the script of the nearest npm run ancestor', () => {
+    expect(command(TABLE)).toEqual({ file: NODE, args: [NPM, 'run', 'e2e:qa'] });
+  });
+
+  test('04-AC-68 arguments added to the outer script follow --', () => {
+    expect(command(TABLE, ['--grep', 'b']).args).toEqual([
+      NPM,
+      'run',
+      'e2e:qa',
+      '--',
+      '--grep',
+      'b',
+    ]);
+  });
+
+  test('04-AC-68 a shell and an ancestor whose script does not name playwright are skipped', () => {
+    const rows = parseProcessTable(
+      [
+        '10 1 npm run tic:qa',
+        '20 10 node /x/npm-cli.js run e2e:qa',
+        '30 20 sh -c npx playwright test',
+        '40 30 node pw',
+      ].join('\n'),
+    );
+    const chain = parseProcessTable(
+      ['10 1 npm run e2e:qa', '20 10 pnpm run tic:qa', '30 20 node pw'].join('\n'),
+    );
+    expect(ancestorScript({ rows, pid: 40, scripts: SCRIPTS })).toBe('e2e:qa');
+    expect(ancestorScript({ rows: chain, pid: 30, scripts: SCRIPTS })).toBe('e2e:qa');
+  });
+
+  test('04-AC-68 without a process table or a matching ancestor: the Playwright command line', () => {
+    expect(command(null)).toEqual({ file: NODE, args: argv.slice(1) });
+    expect(command('  1 0 launchd\n 500 1 node pw')).toEqual({ file: NODE, args: argv.slice(1) });
+  });
+
+  test('04-AC-68 a script event of package.json does not read the process table', () => {
+    let read = 0;
+    const own = { ...env, npm_lifecycle_event: 'e2e:qa' };
+    expect(
+      scriptEnv({ env: own, scripts: SCRIPTS, pid: 500, processTable: () => (read++, TABLE) }),
+    ).toBe(own);
+    expect(read).toBe(0);
   });
 });
