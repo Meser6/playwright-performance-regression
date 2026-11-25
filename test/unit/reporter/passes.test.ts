@@ -108,6 +108,43 @@ describe('passes of the first pass (04-REQ-64)', () => {
     expect(out).not.toContain('/usr/bin/node');
   });
 
+  test('04-AC-68 npx inside a script: the next pass runs the script of the ancestor', async () => {
+    const project = tempDir();
+    writeFileSync(
+      join(project, 'package.json'),
+      JSON.stringify({
+        scripts: {
+          'e2e:qa': 'npm run tic:qa && INSTANCE=QA npx playwright test --grep "$(echo @a)"',
+        },
+      }),
+    );
+    const npm = '/usr/lib/node_modules/npm/bin/npm-cli.js';
+    const first = fakeHost(project, {
+      runPass: laterPasses(),
+      env: {
+        npm_lifecycle_event: 'npx',
+        npm_lifecycle_script: 'playwright test',
+        npm_execpath: npm,
+      },
+      argv: ['/usr/bin/node', '/p/node_modules/.bin/playwright', 'test', '--grep', '@a'],
+      processTable: [
+        '200 1 node /usr/local/bin/npm run e2e:qa',
+        '300 200 sh -c npm run tic:qa && INSTANCE=QA npx playwright test',
+        `400 300 node ${npm} exec playwright test --grep @a`,
+        '500 400 node /p/node_modules/.bin/playwright test --grep @a',
+      ].join('\n'),
+    });
+    const s = session(first, registered({ run: { passes: { test: 2 } } }, { mode: 'test' }));
+    s.begin(fakeConfig(project), { allTests: () => [] });
+    runPass(s, 1);
+    await s.end({ status: 'passed' });
+    expect(first.passes[0]?.command).toEqual({
+      file: '/usr/bin/node',
+      args: [npm, 'run', 'e2e:qa'],
+    });
+    expect(first.stdout.map(stripAnsi).join('')).toContain('pass 2/2: npm run e2e:qa\n');
+  });
+
   test('09-AC-31 TESTS_NOT_INSTRUMENTED counts a test once over all passes', async () => {
     const unwrapped = (s: ReturnType<typeof session>): void => {
       s.testBegin();

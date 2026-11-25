@@ -69,6 +69,7 @@ import {
   passCommand,
   readModeState,
   runShape,
+  scriptEnv,
   testArgsFromArgv,
   testFilters,
   writeModeState,
@@ -856,7 +857,7 @@ export class RunSession {
     const passInput = {
       execPath: this.host.execPath,
       argv: this.host.argv,
-      env: this.host.env,
+      env: this.scriptEnv(info.scripts),
       scripts: info.scripts,
     };
     const command = passCommand(passInput);
@@ -1357,13 +1358,32 @@ export class RunSession {
 
   /** The words the run added to the test command, as for the next pass (09-REQ-32, 04-REQ-63). */
   private runArgs(): { script: boolean; tail: string[] } {
+    const { scripts } = this.host.io.readPackageInfo(this.host.cwd);
     const shape = runShape({
       execPath: this.host.execPath,
       argv: this.host.argv,
-      env: this.host.env,
-      scripts: this.host.io.readPackageInfo(this.host.cwd).scripts,
+      env: this.scriptEnv(scripts),
+      scripts,
     });
     return { script: shape.script !== null, tail: shape.tail };
+  }
+
+  private scriptEnvCache: Readonly<Record<string, string | undefined>> | null = null;
+
+  /**
+   * The environment with npm_lifecycle_event of the script that started Playwright through
+   * `npx` (04-REQ-63 point 2); the process table is read at most once per run.
+   */
+  private scriptEnv(
+    scripts: Readonly<Record<string, string>> | null,
+  ): Readonly<Record<string, string | undefined>> {
+    this.scriptEnvCache ??= scriptEnv({
+      env: this.host.env,
+      scripts,
+      pid: this.host.pid,
+      processTable: this.host.processTable?.bind(this.host),
+    });
+    return this.scriptEnvCache;
   }
 
   /**
@@ -1383,8 +1403,8 @@ export class RunSession {
 
   /** Commands of the project for each mode, for the Next: hint (09-REQ-32). */
   private commands(): Record<PerfMode, string> {
-    const env = this.host.env;
     const info = this.host.io.readPackageInfo(this.configDir);
+    const env = this.scriptEnv(this.host.io.readPackageInfo(this.host.cwd).scripts);
     const ctx: CommandContext = {
       env: this.settings.config.run.env,
       lifecycleEvent: env['npm_lifecycle_event'] ?? null,

@@ -312,5 +312,12 @@ export const RUN_ID_ENV = RUN_ID;
 export const THRESHOLDS_DIR_ENV = THRESHOLDS_DIR;
 /** Name of the pass variable, set for the processes of passes 2…N (04-REQ-64). */
 export const PASS_ENV = PASS;
-export { passCommand, runShape } from './pass-command.ts';
+export {
+  ancestorScript,
+  parseProcessTable,
+  passCommand,
+  runShape,
+  scriptEnv,
+} from './pass-command.ts';
+export type { ProcessRow } from './pass-command.ts';
 export type { PassCommand, RunShape } from './pass-command.ts';

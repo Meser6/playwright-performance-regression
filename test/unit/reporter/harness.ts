@@ -53,6 +53,8 @@ export function fakeHost(
     env?: Record<string, string>;
     tty?: number;
     argv?: string[];
+    /** `ps` output for the script of an ancestor (04-REQ-63 point 2). */
+    processTable?: string;
     /** What a started pass does; by default it exits with 0 and writes nothing. */
     runPass?: ReporterHost['runPass'];
   } = {},
@@ -81,6 +83,9 @@ export function fakeHost(
       ci: null,
       host: { ...HOST_INFO },
       execPath: '/usr/bin/node',
+      ...(options.processTable === undefined
+        ? {}
+        : { pid: 500, processTable: () => options.processTable ?? null }),
       runPass: async (command, env) => {
         passes.push({ command, env: { ...env } });
         return options.runPass === undefined
