@@ -41,11 +41,11 @@ export const MAX_PROBLEMS = 5;
  * Current schemaVersion of every format. 02-REQ-11 applies from the first release: the run
  * report went to version 2 (02-REQ-30); removing custom measurements (D-32) moved the sample
  * batch to 2, the thresholds file to 2 and the run report to 3 (02-REQ-33); APIRequestContext
- * calls moved the sample batch to 3 (02-REQ-40); 1.1.0 moves the run report to 5 and the
- * thresholds file to 3 (02-REQ-43).
+ * calls moved the sample batch to 3 (02-REQ-40); 1.1.0 moves the run report to 5, the
+ * thresholds file to 3 and the sample batch to 4 (02-REQ-43).
  */
 export const SCHEMA_VERSIONS = {
-  samples: 3,
+  samples: 4,
   runReport: 5,
   thresholds: 3,
   outcome: 1,
@@ -545,8 +545,8 @@ function mapValues(map: unknown, f: (value: unknown) => unknown): unknown {
  * statuses outside the snapshot's measure.successStatuses (null for steps), failedTimings [],
  * evaluation.workload null and limits.maxNonSuccessRate null; the config snapshot gets the new
  * options with coldSamples 0 (an old run did not set cold samples apart), the nonSuccess rule
- * with the margin of the errors rule (presets set both alike, 03-REQ-30) and the default
- * workloadShift.
+ * with the margin of the errors rule (presets set both alike, 03-REQ-30), the default
+ * workloadShift and keys.operations [] (an old run had no operation keys).
  */
 export function migrateRunReportV4(document: JsonObject): JsonObject {
   const config = document.config;
@@ -563,6 +563,7 @@ export function migrateRunReportV4(document: JsonObject): JsonObject {
     const errors = isRecord(checks.errors) ? checks.errors : {};
     const defaults = DEFAULT_CONFIG.checks.nonSuccess;
     const thresholds = isRecord(config.thresholds) ? config.thresholds : {};
+    const keys = isRecord(config.keys) ? config.keys : {};
     snapshot = {
       ...config,
       // Also in a sparse snapshot: the default (1) would claim cold samples were set apart.
@@ -579,6 +580,7 @@ export function migrateRunReportV4(document: JsonObject): JsonObject {
         ...thresholds,
         workloadShift: { ...DEFAULT_CONFIG.thresholds.workloadShift },
       },
+      keys: { ...keys, operations: [] },
     };
   }
   return {

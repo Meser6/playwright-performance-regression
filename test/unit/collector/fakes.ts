@@ -107,6 +107,8 @@ export interface FakeRequestOptions {
   resourceType?: string;
   serviceWorker?: boolean;
   page?: FakePage | null;
+  /** Request body; postData() calls are counted in postDataReads. */
+  postData?: string | null;
 }
 
 export class FakeRequest {
@@ -116,6 +118,7 @@ export class FakeRequest {
   failureValue: { errorText: string } | null = null;
   readonly urlValue: string;
   readonly options: FakeRequestOptions;
+  postDataReads = 0;
   constructor(urlValue: string, options: FakeRequestOptions = {}) {
     this.urlValue = urlValue;
     this.options = options;
@@ -128,6 +131,10 @@ export class FakeRequest {
   }
   resourceType(): string {
     return this.options.resourceType ?? 'fetch';
+  }
+  postData(): string | null {
+    this.postDataReads += 1;
+    return this.options.postData ?? null;
   }
   serviceWorker(): unknown {
     return this.options.serviceWorker === true ? {} : null;

@@ -92,7 +92,8 @@
         "extraIdPatterns": [],
         "query": "names",
         "keepQueryValues": [],
-        "dropQueryParams": []
+        "dropQueryParams": [],
+        "operations": []
       },
       "checks": {
         "time": {

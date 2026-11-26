@@ -139,6 +139,7 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },
@@ -455,6 +456,7 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },

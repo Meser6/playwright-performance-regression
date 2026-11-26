@@ -30,19 +30,25 @@ export function measuredBaseOrigins(projects: readonly ProjectBaseUrl[]): string
  * hash53 with FIXED_HASH_SEED of the stable JSON text of { rulesVersion, keys, baseOrigins },
  * as 14 lowercase hex digits (07-REQ-21). `keys` is the effective config section in its JSON
  * form: regexes as { regex, flags }, keyBuilder as "[function]" when set. The body of the
- * keyBuilder function does not change the fingerprint.
+ * keyBuilder function does not change the fingerprint. An empty keys.operations is left out
+ * (18-REQ-11).
  */
 export function normalizationFingerprint(
   cfg: ResolvedConfig['keys'],
   ctx: KeyBuilderContext,
 ): string {
-  const { keyBuilder, extraIdPatterns, ...rest } = cfg;
+  const { keyBuilder, extraIdPatterns, operations, ...rest } = cfg;
+  const json = (p: string | RegExp): string | { regex: string; flags: string } =>
+    typeof p === 'string' ? p : { regex: p.source, flags: p.flags };
   const keys = {
     ...rest,
-    extraIdPatterns: extraIdPatterns.map((p) =>
-      typeof p === 'string' ? p : { regex: p.source, flags: p.flags },
-    ),
+    extraIdPatterns: extraIdPatterns.map(json),
     keyBuilder: keyBuilder === undefined ? undefined : '[function]',
+    // Left out when empty, so the fingerprint without operation keys stays that of 1.0.x (18-REQ-11).
+    operations:
+      operations.length === 0
+        ? undefined
+        : operations.map((entry) => ({ type: entry.type, match: json(entry.match) })),
   };
   return hashHex(
     stringifyStable({

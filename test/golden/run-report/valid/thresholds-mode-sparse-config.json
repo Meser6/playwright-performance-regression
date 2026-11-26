@@ -10,7 +10,8 @@
             "regex": "^[A-Z]{2}-\\d+$",
             "flags": "i"
           }
-        ]
+        ],
+        "operations": []
       },
       "measure": {
         "coldSamples": 0

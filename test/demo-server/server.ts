@@ -190,6 +190,13 @@ async function handle(state: State, req: IncomingMessage, res: ServerResponse): 
     return;
   }
   if (path === '/api/data.json') return json(res, 200, { data: [1, 2, 3] });
+  if (path === '/graphql' && method === 'POST') {
+    // GraphQL (18): the delay key is "POST /graphql#<operationName>", e.g. to slow one operation.
+    const body = JSON.parse((await readBody(req)) || '{}') as { operationName?: unknown };
+    const name = typeof body.operationName === 'string' ? body.operationName : 'anonymous';
+    await sleep(delayOf(state, `${method} ${path}#${name}`, 0));
+    return json(res, 200, { data: { name } });
+  }
   if (path.startsWith('/api/')) {
     await sleep(delayOf(state, `${method} ${path}`, 0));
     return json(res, 200, { path });

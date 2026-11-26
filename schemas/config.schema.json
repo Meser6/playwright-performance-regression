@@ -252,6 +252,20 @@
           "items": {"type": "string", "minLength": 1},
           "default": []
         },
+        "operations": {
+          "description": "Endpoints that get a key per operation (18): GraphQL ('graphql': operationName or the first named operation, batches by the sorted names) and tRPC ('trpc': procedure names from the path), e.g. [{\"type\": \"graphql\", \"match\": \"/graphql\"}] gives 'POST /graphql#GetTickets'. match is tested against the URL path without the query; the first matching entry wins. The request body is read only for POST requests matching a graphql entry, up to 64 KB, in the worker, and never written anywhere.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "match"],
+            "properties": {
+              "type": {"description": "Built-in operation extractor.", "enum": ["graphql", "trpc"]},
+              "match": {"$ref": "#/$defs/urlPattern", "description": "A string matches as a case-sensitive substring of the URL path; {regex, flags} is a JavaScript regular expression tested against the path."}
+            }
+          },
+          "default": []
+        },
         "keyBuilder": {
           "description": "Snapshot only: \"[function]\" when a custom keyBuilder function was configured (TypeScript/JavaScript config).",
           "const": "[function]"

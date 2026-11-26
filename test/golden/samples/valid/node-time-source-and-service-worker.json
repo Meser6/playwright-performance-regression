@@ -34,7 +34,7 @@
         "url": "https://app.example/api/tickets/42?search=abc"
       }
     ],
-    "schemaVersion": 3
+    "schemaVersion": 4
   },
   "expected": {
     "ok": true

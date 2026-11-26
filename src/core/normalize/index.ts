@@ -11,6 +11,7 @@ export type { ProjectBaseUrl } from './fingerprint.ts';
 export { canonicalOrigin, createKeyBuilder, truncateKey } from './key-builder.ts';
 export type { KeyBuilderContext, KeyResult, KeySample, NormalizeIssue } from './key-builder.ts';
 export { ID_PATTERNS } from './patterns.ts';
+export { MAX_OPERATIONS_IN_KEY, operationKeyPart } from './operations.ts';
 export {
   compileHostPatterns,
   isHostPattern,

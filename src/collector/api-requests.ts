@@ -1,5 +1,6 @@
 // APIRequestContext calls (15, chapter 4): wrapping the methods of one context and describing
 // one call. The samples themselves are made by the collector of the running test.
+import type { OperationBody } from './operations.ts';
 import type { RawApiRequestSample } from '../core/types/index.ts';
 import { wrappedRequestContexts } from '../registry/index.ts';
 
@@ -20,7 +21,16 @@ export interface ApiCall {
 
 /** The collector side of a wrapped method: records the call and returns the promise to give back. */
 export interface ApiRecorder {
-  observeApiCall(call: ApiCall, source: ApiSource, result: Promise<unknown>): Promise<unknown>;
+  /**
+   * `options`: the options argument of the call, read synchronously for operation names
+   * (15-REQ-20) and never kept.
+   */
+  observeApiCall(
+    call: ApiCall,
+    source: ApiSource,
+    result: Promise<unknown>,
+    options?: unknown,
+  ): Promise<unknown>;
 }
 
 const METHOD = /^[A-Z]+$/u;
@@ -132,7 +142,7 @@ export function wrapRequestContext(
         depth -= 1;
       }
       if (described === undefined || !isPromise(result)) return result;
-      return active.observeApiCall(described, source, result);
+      return active.observeApiCall(described, source, result, args[1]);
     };
     Object.defineProperty(target, name, {
       value: wrapper,
@@ -142,4 +152,40 @@ export function wrapRequestContext(
     });
   }
   return true;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** The URL of a call with options.params added, for GraphQL GET names (15-REQ-20). */
+export function urlWithParams(url: string, options: unknown): string {
+  const params = isPlainRecord(options) ? options.params : undefined;
+  if (params === undefined || params === null) return url;
+  try {
+    const out = new URL(url);
+    const extra =
+      typeof params === 'string' || params instanceof URLSearchParams
+        ? new URLSearchParams(params)
+        : isPlainRecord(params)
+          ? Object.entries(params).map(([name, value]): [string, string] => [name, String(value)])
+          : [];
+    for (const [name, value] of extra) out.searchParams.set(name, value);
+    return out.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * The body of a call for GraphQL names (15-REQ-20): options.data (an object, or JSON text), else
+ * the operations field of options.multipart. Other bodies (Buffer, form) give no name.
+ */
+export function apiOperationBody(options: unknown): OperationBody {
+  if (!isPlainRecord(options)) return null;
+  const { data, multipart } = options;
+  if (typeof data === 'string') return { text: data };
+  if (isPlainRecord(data) || Array.isArray(data)) return { value: data };
+  if (isPlainRecord(multipart)) return { multipartOperations: multipart.operations };
+  return null;
 }

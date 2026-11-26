@@ -17,6 +17,17 @@ export interface KeyBuilderInput {
   /** Raw URL. */
   url: string;
   resourceType: string;
+  /** Operation names read by keys.operations, in request order, or null. Never the request body (18-REQ-10). */
+  operation: readonly string[] | null;
+}
+
+/** Built-in operation extractors of keys.operations (18-REQ-02). */
+export type OperationType = 'graphql' | 'trpc';
+
+/** An entry of keys.operations (18-REQ-01): match is tested against the URL path without the query. */
+export interface OperationEntryInput {
+  type: OperationType;
+  match: UrlPattern;
 }
 
 /** Return a key, or undefined to fall back to the built-in normalization (07). */
@@ -32,7 +43,11 @@ export type PerfConfigInput = DeepPartial<
         exclude: UrlPattern[];
         steps: boolean | (Omit<StepsSettingsJson, 'include' | 'exclude'> & StepPatternsInput);
       };
-      keys: { extraIdPatterns: UrlPattern[]; keyBuilder: KeyBuilder };
+      keys: {
+        extraIdPatterns: UrlPattern[];
+        keyBuilder: KeyBuilder;
+        operations: OperationEntryInput[];
+      };
     }
   >
 >;
@@ -78,11 +93,18 @@ export type ResolvedConfig = Omit<ResolvedConfigJson, 'measure' | 'keys'> & {
     exclude: ResolvedUrlPattern[];
     steps: ResolvedStepsSettings;
   };
-  keys: Omit<ResolvedConfigJson['keys'], 'extraIdPatterns' | 'keyBuilder'> & {
+  keys: Omit<ResolvedConfigJson['keys'], 'extraIdPatterns' | 'keyBuilder' | 'operations'> & {
     extraIdPatterns: ResolvedUrlPattern[];
     keyBuilder: KeyBuilder | undefined;
+    operations: ResolvedOperationEntry[];
   };
 };
+
+/** keys.operations entry after resolution: the pattern compiled (18-REQ-01). */
+export interface ResolvedOperationEntry {
+  type: OperationType;
+  match: ResolvedUrlPattern;
+}
 
 /** measure.steps after resolution: full object, patterns compiled (03-REQ-18). */
 export type ResolvedStepsSettings = Omit<StepsSettingsJson, 'include' | 'exclude'> & {

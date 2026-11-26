@@ -57,6 +57,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     query: 'names',
     keepQueryValues: [],
     dropQueryParams: [],
+    operations: [],
   },
   checks: {
     time: {

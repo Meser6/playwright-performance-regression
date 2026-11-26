@@ -50,8 +50,8 @@ const fakeFormat: VersionedFormat = {
 };
 
 describe('schemaVersion handling (02-REQ-10)', () => {
-  test('sample batch v3, run report v5, thresholds file v3, outcome file v1 (02-REQ-11, 02-REQ-40, 02-REQ-43)', () => {
-    expect(SCHEMA_VERSIONS).toEqual({ samples: 3, runReport: 5, thresholds: 3, outcome: 1 });
+  test('sample batch v4, run report v5, thresholds file v3, outcome file v1 (02-REQ-11, 02-REQ-40, 02-REQ-43)', () => {
+    expect(SCHEMA_VERSIONS).toEqual({ samples: 4, runReport: 5, thresholds: 3, outcome: 1 });
   });
 
   test('02-AC-03 a newer schemaVersion gives SCHEMA_VERSION_TOO_NEW for every migrating format', () => {
@@ -138,8 +138,8 @@ describe('schemaVersion handling (02-REQ-10)', () => {
 });
 
 describe('sample batch (02-REQ-13)', () => {
-  test('02-AC-13 02-AC-22 schemaVersion 0, 1 or 2 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
-    for (const version of [0, 1, 2]) {
+  test('02-AC-13 02-AC-22 schemaVersion 0 to 3 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
+    for (const version of [0, 1, 2, 3]) {
       const result = parseSampleBatch(text({ ...batch, schemaVersion: version }), 'tickets › open');
       expect(result.ok).toBe(false);
       if (result.ok) continue;
@@ -151,7 +151,7 @@ describe('sample batch (02-REQ-13)', () => {
       const toolError = schemaIssueToIssue(issue);
       expect(toolError).toEqual({
         code: 'SCHEMA_VERSION_MISMATCH',
-        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 3`,
+        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 4`,
         hint: expect.stringContaining('one package version'),
       });
     }
@@ -631,7 +631,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const old = parseSampleBatch(text(v1Input), 'login');
     expect(!old.ok && old.issues[0]?.code).toBe('SCHEMA_VERSION_MISMATCH');
     const withCustom = parseSampleBatch(
-      text({ ...v1Input, schemaVersion: 3, apiRequests: [] }),
+      text({ ...v1Input, schemaVersion: 4, apiRequests: [] }),
       'login',
     );
     expect(!withCustom.ok && withCustom.issues[0]).toMatchObject({
@@ -657,6 +657,8 @@ describe('formats of 1.1.0 (02-REQ-43)', () => {
       expect(report.schemaVersion, file).toBe(5);
       // An old run did not set cold samples apart (02-REQ-43).
       expect(report.config.measure?.coldSamples, file).toBe(0);
+      // An old run had no operation keys (02-REQ-43, 18-REQ-09).
+      expect(report.config.keys?.operations, file).toEqual([]);
       for (const [key, aggregate] of Object.entries(report.endpoints)) {
         const statuses = before.endpoints[key]?.statuses ?? {};
         const outside = Object.entries(statuses)

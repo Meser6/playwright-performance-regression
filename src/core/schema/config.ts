@@ -187,6 +187,12 @@ export const packageConfig = obj({
     keepQueryValues: uniqueStrings(1),
     dropQueryParams: uniqueStrings(1),
     keyBuilder: constant('[function]'),
+    operations: arr(
+      obj(
+        { type: enumOf(['graphql', 'trpc']), match: urlPattern },
+        { required: ['type', 'match'] },
+      ),
+    ),
   }),
   checks,
   gate: obj({
