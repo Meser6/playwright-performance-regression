@@ -13,7 +13,7 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 ## Specification
 
 - The specification lives in a **separate private repository**, expected as a sibling checkout:
-  `../npm-spec/perfo/` (`spec/`, `v4_todo.md`, `HANDOFF.md`). Read the relevant spec files before working on a task.
+  `../npm-spec/perfo/` (`spec/`, `vX_todo.md`, `HANDOFF.md`). Read the relevant spec files before working on a task.
 - The spec is the source of truth. If code and spec disagree, the spec wins; if the spec is wrong,
   it is changed and merged in the spec repository **first**, then the code follows.
 - Never copy spec text, roadmap or business details into this public repository. Refer to spec
@@ -24,7 +24,10 @@ package, `create-playwright-performance-regression`, powers `npm init playwright
 
 ## Work process
 
-- Work follows `v4_todo.md` in the spec repo: one item = one branch = one PR.
+- Overriding rule (see `../npm-spec/CLAUDE.md`): everything that goes into a release is specified
+  first. Order: item in `vX_todo.md` → spec in `../npm-spec/perfo/spec/` (merged in the spec repo)
+  → code. No code for an item that has no spec yet.
+- Work follows the current `vX_todo.md` in the spec repo: one item = one branch = one PR.
 - Acceptance-criteria tests are written before the code. A test covering an AC has the AC ID in
   its title, e.g. `test('09-AC-03 rule is skipped below minSamples', ...)`.
 - Definition of done for a work package:
