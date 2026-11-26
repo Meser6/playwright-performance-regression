@@ -1,4 +1,5 @@
 // Verdict card, KPI strip and the Overview tab (11, chapters 6.2, 6.3 and 8a).
+import { COLD_WARN_RATIO } from '../core/types/index.ts';
 import type { RunReport } from '../core/types/index.ts';
 import {
   DASH,
@@ -533,6 +534,22 @@ function rankings(ctx: Ctx): Ranking[] {
         const top = topCheck(e.agg.evaluation.checks);
         return html`${ruleLabel(top?.rule ?? '', level)} <b>${String(usagePercent(top?.usage ?? 0))}%</b>`;
       },
+    });
+  }
+  // Slowest first calls (11-REQ-62): only when a key is much slower on its first call.
+  const coldRatio = (e: Entry): number => e.agg.cold?.ratio ?? 0;
+  const cold = all.filter((e) => coldRatio(e) >= COLD_WARN_RATIO);
+  if (cold.length > 0) {
+    list.push({
+      id: 'cold',
+      title: 'Slowest first calls',
+      note: 'first call · warm p50',
+      empty: 'No slow first calls in this run',
+      entries: cold.sort(order((e) => [coldRatio(e)])),
+      size: coldRatio,
+      tone: () => 'warn',
+      value: (e) =>
+        html`<b>×${coldRatio(e).toFixed(1)}</b> · ${formatMs(e.agg.cold?.max ?? 0)} vs ${formatMs(e.agg.cold?.warmP50 ?? 0)}`,
     });
   }
   return list;

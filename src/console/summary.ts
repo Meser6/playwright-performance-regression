@@ -10,7 +10,14 @@ import {
   overText,
 } from '../core/format/violation.ts';
 import { KINDS } from '../core/types/index.ts';
-import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
+import type {
+  Check,
+  Generated,
+  Issue,
+  KeyEvaluation,
+  Kind,
+  RunReport,
+} from '../core/types/index.ts';
 import { boxLines, marks, table } from './box.ts';
 import type { BoxLine, Marks, TableColumn, TableRow } from './box.ts';
 import { painter } from './color.ts';
@@ -60,6 +67,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ];
 type Paint = Painter;
 
@@ -334,13 +342,28 @@ function tableLines(
       formatActual(v.check),
       formatLimit(v.check),
       overText(v.check),
-      String(v.check.n),
+      samplesCell(v.check, v.evaluation),
       v.evaluation.thresholdSource,
       [v.check.hardLimitExceeded ? 'HARD' : '', isMuted(v.evaluation) ? 'MUTED' : '']
         .filter((f) => f !== '')
         .join(' '),
     ],
     style: v.check.blocking ? 'red' : 'yellow',
+    // Samples per pass changed much since the thresholds run (09-REQ-42).
+    ...(v.evaluation.workload?.shifted === true
+      ? {
+          cellStyles: [
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            'yellow',
+          ],
+        }
+      : {}),
   }));
   const lines = table(columns, rows, opts);
   if (list.length > shown.length) {
@@ -348,6 +371,55 @@ function tableLines(
     lines.push(paint(`  … and ${more} (see report)`, 'dim'));
   }
   return lines;
+}
+
+/** Rules counting all samples (N); the others count timed samples (m) (09, table in 5.2). */
+const ALL_SAMPLE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
+  'errors',
+  'nonSuccess',
+]);
+
+/**
+ * Column `n`: the samples of the check, with the samples of the thresholds run when the entry has
+ * a source block: `12/40` (09-REQ-42).
+ */
+function samplesCell(check: Check, evaluation: KeyEvaluation): string {
+  const base = evaluation.workload?.base;
+  if (base === undefined) return String(check.n);
+  const n = ALL_SAMPLE_RULES.has(check.rule) ? base.count : base.successCount;
+  return `${String(check.n)}/${String(n)}`;
+}
+
+/** "5 passes · 1 worker · 1,240 samples" (09-REQ-42). */
+function workloadText(passes: number, workers: number, samples: number): string {
+  return `${plural(passes, 'pass', 'passes')} · ${plural(workers, 'worker')} · ${plural(samples, 'sample')}`.replace(
+    /(\d{4,}) sample/u,
+    (_, n: string) => `${Number(n).toLocaleString('en-US')} sample`,
+  );
+}
+
+/**
+ * `Workload:` under the violations table (09-REQ-42): passes, workers and timed samples of this
+ * run and of the thresholds run, for the first thresholds file whose generated block has
+ * sourcePasses (written by 1.1.0 or later); empty otherwise.
+ */
+function workloadLines(report: RunReport, paint: Paint): string[] {
+  for (const kind of KINDS) {
+    // A copy of the file's generated block (an object in the report schema).
+    const generated = report.thresholdFiles.find((f) => f.kind === kind)?.generated as
+      Partial<Generated> | null | undefined;
+    if (generated?.sourcePasses === undefined || generated.sourceSampleCount === undefined) {
+      continue;
+    }
+    const samples = Object.values(aggregatesOf(report, kind)).reduce(
+      (sum, a) => sum + a.successCount,
+      0,
+    );
+    const now = workloadText(report.passes.completed, report.runConditions.workers, samples);
+    const base = workloadText(generated.sourcePasses, 1, generated.sourceSampleCount);
+    return [paint(`  Workload: ${now} (thresholds run: ${base})`, 'dim')];
+  }
+  return [];
 }
 
 /** Slowest sample of the first blocking keys (09-REQ-21, S-02). */
@@ -508,6 +580,7 @@ export function formatSummary(report: RunReport, opts: SummaryOptions): string {
   lines.push(...defaultKeyLines(report, frame, m, paint));
   if (list.length > 0) {
     lines.push(...tableLines(report, list, frame, m, paint));
+    lines.push(...workloadLines(report, paint));
     const slowest = slowestLines(report, list);
     if (slowest.length > 0) lines.push(...slowest);
     lines.push('');

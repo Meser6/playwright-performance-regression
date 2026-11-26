@@ -30,7 +30,7 @@
 +  "entries": {},
 +  "generated": null,
 +  "kind": "api",
-+  "schemaVersion": 2
++  "schemaVersion": 3
 +}
 --- /dev/null
 +++ b/pw-perf-thresholds.steps.json
@@ -39,7 +39,7 @@
 +  "entries": {},
 +  "generated": null,
 +  "kind": "step",
-+  "schemaVersion": 2
++  "schemaVersion": 3
 +}
 --- /dev/null
 +++ b/pw-perf.config.ts

@@ -362,3 +362,25 @@ describe('console summary golden files', () => {
     expect(Array.from(truncateMiddle('x'.repeat(100), 30))).toHaveLength(30);
   });
 });
+
+describe('workload in the violations table (09-REQ-42)', () => {
+  test('09-AC-41 the n column shows now/base and a Workload line follows the table (golden workload-shift)', () => {
+    const text = formatSummary(report('workload-shift'), { width: 120, color: false });
+    expect(text).toMatch(/│ GET \/api\/tickets +│ median .*│ 12\/40 │ file/u);
+    expect(text).toContain(
+      '  Workload: 5 passes · 1 worker · 17 samples (thresholds run: 10 passes · 1 worker · 80 samples)',
+    );
+    expect(text).toBe(readFileSync(join(DIR, 'workload-shift.w120.txt'), 'utf8'));
+    // Without a source block the column shows n alone and there is no Workload line.
+    const plain = formatSummary(report('failed-run'), { width: 120, color: false });
+    expect(plain).not.toContain('Workload:');
+    expect(plain).not.toMatch(/│ +\d+\/\d+ │/u);
+  });
+
+  test('a shifted key has its n cell in yellow', () => {
+    const text = formatSummary(report('workload-shift'), { width: 120, color: true });
+    // GET /api/search is shifted (×0.30): its row is red (blocking), its n cell yellow.
+    const row = text.split('\n').find((l) => l.includes('/api/search')) ?? '';
+    expect(row).toContain('\u001b[33m');
+  });
+});

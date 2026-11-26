@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     exclude: ['/socket.io/', '/sockjs/', '/sockjs-node/', '/signalr/', '/_blazor/'],
     excludeKnownThirdParty: true,
     successStatuses: ['2xx', '3xx'],
+    coldSamples: 1,
     steps: true,
     pendingTimeoutMs: 2000,
   },
@@ -104,6 +105,12 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
       limit: { api: 0.05, step: 0.05 },
       margin: { factor: 1.5, add: 0.02, min: 0.05 },
     },
+    nonSuccess: {
+      enabled: true,
+      minSamples: 5,
+      limit: { api: null },
+      margin: { factor: 1.5, add: 0.02, min: 0.05 },
+    },
   },
   gate: { tolerance: 0, hardLimitFactor: 2, defaultThresholds: 'block', maxFailedTestShare: 0.1 },
   thresholds: {
@@ -114,6 +121,7 @@ export const DEFAULT_CONFIG: DefaultConfigJson = {
     smallSampleN: 20,
     hysteresis: { relative: 0.1, ratio: 0.01 },
     loosenWarnRelative: 0.5,
+    workloadShift: { factor: 2 },
   },
   report: { dir: 'reports/pw-perf', html: true, junit: true, rawUrls: false },
   advanced: { maxSamplesPerKey: 5000, seed: 1 },

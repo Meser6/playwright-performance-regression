@@ -33,7 +33,7 @@
     "testBreakdown"
   ],
   "properties": {
-    "schemaVersion": {"const": 4},
+    "schemaVersion": {"const": 5},
     "tool": {"$ref": "common.schema.json#/$defs/tool"},
     "runId": {"$ref": "common.schema.json#/$defs/runId"},
     "mode": {"$ref": "common.schema.json#/$defs/mode"},
@@ -327,7 +327,10 @@
         "samples",
         "evaluation",
         "histogram",
-        "hints"
+        "hints",
+        "cold",
+        "nonSuccessCount",
+        "failedTimings"
       ],
       "properties": {
         "count": {"description": "All samples, successful or not.", "$ref": "common.schema.json#/$defs/count"},
@@ -450,6 +453,20 @@
             {"type": "null"}
           ]
         },
+        "cold": {
+          "description": "Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
+          "oneOf": [{"$ref": "#/$defs/cold"}, {"type": "null"}]
+        },
+        "nonSuccessCount": {
+          "description": "Endpoints: samples with an HTTP status outside measure.successStatuses, whatever checks.errors.statuses says (08-REQ-46). Null for steps.",
+          "oneOf": [{"$ref": "common.schema.json#/$defs/count"}, {"type": "null"}]
+        },
+        "failedTimings": {
+          "description": "Endpoints: durations of the non-success samples per status, up to 5 statuses with the most samples (08-REQ-47); not part of the time statistics. Empty for steps.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {"$ref": "#/$defs/failedTiming"}
+        },
         "hints": {
           "description": "Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.",
           "type": "array",
@@ -478,6 +495,9 @@
         "evaluation",
         "histogram",
         "hints",
+        "cold",
+        "nonSuccessCount",
+        "failedTimings",
         "location",
         "stepErrorsFromFailedTests"
       ],
@@ -681,6 +701,20 @@
               "type": "null"
             }
           ]
+        },
+        "cold": {
+          "description": "Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
+          "oneOf": [{"$ref": "#/$defs/cold"}, {"type": "null"}]
+        },
+        "nonSuccessCount": {
+          "description": "Endpoints: samples with an HTTP status outside measure.successStatuses, whatever checks.errors.statuses says (08-REQ-46). Null for steps.",
+          "oneOf": [{"$ref": "common.schema.json#/$defs/count"}, {"type": "null"}]
+        },
+        "failedTimings": {
+          "description": "Endpoints: durations of the non-success samples per status, up to 5 statuses with the most samples (08-REQ-47); not part of the time statistics. Empty for steps.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {"$ref": "#/$defs/failedTiming"}
         },
         "hints": {
           "description": "Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.",
@@ -888,6 +922,78 @@
         }
       }
     },
+    "cold": {
+      "description": "Cold samples of one key (08-REQ-43).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "excluded", "reason", "durations", "max", "warmP50", "ratio", "test"],
+      "properties": {
+        "count": {"description": "Number of cold samples (at most measure.coldSamples per shard).", "type": "integer", "minimum": 1},
+        "excluded": {
+          "description": "True when the cold samples are left out of the time statistics and successCount (08-REQ-42).",
+          "type": "boolean"
+        },
+        "reason": {
+          "description": "too-few-samples: the key has fewer than coldSamples + checks.time.median.minSamples timed samples, so the cold samples stay in the statistics.",
+          "oneOf": [{"const": "too-few-samples"}, {"type": "null"}]
+        },
+        "durations": {
+          "description": "Durations of the cold samples in input order, at most the first 5.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {"$ref": "common.schema.json#/$defs/ms"}
+        },
+        "max": {"description": "Largest cold duration.", "$ref": "common.schema.json#/$defs/ms"},
+        "warmP50": {
+          "description": "p50 of the warm samples, or null when there are none.",
+          "oneOf": [{"$ref": "common.schema.json#/$defs/ms"}, {"type": "null"}]
+        },
+        "ratio": {
+          "description": "max / warmP50, 2 decimal places; null when warmP50 is null or 0.",
+          "oneOf": [{"type": "number", "minimum": 0}, {"type": "null"}]
+        },
+        "test": {"description": "Test of the first cold sample.", "$ref": "#/$defs/testRef"}
+      }
+    },
+    "failedTiming": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "count", "p50", "p95"],
+      "properties": {
+        "status": {"type": "integer", "minimum": 100, "maximum": 599},
+        "count": {"description": "Timed samples with this status.", "type": "integer", "minimum": 1},
+        "p50": {"$ref": "common.schema.json#/$defs/ms"},
+        "p95": {"$ref": "common.schema.json#/$defs/ms"}
+      }
+    },
+    "workload": {
+      "description": "Samples of the key in the thresholds run (base, the source block of the entry) and in this run (now) (09-REQ-40).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "now", "perPassRatio", "shifted"],
+      "properties": {
+        "base": {"$ref": "#/$defs/workloadSide"},
+        "now": {"$ref": "#/$defs/workloadSide"},
+        "perPassRatio": {
+          "description": "(now.count / now.passes) / (base.count / base.passes), 2 decimal places; null when base.count is 0.",
+          "oneOf": [{"type": "number", "minimum": 0}, {"type": "null"}]
+        },
+        "shifted": {"description": "perPassRatio is at least thresholds.workloadShift.factor or at most its inverse (09-REQ-41).", "type": "boolean"}
+      }
+    },
+    "workloadSide": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "successCount", "passes", "workers", "share"],
+      "properties": {
+        "count": {"$ref": "common.schema.json#/$defs/count"},
+        "successCount": {"$ref": "common.schema.json#/$defs/count"},
+        "passes": {"type": "integer", "minimum": 1},
+        "workers": {"type": "integer", "minimum": 1},
+        "share": {"description": "count of the key / count of all keys of the kind, 4 decimal places.", "$ref": "common.schema.json#/$defs/ratio"}
+      }
+    },
     "slowSample": {
       "type": "object",
       "additionalProperties": false,
@@ -922,7 +1028,7 @@
       "description": "Evaluation of one key (rules: 09).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["result", "reason", "thresholdSource", "limits", "checks", "muted"],
+      "required": ["result", "reason", "thresholdSource", "limits", "checks", "muted", "workload"],
       "properties": {
         "result": {"enum": ["pass", "fail", "not-evaluated"]},
         "reason": {
@@ -934,7 +1040,7 @@
           "description": "Limits applied to this key after filling missing ones from the rule limits in the config (02-REQ-21, 09-REQ-06). t, minApdex and maxWilson are null when the apdex and wilson rules do not apply (default thresholds, or a file entry without t); with t set, a missing minApdex or maxWilson comes from checks.slowShare.apdex.limit / wilson.limit.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["t", "median", "percentile", "p99", "minApdex", "maxWilson", "maxErrorRate"],
+          "required": ["t", "median", "percentile", "p99", "minApdex", "maxWilson", "maxErrorRate", "maxNonSuccessRate"],
           "properties": {
             "t": {"oneOf": [{"$ref": "common.schema.json#/$defs/msLimit"}, {"type": "null"}]},
             "median": {"$ref": "common.schema.json#/$defs/msLimit"},
@@ -942,7 +1048,11 @@
             "p99": {"$ref": "common.schema.json#/$defs/msLimit"},
             "minApdex": {"oneOf": [{"$ref": "common.schema.json#/$defs/ratio"}, {"type": "null"}]},
             "maxWilson": {"oneOf": [{"$ref": "common.schema.json#/$defs/ratio"}, {"type": "null"}]},
-            "maxErrorRate": {"$ref": "common.schema.json#/$defs/ratio"}
+            "maxErrorRate": {"$ref": "common.schema.json#/$defs/ratio"},
+            "maxNonSuccessRate": {
+              "description": "Limit of the nonSuccess rule (09-REQ-38): from the entry, or checks.nonSuccess.limit.api for endpoint keys without one; null when the rule does not apply.",
+              "oneOf": [{"$ref": "common.schema.json#/$defs/ratio"}, {"type": "null"}]
+            }
           }
         },
         "checks": {
@@ -965,6 +1075,10 @@
             },
             {"type": "null"}
           ]
+        },
+        "workload": {
+          "description": "Workload of the key compared with the thresholds run (09-REQ-40); null without an entry with a source block.",
+          "oneOf": [{"$ref": "#/$defs/workload"}, {"type": "null"}]
         }
       }
     },
@@ -974,8 +1088,8 @@
       "required": ["rule", "n", "actual", "observed", "limit", "passed", "hardLimitExceeded", "blocking", "usage"],
       "properties": {
         "rule": {
-          "description": "Rule name (09, 5.2). apdex, wilson and errors compare a bound of a 95% interval (09-REQ-09).",
-          "enum": ["median", "percentile", "p99", "apdex", "wilson", "errors"]
+          "description": "Rule name (09, 5.2). apdex, wilson, errors and nonSuccess compare a bound of a 95% interval (09-REQ-09).",
+          "enum": ["median", "percentile", "p99", "apdex", "wilson", "errors", "nonSuccess"]
         },
         "n": {
           "description": "Samples the rule used: retained timing samples for time, apdex and wilson rules, all samples of the key for errors.",

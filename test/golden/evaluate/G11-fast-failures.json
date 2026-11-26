@@ -1,0 +1,70 @@
+{
+  "name": "G11-fast-failures",
+  "description": "G11 (09-REQ-38): key with an entry maxNonSuccessRate 0.05 (source run 20 × 200), run 20 × 401 in 8 ms, n = 0: time, apdex and wilson rules do not run, errors passes (401 is no error), nonSuccess lower bound 0.8389 > 0.05; V = 1, blocks; failed. 1.0.x passed the same run.",
+  "input": {
+    "config": {},
+    "options": {"passes":10},
+    "thresholds": {
+      "api": {
+        "status": "loaded",
+        "kind": "api",
+        "path": "pw-perf-thresholds.json",
+        "file": {
+          "schemaVersion": 3,
+          "kind": "api",
+          "generated": null,
+          "entries": {
+            "GET /api/me": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.9,
+              "maxWilson": 0.1,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":20,"successCount":20,"passes":10,"share":1}
+            }
+          }
+        }
+      }
+    },
+    "aggregates": {"endpoints":{"GET /api/me":{"other":20,"otherStatus":"401"}}}
+  },
+  "expected": {
+    "status": "failed",
+    "gateEnabled": true,
+    "counts": {
+      "api": {
+        "keys": 1,
+        "fromFile": 1,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 1,
+        "blockingViolations": 1,
+        "muted": 0
+      },
+      "step": {
+        "keys": 0,
+        "fromFile": 0,
+        "fromDefaults": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "fileEntriesNotEvaluated": 0,
+        "medianOnly": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0,
+        "blockingViolations": 0,
+        "muted": 0
+      }
+    },
+    "violations": [{"kind":"api","key":"GET /api/me","rule":"nonSuccess","actual":0.8389,"limit":0.05,"hardLimitExceeded":false,"blocking":true}],
+    "notEvaluated": [],
+    "warnings": ["THRESHOLDS_ENTRY_NOT_TIMED"],
+    "toolErrors": []
+  }
+}

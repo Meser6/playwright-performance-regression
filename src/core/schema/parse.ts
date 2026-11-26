@@ -11,6 +11,7 @@ import type {
 } from '../types/index.ts';
 import { DEFAULT_CONFIG } from '../config/generated/defaults.ts';
 import { expandSteps } from '../config/steps.ts';
+import { compileStatusMatcher } from '../stats/classification.ts';
 import { child, isRecord, Sink } from './dsl.ts';
 import type { Problem, Schema } from './dsl.ts';
 import { outcomeFile, runReport, sampleBatch, thresholdsFile } from './formats.ts';
@@ -40,12 +41,13 @@ export const MAX_PROBLEMS = 5;
  * Current schemaVersion of every format. 02-REQ-11 applies from the first release: the run
  * report went to version 2 (02-REQ-30); removing custom measurements (D-32) moved the sample
  * batch to 2, the thresholds file to 2 and the run report to 3 (02-REQ-33); APIRequestContext
- * calls moved the sample batch to 3 (02-REQ-40).
+ * calls moved the sample batch to 3 (02-REQ-40); 1.1.0 moves the run report to 5 and the
+ * thresholds file to 3 (02-REQ-43).
  */
 export const SCHEMA_VERSIONS = {
   samples: 3,
-  runReport: 4,
-  thresholds: 2,
+  runReport: 5,
+  thresholds: 3,
   outcome: 1,
 } as const;
 
@@ -500,11 +502,103 @@ export function migrateRunReportV3(document: JsonObject): JsonObject {
   };
 }
 
+/** Aggregate fields of 1.1.0 for an aggregate of a v4 report (02-REQ-43). */
+function withV5AggregateFields(
+  aggregate: unknown,
+  isSuccess: ((label: string) => boolean) | null,
+): unknown {
+  if (!isRecord(aggregate)) return aggregate;
+  let nonSuccessCount: number | null = null;
+  if (isSuccess !== null && isRecord(aggregate.statuses)) {
+    nonSuccessCount = 0;
+    for (const [label, n] of Object.entries(aggregate.statuses)) {
+      if (/^[1-5][0-9]{2}$/u.test(label) && !isSuccess(label) && typeof n === 'number') {
+        nonSuccessCount += n;
+      }
+    }
+  }
+  const evaluation = aggregate.evaluation;
+  return {
+    ...aggregate,
+    cold: null,
+    nonSuccessCount,
+    failedTimings: [],
+    evaluation: isRecord(evaluation)
+      ? {
+          ...evaluation,
+          limits: isRecord(evaluation.limits)
+            ? { ...evaluation.limits, maxNonSuccessRate: null }
+            : evaluation.limits,
+          workload: null,
+        }
+      : evaluation,
+  };
+}
+
+function mapValues(map: unknown, f: (value: unknown) => unknown): unknown {
+  if (!isRecord(map)) return map;
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, f(v)]));
+}
+
+/**
+ * Run report v4 → v5 (02-REQ-43, 02-AC-24): aggregates get cold null, nonSuccessCount from the
+ * statuses outside the snapshot's measure.successStatuses (null for steps), failedTimings [],
+ * evaluation.workload null and limits.maxNonSuccessRate null; the config snapshot gets the new
+ * options with coldSamples 0 (an old run did not set cold samples apart), the nonSuccess rule
+ * with the margin of the errors rule (presets set both alike, 03-REQ-30) and the default
+ * workloadShift.
+ */
+export function migrateRunReportV4(document: JsonObject): JsonObject {
+  const config = document.config;
+  const measure = isRecord(config) ? config.measure : undefined;
+  const statuses = isRecord(measure) ? measure.successStatuses : undefined;
+  const isSuccess = compileStatusMatcher(
+    Array.isArray(statuses)
+      ? statuses.filter((s): s is string => typeof s === 'string')
+      : DEFAULT_CONFIG.measure.successStatuses,
+  );
+  let snapshot = config;
+  if (isRecord(config)) {
+    const checks = isRecord(config.checks) ? config.checks : {};
+    const errors = isRecord(checks.errors) ? checks.errors : {};
+    const defaults = DEFAULT_CONFIG.checks.nonSuccess;
+    const thresholds = isRecord(config.thresholds) ? config.thresholds : {};
+    snapshot = {
+      ...config,
+      // Also in a sparse snapshot: the default (1) would claim cold samples were set apart.
+      measure: { ...(isRecord(measure) ? measure : {}), coldSamples: 0 },
+      checks: {
+        ...checks,
+        nonSuccess: {
+          ...defaults,
+          limit: { ...defaults.limit },
+          margin: isRecord(errors.margin) ? { ...errors.margin } : { ...defaults.margin },
+        },
+      },
+      thresholds: {
+        ...thresholds,
+        workloadShift: { ...DEFAULT_CONFIG.thresholds.workloadShift },
+      },
+    };
+  }
+  return {
+    ...document,
+    config: snapshot,
+    endpoints: mapValues(document.endpoints, (a) => withV5AggregateFields(a, isSuccess)),
+    steps: mapValues(document.steps, (a) => withV5AggregateFields(a, null)),
+  };
+}
+
 export const RUN_REPORT_FORMAT: VersionedFormat = {
   name: 'run report',
   schemaFile: 'run-report.schema.json',
   current: SCHEMA_VERSIONS.runReport,
-  migrations: { 1: migrateRunReportV1, 2: migrateRunReportV2, 3: migrateRunReportV3 },
+  migrations: {
+    1: migrateRunReportV1,
+    2: migrateRunReportV2,
+    3: migrateRunReportV3,
+    4: migrateRunReportV4,
+  },
   schema: runReport,
   extraChecks: checkRunReport,
 };
@@ -514,7 +608,8 @@ export const THRESHOLDS_FORMAT: VersionedFormat = {
   schemaFile: 'thresholds.schema.json',
   current: SCHEMA_VERSIONS.thresholds,
   // v1 → v2 changes no content (02-REQ-33): a v1 file of kind custom fails validation after it.
-  migrations: { 1: (document) => document },
+  // v2 → v3 changes no content either: the fields of 1.1.0 are optional (02-REQ-43).
+  migrations: { 1: (document) => document, 2: (document) => document },
   schema: thresholdsFile,
   extraChecks(document, sink) {
     const entries = document.entries as Record<string, Record<string, unknown>>;

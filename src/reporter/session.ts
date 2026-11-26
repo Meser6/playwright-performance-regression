@@ -320,6 +320,8 @@ export class RunSession {
       dependencyProjects: this.dependencyOnly,
       evaluatedPercentile: cfg.checks.time.percentile.level,
       rawUrls: cfg.report.rawUrls,
+      coldSamples: cfg.measure.coldSamples,
+      minSamples: cfg.checks.time.median.minSamples,
     });
   }
 
@@ -693,6 +695,7 @@ export class RunSession {
       host,
       normalization: this.normalization,
       stepNormalization: this.steps.fingerprint(),
+      coldSamples: this.settings.config.measure.coldSamples,
     };
   }
 
@@ -987,6 +990,8 @@ export class RunSession {
       fatalToolError: this.fatal,
       source: this.source(),
       startedAt: this.startedAt.toISOString(),
+      passes: this.completedPasses,
+      workers: this.conditions.workers,
     });
     warnings.push(...evaluation.warnings);
     toolErrors.push(...evaluation.toolErrors);

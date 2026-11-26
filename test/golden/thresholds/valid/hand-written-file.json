@@ -13,7 +13,7 @@
     },
     "generated": null,
     "kind": "api",
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "ok": true

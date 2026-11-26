@@ -8,7 +8,15 @@ import type { Limits } from './limits.ts';
 export type Rule = Check['rule'];
 
 /** Rule order in `checks` (09, table in 5.2). */
-export const RULES: readonly Rule[] = ['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors'];
+export const RULES: readonly Rule[] = [
+  'median',
+  'percentile',
+  'p99',
+  'apdex',
+  'wilson',
+  'errors',
+  'nonSuccess',
+];
 
 export const TIME_RULES: ReadonlySet<Rule> = new Set<Rule>(['median', 'percentile', 'p99']);
 
@@ -24,7 +32,7 @@ interface RuleInput {
   minSamples: number;
   /** Limits the rule needs are all set (09-REQ-07). */
   hasLimits: boolean;
-  /** Sample count compared with minSamples: n, or N for errors (09-REQ-07). */
+  /** Sample count compared with minSamples: n, or N for errors and nonSuccess (09-REQ-07). */
   count: number;
   run: () => Omit<EvaluatedCheck, 'hardLimitExceeded' | 'blocking'>;
 }
@@ -48,7 +56,7 @@ export function runRules(
   limits: Limits,
   cfg: Pick<ResolvedConfig, 'checks' | 'gate'>,
 ): RuleOutcome {
-  const { time, slowShare, errors } = cfg.checks;
+  const { time, slowShare, errors, nonSuccess } = cfg.checks;
   const n = stats.successCount;
   const bigN = stats.count;
   const durations = [...stats.samples.durations].sort((a, b) => a - b);
@@ -135,6 +143,26 @@ export function runRules(
           observed: roundRatio(stats.errorCount / bigN),
           limit: limits.maxErrorRate,
           passed: !(actual > limits.maxErrorRate),
+        };
+      },
+    },
+    {
+      ...nonSuccess,
+      // Endpoint keys with a limit only: from the entry or checks.nonSuccess.limit.api (09-REQ-38).
+      hasLimits: limits.maxNonSuccessRate !== null && stats.nonSuccessCount !== null,
+      count: bigN,
+      run: () => {
+        const k = stats.nonSuccessCount ?? 0;
+        const limit = limits.maxNonSuccessRate ?? 0;
+        // Lower bound for the share of responses outside successStatuses (09-REQ-38).
+        const actual = wilsonBounds(k, bigN)?.lower ?? 0;
+        return {
+          rule: 'nonSuccess',
+          n: bigN,
+          actual,
+          observed: roundRatio(k / bigN),
+          limit,
+          passed: !(actual > limit),
         };
       },
     },

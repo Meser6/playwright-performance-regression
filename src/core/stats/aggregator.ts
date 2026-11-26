@@ -3,7 +3,7 @@ import { roundMs } from '../format/index.ts';
 import type { KeyResult, KeySample } from '../normalize/index.ts';
 import { hash53 } from '../random/index.ts';
 import type { ResolvedConfig } from '../config/index.ts';
-import { REQUEST_KEY_PREFIX } from '../types/index.ts';
+import { COLD_WARN_RATIO, REQUEST_KEY_PREFIX } from '../types/index.ts';
 import type {
   AggregateStats,
   Issue,
@@ -42,12 +42,17 @@ export interface AggregatorOptions {
   evaluatedPercentile: string;
   /** report.rawUrls: slowest[].url of endpoints (08-REQ-18). */
   rawUrls: boolean;
+  /** measure.coldSamples (08-REQ-41); default 0: no cold samples. */
+  coldSamples?: number;
+  /** checks.time.median.minSamples, for the exclusion of cold samples (08-REQ-42); default 5. */
+  minSamples?: number;
 }
 
 export type StatsIssueCode =
   | 'STATS_SAMPLES_WITHOUT_BROWSER_TIMING'
   | 'STATS_SAMPLES_OUTSIDE_MEASURED_PROJECTS'
-  | 'STATS_MULTIPLE_BROWSERS';
+  | 'STATS_MULTIPLE_BROWSERS'
+  | 'STATS_COLD_SLOW';
 
 export type StatsIssue = Issue & { code: StatsIssueCode };
 
@@ -69,6 +74,13 @@ export interface Aggregates {
 /** Number of slowest samples and top tests per key (08-REQ-18, 08-REQ-33). */
 const SLOWEST = 3;
 const TOP_TESTS = 5;
+/** Cold durations kept per key and statuses in failedTimings (08-REQ-43, 08-REQ-47). */
+const COLD_KEPT = 5;
+const FAILED_STATUSES = 5;
+/** STATS_COLD_SLOW: the smallest gap in ms between cold max and warm p50 (08-REQ-44). */
+const COLD_WARN_GAP_MS = 100;
+/** Keys named in STATS_COLD_SLOW (08-REQ-44). */
+const COLD_WARN_KEYS = 3;
 
 /** Code unit order, never localeCompare (02-REQ-04). */
 function compareText(a: string, b: string): number {
@@ -124,10 +136,24 @@ function compareTopTests(a: TopTest, b: TopTest): number {
   );
 }
 
+interface TimedSample {
+  test: TestMeta;
+  ordinal: number;
+  time: { duration: number; ttfb: number | null; startedAt: number; url?: string };
+}
+
 class KeyState {
   readonly kind: SampleKind;
   count = 0;
   successCount = 0;
+  /** Timed samples seen, cold ones included (08-REQ-41). */
+  timed = 0;
+  /** The first measure.coldSamples timed samples, in input order (08-REQ-41). */
+  readonly cold: TimedSample[] = [];
+  /** Endpoints: samples with an HTTP status outside successStatuses (08-REQ-46). */
+  nonSuccessCount = 0;
+  /** Endpoints: timed non-success samples per HTTP status (08-REQ-47). */
+  readonly failed = new Map<number, { count: number; sample: BottomK }>();
   errorCount = 0;
   fromFailedTests = 0;
   browser = 0;
@@ -182,7 +208,8 @@ class KeyState {
 
 /**
  * Aggregates the samples of one run per key (08). The result of finalize() does not depend on
- * the order of addRequest() calls (08-REQ-26). Not thread-safe; finalize() may be
+ * the order of addRequest() calls (08-REQ-26), except for the choice of cold samples, which are
+ * the first timed samples of a key in input order (08-REQ-41). Not thread-safe; finalize() may be
  * called once.
  */
 export class Aggregator {
@@ -202,6 +229,8 @@ export class Aggregator {
   private withoutBrowserTiming = 0;
   private readonly keysWithoutBrowserTiming = new Set<string>();
   private readonly testBreakdown = new TestBreakdownBuilder();
+  /** Keys for STATS_COLD_SLOW (08-REQ-44), filled by finalize(). */
+  private readonly coldSlow: { key: string; max: number; warmP50: number; ratio: number }[] = [];
   private finalized = false;
 
   constructor(opts: AggregatorOptions) {
@@ -246,6 +275,12 @@ export class Aggregator {
     // FAILED and PENDING are never successful (08-REQ-01).
     const successful = typeof sample.status === 'number' && this.isSuccess(statusLabel);
     const apiCall = sample.apiCall === true;
+    if (typeof sample.status === 'number' && !successful) {
+      state.nonSuccessCount += 1;
+      if ((sample.timeSource === 'browser' || apiCall) && sample.duration !== null) {
+        this.addFailed(state, key, sample.status, sample.test, sample.ordinal, sample.duration);
+      }
+    }
     if (successful && sample.timeSource === 'node' && !apiCall) {
       this.withoutBrowserTiming += 1;
       this.keysWithoutBrowserTiming.add(key);
@@ -360,7 +395,24 @@ export class Aggregator {
     key: string,
     test: TestMeta,
     ordinal: number,
-    time: { duration: number; ttfb: number | null; startedAt: number; url?: string },
+    time: TimedSample['time'],
+  ): void {
+    state.timed += 1;
+    // The first timed samples of the key wait until finalize() decides on them (08-REQ-42).
+    if (state.cold.length < (this.opts.coldSamples ?? 0)) {
+      state.cold.push({ test, ordinal, time });
+      return;
+    }
+    this.addWarm(state, key, test, ordinal, time);
+  }
+
+  /** Adds a timed sample to the time statistics (08-REQ-02). */
+  private addWarm(
+    state: KeyState,
+    key: string,
+    test: TestMeta,
+    ordinal: number,
+    time: TimedSample['time'],
   ): void {
     const tenths = toTenths(time.duration);
     state.successCount += 1;
@@ -368,12 +420,7 @@ export class Aggregator {
     if (tenths < state.minTenths) state.minTenths = tenths;
     if (tenths > state.maxTenths) state.maxTenths = tenths;
 
-    let r = this.resultIndex.get(test.resultId);
-    if (r === undefined) {
-      r = this.resultIds.length;
-      this.resultIds.push(test.resultId);
-      this.resultIndex.set(test.resultId, r);
-    }
+    const r = this.resultIndexOf(test.resultId);
     const id = sampleId(test.resultId, state.kind, ordinal);
     // Priority from the key, the sample identity and the seed only (08-REQ-12, 08-REQ-13).
     const priority = hash53(`${key}\u0000${id}`, this.opts.advanced.seed);
@@ -388,11 +435,84 @@ export class Aggregator {
     });
   }
 
+  /** A timed non-success sample (08-REQ-47), kept with bottom-k per status like 08-REQ-12. */
+  private addFailed(
+    state: KeyState,
+    key: string,
+    status: number,
+    test: TestMeta,
+    ordinal: number,
+    duration: number,
+  ): void {
+    let entry = state.failed.get(status);
+    if (entry === undefined) {
+      const ids = this.resultIds;
+      const kind = state.kind;
+      entry = {
+        count: 0,
+        sample: new BottomK(this.opts.advanced.maxSamplesPerKey, (r, o) =>
+          sampleId(ids[r] ?? '', kind, o),
+        ),
+      };
+      state.failed.set(status, entry);
+    }
+    entry.count += 1;
+    const r = this.resultIndexOf(test.resultId);
+    const id = sampleId(test.resultId, state.kind, ordinal);
+    const priority = hash53(`${key}\u0000${id}`, this.opts.advanced.seed);
+    entry.sample.add(priority, toTenths(duration), -1, r, ordinal);
+  }
+
+  private resultIndexOf(resultId: string): number {
+    let r = this.resultIndex.get(resultId);
+    if (r === undefined) {
+      r = this.resultIds.length;
+      this.resultIds.push(resultId);
+      this.resultIndex.set(resultId, r);
+    }
+    return r;
+  }
+
+  /**
+   * Decides on the cold samples of a key (08-REQ-42): with at least coldSamples + minSamples
+   * timed samples they stay out of the statistics, otherwise they are added to them. Returns the
+   * cold block (08-REQ-43); warmP50 is the p50 of the warm samples alone.
+   */
+  private settleCold(state: KeyState, key: string): AggregateStats['cold'] {
+    if (state.cold.length === 0) return null;
+    const minSamples = this.opts.minSamples ?? 5;
+    const excluded = state.timed >= state.cold.length + minSamples;
+    // Computed like stats.percentiles.p50, so that both are equal when the cold samples are excluded.
+    const warm = state.sample.durations().map((t) => t / 10);
+    const warmP50 = warm.length === 0 ? null : roundMs(percentile(warm, 50) ?? 0);
+    if (!excluded) {
+      for (const c of state.cold) this.addWarm(state, key, c.test, c.ordinal, c.time);
+    }
+    const durations = state.cold.slice(0, COLD_KEPT).map((c) => toTenths(c.time.duration) / 10);
+    const max = Math.max(...state.cold.map((c) => toTenths(c.time.duration))) / 10;
+    const first = state.cold[0] as TimedSample;
+    const ratio =
+      warmP50 === null || warmP50 === 0 ? null : Math.round((max / warmP50) * 100) / 100;
+    if (ratio !== null && warmP50 !== null && ratio >= COLD_WARN_RATIO) {
+      if (max - warmP50 >= COLD_WARN_GAP_MS) this.coldSlow.push({ key, max, warmP50, ratio });
+    }
+    return {
+      count: state.cold.length,
+      excluded,
+      reason: excluded ? null : 'too-few-samples',
+      durations,
+      max,
+      warmP50,
+      ratio,
+      test: testRefOf(first.test),
+    } as AggregateStats['cold'];
+  }
+
   private build(states: Map<string, KeyState>): Record<string, AggregateStats> {
     const result: Record<string, AggregateStats> = {};
     for (const key of [...states.keys()].sort(compareText)) {
       const state = states.get(key);
-      if (state !== undefined) result[key] = this.aggregate(state);
+      if (state !== undefined) result[key] = this.aggregate(state, key);
     }
     return result;
   }
@@ -403,7 +523,7 @@ export class Aggregator {
       const state = this.steps.get(key);
       if (state === undefined) continue;
       result[key] = {
-        ...this.aggregate(state),
+        ...this.aggregate(state, key),
         location: state.location,
         stepErrorsFromFailedTests: state.stepErrorsFromFailedTests,
       } as StepAggregateStats;
@@ -411,7 +531,8 @@ export class Aggregator {
     return result;
   }
 
-  private aggregate(state: KeyState): AggregateStats {
+  private aggregate(state: KeyState, key: string): AggregateStats {
+    const cold = this.settleCold(state, key);
     const durations = state.sample.durations().map((t) => t / 10);
     const ttfbs = state.sample.ttfbs().map((t) => t / 10);
     const others = state.sample.othersThanTtfb().map((t) => t / 10);
@@ -446,13 +567,7 @@ export class Aggregator {
       slowest: state.slowest.map((s): SlowSample => ({
         duration: s.tenths / 10,
         startedAt: new Date(s.startedAt).toISOString(),
-        test: {
-          title: s.test.title,
-          project: s.test.project,
-          file: s.test.file,
-          line: s.test.line,
-          repeatEachIndex: s.test.repeatEachIndex,
-        },
+        test: testRefOf(s.test),
         ...(s.url === undefined ? {} : { url: s.url }),
       })) as AggregateStats['slowest'],
       topTests: [...state.tests.values()]
@@ -471,7 +586,26 @@ export class Aggregator {
       },
       // Bins of the retained durations; null exactly when stats is null (08-REQ-34).
       histogram: (usable ? histogram(durations) : null) as AggregateStats['histogram'],
-    };
+      cold,
+      nonSuccessCount: state.kind === 'step' ? null : state.nonSuccessCount,
+      failedTimings: this.failedTimings(state),
+    } as AggregateStats;
+  }
+
+  /** Up to 5 statuses with the most timed samples, ties by code (08-REQ-47). */
+  private failedTimings(state: KeyState): AggregateStats['failedTimings'] {
+    return [...state.failed.entries()]
+      .sort(([a, x], [b, y]) => y.count - x.count || a - b)
+      .slice(0, FAILED_STATUSES)
+      .map(([status, { count, sample }]) => {
+        const sorted = sample.durations().map((t) => t / 10);
+        return {
+          status,
+          count,
+          p50: roundMs(percentile(sorted, 50) ?? 0),
+          p95: roundMs(percentile(sorted, 95) ?? 0),
+        };
+      }) as AggregateStats['failedTimings'];
   }
 
   private issues(): StatsIssue[] {
@@ -505,8 +639,40 @@ export class Aggregator {
         hint: 'Measure one browser engine per run: select projects of one engine with --project in the measurement command.',
       });
     }
+    if (this.coldSlow.length > 0) {
+      const n = this.coldSlow.length;
+      const top = [...this.coldSlow]
+        .sort((a, b) => b.ratio - a.ratio || compareText(a.key, b.key))
+        .slice(0, COLD_WARN_KEYS)
+        .map(
+          (c) =>
+            `${c.key} ${formatWholeMs(c.max)} ms vs warm p50 ${formatWholeMs(c.warmP50)} ms (×${c.ratio.toFixed(1)})`,
+        );
+      issues.push({
+        code: 'STATS_COLD_SLOW',
+        message:
+          `${plural(n, 'key')} ${n === 1 ? 'is' : 'are'} much slower on the first call (cold start): ` +
+          `${top.join(', ')}${n > COLD_WARN_KEYS ? ', …' : ''}.`,
+        hint: 'Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.',
+      });
+    }
     return issues;
   }
+}
+
+/** Whole milliseconds with thousands separators, as in other messages (e.g. "1,840"). */
+function formatWholeMs(ms: number): string {
+  return Math.round(ms).toLocaleString('en-US');
+}
+
+function testRefOf(test: TestMeta): SlowSample['test'] {
+  return {
+    title: test.title,
+    project: test.project,
+    file: test.file,
+    line: test.line,
+    repeatEachIndex: test.repeatEachIndex,
+  };
 }
 
 /**

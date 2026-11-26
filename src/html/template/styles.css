@@ -1982,6 +1982,27 @@ td.tk2 > * {
   color: var(--bad);
 }
 
+/* 1.1.0 (11-REQ-61): cold vs warm, unsuccessful responses, workload. */
+.cw {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wv,
+.wv th {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.ev {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.ft td:nth-last-child(-n + 2) {
+  text-align: right;
+}
+
 .facts {
   display: flex;
   flex-wrap: wrap;

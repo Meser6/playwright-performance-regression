@@ -343,8 +343,8 @@ export function relationalIssues(
     );
   }
 
-  // minSamples of every rule at least that of the median rule.
-  for (const rule of RULES.slice(1)) {
+  // minSamples of every rule at least that of the median rule; nonSuccess like errors (03-REQ-30).
+  for (const rule of [...RULES.slice(1), ['checks', 'nonSuccess']]) {
     ordered(
       ['checks', 'time', 'median', 'minSamples'],
       [...rule, 'minSamples'],

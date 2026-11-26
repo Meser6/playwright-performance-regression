@@ -278,7 +278,7 @@
       "workers": 1
     },
     "runId": "",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "x",
     "thresholdFiles": [],
     "toolErrors": [],

@@ -429,6 +429,7 @@ describe('limits and results (09, chapter 5)', () => {
       minApdex: 0.8,
       maxWilson: 0.07,
       maxErrorRate: 0.05,
+      maxNonSuccessRate: null,
     });
     expect(check(k, 'apdex')?.limit).toBe(0.8);
     expect(check(k, 'wilson')?.limit).toBe(0.07);
@@ -446,6 +447,7 @@ describe('limits and results (09, chapter 5)', () => {
       minApdex: 0.85,
       maxWilson: 0.05,
       maxErrorRate: 0.1,
+      maxNonSuccessRate: null,
     });
     expect(one({ durations: [[20, 100]] }, { percentile: 900 }).limits).toMatchObject({
       t: null,
@@ -508,9 +510,11 @@ describe('limits and results (09, chapter 5)', () => {
         minApdex: null,
         maxWilson: null,
         maxErrorRate: 0.05,
+        maxNonSuccessRate: null,
       },
       checks: [],
       muted: null,
+      workload: null,
     });
     expect(e.status).toBe('error');
     expect(e.toolErrors).toEqual([

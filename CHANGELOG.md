@@ -7,6 +7,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Cold and warm samples.** The first timed sample of every key in a run is cold
+  (`measure.coldSamples`, 1 by default, 0 turns it off): a slow first call after the application
+  or its container started no longer moves p95 on small sample counts. A cold sample stays out of
+  the evaluated statistics only when the key has at least `measure.coldSamples +
+checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samples are still
+  evaluated by their median. The report has a `cold` block per key, the HTML report a "Cold vs
+  warm" block and a "Slowest first calls" ranking, and the new warning `STATS_COLD_SLOW` names keys
+  whose first call is at least three times slower than their warm median.
+- **Fast failures: the `nonSuccess` rule.** An endpoint that starts answering 401, 403, 404 or 5xx
+  fast no longer passes silently because it has no successful samples to time. Thresholds runs
+  write `maxNonSuccessRate` (the share of responses outside `measure.successStatuses` in the
+  thresholds run, with the margin `checks.nonSuccess.margin`), and the rule compares the lower
+  bound of the current share with it. Keys without an entry are not checked unless you set
+  `checks.nonSuccess.limit.api`. Keys with an entry whose responses were not successful get the
+  warning `THRESHOLDS_ENTRY_NOT_TIMED`. The report counts these responses per key
+  (`nonSuccessCount`) and keeps their durations per status (`failedTimings`, shown under
+  "Unsuccessful responses"); they never enter the time statistics.
+- **Workload context.** Every new or replaced thresholds entry records the samples of its source
+  run (`source`), and the file records `generated.coldSamples` and `generated.sourcePasses`. Each
+  evaluated key gets `evaluation.workload` (samples, passes, workers and its share of the traffic,
+  then and now); the console shows the samples as `now/base` in the violations table with a
+  `Workload:` line, the HTML report a "Compared with the thresholds run" block, `junit.xml` a
+  `workload:` line. The new warning `THRESHOLDS_WORKLOAD_SHIFT` names keys whose samples per pass
+  changed by `thresholds.workloadShift.factor` (2 by default) or more.
+
+### Changed
+
+- **Run report version 5, thresholds file version 3.** Older reports and thresholds files are
+  migrated when read (a thresholds file gives `THRESHOLDS_FILE_OUTDATED` until the next thresholds
+  run rewrites it). The next thresholds run adds `maxNonSuccessRate` and `source` also to entries
+  it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
+- Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.
+
 ## [1.0.1] - 2026-11-25
 
 A hotfix release.

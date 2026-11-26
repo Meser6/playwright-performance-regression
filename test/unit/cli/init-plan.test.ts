@@ -370,7 +370,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     ]);
     expect(
       CONFIG_OPTIONS.filter((o) => /^checks\.[^.]+$/u.test(o.path)).map((o) => o.path),
-    ).toEqual(['checks.time', 'checks.slowShare', 'checks.errors']);
+    ).toEqual(['checks.time', 'checks.slowShare', 'checks.errors', 'checks.nonSuccess']);
     for (const line of lines) expect(line.length, line).toBeLessThanOrEqual(100);
   });
 
@@ -882,7 +882,7 @@ describe('recognized layouts (04-REQ-39)', () => {
       'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
     };
     const expected = (kind: string): string =>
-      `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 2\n}\n`;
+      `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 3\n}\n`;
     for (const measure of ['all', 'api', 'steps'] as const) {
       const plan = planInitChanges(detectProject(files(project)), { ...ANSWERS, measure });
       const created = plan.changes.filter((c) => c.path.startsWith('pw-perf-thresholds'));
@@ -897,7 +897,7 @@ describe('recognized layouts (04-REQ-39)', () => {
         expect(change.after).toBe(expected(kind));
         const parsed = parseThresholdsFile(change.after, change.path, kind);
         expect(parsed.ok && parsed.value).toEqual({
-          file: { schemaVersion: 2, kind, generated: null, entries: {} },
+          file: { schemaVersion: 3, kind, generated: null, entries: {} },
           migratedFrom: null,
         });
       }

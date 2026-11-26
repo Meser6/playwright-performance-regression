@@ -69,3 +69,9 @@ export const CONFIG_FILE_EXTENSIONS: readonly string[] = [
   '.cjs',
   '.json',
 ];
+
+/**
+ * STATS_COLD_SLOW: cold max / warm p50 from which the first call of a key counts as much slower
+ * (08-REQ-44, P-13). Defined here because the HTML report uses it too (11-REQ-61, 11-REQ-62).
+ */
+export const COLD_WARN_RATIO = 3;
