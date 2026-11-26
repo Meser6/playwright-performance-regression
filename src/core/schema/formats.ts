@@ -156,6 +156,8 @@ export const sampleBatch = obj(
 // ---- thresholds.schema.json -----------------------------------------------------------------
 
 const LIMIT_FIELDS = ['t', 'median', 'percentile', 'p99', 'minApdex', 'maxWilson', 'maxErrorRate'];
+/** Limit fields of an entry, with the optional maxNonSuccessRate of 1.1.0 (10-REQ-25). */
+const ENTRY_LIMIT_FIELDS = [...LIMIT_FIELDS, 'maxNonSuccessRate'];
 
 const thresholdsEntry = obj(
   {
@@ -166,6 +168,11 @@ const thresholdsEntry = obj(
     minApdex: nullable(ratio),
     maxWilson: nullable(ratio),
     maxErrorRate: ratio,
+    maxNonSuccessRate: ratio,
+    source: obj(
+      { count, successCount: count, passes: int({ minimum: 1 }), share: ratio },
+      { required: ['count', 'successCount', 'passes', 'share'] },
+    ),
     locked: constant(true),
     note: str({ minLength: 1, maxLength: 500 }),
     gate: constant('warn'),
@@ -173,7 +180,7 @@ const thresholdsEntry = obj(
   },
   {
     refine(value, pointer, sink) {
-      if (![...LIMIT_FIELDS, 'gate'].some((name) => Object.hasOwn(value, name))) {
+      if (![...ENTRY_LIMIT_FIELDS, 'gate'].some((name) => Object.hasOwn(value, name))) {
         sink.add(pointer, 'must have at least one limit or gate');
       }
       if (Object.hasOwn(value, 'gate')) {
@@ -203,6 +210,8 @@ const thresholdsGenerated = obj(
     playwrightVersion: nonEmpty,
     host: hostFingerprint,
     normalization: fingerprint,
+    coldSamples: int({ minimum: 0, maximum: 5 }),
+    sourcePasses: int({ minimum: 1 }),
   },
   {
     required: [
@@ -223,7 +232,7 @@ const thresholdsGenerated = obj(
 
 export const thresholdsFile = obj(
   {
-    schemaVersion: constant(2),
+    schemaVersion: constant(3),
     kind,
     generated: oneOf(thresholdsGenerated, nul),
     entries: record(key, thresholdsEntry),
@@ -305,7 +314,7 @@ const stats = obj(
 
 const check = obj(
   {
-    rule: enumOf(['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors']),
+    rule: enumOf(['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors', 'nonSuccess']),
     n: int({ minimum: 1 }),
     actual: num({ minimum: 0 }),
     observed: oneOf(num({ minimum: 0, maximum: 1 }), nul),
@@ -330,6 +339,28 @@ const check = obj(
   },
 );
 
+const workloadSide = obj(
+  {
+    count,
+    successCount: count,
+    passes: int({ minimum: 1 }),
+    workers: int({ minimum: 1 }),
+    share: ratio,
+  },
+  { required: ['count', 'successCount', 'passes', 'workers', 'share'] },
+);
+
+/** 09-REQ-40. */
+const workload = obj(
+  {
+    base: workloadSide,
+    now: workloadSide,
+    perPassRatio: nullable(num({ minimum: 0 })),
+    shifted: bool,
+  },
+  { required: ['base', 'now', 'perPassRatio', 'shifted'] },
+);
+
 const keyEvaluation = obj(
   {
     result: enumOf(['pass', 'fail', 'not-evaluated']),
@@ -344,8 +375,9 @@ const keyEvaluation = obj(
         minApdex: nullable(ratio),
         maxWilson: nullable(ratio),
         maxErrorRate: ratio,
+        maxNonSuccessRate: nullable(ratio),
       },
-      { required: LIMIT_FIELDS },
+      { required: ENTRY_LIMIT_FIELDS },
     ),
     checks: arr(check),
     muted: oneOf(
@@ -355,8 +387,9 @@ const keyEvaluation = obj(
       ),
       nul,
     ),
+    workload: oneOf(workload, nul),
   },
-  { required: ['result', 'reason', 'thresholdSource', 'limits', 'checks', 'muted'] },
+  { required: ['result', 'reason', 'thresholdSource', 'limits', 'checks', 'muted', 'workload'] },
 );
 
 /** Hint codes of 11-REQ-34, in rule priority order. */
@@ -490,6 +523,27 @@ const testBreakdown = oneOf(
   nul,
 );
 
+/** 08-REQ-43. */
+const cold = obj(
+  {
+    count: int({ minimum: 1 }),
+    excluded: bool,
+    reason: oneOf(constant('too-few-samples'), nul),
+    durations: arr(ms, { minItems: 1, maxItems: 5 }),
+    max: ms,
+    warmP50: msOrNull,
+    ratio: nullable(num({ minimum: 0 })),
+    test: testRef,
+  },
+  { required: ['count', 'excluded', 'reason', 'durations', 'max', 'warmP50', 'ratio', 'test'] },
+);
+
+/** 08-REQ-47. */
+const failedTiming = obj(
+  { status: int({ minimum: 100, maximum: 599 }), count: int({ minimum: 1 }), p50: ms, p95: ms },
+  { required: ['status', 'count', 'p50', 'p95'] },
+);
+
 const aggregateProps = {
   count,
   successCount: count,
@@ -524,6 +578,9 @@ const aggregateProps = {
   evaluation: keyEvaluation,
   histogram,
   hints: arr(hint, { maxItems: 3 }),
+  cold: oneOf(cold, nul),
+  nonSuccessCount: oneOf(count, nul),
+  failedTimings: arr(failedTiming, { maxItems: 5 }),
 };
 const aggregateRequired = [
   'count',
@@ -541,6 +598,9 @@ const aggregateRequired = [
   'evaluation',
   'histogram',
   'hints',
+  'cold',
+  'nonSuccessCount',
+  'failedTimings',
 ];
 
 const aggregate = obj(aggregateProps, { required: aggregateRequired });
@@ -560,7 +620,7 @@ const stepAggregate = obj(
 
 export const runReport = obj(
   {
-    schemaVersion: constant(4),
+    schemaVersion: constant(5),
     tool,
     runId,
     mode,

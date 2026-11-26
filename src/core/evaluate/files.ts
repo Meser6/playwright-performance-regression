@@ -98,12 +98,15 @@ export interface SourceDifferences {
   timing: boolean;
   /** The normalization differs: the keys are not comparable. */
   keys: boolean;
+  /** measure.coldSamples differs: other samples are timed (08-REQ-41). */
+  cold: boolean;
 }
 
 export function sourceDifferences(generated: Generated, source: RunSource): SourceDifferences {
   const diffs: string[] = [];
   let timing = false;
   let keys = false;
+  let cold = false;
   if (!sameList(generated.browsers, source.browsers)) {
     diffs.push(`browsers ${listText(generated.browsers)} / ${listText(source.browsers)}`);
     timing = true;
@@ -125,8 +128,20 @@ export function sourceDifferences(generated: Generated, source: RunSource): Sour
     diffs.push(`normalization ${generated.normalization} / ${source.normalization}`);
     keys = true;
   }
-  return { diffs, timing, keys };
+  // A file written by 1.0.x has no coldSamples: the field is not compared (09-REQ-04).
+  if (
+    generated.coldSamples !== undefined &&
+    source.coldSamples !== undefined &&
+    generated.coldSamples !== source.coldSamples
+  ) {
+    diffs.push(`coldSamples ${generated.coldSamples} / ${source.coldSamples}`);
+    cold = true;
+  }
+  return { diffs, timing, keys, cold };
 }
+
+/** Hint of THRESHOLDS_SOURCE_MISMATCH for a different measure.coldSamples (09-REQ-04). */
+export const COLD_SAMPLES_HINT = `Another measure.coldSamples changes which samples are timed: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`;
 
 /** Warnings about the `generated` block of a loaded file (09-REQ-04). */
 export function generatedWarnings(
@@ -155,7 +170,7 @@ export function generatedWarnings(
   }
 
   // One warning per file with every differing field (09-REQ-04, 09-D-13).
-  const { diffs, timing, keys } = sourceDifferences(generated, source);
+  const { diffs, timing, keys, cold } = sourceDifferences(generated, source);
   if (diffs.length > 0) {
     const hints: string[] = [];
     if (timing) {
@@ -168,6 +183,7 @@ export function generatedWarnings(
         `Another normalization changes the keys: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
       );
     }
+    if (cold) hints.push(COLD_SAMPLES_HINT);
     issues.push({
       code: 'THRESHOLDS_SOURCE_MISMATCH',
       message: `Thresholds in ${path} come from a run with other conditions (thresholds / this run): ${diffs.join('; ')}.`,

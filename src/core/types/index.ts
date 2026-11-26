@@ -48,6 +48,7 @@ export const KINDS: readonly Kind[] = ['api', 'step'];
 export {
   DIFF_CATEGORIES,
   LIMIT_NAMES,
+  DIFF_LIMIT_NAMES,
   LISTED_CATEGORIES,
   diffChangeText,
   diffCountsText,
@@ -84,4 +85,5 @@ export {
   SAMPLES_ATTACHMENT_NAME,
   THRESHOLDS_COMMAND,
   isRequestKey,
+  COLD_WARN_RATIO,
 } from './constants.ts';

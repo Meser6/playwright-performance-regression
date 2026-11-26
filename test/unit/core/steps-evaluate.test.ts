@@ -160,7 +160,7 @@ describe('10-AC-19 step thresholds file', () => {
     const before = existing(
       undefined,
       loadedFile({
-        schemaVersion: 2,
+        schemaVersion: 3,
         kind: 'step',
         generated: null,
         entries: { pay: { median: 900 } },
@@ -209,7 +209,7 @@ describe('09-AC-35 empty thresholds files (04-REQ-75)', () => {
 describe('10-AC-22 derivation over the empty files of the wizard', () => {
   const report = runReport({ endpoints: { 'GET /api/a': { durations: [[30, 100]] } } });
   const empty = (kind: 'api' | 'step') =>
-    loadedFile({ schemaVersion: 2, kind, generated: null, entries: {} });
+    loadedFile({ schemaVersion: 3, kind, generated: null, entries: {} });
 
   test('writes the same entries as a first derivation, updated, without THRESHOLDS_MANUAL_FILE', () => {
     const first = deriveThresholds(report, STEPS_ON, existing(), deriveOptions());

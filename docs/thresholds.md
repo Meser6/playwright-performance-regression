@@ -31,11 +31,13 @@ An entry looks like this:
 ```json
 "GET /api/orders/:id": {
   "maxErrorRate": 0.05,
+  "maxNonSuccessRate": 0.05,
   "maxWilson": 0.08,
   "median": 420,
   "minApdex": 0.86,
   "p99": 1300,
   "percentile": 760,
+  "source": { "count": 40, "passes": 10, "share": 0.0412, "successCount": 40 },
   "t": 500
 }
 ```
@@ -44,8 +46,28 @@ An entry looks like this:
 and `p99` are limits in milliseconds. `t` is the Apdex threshold used by `minApdex` and `maxWilson`
 (the allowed share of samples slower than `t`); they are `null` for keys too slow for a sensible
 `t`. `maxErrorRate` is the allowed share of errors. The `generated` block at the top of the file
-records which run the values came from (browser, Playwright version, machine, normalization). The
-reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the current run differs from it.
+records which run the values came from (browser, Playwright version, machine, normalization,
+`measure.coldSamples`). The reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the current run
+differs from it.
+
+`maxNonSuccessRate` (endpoints only, from version 1.1.0) is the allowed share of responses outside
+`measure.successStatuses`, such as 401, 403, 404 or 5xx, derived from their share in the
+thresholds run. The `nonSuccess` rule catches fast failures: an endpoint that used to answer 200 in
+120 ms and now answers 401 in 8 ms has no successful samples to time, so the time rules cannot
+fail it, but its non-success share jumps from 0 to 1. An endpoint that answers an expected 404 in
+part of its calls gets a limit high enough for that. Keys without an entry are not checked by this
+rule unless you set `checks.nonSuccess.limit.api`. Entries written before 1.1.0 get the field at the
+next thresholds run.
+
+`source` records the samples of the key in the run the limits come from: all samples, timed
+samples, passes and the key's share of all samples. When the current run has a very different
+number of samples per pass (`thresholds.workloadShift.factor`, ×2 by default), the reporter warns
+with `THRESHOLDS_WORKLOAD_SHIFT`, because percentiles of fewer or more samples are not comparable.
+`source` does not take part in deciding whether an entry or the file changes.
+
+The first timed sample of every key in a run (`measure.coldSamples`, 1 by default) is cold: when
+the key has enough samples, it stays out of the statistics that are evaluated and derived, so a
+slow first call after start-up does not move p95. The HTML report shows it under "Cold vs warm".
 
 Calls of Playwright's `request` fixture, `page.request` and `context.request` have keys with the
 prefix `request`, e.g. `request GET /api/orders/:id`. The same endpoint called by the page and by

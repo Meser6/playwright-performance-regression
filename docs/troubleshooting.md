@@ -362,6 +362,18 @@ project.
 mixed in the same keys. Measure one browser engine per run: select its projects with `--project`
 in the measurement command, e.g. `--project chromium`.
 
+### STATS_COLD_SLOW
+
+**Warning.** The first call of some keys in the run was much slower than their usual (warm)
+median: at least three times slower and at least 100 ms more, typically right after the
+application or its container started (JIT, connection pools, caches). The message names up to
+three keys with the first call, the warm p50 and the ratio. The first `measure.coldSamples` timed
+samples of a key (1 by default) are cold: when the key has at least `measure.coldSamples +
+checks.time.median.minSamples` timed samples, they stay out of the evaluated statistics, so this
+warning does not change the result. The HTML report shows them under "Cold vs warm" and ranks the
+keys under "Slowest first calls". To measure first calls too, warm the application up before the
+tests or set `measure.coldSamples` to `0`.
+
 ## Run and reporter
 
 ### CHECK_RANDOM_HOST
@@ -587,9 +599,33 @@ written for. Check `PW_PERF_ENV` and `run.env`, and derive thresholds for each e
 
 **Warning.** A thresholds file was derived under other conditions than the current run (or the
 source report): another browser, Playwright version (major.minor), machine or normalization
-rules. Timings from another machine or browser are not comparable: derive thresholds on the same
-infrastructure that runs the gate, usually CI (see [thresholds.md](thresholds.md)). After a change
-of normalization, derive again so the keys match.
+rules, or another `measure.coldSamples` (files written before 1.1.0 do not record it and are not
+compared on it). Timings from another machine or browser are not comparable: derive thresholds on
+the same infrastructure that runs the gate, usually CI (see [thresholds.md](thresholds.md)). After a
+change of normalization or of `measure.coldSamples`, derive again so the keys and samples match.
+
+### THRESHOLDS_ENTRY_NOT_TIMED
+
+**Warning.** Keys with an entry in the thresholds file were called often enough
+(`checks.time.median.minSamples`), but too few of their responses were successful
+(`measure.successStatuses`), so their time limits could not be checked. The message names up to
+three keys with their statuses, e.g. `GET /api/me (20 × 401)`. Typical causes are an expired login,
+missing test data or a changed backend that now answers 401, 403, 404 or 5xx quickly. Check the
+login and the test data of the tests that call these keys. The `nonSuccess` rule fails such a key
+when its entry has `maxNonSuccessRate`, which thresholds runs of version 1.1.0 or later write; see
+[thresholds.md](thresholds.md).
+
+### THRESHOLDS_WORKLOAD_SHIFT
+
+**Warning.** Some keys got a different number of samples per pass than in the thresholds run, by
+`thresholds.workloadShift.factor` (2 by default) or more in either direction, e.g. after a change
+of the tests, fixtures or test data. Percentiles of fewer or more samples are not comparable, so a
+change of the result may come from the tests, not from the application. The message names up to
+three keys with the largest change (`4.0 → 0.8 samples per pass (×0.20)`); the console shows the
+samples as `now/base` in the violations table and the HTML report has a "Compared with the
+thresholds run" block. The warning does not change the result. After an intended change of the
+tests, derive thresholds again with `PW_PERF_MODE=thresholds npm run e2e`; set
+`thresholds.workloadShift.factor` to `null` to turn the warning off.
 
 ### THRESHOLDS_MUTED
 

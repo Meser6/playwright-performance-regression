@@ -26,6 +26,8 @@ export function ruleLabel(rule: Check['rule'] | string, level: string): string {
       return 'slow share';
     case 'errors':
       return 'error rate';
+    case 'nonSuccess':
+      return 'non-success share';
     default:
       return rule;
   }

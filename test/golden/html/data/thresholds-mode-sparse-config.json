@@ -2,6 +2,20 @@
   "expected": {
     "ci": null,
     "config": {
+      "checks": {
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        }
+      },
       "keys": {
         "extraIdPatterns": [
           {
@@ -10,6 +24,14 @@
           }
         ],
         "keyBuilder": "[function]"
+      },
+      "measure": {
+        "coldSamples": 0
+      },
+      "thresholds": {
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
@@ -81,7 +103,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},
@@ -108,6 +130,20 @@
   "input": {
     "ci": null,
     "config": {
+      "checks": {
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        }
+      },
       "keys": {
         "extraIdPatterns": [
           {
@@ -116,6 +152,14 @@
           }
         ],
         "keyBuilder": "[function]"
+      },
+      "measure": {
+        "coldSamples": 0
+      },
+      "thresholds": {
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
@@ -187,7 +231,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},

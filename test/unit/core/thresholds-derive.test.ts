@@ -77,10 +77,16 @@ function content(d: DerivedThresholds, kind: Kind = 'api'): ThresholdsFile {
   return f;
 }
 
+/** An entry without its source block (10-REQ-26), which the limit tests do not look at. */
+function withoutSource(entry: ThresholdsEntry): ThresholdsEntry {
+  const { source: _source, ...rest } = entry;
+  return rest;
+}
+
 function entryOf(d: DerivedThresholds, key = KEY, kind: Kind = 'api'): ThresholdsEntry {
   const e = content(d, kind).entries[key];
   if (e === undefined) throw new Error(`no entry ${key}`);
-  return e;
+  return withoutSource(e);
 }
 
 function codes(d: DerivedThresholds): string[] {
@@ -118,6 +124,7 @@ describe('derived entry formulas (10, chapter 5)', () => {
       minApdex: 0.947,
       maxWilson: 0.03,
       maxErrorRate: 0.05,
+      maxNonSuccessRate: 0.05,
     });
   });
 
@@ -132,6 +139,8 @@ describe('derived entry formulas (10, chapter 5)', () => {
       minApdex: null,
       maxWilson: null,
       maxErrorRate: 0.145,
+      // The 500 is outside successStatuses too (10-REQ-25).
+      maxNonSuccessRate: 0.145,
     });
   });
 
@@ -184,6 +193,7 @@ describe('derived entry formulas (10, chapter 5)', () => {
       minApdex: 0.95,
       maxWilson: 0.03,
       maxErrorRate: 0.05,
+      maxNonSuccessRate: 0.05,
     });
   });
 
@@ -316,7 +326,7 @@ describe('derived entry formulas (10, chapter 5)', () => {
       options(),
     );
     const rules = evaluation.perKey.api[KEY]?.checks.map((c) => c.rule);
-    expect(rules).toEqual(['median', 'percentile', 'p99', 'errors']);
+    expect(rules).toEqual(['median', 'percentile', 'p99', 'errors', 'nonSuccess']);
   });
 });
 
@@ -610,7 +620,8 @@ describe('deriveThresholds (10, chapters 6–8)', () => {
         );
         const result = content(d).entries;
         for (const [key, entry] of Object.entries(expected[update])) {
-          expect(result[key], key).toEqual(entry);
+          const got = result[key];
+          expect(got === undefined ? got : withoutSource(got), key).toEqual(entry);
         }
         const pruned = derive(
           spec,

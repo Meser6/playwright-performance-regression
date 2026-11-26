@@ -28,6 +28,8 @@ import type { MutedKey } from './muting.ts';
 import { TIME_RULES, runRules } from './rules.ts';
 import { sourceForKind } from './types.ts';
 import type { EvaluateOptions, Evaluation, EvaluationStatus, LoadedThresholds } from './types.ts';
+import { entryNotTimedWarning, keyWorkload, workloadShiftWarning } from './workload.ts';
+import type { WorkloadRun } from './workload.ts';
 
 /**
  * Number of keys with qualified violations that is still tolerated (09-REQ-13, step 5): the
@@ -52,6 +54,7 @@ function evaluateKey(
   thresholds: LoadedThresholds,
   cfg: ResolvedConfig,
   runDay: string,
+  run: WorkloadRun,
 ): EvaluatedKey {
   const file = thresholds[kind];
   if (file.status === 'invalid') {
@@ -63,6 +66,7 @@ function evaluateKey(
       limits: defaultLimits(cfg.checks, kind),
       checks: [],
       muted: null,
+      workload: null,
     };
   }
   const entries = file.status === 'loaded' ? file.file.entries : {};
@@ -77,6 +81,7 @@ function evaluateKey(
     limits,
     checks,
     muted: entry === undefined ? null : keyMuting(entry, runDay),
+    workload: keyWorkload(entry, stats, run, cfg.thresholds.workloadShift.factor),
   };
 }
 
@@ -176,10 +181,15 @@ export function evaluate(
   };
   const perKey: Record<Kind, Record<string, EvaluatedKey>> = { api: {}, step: {} };
   for (const kind of KINDS) {
+    const run: WorkloadRun = {
+      passes: opts.passes ?? 1,
+      workers: opts.workers ?? 1,
+      kindCount: Object.values(byKind[kind]).reduce((sum, stats) => sum + stats.count, 0),
+    };
     for (const key of Object.keys(byKind[kind]).sort(compareText)) {
       const stats = byKind[kind][key];
       if (stats !== undefined) {
-        perKey[kind][key] = evaluateKey(key, stats, kind, thresholds, cfg, runDay);
+        perKey[kind][key] = evaluateKey(key, stats, kind, thresholds, cfg, runDay, run);
       }
     }
   }
@@ -245,6 +255,18 @@ export function evaluate(
         if (onDefaults.length > 0) {
           warnings.push(keysOnDefaultsWarning(file.path, kind, onDefaults, opts.env));
         }
+      }
+      // 1.1.0: entries not timed (09-REQ-39) and workload shifts (09-REQ-41), test mode only.
+      if (opts.mode === 'test') {
+        const notTimed = entryNotTimedWarning(
+          kind,
+          perKey[kind],
+          byKind[kind],
+          cfg.checks.time.median.minSamples,
+        );
+        if (notTimed !== null) warnings.push(notTimed);
+        const shift = workloadShiftWarning(kind, perKey[kind]);
+        if (shift !== null) warnings.push(shift);
       }
     }
     unseenCount[kind] = unseen.length;

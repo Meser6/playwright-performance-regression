@@ -92,7 +92,7 @@
       }
     },
     "kind": "api",
-    "schemaVersion": 3
+    "schemaVersion": 4
   },
   "expected": {
     "code": "SCHEMA_VERSION_TOO_NEW"

@@ -11,6 +11,28 @@
             "flags": "i"
           }
         ]
+      },
+      "measure": {
+        "coldSamples": 0
+      },
+      "checks": {
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
+        }
+      },
+      "thresholds": {
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
@@ -84,7 +106,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [],
     "toolErrors": [],

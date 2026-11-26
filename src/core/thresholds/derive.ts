@@ -1,9 +1,17 @@
 // Derivation of the thresholds files from a run report (10, chapters 3–8).
 import type { ResolvedConfig } from '../config/index.ts';
+import { DEFAULT_CONFIG } from '../config/generated/defaults.ts';
 import { sourceForKind } from '../evaluate/index.ts';
 import type { LoadedThresholds, LoadedThresholdsFile, RunSource } from '../evaluate/index.ts';
-import { compareText, majorMinor, plural, sameList, sourceDifferences } from '../evaluate/files.ts';
-import { stringifyStable } from '../format/index.ts';
+import {
+  COLD_SAMPLES_HINT,
+  compareText,
+  majorMinor,
+  plural,
+  sameList,
+  sourceDifferences,
+} from '../evaluate/files.ts';
+import { floorTo, stringifyStable } from '../format/index.ts';
 import { SCHEMA_VERSIONS, schemaIssueToIssue } from '../schema/index.ts';
 import type {
   AggregateStats,
@@ -32,6 +40,11 @@ export function aggregatesOf(report: RunReport, kind: Kind): Record<string, Aggr
   return byKind[kind];
 }
 
+/** measure.coldSamples of the report's config snapshot; the schema default when missing. */
+function coldSamplesOf(report: RunReport): number {
+  return report.config.measure?.coldSamples ?? DEFAULT_CONFIG.measure.coldSamples;
+}
+
 /** Fingerprint of the source report compared with `generated` (09-REQ-04, 10-REQ-11). */
 export function reportSource(report: RunReport): RunSource {
   const browsers = report.runConditions.projects
@@ -44,6 +57,7 @@ export function reportSource(report: RunReport): RunSource {
     host: { platform, arch, ci, cpuCount, cpuModel },
     normalization: report.normalization,
     stepNormalization: report.stepNormalization,
+    coldSamples: coldSamplesOf(report),
   };
 }
 
@@ -123,12 +137,15 @@ function generatedBlock(
     host: source.host,
     // The step file carries the step fingerprint (10-REQ-22, 06-REQ-25).
     normalization: kind === 'step' ? (report.stepNormalization ?? '') : source.normalization,
+    coldSamples: coldSamplesOf(report),
+    sourcePasses: report.passes.completed,
   };
 }
 
 /**
  * Fields of `generated` whose change makes the file be written (10-REQ-12, 10-D-20): every field
- * the evaluation compares (09-REQ-04), but not tool, source* or the Playwright patch version.
+ * the evaluation compares (09-REQ-04, with coldSamples from 1.1.0, 10-REQ-26), but not tool,
+ * source* or the Playwright patch version.
  */
 function generatedChanged(before: Generated, after: Generated): boolean {
   return (
@@ -138,8 +155,26 @@ function generatedChanged(before: Generated, after: Generated): boolean {
     !sameList(before.browsers, after.browsers) ||
     majorMinor(before.playwrightVersion) !== majorMinor(after.playwrightVersion) ||
     stringifyStable(before.host) !== stringifyStable(after.host) ||
-    before.normalization !== after.normalization
+    before.normalization !== after.normalization ||
+    before.coldSamples !== after.coldSamples
   );
+}
+
+/**
+ * Source block of an entry (10-REQ-26): samples of the key in the source run, the completed
+ * passes and the key's share of all samples of the kind, 4 places rounded down.
+ */
+function sourceBlock(
+  stats: AggregateStats,
+  kindCount: number,
+  passes: number,
+): NonNullable<ThresholdsEntry['source']> {
+  return {
+    count: stats.count,
+    successCount: stats.successCount,
+    passes,
+    share: kindCount === 0 ? 0 : floorTo(stats.count / kindCount, 4),
+  };
 }
 
 /** Muting and note of an entry, kept on every recomputation (10-REQ-21). */
@@ -203,6 +238,7 @@ function deriveKind(
       diffs,
       timing,
       keys: keysDiffer,
+      cold,
     } = sourceDifferences(loaded.file.generated, sourceForKind(reportSource(report), kind));
     if (diffs.length > 0) {
       const hints: string[] = [];
@@ -216,6 +252,7 @@ function deriveKind(
           `Another normalization changes the keys: entries of old keys are kept as unseen until removed with \`${PRUNE_COMMAND}\`.`,
         );
       }
+      if (cold) hints.push(COLD_SAMPLES_HINT);
       warnings.push({
         code: 'THRESHOLDS_SOURCE_MISMATCH',
         message: `Thresholds in ${loaded.path} were derived under other conditions than the source report (file / source report): ${diffs.join('; ')}.`,
@@ -226,6 +263,12 @@ function deriveKind(
 
   // Existing entries (10-REQ-07), then new keys.
   const before = loaded?.file.entries ?? {};
+  const kindCount = keys.reduce((sum, key) => sum + (aggregates[key]?.count ?? 0), 0);
+  const passes = report.passes.completed;
+  const derived = (stats: AggregateStats): ThresholdsEntry => ({
+    ...deriveEntry(stats, kind, cfg),
+    source: sourceBlock(stats, kindCount, passes),
+  });
   const entries: Record<string, ThresholdsEntry> = {};
   let much = 0;
   for (const key of Object.keys(before).sort(compareText)) {
@@ -252,16 +295,22 @@ function deriveKind(
       withinHysteresis(old, fresh, cfg.thresholds.hysteresis) &&
       entrySelfConsistent(old, stats, kind, cfg)
     ) {
-      entries[key] = structuredClone(old);
+      // Kept with its limits and source; fields of 1.1.0 it lacks come from this run (10-REQ-27).
+      const kept: ThresholdsEntry = structuredClone(old);
+      if (kept.maxNonSuccessRate === undefined && fresh.maxNonSuccessRate !== undefined) {
+        kept.maxNonSuccessRate = fresh.maxNonSuccessRate;
+      }
+      kept.source ??= sourceBlock(stats, kindCount, passes);
+      entries[key] = kept;
       continue;
     }
-    entries[key] = { ...fresh, ...humanFields(old) };
+    entries[key] = { ...fresh, source: sourceBlock(stats, kindCount, passes), ...humanFields(old) };
     if (loosenedMuch(old, fresh, cfg.thresholds.loosenWarnRelative)) much += 1;
   }
   for (const key of derivable) {
     const stats = aggregates[key];
     if (Object.hasOwn(before, key) || stats === undefined) continue;
-    entries[key] = deriveEntry(stats, kind, cfg);
+    entries[key] = derived(stats);
   }
 
   const generated = generatedBlock(report, cfg, kind, opts);

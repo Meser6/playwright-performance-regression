@@ -59,7 +59,8 @@
           "groupBy": "step",
           "normalizeTitles": true,
           "redactQuotedValues": false
-        }
+        },
+        "coldSamples": 0
       },
       "keys": {
         "origins": {},
@@ -177,6 +178,18 @@
             "add": 0.02,
             "min": 0.05
           }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
         }
       },
       "gate": {
@@ -195,7 +208,10 @@
           "relative": 0.1,
           "ratio": 0.01
         },
-        "loosenWarnRelative": 0.5
+        "loosenWarnRelative": 0.5,
+        "workloadShift": {
+          "factor": 2
+        }
       },
       "report": {
         "dir": "reports/pw-perf",
@@ -278,7 +294,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [],
     "toolErrors": [],

@@ -148,6 +148,11 @@ function buildAggregate(
       durations: stats.samples.durations.map(roundMs).sort((a, b) => a - b),
       sampled: stats.samples.sampled,
     },
+    // Fields of 1.1.0 (08-REQ-43, 08-REQ-47), copied so the report owns its data.
+    cold: stats.cold === null ? null : structuredClone(stats.cold),
+    failedTimings: stats.failedTimings.map((f) => ({
+      ...f,
+    })) as RunReportAggregate['failedTimings'],
     evaluation,
     // Edges are constants of the scale, not rounded (08-REQ-34).
     histogram:

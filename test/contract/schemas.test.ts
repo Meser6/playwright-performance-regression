@@ -57,7 +57,7 @@ const derivation = {
   },
 };
 const thresholds = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   kind: 'api',
   generated: null,
   entries: {
@@ -88,7 +88,7 @@ const counts = {
 };
 function runReport(): { [key: string]: Json } {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     tool,
     runId: 'run-1',
     mode: 'test',

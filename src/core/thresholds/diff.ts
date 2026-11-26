@@ -7,7 +7,7 @@ import type { AggregateStats, RunReport, ThresholdsEntry } from '../types/index.
 import { aggregatesOf } from './derive.ts';
 import { changeDirection, grewMuch, isComplete, limitsOf } from './entries.ts';
 import { deriveEntry, isDerivable, minDeriveSamples } from './formulas.ts';
-import { DIFF_CATEGORIES, LIMIT_NAMES } from './types.ts';
+import { DIFF_CATEGORIES, DIFF_LIMIT_NAMES } from './types.ts';
 import type { DerivedFile, DiffCategory, KeyDiff, LimitChange, ThresholdsDiff } from './types.ts';
 
 type DiffConfig = Pick<ResolvedConfig, 'checks' | 'thresholds'>;
@@ -20,7 +20,9 @@ function limitChanges(
   const a = limitsOf(before);
   const b = limitsOf(after);
   const changes: LimitChange[] = [];
-  for (const limit of LIMIT_NAMES) {
+  for (const limit of DIFF_LIMIT_NAMES) {
+    // maxNonSuccessRate added to an entry of 1.0.x is a new field, not a change (10-REQ-27).
+    if (limit === 'maxNonSuccessRate' && (a[limit] === null || b[limit] === null)) continue;
     const direction = changeDirection(limit, a[limit], b[limit]);
     if (direction === null) continue;
     const change: LimitChange = { limit, before: a[limit], after: b[limit], direction };
@@ -66,6 +68,10 @@ function keptKey(
   }
   if (!isDerivable(stats, cfg.checks)) return skipped(key, stats, cfg);
   const changes = limitChanges(before, after, cfg.thresholds.loosenWarnRelative);
+  // A kept entry that got the fields of 1.1.0 from this run (10-REQ-27).
+  const newFields =
+    (before.maxNonSuccessRate === undefined && after.maxNonSuccessRate !== undefined) ||
+    (before.source === undefined && after.source !== undefined);
   if (changes.length > 0) {
     const looser = changes.some((c) => c.direction === 'looser');
     const stricter = changes.some((c) => c.direction === 'stricter');
@@ -74,9 +80,16 @@ function keptKey(
   }
   // Unchanged although a fresh derivation differs: kept by hysteresis (10-REQ-18).
   const fresh = cfg.thresholds.update === 'all' ? deriveEntry(stats, kind, cfg) : null;
-  const old = limitsOf(before);
-  const kept = fresh !== null && LIMIT_NAMES.some((name) => fresh[name] !== old[name]);
-  return { key, category: 'unchanged', changes: [], ...(kept ? { withinHysteresis: true } : {}) };
+  const old = limitsOf(after);
+  const kept =
+    fresh !== null && DIFF_LIMIT_NAMES.some((name) => (fresh[name] ?? null) !== old[name]);
+  return {
+    key,
+    category: 'unchanged',
+    changes: [],
+    ...(kept ? { withinHysteresis: true as const } : {}),
+    ...(newFields ? { newFields: true as const } : {}),
+  };
 }
 
 /**

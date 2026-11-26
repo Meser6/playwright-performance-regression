@@ -127,11 +127,13 @@ export function str(options: StringOptions = {}): Schema {
 
 export interface NumberOptions {
   minimum?: number;
+  /** The value must be greater than this (JSON Schema exclusiveMinimum). */
+  exclusiveMinimum?: number;
   maximum?: number;
 }
 
 function numeric(integer: boolean, options: NumberOptions): Schema {
-  const { minimum, maximum } = options;
+  const { minimum, exclusiveMinimum, maximum } = options;
   const type = integer ? 'integer' : 'number';
   return {
     expected: type,
@@ -142,6 +144,9 @@ function numeric(integer: boolean, options: NumberOptions): Schema {
       }
       if (integer && !Number.isInteger(value)) return sink.add(pointer, 'must be integer', 'type');
       if (minimum !== undefined && value < minimum) sink.add(pointer, `must be >= ${minimum}`);
+      if (exclusiveMinimum !== undefined && value <= exclusiveMinimum) {
+        sink.add(pointer, `must be > ${exclusiveMinimum}`);
+      }
       if (maximum !== undefined && value > maximum) sink.add(pointer, `must be <= ${maximum}`);
     },
   };
