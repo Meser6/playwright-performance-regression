@@ -204,6 +204,20 @@ describe('a shard run (17, chapter 5)', () => {
     expect(run.outcome.exitCode).toBe(0);
   });
 
+  test('17-AC-02 an empty shard as Playwright reports it (no project suites) has no tool error', async () => {
+    const dir = projectDir('empty-suites');
+    const captured = fakeHost(dir);
+    const s = session(captured, registered({}, { mode: 'test' }));
+    s.begin(fakeConfig(dir, { shard: { current: 3, total: 3 } }), {
+      allTests: () => [],
+      suites: [],
+    });
+    await s.end({ status: 'passed' });
+    const out = captured.stdout.join('');
+    expect(out).not.toContain('CONFIG_NO_MEASURED_PROJECT');
+    expect(out).toContain('shard data written (code 0)');
+  });
+
   test('an interrupted shard: shard data incomplete, exit code 3, the file is written', async () => {
     const run = await runShard('s1', { current: 1, total: 2 }, [A], { status: 'interrupted' });
     expect(run.outcome.exitCode).toBe(3);
