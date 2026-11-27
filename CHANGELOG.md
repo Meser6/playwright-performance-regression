@@ -76,6 +76,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The run report gets `shards: null` when a report of version 4 is migrated.
 - The package's own tests run with `@playwright/test` 1.65.1 (development dependency only; the
   supported Playwright range is unchanged).
+- The package's own type checks use `@types/node` 26 (development dependency only; the supported
+  Node.js versions are unchanged).
 - README: GraphQL and tRPC are no longer listed as a limitation (`keys.operations`), and "How it
   works" names fast failures.
 
