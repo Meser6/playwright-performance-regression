@@ -48,7 +48,7 @@ function clamp(x: number, min: number, max: number): number {
 
 /** generated.derivation: the settings the formulas used for this kind (10-REQ-11). */
 export function derivationSettings(cfg: DeriveConfig, kind: Kind): DerivationSettings {
-  const { time, slowShare, errors } = cfg.checks;
+  const { time, slowShare, errors, nonSuccess } = cfg.checks;
   return structuredClone({
     t: slowShare.t[kind],
     smallSampleN: cfg.thresholds.smallSampleN,
@@ -59,13 +59,30 @@ export function derivationSettings(cfg: DeriveConfig, kind: Kind): DerivationSet
       apdex: slowShare.apdex.margin,
       wilson: slowShare.wilson.margin,
       errors: errors.margin,
+      // Endpoint files only: steps have no nonSuccess limit (10-REQ-25).
+      ...(kind === 'api' ? { nonSuccess: nonSuccess.margin } : {}),
     },
   });
 }
 
+/** min(1, max(r × factor + add, min, rLow + ERR_SELF_GAP)) rounded up (10, chapter 5). */
+function rateLimit(
+  k: number,
+  bigN: number,
+  margin: ResolvedConfig['checks']['errors']['margin'],
+): number {
+  const r = bigN === 0 ? 0 : k / bigN;
+  const low = wilsonBounds(k, bigN)?.lower ?? 0;
+  return ceilTo(
+    Math.min(1, Math.max(r * margin.factor + margin.add, margin.min, low + ERR_SELF_GAP)),
+    3,
+  );
+}
+
 /**
  * Derived entry of one key (10, chapter 5): all seven limits, rounded and computed in the order
- * of 10-REQ-03. Pure; the caller checks isDerivable() first.
+ * of 10-REQ-03, and maxNonSuccessRate for endpoint keys (10-REQ-25). Pure; the caller checks
+ * isDerivable() first.
  */
 export function deriveEntry(stats: AggregateStats, kind: Kind, cfg: DeriveConfig): CompleteEntry {
   const level = cfg.checks.time.percentile.level;
@@ -76,7 +93,7 @@ export function deriveEntry(stats: AggregateStats, kind: Kind, cfg: DeriveConfig
     if (value === undefined) throw new Error(`deriveEntry: aggregate has no percentile "${name}"`);
     return value;
   };
-  const { time, slowShare, errors } = cfg.checks;
+  const { time, slowShare, errors, nonSuccess } = cfg.checks;
   const T = slowShare.t[kind];
   const n = stats.successCount;
   const small = n < cfg.thresholds.smallSampleN;
@@ -134,15 +151,9 @@ export function deriveEntry(stats: AggregateStats, kind: Kind, cfg: DeriveConfig
 
   // 7. Errors: e = errorCount / N with N = count (10-REQ-01).
   const bigN = stats.count;
-  const e = bigN === 0 ? 0 : stats.errorCount / bigN;
-  const eLow = wilsonBounds(stats.errorCount, bigN)?.lower ?? 0;
-  const em = errors.margin;
-  const maxErrorRate = ceilTo(
-    Math.min(1, Math.max(e * em.factor + em.add, em.min, eLow + ERR_SELF_GAP)),
-    3,
-  );
+  const maxErrorRate = rateLimit(stats.errorCount, bigN, errors.margin);
 
-  return {
+  const entry: CompleteEntry = {
     t,
     median,
     percentile: percentileLimit,
@@ -151,4 +162,9 @@ export function deriveEntry(stats: AggregateStats, kind: Kind, cfg: DeriveConfig
     maxWilson,
     maxErrorRate,
   };
+  // 8. Endpoint keys: u = nonSuccessCount / N (10-REQ-25); 1 for a key that never succeeds.
+  if (kind === 'api' && stats.nonSuccessCount !== null) {
+    entry.maxNonSuccessRate = rateLimit(stats.nonSuccessCount, bigN, nonSuccess.margin);
+  }
+  return entry;
 }

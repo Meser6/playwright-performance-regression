@@ -48,7 +48,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 2,
+          "schemaVersion": 3,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -66,15 +66,30 @@
                 "p99": {"relative":0.2,"minGapMs":50,"minGapRelative":0.1},
                 "apdex": {"absolute":0.05,"smallSampleAbsolute":0.1},
                 "wilson": {"factor":1.5,"add":0.02,"min":0.03,"max":0.15,"smallSampleMin":0.1},
-                "errors": {"factor":1.5,"add":0.02,"min":0.05}
+                "errors": {"factor":1.5,"add":0.02,"min":0.05},
+                "nonSuccess": {"factor":1.5,"add":0.02,"min":0.05}
               }
             },
             "browsers": ["chromium"],
             "playwrightVersion": "1.57.0",
             "host": {"platform":"linux","arch":"x64","ci":true,"cpuCount":4,"cpuModel":"AMD EPYC 7763"},
-            "normalization": "0a3f9c21d47b6e"
+            "normalization": "0a3f9c21d47b6e",
+            "coldSamples": 1,
+            "sourcePasses": 10
           },
-          "entries": {"GET /api/close":{"t":500,"median":230,"percentile":350,"p99":500,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05}}
+          "entries": {
+            "GET /api/close": {
+              "t": 500,
+              "median": 230,
+              "percentile": 350,
+              "p99": 500,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":1}
+            }
+          }
         },
         "changed": true
       }

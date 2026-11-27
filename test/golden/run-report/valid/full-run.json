@@ -64,7 +64,8 @@
           "groupBy": "step",
           "normalizeTitles": true,
           "redactQuotedValues": false
-        }
+        },
+        "coldSamples": 0
       },
       "keys": {
         "origins": {},
@@ -79,7 +80,8 @@
         "extraIdPatterns": [],
         "query": "names",
         "keepQueryValues": [],
-        "dropQueryParams": []
+        "dropQueryParams": [],
+        "operations": []
       },
       "checks": {
         "time": {
@@ -182,6 +184,18 @@
             "add": 0.02,
             "min": 0.05
           }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
         }
       },
       "gate": {
@@ -200,7 +214,10 @@
           "relative": 0.1,
           "ratio": 0.01
         },
-        "loosenWarnRelative": 0.5
+        "loosenWarnRelative": 0.5,
+        "workloadShift": {
+          "factor": 2
+        }
       },
       "report": {
         "dir": "reports/pw-perf",
@@ -249,7 +266,8 @@
             "minApdex": 0.85,
             "p99": 2100,
             "percentile": 1400,
-            "t": 500
+            "t": 500,
+            "maxNonSuccessRate": null
           },
           "muted": {
             "expired": false,
@@ -258,7 +276,8 @@
           },
           "reason": null,
           "result": "pass",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -367,7 +386,10 @@
             1
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 1,
+        "failedTimings": []
       },
       "POST /api/orders": {
         "count": 5,
@@ -393,12 +415,14 @@
             "minApdex": null,
             "p99": 2100,
             "percentile": 1400,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "default"
+          "thresholdSource": "default",
+          "workload": null
         },
         "fromFailedTests": 5,
         "samples": {
@@ -444,7 +468,10 @@
               "share": 1
             }
           }
-        ]
+        ],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       }
     },
     "steps": {},
@@ -508,6 +535,7 @@
       "completed": 1,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "overriddenSettings": [],
       "projects": [
@@ -522,7 +550,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [
       {

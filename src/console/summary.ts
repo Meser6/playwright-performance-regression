@@ -10,7 +10,14 @@ import {
   overText,
 } from '../core/format/violation.ts';
 import { KINDS } from '../core/types/index.ts';
-import type { Check, Issue, KeyEvaluation, Kind, RunReport } from '../core/types/index.ts';
+import type {
+  Check,
+  Generated,
+  Issue,
+  KeyEvaluation,
+  Kind,
+  RunReport,
+} from '../core/types/index.ts';
 import { boxLines, marks, table } from './box.ts';
 import type { BoxLine, Marks, TableColumn, TableRow } from './box.ts';
 import { painter } from './color.ts';
@@ -28,6 +35,8 @@ export interface SummaryOptions {
   ascii?: boolean;
   /** Whether report.html was written; default: report.html of the config snapshot. */
   html?: boolean;
+  /** Absolute folder of the report files; default: report.dir of the snapshot below configDir. */
+  reportDir?: string;
 }
 
 /** At most this many warnings are listed; tool errors are always listed in full (chapter 8.1). */
@@ -60,6 +69,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ];
 type Paint = Painter;
 
@@ -105,6 +115,15 @@ function header(report: RunReport, paint: Paint): string {
   if (t.flaky > 0) details.push(`${t.flaky} flaky`);
   if (t.skipped > 0) details.push(`${t.skipped} skipped`);
   const parts = [report.tool.name, `mode: ${report.mode}`];
+  // 17-REQ-19: a merged report names its shards.
+  const shards = report.shards;
+  if (shards !== null) {
+    parts.push(
+      shards.missing.length === 0
+        ? `merged from ${plural(shards.total, 'shard')}`
+        : `merged from ${String(shards.list.length)} of ${plural(shards.total, 'shard')}`,
+    );
+  }
   if (report.env !== null) parts.push(`env: ${report.env}`);
   parts.push(`${plural(executions, 'test')} (${details.join(', ')})`);
   const ci = report.ci;
@@ -226,7 +245,8 @@ interface DefaultKey {
 /**
  * Keys evaluated with default thresholds although the file of their kind has entries, as for
  * THRESHOLDS_KEYS_ON_DEFAULTS (09-REQ-36), taken from the report alone (09-REQ-37): test mode,
- * a loaded file with entries (a key from the file or unseen entries). Sorted for the table.
+ * a loaded file with entries (a key from the file or unseen entries), keys with successful
+ * samples only. Sorted for the table.
  */
 function keysOnDefaults(report: RunReport): DefaultKey[] {
   if (report.mode !== 'test') return [];
@@ -242,6 +262,8 @@ function keysOnDefaults(report: RunReport): DefaultKey[] {
     for (const [key, aggregate] of aggregates) {
       const e = aggregate.evaluation;
       if (e.thresholdSource !== 'default' || e.result === 'not-evaluated') continue;
+      // Without successful samples a thresholds run gives no entry (09-REQ-36, 10-REQ-02).
+      if (aggregate.successCount === 0) continue;
       const failed = e.checks.filter((c) => !c.passed);
       const rank = failed.some((c) => c.blocking) ? 2 : failed.length > 0 ? 1 : 0;
       list.push({ kind, key, aggregate, rank });
@@ -334,13 +356,28 @@ function tableLines(
       formatActual(v.check),
       formatLimit(v.check),
       overText(v.check),
-      String(v.check.n),
+      samplesCell(v.check, v.evaluation),
       v.evaluation.thresholdSource,
       [v.check.hardLimitExceeded ? 'HARD' : '', isMuted(v.evaluation) ? 'MUTED' : '']
         .filter((f) => f !== '')
         .join(' '),
     ],
     style: v.check.blocking ? 'red' : 'yellow',
+    // Samples per pass changed much since the thresholds run (09-REQ-42).
+    ...(v.evaluation.workload?.shifted === true
+      ? {
+          cellStyles: [
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            'yellow',
+          ],
+        }
+      : {}),
   }));
   const lines = table(columns, rows, opts);
   if (list.length > shown.length) {
@@ -348,6 +385,55 @@ function tableLines(
     lines.push(paint(`  … and ${more} (see report)`, 'dim'));
   }
   return lines;
+}
+
+/** Rules counting all samples (N); the others count timed samples (m) (09, table in 5.2). */
+const ALL_SAMPLE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
+  'errors',
+  'nonSuccess',
+]);
+
+/**
+ * Column `n`: the samples of the check, with the samples of the thresholds run when the entry has
+ * a source block: `12/40` (09-REQ-42).
+ */
+function samplesCell(check: Check, evaluation: KeyEvaluation): string {
+  const base = evaluation.workload?.base;
+  if (base === undefined) return String(check.n);
+  const n = ALL_SAMPLE_RULES.has(check.rule) ? base.count : base.successCount;
+  return `${String(check.n)}/${String(n)}`;
+}
+
+/** "5 passes · 1 worker · 1,240 samples" (09-REQ-42). */
+function workloadText(passes: number, workers: number, samples: number): string {
+  return `${plural(passes, 'pass', 'passes')} · ${plural(workers, 'worker')} · ${plural(samples, 'sample')}`.replace(
+    /(\d{4,}) sample/u,
+    (_, n: string) => `${Number(n).toLocaleString('en-US')} sample`,
+  );
+}
+
+/**
+ * `Workload:` under the violations table (09-REQ-42): passes, workers and timed samples of this
+ * run and of the thresholds run, for the first thresholds file whose generated block has
+ * sourcePasses (written by 1.1.0 or later); empty otherwise.
+ */
+function workloadLines(report: RunReport, paint: Paint): string[] {
+  for (const kind of KINDS) {
+    // A copy of the file's generated block (an object in the report schema).
+    const generated = report.thresholdFiles.find((f) => f.kind === kind)?.generated as
+      Partial<Generated> | null | undefined;
+    if (generated?.sourcePasses === undefined || generated.sourceSampleCount === undefined) {
+      continue;
+    }
+    const samples = Object.values(aggregatesOf(report, kind)).reduce(
+      (sum, a) => sum + a.successCount,
+      0,
+    );
+    const now = workloadText(report.passes.completed, report.runConditions.workers, samples);
+    const base = workloadText(generated.sourcePasses, 1, generated.sourceSampleCount);
+    return [paint(`  Workload: ${now} (thresholds run: ${base})`, 'dim')];
+  }
+  return [];
 }
 
 /** Slowest sample of the first blocking keys (09-REQ-21, S-02). */
@@ -376,7 +462,6 @@ function errorCauses(report: RunReport): string[] {
   const named: Record<string, string> = {
     TESTS_FAILED_TOO_MANY: `too many failed tests (${t.unexpected} of ${t.expected + t.unexpected + t.flaky} executions)`,
     RUN_INCOMPLETE: 'the run did not complete',
-    RUN_SHARDED: 'the run is sharded',
   };
   const causes: string[] = [];
   let other = 0;
@@ -483,12 +568,73 @@ function resolvePath(base: string, path: string): string {
  * One line with the absolute path of report.html, or report.json without HTML (09-REQ-30):
  * terminals show an absolute path as a link whatever the current directory.
  */
-function reportLine(report: RunReport, html: boolean | undefined, paint: Paint): string[] {
+function reportLine(
+  report: RunReport,
+  html: boolean | undefined,
+  paint: Paint,
+  reportDir?: string,
+): string[] {
   const options = report.config.report;
-  if (options?.dir === undefined) return [];
-  const dir = resolvePath(report.configDir, options.dir);
-  const file = (html ?? options.html !== false) ? 'report.html' : 'report.json';
+  if (options?.dir === undefined && reportDir === undefined) return [];
+  const dir = toSlash(reportDir ?? resolvePath(report.configDir, options?.dir ?? '.'));
+  const file = (html ?? options?.html !== false) ? 'report.html' : 'report.json';
   return [`${paint('Report:', 'bold')} ${dir}/${file}`];
+}
+
+/** Duration between two timestamps, e.g. "1h 04m", "12m 05s", "48s". */
+function durationText(from: string, to: string): string {
+  const s = Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${String(h)}h ${String(m).padStart(2, '0')}m`;
+  if (m > 0) return `${String(m)}m ${String(sec).padStart(2, '0')}s`;
+  return `${String(sec)}s`;
+}
+
+const CPU_WIDTH = 28;
+
+/**
+ * The table of shards before the verdict (17-REQ-19), when shards are missing or ran on different
+ * machines (MERGE_SHARDS_DIFFERENT_HOSTS): number, tests, samples, time, passes and CPU.
+ */
+function shardLines(report: RunReport, frame: FrameOptions): string[] {
+  const shards = report.shards;
+  if (shards === null) return [];
+  const hosts = report.warnings.some((w) => w.code === 'MERGE_SHARDS_DIFFERENT_HOSTS');
+  if (!hosts && shards.missing.length === 0) return [];
+  const rows = [
+    ...shards.list.map((s) => ({
+      index: s.index,
+      cells: [
+        `${String(s.index)}/${String(shards.total)}`,
+        String(s.tests.expected + s.tests.unexpected + s.tests.flaky),
+        s.samples.toLocaleString('en-US'),
+        durationText(s.startedAt, s.finishedAt),
+        `${String(s.passes.completed)}/${String(s.passes.planned)}`,
+        truncateMiddle(s.host.cpuModel === '' ? 'unknown' : s.host.cpuModel, CPU_WIDTH),
+      ],
+    })),
+    ...shards.missing.map((index) => ({
+      index,
+      cells: [`${String(index)}/${String(shards.total)}`, '—', '—', '—', '—', 'missing'],
+    })),
+  ].sort((a, b) => a.index - b.index);
+  return [
+    ...table(
+      [
+        { header: 'shard' },
+        { header: 'tests', align: 'right' },
+        { header: 'samples', align: 'right' },
+        { header: 'time', align: 'right' },
+        { header: 'passes', align: 'right' },
+        { header: 'cpu', flex: true, minWidth: 8 },
+      ],
+      rows.map((r) => ({ cells: r.cells })),
+      { ...frame, border: 'dim' },
+    ),
+    '',
+  ];
 }
 
 /** Console summary of a run report (09, chapter 8). Ends with a newline. */
@@ -508,10 +654,15 @@ export function formatSummary(report: RunReport, opts: SummaryOptions): string {
   lines.push(...defaultKeyLines(report, frame, m, paint));
   if (list.length > 0) {
     lines.push(...tableLines(report, list, frame, m, paint));
+    lines.push(...workloadLines(report, paint));
     const slowest = slowestLines(report, list);
     if (slowest.length > 0) lines.push(...slowest);
     lines.push('');
   }
-  lines.push(...resultLines(report, frame, m), ...reportLine(report, opts.html, paint));
+  lines.push(...shardLines(report, frame));
+  lines.push(
+    ...resultLines(report, frame, m),
+    ...reportLine(report, opts.html, paint, opts.reportDir),
+  );
   return `${lines.join('\n')}\n`;
 }

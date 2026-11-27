@@ -39,9 +39,11 @@ const NO_EVALUATION: KeyEvaluation = {
     minApdex: null,
     maxWilson: null,
     maxErrorRate: 0.05,
+    maxNonSuccessRate: null,
   },
   checks: [],
   muted: null,
+  workload: null,
 };
 
 export function reportAggregate(spec: ReportAggregateSpec, level = 'p95'): Aggregate {
@@ -98,7 +100,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     muted: 0,
   };
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     tool: { name: 'playwright-performance-regression', version: '0.1.0' },
     runId: spec.runId ?? 'run-1',
     mode: spec.mode ?? 'thresholds',
@@ -113,6 +115,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     host: { ...HOST, ...spec.host },
     playwright: { version: spec.playwrightVersion ?? '1.57.0' },
     passes: { planned: 10, completed: 10, failed: [] },
+    shards: null,
     runConditions: {
       workers: 1,
       projects: spec.projects ?? [
@@ -172,12 +175,15 @@ export function generated(partial: Partial<Generated> = {}): Generated {
         apdex: { absolute: 0.05, smallSampleAbsolute: 0.1 },
         wilson: { factor: 1.5, add: 0.02, min: 0.03, max: 0.15, smallSampleMin: 0.1 },
         errors: { factor: 1.5, add: 0.02, min: 0.05 },
+        nonSuccess: { factor: 1.5, add: 0.02, min: 0.05 },
       },
     },
     browsers: ['chromium'],
     playwrightVersion: '1.57.0',
     host: { platform: 'linux', arch: 'x64', ci: true, cpuCount: 4, cpuModel: 'AMD EPYC 7763' },
     normalization: '0a3f9c21d47b6e',
+    coldSamples: 1,
+    sourcePasses: 10,
     ...partial,
   };
 }
@@ -191,7 +197,7 @@ export function file(
     status: 'loaded',
     kind,
     path: `pw-perf-thresholds${kind === 'step' ? '.steps' : ''}.json`,
-    file: { schemaVersion: 2, kind, generated: gen, entries },
+    file: { schemaVersion: 3, kind, generated: gen, entries },
   };
 }
 

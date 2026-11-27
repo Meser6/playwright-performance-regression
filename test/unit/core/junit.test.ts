@@ -36,6 +36,8 @@ const CASES: Record<string, () => RunReport> = {
   'tool-error': () => inputOf('console', 'tool-error.json'),
   empty: () => inputOf('run-report', 'valid', 'empty-run.json'),
   steps: stepsRun,
+  // A merge of two shards (17-REQ-17, 16-REQ-13: pw-perf.shards).
+  merged: () => inputOf('run-report', 'valid', 'merged.json'),
 };
 
 const xmllint = spawnSync('xmllint', ['--version']).status === 0;
@@ -535,5 +537,27 @@ describe('junit.xml escaping and limits (16-REQ-10, 16-REQ-12)', () => {
     expect(Buffer.byteLength(xml, 'utf8')).toBeLessThan(1024 * 1024);
     expect(countTag(xml, 'testcase')).toBe(1001);
     expect(countTag(xml, 'failure')).toBe(200);
+  });
+});
+
+describe('1.1.0 in junit.xml (16-REQ-21)', () => {
+  test('16-REQ-21 a nonSuccess failure has its type and the statuses; nonSuccess in the limits', () => {
+    const xml = buildJunitXml(inputOf('run-report', 'valid', 'fast-failure.json'));
+    expect(xml).toContain(
+      '<failure type="nonSuccess" message="nonSuccess 0.839 (1.000) &gt; limit 0.050 (+79 pp), 20 samples: 20 × 401, thresholds file">',
+    );
+    expect(xml).toContain(
+      'errors &lt;= 0.050, T 500 ms, apdex &gt;= 0.900, wilson &lt;= 0.100, nonSuccess &lt;= 0.050',
+    );
+  });
+
+  test('16-REQ-21 system-out has the workload of a key with a source block and the cold start of a key', () => {
+    const shift = buildJunitXml(inputOf('run-report', 'valid', 'workload-shift.json'));
+    expect(shift).toContain('workload: 40 → 6 samples (per pass 4.0 → 1.2)');
+    const cold = buildJunitXml(inputOf('run-report', 'valid', 'cold.json'));
+    // Cold samples of 5 passes (08-REQ-41): the slowest of them.
+    expect(cold).toContain('cold start: slowest of 5 first calls 1840 ms, warm p50 120 ms');
+    // A cold sample kept in the statistics (too few samples) gives no line.
+    expect(cold).not.toContain('first call 900 ms');
   });
 });

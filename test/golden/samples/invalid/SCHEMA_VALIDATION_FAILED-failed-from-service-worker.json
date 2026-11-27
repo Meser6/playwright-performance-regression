@@ -23,7 +23,7 @@
         "url": "https://app.example/api/orders"
       }
     ],
-    "schemaVersion": 3
+    "schemaVersion": 4
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

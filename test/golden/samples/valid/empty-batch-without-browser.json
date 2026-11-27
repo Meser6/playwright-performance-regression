@@ -9,7 +9,7 @@
     },
     "diagnostics": [],
     "requests": [],
-    "schemaVersion": 3
+    "schemaVersion": 4
   },
   "expected": {
     "ok": true

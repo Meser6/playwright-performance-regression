@@ -25,6 +25,38 @@ changes and are always listed with migration steps:
 After upgrading, run the thresholds job in CI (`PW_PERF_MODE=thresholds` with your test command)
 and review the diff before committing anything.
 
+### From 1.0.x to 1.1.0
+
+`1.1.0` adds features and changes no option you already set, but it changes the file formats and
+two defaults that move the statistics a little. Upgrade every machine and CI job that reads the
+thresholds files at the same time, then derive thresholds once.
+
+1. **Formats are migrated for you.** The run report is now `schemaVersion` 5, the thresholds files
+   3, the per-pass sample files 4. Older files are read and migrated in memory (an old thresholds
+   file warns with `THRESHOLDS_FILE_OUTDATED`); the next thresholds run writes them in the new
+   format, also for entries whose limits it keeps. `1.0.x` refuses a version 3 thresholds file with
+   `SCHEMA_VERSION_TOO_NEW`, so do not commit new files before every job runs `1.1.0`.
+2. **Cold samples are on by default** (`measure.coldSamples: 1`): the first sample of every key in
+   each pass stays out of the evaluated statistics and the derived thresholds when enough warm
+   samples remain ([Thresholds](thresholds.md#fast-failures-and-workload-changes)). Percentiles without a
+   slow first call are a bit lower, so the first thresholds run after the upgrade may lower some
+   limits slightly; review the diff as usual. Thresholds files from `1.0.x` are compared without a
+   `coldSamples` warning. To keep the `1.0.x` behaviour, set `measure: { coldSamples: 0 }`.
+3. **The `nonSuccess` rule needs a new thresholds run.** It fails a key whose share of responses
+   outside `measure.successStatuses` (fast 401s, 500s) grew, but only for entries with
+   `maxNonSuccessRate`, which a thresholds run of `1.1.0` writes. Until then nothing changes for
+   your keys (except with `checks.nonSuccess.limit.api`). The same run adds the `source` block
+   that the workload context (`THRESHOLDS_WORKLOAD_SHIFT`, the `Workload:` line) compares with.
+   New warnings you may see: `THRESHOLDS_ENTRY_NOT_TIMED`, `THRESHOLDS_WORKLOAD_SHIFT`,
+   `STATS_COLD_SLOW` ([Troubleshooting](troubleshooting.md)).
+4. **Keys per GraphQL operation or tRPC procedure are opt-in.** Without
+   [`keys.operations`](configuration.md#keysoperations) every key stays as it was. When you add it,
+   the matched endpoints get new keys (`POST /graphql#GetTickets`): derive thresholds again and
+   remove the old shared key with `PW_PERF_PRUNE=1` in a thresholds run of the full suite.
+5. **Sharded runs work.** `--shard` in a measurement run no longer stops with `RUN_SHARDED`: each
+   shard writes a shard file and a merge job runs `PW_PERF_MODE=merge npx pw-perf`
+   ([Sharded runs](ci.md#sharded-runs)). Runs without `--shard` are unchanged.
+
 ### From 0.1.0-next.x to 1.0.0
 
 `1.0.0` is the first stable release, under the `latest` dist-tag. The `0.1.0-next.N` versions were

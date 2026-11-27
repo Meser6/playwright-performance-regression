@@ -55,6 +55,8 @@ export interface FakeHostOptions {
   prompt?: () => Prompt;
   /** process.stdout.columns of the host (unset: not reported). */
   columns?: number;
+  /** The shard merge (17-REQ-12); without it the merge fails the test. */
+  runMerge?: () => Promise<number>;
 }
 
 export function fakeCliHost(options: FakeHostOptions): FakeHost {
@@ -144,6 +146,10 @@ export function fakeCliHost(options: FakeHostOptions): FakeHost {
     createPrompt: () => {
       if (options.prompt === undefined) throw new Error('no terminal');
       return options.prompt();
+    },
+    runMerge: async () => {
+      if (options.runMerge === undefined) throw new Error('unexpected merge');
+      return options.runMerge();
     },
   };
   return fake;

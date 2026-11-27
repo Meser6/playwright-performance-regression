@@ -4,13 +4,16 @@ import type { BrowserContext, Page, Request, Response } from '@playwright/test';
 import type { ResolvedConfig } from '../core/config/index.ts';
 import { ABORT_FAILURE_TEXTS, CONTEXT_CLOSED_FAILURE_TEXT } from '../core/types/index.ts';
 import type { Diagnostics, RawRequestSample } from '../core/types/index.ts';
-import { errorText } from './diagnostics.ts';
+import { errorText, operationUnknown } from './diagnostics.ts';
+import { readOperation } from './operations.ts';
 import { shouldTrack } from './filters.ts';
 import { computeTiming, partialTiming } from './timing.ts';
 import type { RequestTimingInput } from './timing.ts';
 
 export interface CollectorOptions {
   measure: ResolvedConfig['measure'];
+  /** keys.operations (18); empty: no operation names and no `operation` field. Default []. */
+  operations?: ResolvedConfig['keys']['operations'];
   /** performance.now(), injected for tests. */
   now: () => number;
   /** Date.now(), injected for tests; startTime when the browser gives none. */
@@ -34,7 +37,12 @@ interface InFlight {
   response: Response | null;
   /** requestfinished arrived and the sample is being computed. */
   settling: boolean;
+  /** Operation names read at the request event (18-REQ-07); only the names are kept. */
+  operation: OperationField;
 }
+
+/** The `operation` field of a sample: absent while keys.operations is empty (18-REQ-09). */
+type OperationField = Pick<RawRequestSample, 'operation'>;
 
 const NO_TIMING: RequestTimingInput = {
   startTime: -1,
@@ -149,7 +157,35 @@ export class RequestTracker {
       page: pageOf(request),
       response: null,
       settling: false,
+      operation: this.#operationOf(request),
     });
+  }
+
+  /**
+   * Operation names of a request (05-REQ-40, 18-REQ-07): the body is read, synchronously, only
+   * for a POST request matching a graphql entry, and dropped right after the names are taken.
+   */
+  #operationOf(request: Request): OperationField {
+    const entries = this.#opts.operations ?? [];
+    if (entries.length === 0) return {};
+    const method = request.method().toUpperCase();
+    let result: ReturnType<typeof readOperation>;
+    try {
+      result = readOperation(entries, {
+        method,
+        url: request.url(),
+        body: () => {
+          const text = request.postData();
+          return text === null ? null : { text };
+        },
+      });
+    } catch (error) {
+      this.#diag.add(operationUnknown(method, null, errorText(error)));
+      return { operation: null };
+    }
+    if (!result.matched) return { operation: null };
+    if (result.names === null) this.#diag.add(operationUnknown(method, result.entry.match));
+    return { operation: result.names };
   }
 
   #onResponse(response: Response): void {
@@ -195,6 +231,7 @@ export class RequestTracker {
       this.#settle(request);
       this.#sink.finished({
         ...base(request),
+        ...entry.operation,
         status: response.status(),
         ...timing,
         startTime: startTimeOf(timing.startTime, entry),
@@ -270,6 +307,7 @@ export class RequestTracker {
     if (entry.response !== null) {
       this.#sink.finished({
         ...base(request),
+        ...entry.operation,
         status: entry.response.status(),
         startTime,
         duration: null,
@@ -281,6 +319,7 @@ export class RequestTracker {
     }
     this.#sink.pending({
       ...base(request),
+      ...entry.operation,
       status: 'PENDING',
       startTime,
       duration: null,
@@ -334,6 +373,7 @@ function failed(
 ): RawRequestSample {
   return {
     ...base(request),
+    ...entry.operation,
     status: 'FAILED',
     failureText,
     startTime: startTimeOf(Math.round(timing.startTime), entry),

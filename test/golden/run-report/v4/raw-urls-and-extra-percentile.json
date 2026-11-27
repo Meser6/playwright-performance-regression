@@ -1,0 +1,587 @@
+{
+  "ci": {
+    "branch": "main",
+    "buildUrl": "https://github.com/o/r/actions/runs/1",
+    "commit": "abc123",
+    "provider": "github"
+  },
+  "config": {
+    "run": {
+      "env": null,
+      "passes": {
+        "test": 5,
+        "thresholds": 10
+      },
+      "grep": null,
+      "keepReporters": []
+    },
+    "measure": {
+      "resourceTypes": [
+        "document",
+        "xhr",
+        "fetch"
+      ],
+      "ignoreExtensions": [
+        ".js",
+        ".mjs",
+        ".css",
+        ".map",
+        ".html",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".webp",
+        ".avif",
+        ".ico",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".otf",
+        ".eot"
+      ],
+      "include": [],
+      "exclude": [
+        "/socket.io/"
+      ],
+      "excludeKnownThirdParty": true,
+      "successStatuses": [
+        "2xx",
+        "3xx"
+      ],
+      "pendingTimeoutMs": 2000,
+      "steps": {
+        "enabled": false,
+        "include": [],
+        "exclude": [],
+        "maxDepth": 3,
+        "categories": [
+          "test.step"
+        ],
+        "groupBy": "step",
+        "normalizeTitles": true,
+        "redactQuotedValues": false
+      }
+    },
+    "keys": {
+      "origins": {},
+      "idPatterns": {
+        "number": true,
+        "uuid": true,
+        "hex": true,
+        "token": true,
+        "mixed": true,
+        "email": true
+      },
+      "extraIdPatterns": [],
+      "query": "names",
+      "keepQueryValues": [],
+      "dropQueryParams": []
+    },
+    "checks": {
+      "time": {
+        "median": {
+          "enabled": true,
+          "minSamples": 5,
+          "margin": {
+            "relative": 0.4,
+            "minMs": 100,
+            "smallSampleRelative": 0.8
+          },
+          "limit": {
+            "api": 2000,
+            "step": 10000
+          }
+        },
+        "percentile": {
+          "enabled": true,
+          "minSamples": 20,
+          "level": "p95",
+          "limit": {
+            "api": 2000,
+            "step": 15000
+          },
+          "margin": {
+            "relative": 0.4,
+            "minMs": 100,
+            "smallSampleRelative": 0.8
+          }
+        },
+        "p99": {
+          "enabled": true,
+          "minSamples": 100,
+          "margin": {
+            "relative": 0.2,
+            "minGapMs": 50,
+            "minGapRelative": 0.1
+          },
+          "limit": {
+            "api": 4000,
+            "step": 30000
+          }
+        }
+      },
+      "slowShare": {
+        "t": {
+          "api": {
+            "min": 500,
+            "max": 2000,
+            "medianFactor": 2
+          },
+          "step": {
+            "min": 1000,
+            "max": 10000,
+            "medianFactor": 2
+          }
+        },
+        "apdex": {
+          "enabled": true,
+          "minSamples": 20,
+          "margin": {
+            "absolute": 0.05,
+            "smallSampleAbsolute": 0.1
+          },
+          "limit": {
+            "api": 0.85,
+            "step": 0.85
+          }
+        },
+        "wilson": {
+          "enabled": true,
+          "minSamples": 20,
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.03,
+            "max": 0.15,
+            "smallSampleMin": 0.1
+          },
+          "limit": {
+            "api": 0.05,
+            "step": 0.05
+          }
+        }
+      },
+      "errors": {
+        "enabled": true,
+        "minSamples": 5,
+        "statuses": [
+          "5xx",
+          "FAILED",
+          "PENDING"
+        ],
+        "limit": {
+          "api": 0.05,
+          "step": 0.05
+        },
+        "margin": {
+          "factor": 1.5,
+          "add": 0.02,
+          "min": 0.05
+        }
+      }
+    },
+    "gate": {
+      "tolerance": 0,
+      "hardLimitFactor": 2,
+      "defaultThresholds": "block",
+      "maxFailedTestShare": 0.1
+    },
+    "thresholds": {
+      "preset": "normal",
+      "dir": ".",
+      "filePrefix": "pw-perf-thresholds",
+      "update": "all",
+      "smallSampleN": 20,
+      "hysteresis": {
+        "relative": 0.1,
+        "ratio": 0.01
+      },
+      "loosenWarnRelative": 0.5
+    },
+    "report": {
+      "dir": "reports/pw-perf",
+      "html": true,
+      "rawUrls": true
+    },
+    "advanced": {
+      "maxSamplesPerKey": 5000,
+      "seed": 1
+    }
+  },
+  "configDir": "/home/user/project",
+  "endpoints": {
+    "GET /api/tickets/:id": {
+      "count": 12,
+      "errorCount": 1,
+      "evaluation": {
+        "checks": [
+          {
+            "actual": 180.2,
+            "blocking": false,
+            "hardLimitExceeded": false,
+            "limit": 900,
+            "n": 10,
+            "observed": null,
+            "passed": true,
+            "rule": "median",
+            "usage": 0.2002
+          },
+          {
+            "actual": 0.0149,
+            "blocking": false,
+            "hardLimitExceeded": false,
+            "limit": 0.05,
+            "n": 12,
+            "observed": 0.083,
+            "passed": true,
+            "rule": "errors",
+            "usage": 0.298
+          }
+        ],
+        "limits": {
+          "maxErrorRate": 0.05,
+          "maxWilson": 0.05,
+          "median": 900,
+          "minApdex": 0.85,
+          "p99": 2100,
+          "percentile": 1400,
+          "t": 500
+        },
+        "muted": {
+          "expired": false,
+          "note": "Known slow",
+          "until": "2026-12-31"
+        },
+        "reason": null,
+        "result": "pass",
+        "thresholdSource": "file"
+      },
+      "fromFailedTests": 0,
+      "samples": {
+        "durations": [
+          150.1,
+          160,
+          170.5,
+          175,
+          180.2,
+          182.4,
+          190,
+          200,
+          210.3,
+          250
+        ],
+        "sampled": false
+      },
+      "slowest": [
+        {
+          "duration": 250,
+          "startedAt": "2026-11-18T10:01:00.123Z",
+          "test": {
+            "file": "tests/tickets.spec.ts",
+            "line": 12,
+            "project": "chromium",
+            "repeatEachIndex": 3,
+            "title": "tickets › opens a ticket"
+          },
+          "url": "https://app.example/api/tickets/42"
+        }
+      ],
+      "stats": {
+        "avg": 186.9,
+        "max": 250,
+        "min": 150.1,
+        "percentiles": {
+          "p50": 180.2,
+          "p90": 210.3,
+          "p95": 250,
+          "p99": 250,
+          "p99.9": 250
+        }
+      },
+      "statuses": {
+        "200": 10,
+        "500": 1,
+        "ABORTED": 1
+      },
+      "successCount": 10,
+      "testCount": 2,
+      "timeSources": {
+        "browser": 12,
+        "node": 0
+      },
+      "topTests": [
+        {
+          "file": "tests/tickets.spec.ts",
+          "line": 12,
+          "project": "chromium",
+          "sampleCount": 10,
+          "title": "tickets › opens a ticket"
+        }
+      ],
+      "ttfb": {
+        "p50": 120.5,
+        "p95": 200,
+        "otherP50": 59.7
+      },
+      "histogram": {
+        "edges": [
+          146.8,
+          154,
+          161.6,
+          169.5,
+          177.8,
+          186.6,
+          195.7,
+          205.4,
+          215.4,
+          226,
+          237.1,
+          248.8,
+          261
+        ],
+        "counts": [
+          1,
+          1,
+          0,
+          2,
+          2,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "hints": []
+    }
+  },
+  "steps": {},
+  "env": "qa",
+  "evaluation": {
+    "counts": {
+      "api": {
+        "blockingViolations": 1,
+        "fileEntriesNotEvaluated": 0,
+        "fromDefaults": 1,
+        "fromFile": 1,
+        "keys": 2,
+        "medianOnly": 0,
+        "muted": 1,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 1
+      },
+      "step": {
+        "blockingViolations": 0,
+        "fileEntriesNotEvaluated": 0,
+        "fromDefaults": 0,
+        "fromFile": 0,
+        "keys": 0,
+        "medianOnly": 0,
+        "muted": 0,
+        "notEvaluated": 0,
+        "tooFewSamples": 0,
+        "unseenThresholdEntries": 0,
+        "violations": 0
+      }
+    },
+    "gateEnabled": true,
+    "status": "failed"
+  },
+  "finishedAt": "2026-11-18T10:05:00.000Z",
+  "host": {
+    "arch": "x64",
+    "ci": true,
+    "cpuCount": 4,
+    "cpuModel": "AMD EPYC 7763 64-Core Processor",
+    "platform": "linux",
+    "nodeVersion": "v22.18.0"
+  },
+  "mode": "test",
+  "normalization": "0123456789abcd",
+  "stepNormalization": null,
+  "origins": [
+    {
+      "label": "",
+      "origin": "https://app.example",
+      "requestCount": 17
+    }
+  ],
+  "playwright": {
+    "version": "1.57.0"
+  },
+  "passes": {
+    "planned": 1,
+    "completed": 1,
+    "failed": []
+  },
+  "runConditions": {
+    "overriddenSettings": [],
+    "projects": [
+      {
+        "browserName": "chromium",
+        "name": "chromium",
+        "repeatEach": 5,
+        "retries": 0,
+        "role": "measured"
+      }
+    ],
+    "workers": 1
+  },
+  "runId": "run-1",
+  "schemaVersion": 4,
+  "startedAt": "2026-11-18T10:00:00.000Z",
+  "thresholdFiles": [
+    {
+      "generated": {
+        "browsers": [
+          "chromium"
+        ],
+        "derivation": {
+          "margins": {
+            "apdex": {
+              "absolute": 0.05,
+              "smallSampleAbsolute": 0.1
+            },
+            "errors": {
+              "add": 0.02,
+              "factor": 1.5,
+              "min": 0.05
+            },
+            "median": {
+              "minMs": 100,
+              "relative": 0.4,
+              "smallSampleRelative": 0.8
+            },
+            "p99": {
+              "minGapMs": 50,
+              "minGapRelative": 0.1,
+              "relative": 0.2
+            },
+            "percentile": {
+              "minMs": 100,
+              "relative": 0.4,
+              "smallSampleRelative": 0.8
+            },
+            "wilson": {
+              "add": 0.02,
+              "factor": 1.5,
+              "max": 0.15,
+              "min": 0.03,
+              "smallSampleMin": 0.1
+            }
+          },
+          "smallSampleN": 20,
+          "t": {
+            "max": 2000,
+            "medianFactor": 2,
+            "min": 500
+          }
+        },
+        "env": null,
+        "evaluatedPercentile": "p95",
+        "host": {
+          "arch": "x64",
+          "ci": true,
+          "cpuCount": 4,
+          "cpuModel": "AMD EPYC 7763 64-Core Processor",
+          "platform": "linux"
+        },
+        "normalization": "0a3f9c21d47b6e",
+        "playwrightVersion": "1.57.0",
+        "sourceRunId": "2026-11-18T10-00-00-a1b2",
+        "sourceRunStartedAt": "2026-11-18T10:00:00.000Z",
+        "sourceSampleCount": 1200,
+        "tool": {
+          "name": "playwright-performance-regression",
+          "version": "0.1.0"
+        }
+      },
+      "kind": "api",
+      "path": "pw-perf-thresholds.api.qa.json",
+      "status": "loaded",
+      "unseenKeys": [
+        "GET /api/legacy"
+      ]
+    }
+  ],
+  "toolErrors": [],
+  "tests": {
+    "expected": 3,
+    "flaky": 0,
+    "skipped": 0,
+    "status": "passed",
+    "unexpected": 0
+  },
+  "tool": {
+    "name": "playwright-performance-regression",
+    "version": "0.1.0"
+  },
+  "warnings": [
+    {
+      "code": "THRESHOLDS_MUTED",
+      "count": 1,
+      "message": "1 key is muted."
+    }
+  ],
+  "testBreakdown": {
+    "tests": [
+      {
+        "title": "tickets › opens a ticket",
+        "project": "chromium",
+        "file": "tests/tickets.spec.ts",
+        "line": 12,
+        "executions": 5,
+        "requestCount": 10,
+        "errorCount": 0,
+        "totalMs": 1765.9,
+        "maxRequestMs": 210.3,
+        "keyCount": 1,
+        "topKeys": [
+          {
+            "key": "GET /api/tickets/:id",
+            "count": 10,
+            "totalMs": 1765.9
+          }
+        ],
+        "violatedKeys": [],
+        "violatedKeyCount": 0
+      }
+    ],
+    "omitted": 0,
+    "waterfalls": [
+      {
+        "test": {
+          "title": "tickets › opens a ticket",
+          "project": "chromium",
+          "file": "tests/tickets.spec.ts",
+          "line": 12,
+          "repeatEachIndex": 2
+        },
+        "totalMs": 380.2,
+        "requestCount": 2,
+        "spanMs": 473,
+        "requests": [
+          {
+            "offset": 150,
+            "duration": 180.2,
+            "key": "GET /api/tickets/:id",
+            "status": "200"
+          },
+          {
+            "offset": 273,
+            "duration": 200,
+            "key": "GET /api/tickets/:id",
+            "status": "200"
+          }
+        ],
+        "omitted": 0
+      }
+    ]
+  }
+}

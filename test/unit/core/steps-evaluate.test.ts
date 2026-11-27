@@ -160,7 +160,7 @@ describe('10-AC-19 step thresholds file', () => {
     const before = existing(
       undefined,
       loadedFile({
-        schemaVersion: 2,
+        schemaVersion: 3,
         kind: 'step',
         generated: null,
         entries: { pay: { median: 900 } },
@@ -209,7 +209,7 @@ describe('09-AC-35 empty thresholds files (04-REQ-75)', () => {
 describe('10-AC-22 derivation over the empty files of the wizard', () => {
   const report = runReport({ endpoints: { 'GET /api/a': { durations: [[30, 100]] } } });
   const empty = (kind: 'api' | 'step') =>
-    loadedFile({ schemaVersion: 2, kind, generated: null, entries: {} });
+    loadedFile({ schemaVersion: 3, kind, generated: null, entries: {} });
 
   test('writes the same entries as a first derivation, updated, without THRESHOLDS_MANUAL_FILE', () => {
     const first = deriveThresholds(report, STEPS_ON, existing(), deriveOptions());
@@ -284,6 +284,27 @@ describe('09-AC-36 keys without an entry on default thresholds (09-REQ-36)', () 
     expect(onDefaults(one).map((w) => w.message)).toEqual([
       '1 endpoint key has no entry in pw-perf-thresholds.json and is evaluated with default thresholds: GET /api/a.',
       '1 step key has no entry in pw-perf-thresholds.steps.json and is evaluated with default thresholds: login › submit.',
+    ]);
+  });
+
+  test('a key without successful samples (intentional 404s) is not listed', () => {
+    const e = evaluate(
+      {
+        endpoints: aggregates({
+          'GET /api/entry': { durations: [[30, 100]] },
+          'GET /api/a': { durations: [[30, 100]] },
+          'request GET /api/missing': { other: 10 },
+        }).endpoints,
+      },
+      files(withEntry(), missing('step')),
+      STEPS_OFF,
+      options(),
+    );
+    // Evaluated by the errors rule on default thresholds, but a thresholds run gives it no entry.
+    expect(e.perKey.api['request GET /api/missing']?.thresholdSource).toBe('default');
+    expect(e.perKey.api['request GET /api/missing']?.result).toBe('pass');
+    expect(onDefaults(e).map((w) => w.message)).toEqual([
+      '1 endpoint key has no entry in pw-perf-thresholds.json and is evaluated with default thresholds: GET /api/a.',
     ]);
   });
 

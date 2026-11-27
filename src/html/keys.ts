@@ -2,6 +2,7 @@
 // (11-REQ-09) and its details block, a <details> under the row that the script shows in the key
 // dialog (11-REQ-37).
 import { overText } from '../core/format/violation.ts';
+import { COLD_WARN_RATIO, REQUEST_KEY_PREFIX } from '../core/types/index.ts';
 import type { Check, KeyEvaluation, RunReport } from '../core/types/index.ts';
 import { percentileBar } from './bar.ts';
 import { histogramSvg, ttfbSplitSvg } from './charts.ts';
@@ -33,7 +34,7 @@ export { KEY_COLUMN_MAX } from './context.ts';
 export const NEAR_LIMIT = 0.9;
 
 /** Error statuses when the config snapshot omits them: the schema default (03). */
-const DEFAULT_ERROR_STATUSES = ['5xx', 'FAILED', 'PENDING'];
+export const DEFAULT_ERROR_STATUSES = ['5xx', 'FAILED', 'PENDING'];
 
 const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'median',
@@ -97,6 +98,7 @@ const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ]);
 
 /**
@@ -128,11 +130,13 @@ export function usageMeter(
 
 /**
  * A value of a check (11-REQ-19): a time for the time rules, a percentage for the error rate and
- * a share with three decimals for Apdex and the slow share.
+ * the non-success share (11-REQ-61), and a share with three decimals for Apdex and the slow share.
  */
 export function checkValue(check: Pick<Check, 'rule'>, value: number): string {
   if (TIME_RULES.has(check.rule)) return formatMs(value);
-  return check.rule === 'errors' ? formatPercent(value) : formatRatio(value);
+  return check.rule === 'errors' || check.rule === 'nonSuccess'
+    ? formatPercent(value)
+    : formatRatio(value);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -385,7 +389,7 @@ function ttfbSplit(agg: HtmlAggregate): SafeHtml | null {
 }
 
 /** Whether a status label counts as an error (`checks.errors.statuses`, 08). */
-function isErrorStatus(label: string, statuses: readonly string[]): boolean {
+export function isErrorStatus(label: string, statuses: readonly string[]): boolean {
   return statuses.some(
     (s) => s === label || (/^\dxx$/u.test(s) && /^\d{3}$/u.test(label) && s[0] === label[0]),
   );
@@ -447,16 +451,135 @@ function statusesPart(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate)
   );
 }
 
+/**
+ * "First call 1,840 ms" or "First 5 calls 1,840 ms, 1,620 ms, … · max 1,840 ms": at most 5
+ * durations, "…" when there are more cold samples (11-REQ-61).
+ */
+function coldCalls(cold: NonNullable<HtmlAggregate['cold']>): string {
+  if (cold.count === 1) return `First call ${cold.durations.map(formatMs).join(', ')}`;
+  const more = cold.count > cold.durations.length ? ', …' : '';
+  return `First ${String(cold.count)} calls ${cold.durations.map(formatMs).join(', ')}${more} · max ${formatMs(cold.max)}`;
+}
+
+/** Cold vs warm (11-REQ-61): the cold samples next to the warm median. */
+function coldPart(agg: HtmlAggregate): SafeHtml | null {
+  const cold = agg.cold;
+  if (cold === null) return null;
+  const slow = cold.ratio !== null && cold.ratio >= COLD_WARN_RATIO;
+  return part(
+    'Cold vs warm',
+    'first calls in each pass',
+    html`<p class="cw">${coldCalls(cold)}`,
+    cold.warmP50 === null
+      ? null
+      : // Only cold samples (a key called once per pass): their p50 (08-REQ-43).
+        html` · ${!cold.excluded && cold.count === agg.successCount ? 'p50 of all samples' : 'warm p50'} ${formatMs(cold.warmP50)}`,
+    cold.ratio === null
+      ? null
+      : html` · <b${slow ? html` class="wv"` : null}>×${cold.ratio.toFixed(1)}</b>`,
+    html`</p><p class="facts"><span>First cold sample: ${testRef(cold.test)}</span><span>${
+      cold.excluded
+        ? 'Cold samples are not evaluated.'
+        : 'Too few warm samples to set the first calls apart: they are included in the statistics.'
+    }</span></p>`,
+  );
+}
+
+/**
+ * Unsuccessful responses (11-REQ-61): durations per status outside successStatuses; error
+ * statuses (checks.errors.statuses) red, the others amber.
+ */
+function unsuccessfulPart(ctx: Ctx, agg: HtmlAggregate): SafeHtml | null {
+  if (agg.failedTimings.length === 0) return null;
+  const errors = ctx.report.config.checks?.errors?.statuses ?? DEFAULT_ERROR_STATUSES;
+  return part(
+    'Unsuccessful responses',
+    agg.nonSuccessCount === null ? null : plural(agg.nonSuccessCount, 'response'),
+    html`<div class="ct" tabindex="0"><table class="ck ft"><caption>Unsuccessful responses</caption><thead><tr><th scope="col">Status</th><th scope="col" class="num">Samples</th><th scope="col" class="num">p50</th><th scope="col" class="num">p95</th></tr></thead><tbody>${agg.failedTimings.map(
+      (f) =>
+        html`<tr><th scope="row" class="${isErrorStatus(String(f.status), errors) ? 'ev' : 'wv'}">${f.status}</th><td>${f.count}</td><td>${formatMs(f.p50)}</td><td>${formatMs(f.p95)}</td></tr>`,
+    )}</tbody></table></div>`,
+    html`<p class="legend">Not part of the time statistics; the nonSuccess and errors rules count them.</p>`,
+  );
+}
+
+/** Compared with the thresholds run (11-REQ-61): samples, per pass, share, passes and workers. */
+function workloadPart(kind: LinkKind, agg: HtmlAggregate): SafeHtml | null {
+  const w = agg.evaluation.workload;
+  if (w === null) return null;
+  const perPass = (side: typeof w.base): string => (side.count / side.passes).toFixed(1);
+  const row = (label: string, base: HtmlValue, now: HtmlValue, warn = false): SafeHtml =>
+    html`<tr${warn ? html` class="wv"` : null}><th scope="row">${label}</th><td>${base}</td><td>${now}</td></tr>`;
+  return part(
+    'Compared with the thresholds run',
+    w.perPassRatio === null ? null : `×${w.perPassRatio.toFixed(2)} samples per pass`,
+    html`<div class="ct" tabindex="0"><table class="ck ft"><caption>Compared with the thresholds run</caption><thead><tr><th scope="col"></th><th scope="col" class="num">Thresholds run</th><th scope="col" class="num">This run</th></tr></thead><tbody>${[
+      row('Samples', w.base.count, w.now.count),
+      row('Per pass', perPass(w.base), perPass(w.now), w.shifted),
+      row(
+        `Share of ${KIND_LABEL[kind]} traffic`,
+        formatPercent(w.base.share),
+        formatPercent(w.now.share),
+      ),
+      row(
+        'Passes · workers',
+        `${String(w.base.passes)} · ${String(w.base.workers)}`,
+        `${String(w.now.passes)} · ${String(w.now.workers)}`,
+      ),
+    ]}</tbody></table></div>`,
+    w.shifted
+      ? html`<p class="legend">The key gets a different number of samples per pass than in the thresholds run, which changes its percentiles without a change of the application.</p>`
+      : null,
+  );
+}
+
+/** Samples from which a GraphQL or tRPC look-alike key gets the keys.operations hint (18-REQ-13). */
+export const OPERATIONS_HINT_MIN_SAMPLES = 20;
+
+/**
+ * The keys.operations hint (18-REQ-13): a POST key whose path ends with /graphql or has a trpc
+ * segment, with enough samples, while keys.operations is empty. Null otherwise.
+ */
+export function operationsHint(
+  ctx: Pick<Ctx, 'report'>,
+  kind: LinkKind,
+  key: string,
+  count: number,
+): string | null {
+  if (kind !== 'api' || count < OPERATIONS_HINT_MIN_SAMPLES) return null;
+  const operations = ctx.report.config.keys?.operations;
+  if (operations !== undefined && operations.length > 0) return null;
+  const plain = key.startsWith(REQUEST_KEY_PREFIX) ? key.slice(REQUEST_KEY_PREFIX.length) : key;
+  if (!plain.startsWith('POST ')) return null;
+  const slash = plain.indexOf('/');
+  if (slash < 0) return null;
+  const path = plain.slice(slash).split(/[?#]/u, 1)[0] ?? '';
+  const name = path.endsWith('/graphql')
+    ? 'GraphQL'
+    : path.split('/').includes('trpc')
+      ? 'tRPC'
+      : null;
+  if (name === null) return null;
+  return `This looks like ${name}: one key mixes all operations. Set keys.operations to get a key per operation (docs/configuration.md#operations).`;
+}
+
 /** Content of the details block of a key (11-REQ-60). */
 export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
   const hints = ctx.migrated ? [] : agg.hints;
+  const texts = hints.map((h) => hintText(h, ctx.level, agg.evaluation.muted, kind));
+  const operations = operationsHint(ctx, kind, key, agg.count);
+  if (operations !== null) texts.push(operations);
   return join(
     html`<div class="kd">`,
     keyHeader(ctx, kind, key, agg),
-    hints.length === 0
+    texts.length === 0
       ? null
-      : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted, kind)}</li>`)}</ul>`,
+      : html`<ul class="hints">${texts.map((t) => html`<li>${icon('bulb')}${t}</li>`)}</ul>`,
     statsGrid(ctx, kind, agg),
+    // 1.1.0 (11-REQ-61): after the stats grid, before the histogram.
+    coldPart(agg),
+    unsuccessfulPart(ctx, agg),
+    workloadPart(kind, agg),
     distribution(ctx, agg),
     checksTable(ctx, kind, agg),
     kind === 'api' ? ttfbSplit(agg) : null,

@@ -113,6 +113,18 @@
             },
             "minSamples": 20
           }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          }
         }
       },
       "gate": {
@@ -183,7 +195,8 @@
           "groupBy": "step",
           "normalizeTitles": true,
           "redactQuotedValues": false
-        }
+        },
+        "coldSamples": 0
       },
       "report": {
         "dir": "reports/pw-perf",
@@ -209,7 +222,10 @@
         },
         "loosenWarnRelative": 0.5,
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/work/app",
@@ -260,12 +276,14 @@
             "minApdex": null,
             "p99": 10,
             "percentile": 1,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -337,7 +355,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/organizations/:id/projects/:id/environments/:id/deployments?filter&include&page&sort": {
         "count": 20,
@@ -385,12 +406,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 2500,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -462,7 +485,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/rare": {
         "count": 2,
@@ -476,12 +502,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 400,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": "too-few-samples",
           "result": "not-evaluated",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -523,7 +551,10 @@
             2
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/search": {
         "count": 100,
@@ -604,12 +635,14 @@
             "minApdex": 0.9,
             "p99": 4000,
             "percentile": 2000,
-            "t": 300
+            "t": 300,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -803,7 +836,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/tickets/:id?search": {
         "count": 40,
@@ -873,12 +909,14 @@
             "minApdex": 0.85,
             "p99": 4000,
             "percentile": 1400,
-            "t": 2000
+            "t": 2000,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -998,7 +1036,10 @@
             4
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/users": {
         "count": 20,
@@ -1046,12 +1087,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 400,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "pass",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -1111,7 +1154,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "GET /api/users/:id": {
         "count": 8,
@@ -1148,12 +1194,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 2000,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "pass",
-          "thresholdSource": "default"
+          "thresholdSource": "default",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -1201,7 +1249,10 @@
             8
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       },
       "POST /api/orders": {
         "count": 5,
@@ -1227,12 +1278,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 3000,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -1288,7 +1341,10 @@
             3
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 2,
+        "failedTimings": []
       },
       "POST /api/reports/export": {
         "count": 20,
@@ -1336,7 +1392,8 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 2000,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": {
             "expired": false,
@@ -1345,7 +1402,8 @@
           },
           "reason": null,
           "result": "fail",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -1405,7 +1463,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       }
     },
     "steps": {},
@@ -1463,6 +1524,7 @@
       "completed": 1,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "overriddenSettings": [
         "retries"
@@ -1479,7 +1541,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 127,

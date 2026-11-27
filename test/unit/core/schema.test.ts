@@ -11,7 +11,12 @@ import {
   schemaIssueToIssue,
 } from '../../../src/core/schema/index.ts';
 import { constant, int, obj, str } from '../../../src/core/schema/dsl.ts';
-import { migrate, parseVersioned, RUN_REPORT_FORMAT } from '../../../src/core/schema/parse.ts';
+import {
+  migrate,
+  migrateRunReportV3,
+  parseVersioned,
+  RUN_REPORT_FORMAT,
+} from '../../../src/core/schema/parse.ts';
 import type { VersionedFormat } from '../../../src/core/schema/parse.ts';
 import { GOLDEN_DIR, loadCases, oldVersionDirs } from '../../contract/golden.ts';
 import type { Format } from '../../contract/golden.ts';
@@ -45,14 +50,14 @@ const fakeFormat: VersionedFormat = {
 };
 
 describe('schemaVersion handling (02-REQ-10)', () => {
-  test('sample batch v3, run report v4, thresholds file v2, outcome file v1 (02-REQ-11, 02-REQ-40)', () => {
-    expect(SCHEMA_VERSIONS).toEqual({ samples: 3, runReport: 4, thresholds: 2, outcome: 1 });
+  test('sample batch v4, run report v5, thresholds file v3, outcome file v1 (02-REQ-11, 02-REQ-40, 02-REQ-43)', () => {
+    expect(SCHEMA_VERSIONS).toEqual({ samples: 4, runReport: 5, thresholds: 3, outcome: 1 });
   });
 
   test('02-AC-03 a newer schemaVersion gives SCHEMA_VERSION_TOO_NEW for every migrating format', () => {
     const results = [
-      parseRunReport(text({ ...report, schemaVersion: 5 }), 'report.json'),
-      parseThresholdsFile(text({ ...thresholds, schemaVersion: 3 }), 't.json', 'api'),
+      parseRunReport(text({ ...report, schemaVersion: 6 }), 'report.json'),
+      parseThresholdsFile(text({ ...thresholds, schemaVersion: 4 }), 't.json', 'api'),
       parseOutcome(text({ ...outcome, schemaVersion: 2 }), 'outcome.json'),
     ];
     for (const result of results) {
@@ -133,8 +138,8 @@ describe('schemaVersion handling (02-REQ-10)', () => {
 });
 
 describe('sample batch (02-REQ-13)', () => {
-  test('02-AC-13 02-AC-22 schemaVersion 0, 1 or 2 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
-    for (const version of [0, 1, 2]) {
+  test('02-AC-13 02-AC-22 schemaVersion 0 to 3 gives SCHEMA_VERSION_MISMATCH and a tool error entry', () => {
+    for (const version of [0, 1, 2, 3]) {
       const result = parseSampleBatch(text({ ...batch, schemaVersion: version }), 'tickets › open');
       expect(result.ok).toBe(false);
       if (result.ok) continue;
@@ -146,7 +151,7 @@ describe('sample batch (02-REQ-13)', () => {
       const toolError = schemaIssueToIssue(issue);
       expect(toolError).toEqual({
         code: 'SCHEMA_VERSION_MISMATCH',
-        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 3`,
+        message: `tickets › open: sample batch has schemaVersion ${version}, but this package version reads only 4`,
         hint: expect.stringContaining('one package version'),
       });
     }
@@ -469,6 +474,18 @@ describe('run report version 2 (02-REQ-30, 02-REQ-31)', () => {
   });
 });
 
+/** Aggregates without the fields the v4 → v5 migration adds (02-REQ-43). */
+function withoutV5Fields(aggregates: unknown): unknown {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(aggregates as Record<string, Json>)) {
+    const { cold: _c, nonSuccessCount: _n, failedTimings: _f, evaluation, ...rest } = value;
+    const { workload: _w, limits, ...ev } = evaluation as Json;
+    const { maxNonSuccessRate: _m, ...lim } = limits as Json;
+    out[key] = { ...rest, evaluation: { ...ev, limits: lim } };
+  }
+  return out;
+}
+
 describe('formats without custom measurements (02-REQ-33, D-32)', () => {
   const raw = (...path: string[]): string => readFileSync(join(GOLDEN_DIR, ...path), 'utf8');
   const reportV2Text = raw('run-report', 'v2', 'full-run.json');
@@ -489,7 +506,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const result = parseRunReport(reportV2Text, 'v2.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     const migrated = result.value as unknown as Json & typeof reportV2;
-    expect(migrated['schemaVersion']).toBe(4);
+    expect(migrated['schemaVersion']).toBe(5);
     expect(migrated).not.toHaveProperty('custom');
     expect(migrated.evaluation.counts).not.toHaveProperty('custom');
     expect(migrated.thresholdFiles.map((f) => f.kind)).toEqual(
@@ -498,8 +515,8 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     // No custom limit or T is left in the config snapshot; warnings are kept as they are.
     expect(JSON.stringify(migrated['config'])).not.toContain('"custom"');
     expect(migrated['warnings']).toEqual(reportV2['warnings']);
-    // Everything else is unchanged.
-    expect(migrated['endpoints']).toEqual(reportV2['endpoints']);
+    // Everything else is unchanged, apart from the aggregate fields of 1.1.0 (02-REQ-43).
+    expect(withoutV5Fields(migrated['endpoints'])).toEqual(reportV2['endpoints']);
     expect(migrated['testBreakdown']).toEqual(reportV2['testBreakdown']);
   });
 
@@ -507,7 +524,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const result = parseRunReport(raw('run-report', 'v1', 'full-run.json'), 'v1.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     const migrated = result.value as unknown as Json & { evaluation: { counts: Json } };
-    expect(migrated['schemaVersion']).toBe(4);
+    expect(migrated['schemaVersion']).toBe(5);
     expect(migrated).not.toHaveProperty('custom');
     expect(migrated.evaluation.counts).not.toHaveProperty('custom');
     expect(JSON.stringify(migrated)).not.toMatch(/"kind":"custom"/u);
@@ -538,15 +555,16 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
       config: { run: Json; measure: Json; report: Json };
     };
     expect(before.config.run['projects']).toBe('auto');
+    // The current parser validates after every later step; the v3 → v4 step alone is compared.
     const result = parseRunReport(text, 'v3.json');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
-    const migrated = result.value as unknown as Json & { config: { run: Json } };
-    expect(migrated['schemaVersion']).toBe(4);
+    const migrated = migrateRunReportV3(JSON.parse(text) as Json) as Json & {
+      config: { run: Json };
+    };
     expect(migrated.config.run).not.toHaveProperty('projects');
     const { projects: _projects, ...run } = before.config.run;
     expect(migrated).toEqual({
       ...before,
-      schemaVersion: 4,
       config: {
         ...before.config,
         run: { ...run, overrideSlowMo: false },
@@ -582,14 +600,14 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     }
   });
 
-  test('02-AC-18 a v1 api thresholds file migrates to v2 with the same entries', () => {
+  test('02-AC-18 a v1 api thresholds file migrates to the current version with the same entries', () => {
     const v1Text = raw('thresholds', 'v1', 'generated-api-file.json');
     const v1 = JSON.parse(v1Text) as Json;
     expect(v1['schemaVersion']).toBe(1);
     const result = parseThresholdsFile(v1Text, 'pw-perf-thresholds.json', 'api');
     if (!result.ok) throw new Error(JSON.stringify(result.issues));
     expect(result.value.migratedFrom).toBe(1);
-    expect(result.value.file).toEqual({ ...v1, schemaVersion: 2 });
+    expect(result.value.file).toEqual({ ...v1, schemaVersion: 3 });
   });
 
   test('02-AC-18 a thresholds file of kind custom gives SCHEMA_VALIDATION_FAILED in v1 and v2', () => {
@@ -613,12 +631,65 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
     const old = parseSampleBatch(text(v1Input), 'login');
     expect(!old.ok && old.issues[0]?.code).toBe('SCHEMA_VERSION_MISMATCH');
     const withCustom = parseSampleBatch(
-      text({ ...v1Input, schemaVersion: 3, apiRequests: [] }),
+      text({ ...v1Input, schemaVersion: 4, apiRequests: [] }),
       'login',
     );
     expect(!withCustom.ok && withCustom.issues[0]).toMatchObject({
       code: 'SCHEMA_VALIDATION_FAILED',
       problems: [{ pointer: '', message: expect.stringContaining('custom') }],
     });
+  });
+});
+
+describe('formats of 1.1.0 (02-REQ-43)', () => {
+  const raw = (...path: string[]): string => readFileSync(join(GOLDEN_DIR, ...path), 'utf8');
+
+  test('02-AC-24 17-AC-09 v4 golden reports and v2 thresholds files migrate to v5 and v3 and validate', () => {
+    for (const file of readdirSync(join(GOLDEN_DIR, 'run-report', 'v4'))) {
+      const text = raw('run-report', 'v4', file);
+      const before = JSON.parse(text) as {
+        config: { measure?: { successStatuses?: string[] } };
+        endpoints: Record<string, { statuses: Record<string, number> }>;
+      };
+      const result = parseRunReport(text, file);
+      if (!result.ok) throw new Error(`${file}: ${JSON.stringify(result.issues)}`);
+      const report = result.value;
+      expect(report.schemaVersion, file).toBe(5);
+      // 17-AC-09: a v4 run was never merged from shards (17-REQ-26).
+      expect(report.shards, file).toBeNull();
+      // An old run did not set cold samples apart (02-REQ-43).
+      expect(report.config.measure?.coldSamples, file).toBe(0);
+      // An old run had no operation keys (02-REQ-43, 18-REQ-09).
+      expect(report.config.keys?.operations, file).toEqual([]);
+      for (const [key, aggregate] of Object.entries(report.endpoints)) {
+        const statuses = before.endpoints[key]?.statuses ?? {};
+        const outside = Object.entries(statuses)
+          .filter(([label]) => /^\d{3}$/u.test(label) && !/^[23]/u.test(label))
+          .reduce((sum, [, n]) => sum + n, 0);
+        expect(aggregate.cold, `${file} ${key}`).toBeNull();
+        expect(aggregate.nonSuccessCount, `${file} ${key}`).toBe(outside);
+        expect(aggregate.failedTimings, `${file} ${key}`).toEqual([]);
+        expect(aggregate.evaluation.workload, `${file} ${key}`).toBeNull();
+        expect(aggregate.evaluation.limits.maxNonSuccessRate, `${file} ${key}`).toBeNull();
+      }
+      for (const aggregate of Object.values(report.steps)) {
+        expect(aggregate.nonSuccessCount, file).toBeNull();
+      }
+    }
+    for (const file of readdirSync(join(GOLDEN_DIR, 'thresholds', 'v2'))) {
+      const text = raw('thresholds', 'v2', file);
+      const result = parseThresholdsFile(text, file, 'api');
+      if (!result.ok) throw new Error(`${file}: ${JSON.stringify(result.issues)}`);
+      expect(result.value.migratedFrom, file).toBe(2);
+      // No content change: the fields of 1.1.0 are optional.
+      expect(result.value.file, file).toEqual({ ...(JSON.parse(text) as Json), schemaVersion: 3 });
+    }
+  });
+
+  test('a sparse v4 snapshot without measure gets measure.coldSamples 0', () => {
+    const text = raw('run-report', 'v4', 'thresholds-mode-sparse-config.json');
+    const result = parseRunReport(text, 'sparse.json');
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    expect(result.value.config.measure).toEqual({ coldSamples: 0 });
   });
 });

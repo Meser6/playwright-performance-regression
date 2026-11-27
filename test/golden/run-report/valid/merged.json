@@ -1,0 +1,1214 @@
+{
+  "name": "merged: two shards of 3 passes, a key called in both with one cold sample per shard (17-REQ-15…17)",
+  "input": {
+    "schemaVersion": 5,
+    "tool": {
+      "name": "playwright-performance-regression",
+      "version": "0.1.0"
+    },
+    "runId": "run-1",
+    "mode": "test",
+    "startedAt": "2026-11-18T10:00:00.000Z",
+    "finishedAt": "2026-11-18T10:05:00.000Z",
+    "env": null,
+    "configDir": "/home/user/project",
+    "config": {
+      "run": {
+        "env": null,
+        "passes": {
+          "test": 3,
+          "thresholds": 10
+        },
+        "grep": null,
+        "keepReporters": [],
+        "overrideSlowMo": false
+      },
+      "measure": {
+        "api": true,
+        "resourceTypes": [
+          "document",
+          "xhr",
+          "fetch"
+        ],
+        "ignoreExtensions": [
+          ".js",
+          ".mjs",
+          ".css",
+          ".map",
+          ".html",
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".gif",
+          ".svg",
+          ".webp",
+          ".avif",
+          ".ico",
+          ".woff",
+          ".woff2",
+          ".ttf",
+          ".otf",
+          ".eot"
+        ],
+        "include": [],
+        "exclude": [
+          "/socket.io/",
+          "/sockjs/",
+          "/sockjs-node/",
+          "/signalr/",
+          "/_blazor/"
+        ],
+        "excludeKnownThirdParty": true,
+        "successStatuses": [
+          "2xx",
+          "3xx"
+        ],
+        "coldSamples": 1,
+        "steps": {
+          "enabled": true,
+          "include": [],
+          "exclude": [],
+          "maxDepth": 3,
+          "categories": [
+            "test.step"
+          ],
+          "groupBy": "step",
+          "normalizeTitles": true,
+          "redactQuotedValues": false
+        },
+        "pendingTimeoutMs": 2000
+      },
+      "keys": {
+        "origins": {},
+        "idPatterns": {
+          "number": true,
+          "uuid": true,
+          "hex": true,
+          "token": true,
+          "mixed": true,
+          "prefixed": true,
+          "email": true
+        },
+        "extraIdPatterns": [],
+        "query": "names",
+        "keepQueryValues": [],
+        "dropQueryParams": [],
+        "operations": []
+      },
+      "checks": {
+        "time": {
+          "median": {
+            "enabled": true,
+            "minSamples": 5,
+            "margin": {
+              "relative": 0.4,
+              "minMs": 100,
+              "smallSampleRelative": 0.8
+            },
+            "limit": {
+              "api": 2000,
+              "step": 10000
+            }
+          },
+          "percentile": {
+            "enabled": true,
+            "minSamples": 20,
+            "level": "p95",
+            "limit": {
+              "api": 2000,
+              "step": 15000
+            },
+            "margin": {
+              "relative": 0.4,
+              "minMs": 100,
+              "smallSampleRelative": 0.8
+            }
+          },
+          "p99": {
+            "enabled": true,
+            "minSamples": 100,
+            "margin": {
+              "relative": 0.2,
+              "minGapMs": 50,
+              "minGapRelative": 0.1
+            },
+            "limit": {
+              "api": 4000,
+              "step": 30000
+            }
+          }
+        },
+        "slowShare": {
+          "t": {
+            "api": {
+              "min": 500,
+              "max": 2000,
+              "medianFactor": 2
+            },
+            "step": {
+              "min": 1000,
+              "max": 10000,
+              "medianFactor": 2
+            }
+          },
+          "apdex": {
+            "enabled": true,
+            "minSamples": 20,
+            "margin": {
+              "absolute": 0.05,
+              "smallSampleAbsolute": 0.1
+            },
+            "limit": {
+              "api": 0.85,
+              "step": 0.85
+            }
+          },
+          "wilson": {
+            "enabled": true,
+            "minSamples": 20,
+            "margin": {
+              "factor": 1.5,
+              "add": 0.02,
+              "min": 0.03,
+              "max": 0.15,
+              "smallSampleMin": 0.1
+            },
+            "limit": {
+              "api": 0.05,
+              "step": 0.05
+            }
+          }
+        },
+        "errors": {
+          "enabled": true,
+          "minSamples": 5,
+          "statuses": [
+            "5xx",
+            "FAILED",
+            "PENDING"
+          ],
+          "limit": {
+            "api": 0.05,
+            "step": 0.05
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
+        }
+      },
+      "gate": {
+        "tolerance": 0,
+        "hardLimitFactor": 2,
+        "defaultThresholds": "block",
+        "maxFailedTestShare": 0.1
+      },
+      "thresholds": {
+        "preset": "normal",
+        "dir": ".",
+        "filePrefix": "pw-perf-thresholds",
+        "update": "all",
+        "smallSampleN": 20,
+        "hysteresis": {
+          "relative": 0.1,
+          "ratio": 0.01
+        },
+        "loosenWarnRelative": 0.5,
+        "workloadShift": {
+          "factor": 2
+        }
+      },
+      "report": {
+        "dir": "reports/pw-perf",
+        "html": true,
+        "junit": true,
+        "rawUrls": false
+      },
+      "advanced": {
+        "maxSamplesPerKey": 5000,
+        "seed": 1
+      }
+    },
+    "normalization": "0123456789abcd",
+    "stepNormalization": null,
+    "ci": {
+      "branch": "main",
+      "buildUrl": "https://github.com/o/r/actions/runs/1",
+      "commit": "abc123",
+      "provider": "github"
+    },
+    "host": {
+      "arch": "x64",
+      "ci": true,
+      "cpuCount": 4,
+      "cpuModel": "AMD EPYC 7763 64-Core Processor",
+      "platform": "linux",
+      "nodeVersion": "v22.18.0"
+    },
+    "playwright": {
+      "version": "1.57.0"
+    },
+    "passes": {
+      "planned": 3,
+      "completed": 3,
+      "failed": []
+    },
+    "shards": {
+      "total": 2,
+      "missing": [],
+      "list": [
+        {
+          "index": 1,
+          "runId": "2026-11-27T10-00-00-00a1",
+          "startedAt": "2026-11-18T10:00:00.000Z",
+          "finishedAt": "2026-11-18T10:10:00.000Z",
+          "status": "passed",
+          "passes": {
+            "planned": 3,
+            "completed": 3,
+            "failed": []
+          },
+          "tests": {
+            "status": "passed",
+            "expected": 6,
+            "unexpected": 0,
+            "flaky": 0,
+            "skipped": 0
+          },
+          "samples": 12,
+          "host": {
+            "arch": "x64",
+            "ci": true,
+            "cpuCount": 4,
+            "cpuModel": "AMD EPYC 7763 64-Core Processor",
+            "platform": "linux",
+            "nodeVersion": "v22.18.0"
+          },
+          "buildUrl": "https://github.com/acme/shop/actions/runs/42/job/1"
+        },
+        {
+          "index": 2,
+          "runId": "2026-11-27T10-00-01-00a2",
+          "startedAt": "2026-11-18T10:00:01.000Z",
+          "finishedAt": "2026-11-18T10:10:45.000Z",
+          "status": "passed",
+          "passes": {
+            "planned": 3,
+            "completed": 3,
+            "failed": []
+          },
+          "tests": {
+            "status": "passed",
+            "expected": 6,
+            "unexpected": 0,
+            "flaky": 0,
+            "skipped": 0
+          },
+          "samples": 12,
+          "host": {
+            "arch": "x64",
+            "ci": true,
+            "cpuCount": 4,
+            "cpuModel": "AMD EPYC 7763 64-Core Processor",
+            "platform": "linux",
+            "nodeVersion": "v22.18.0"
+          },
+          "buildUrl": "https://github.com/acme/shop/actions/runs/42/job/2"
+        }
+      ]
+    },
+    "runConditions": {
+      "workers": 1,
+      "projects": [
+        {
+          "name": "chromium",
+          "role": "measured",
+          "browserName": "chromium",
+          "repeatEach": 1,
+          "retries": 0
+        }
+      ],
+      "overriddenSettings": []
+    },
+    "tests": {
+      "status": "passed",
+      "expected": 12,
+      "unexpected": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "evaluation": {
+      "status": "passed",
+      "gateEnabled": true,
+      "counts": {
+        "api": {
+          "keys": 3,
+          "fromFile": 0,
+          "fromDefaults": 3,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "fileEntriesNotEvaluated": 0,
+          "medianOnly": 3,
+          "unseenThresholdEntries": 0,
+          "violations": 0,
+          "blockingViolations": 0,
+          "muted": 0
+        },
+        "step": {
+          "keys": 0,
+          "fromFile": 0,
+          "fromDefaults": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "fileEntriesNotEvaluated": 0,
+          "medianOnly": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0,
+          "blockingViolations": 0,
+          "muted": 0
+        }
+      }
+    },
+    "thresholdFiles": [
+      {
+        "kind": "api",
+        "path": "pw-perf-thresholds.json",
+        "status": "missing",
+        "generated": null,
+        "unseenKeys": []
+      },
+      {
+        "kind": "step",
+        "path": "pw-perf-thresholds.steps.json",
+        "status": "missing",
+        "generated": null,
+        "unseenKeys": []
+      }
+    ],
+    "warnings": [
+      {
+        "code": "STATS_COLD_SLOW",
+        "message": "1 key is much slower on the first call (cold start): GET /api/tickets 1,400 ms vs warm p50 125 ms (×11.2).",
+        "hint": "The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0."
+      },
+      {
+        "code": "THRESHOLDS_FILE_MISSING",
+        "message": "Thresholds file pw-perf-thresholds.json not found; endpoint keys are evaluated with default thresholds.",
+        "hint": "Derive thresholds with `PW_PERF_MODE=thresholds <your test command>`."
+      }
+    ],
+    "toolErrors": [],
+    "origins": [
+      {
+        "origin": "https://app.example",
+        "label": "",
+        "requestCount": 24
+      }
+    ],
+    "endpoints": {
+      "GET /api/shard1": {
+        "count": 6,
+        "successCount": 6,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 2,
+        "statuses": {
+          "200": 6
+        },
+        "timeSources": {
+          "browser": 6,
+          "node": 0
+        },
+        "stats": {
+          "min": 105,
+          "avg": 108.3,
+          "max": 112,
+          "percentiles": {
+            "p50": 108,
+            "p90": 112,
+            "p95": 112,
+            "p99": 112
+          }
+        },
+        "ttfb": {
+          "p50": 64.8,
+          "p95": 67.2,
+          "otherP50": 43.2
+        },
+        "slowest": [
+          {
+            "duration": 112,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/tickets.spec.ts",
+              "line": 5,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 112,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "tickets › filters the list",
+              "project": "chromium",
+              "file": "tests/tickets.spec.ts",
+              "line": 18,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 108,
+            "startedAt": "2026-11-26T10:02:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/tickets.spec.ts",
+              "line": 5,
+              "repeatEachIndex": 2
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 5,
+            "sampleCount": 3
+          },
+          {
+            "title": "tickets › filters the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 18,
+            "sampleCount": 3
+          }
+        ],
+        "samples": {
+          "durations": [
+            105,
+            105,
+            108,
+            108,
+            112,
+            112
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            104.9,
+            110.1,
+            115.5
+          ],
+          "counts": [
+            4,
+            2
+          ]
+        },
+        "cold": {
+          "count": 3,
+          "excluded": false,
+          "reason": "too-few-samples",
+          "durations": [
+            105,
+            112,
+            108
+          ],
+          "max": 112,
+          "warmP50": 108,
+          "ratio": 1.04,
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 5,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 6,
+              "actual": 108,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.054
+            },
+            {
+              "rule": "errors",
+              "n": 6,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      },
+      "GET /api/shard2": {
+        "count": 6,
+        "successCount": 6,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 2,
+        "statuses": {
+          "200": 6
+        },
+        "timeSources": {
+          "browser": 6,
+          "node": 0
+        },
+        "stats": {
+          "min": 125,
+          "avg": 128.3,
+          "max": 132,
+          "percentiles": {
+            "p50": 128,
+            "p90": 132,
+            "p95": 132,
+            "p99": 132
+          }
+        },
+        "ttfb": {
+          "p50": 76.8,
+          "p95": 79.2,
+          "otherP50": 51.2
+        },
+        "slowest": [
+          {
+            "duration": 132,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "admin › opens the tickets",
+              "project": "chromium",
+              "file": "tests/admin.spec.ts",
+              "line": 7,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 132,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "admin › exports the tickets",
+              "project": "chromium",
+              "file": "tests/admin.spec.ts",
+              "line": 21,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 128,
+            "startedAt": "2026-11-26T10:02:01.000Z",
+            "test": {
+              "title": "admin › opens the tickets",
+              "project": "chromium",
+              "file": "tests/admin.spec.ts",
+              "line": 7,
+              "repeatEachIndex": 2
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "admin › opens the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 7,
+            "sampleCount": 3
+          },
+          {
+            "title": "admin › exports the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 21,
+            "sampleCount": 3
+          }
+        ],
+        "samples": {
+          "durations": [
+            125,
+            125,
+            128,
+            128,
+            132,
+            132
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            121.2,
+            127.1,
+            133.4
+          ],
+          "counts": [
+            2,
+            4
+          ]
+        },
+        "cold": {
+          "count": 3,
+          "excluded": false,
+          "reason": "too-few-samples",
+          "durations": [
+            125,
+            132,
+            128
+          ],
+          "max": 132,
+          "warmP50": 128,
+          "ratio": 1.03,
+          "test": {
+            "title": "admin › opens the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 7,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 6,
+              "actual": 128,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.064
+            },
+            {
+              "rule": "errors",
+              "n": 6,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      },
+      "GET /api/tickets": {
+        "count": 12,
+        "successCount": 6,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 4,
+        "statuses": {
+          "200": 12
+        },
+        "timeSources": {
+          "browser": 12,
+          "node": 0
+        },
+        "stats": {
+          "min": 118,
+          "avg": 531.5,
+          "max": 1400,
+          "percentiles": {
+            "p50": 125,
+            "p90": 1350,
+            "p95": 1375,
+            "p99": 1395
+          }
+        },
+        "ttfb": {
+          "p50": 75,
+          "p95": 825,
+          "otherP50": 50
+        },
+        "slowest": [
+          {
+            "duration": 1400,
+            "startedAt": "2026-11-26T10:00:00.000Z",
+            "test": {
+              "title": "admin › exports the tickets",
+              "project": "chromium",
+              "file": "tests/admin.spec.ts",
+              "line": 21,
+              "repeatEachIndex": 0
+            }
+          },
+          {
+            "duration": 1300,
+            "startedAt": "2026-11-26T10:00:00.000Z",
+            "test": {
+              "title": "tickets › filters the list",
+              "project": "chromium",
+              "file": "tests/tickets.spec.ts",
+              "line": 18,
+              "repeatEachIndex": 0
+            }
+          },
+          {
+            "duration": 125,
+            "startedAt": "2026-11-26T10:01:00.000Z",
+            "test": {
+              "title": "admin › exports the tickets",
+              "project": "chromium",
+              "file": "tests/admin.spec.ts",
+              "line": 21,
+              "repeatEachIndex": 1
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "admin › opens the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 7,
+            "sampleCount": 3
+          },
+          {
+            "title": "admin › exports the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 21,
+            "sampleCount": 3
+          },
+          {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 5,
+            "sampleCount": 3
+          },
+          {
+            "title": "tickets › filters the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 18,
+            "sampleCount": 3
+          }
+        ],
+        "samples": {
+          "durations": [
+            118,
+            121,
+            125,
+            125,
+            1300,
+            1400
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            115.5,
+            127.1,
+            139.9,
+            154,
+            169.5,
+            186.6,
+            205.4,
+            226,
+            248.8,
+            273.8,
+            301.4,
+            331.8,
+            365.2,
+            401.9,
+            442.4,
+            487,
+            536,
+            590,
+            649.4,
+            714.8,
+            786.7,
+            866,
+            953.2,
+            1049,
+            1155,
+            1271,
+            1399,
+            1540
+          ],
+          "counts": [
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1
+          ]
+        },
+        "cold": {
+          "count": 6,
+          "excluded": true,
+          "reason": null,
+          "durations": [
+            1300,
+            118,
+            125,
+            1400,
+            125
+          ],
+          "max": 1400,
+          "warmP50": 125,
+          "ratio": 11.2,
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 5,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 6,
+              "actual": 125,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.0625
+            },
+            {
+              "rule": "errors",
+              "n": 12,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      }
+    },
+    "steps": {},
+    "testBreakdown": {
+      "tests": [
+        {
+          "title": "admin › opens the tickets",
+          "project": "chromium",
+          "file": "tests/admin.spec.ts",
+          "line": 7,
+          "executions": 3,
+          "requestCount": 6,
+          "errorCount": 0,
+          "totalMs": 2031,
+          "maxRequestMs": 1400,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "GET /api/tickets",
+              "count": 3,
+              "totalMs": 1646
+            },
+            {
+              "key": "GET /api/shard2",
+              "count": 3,
+              "totalMs": 385
+            }
+          ],
+          "violatedKeys": [],
+          "violatedKeyCount": 0
+        },
+        {
+          "title": "admin › exports the tickets",
+          "project": "chromium",
+          "file": "tests/admin.spec.ts",
+          "line": 21,
+          "executions": 3,
+          "requestCount": 6,
+          "errorCount": 0,
+          "totalMs": 2031,
+          "maxRequestMs": 1400,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "GET /api/tickets",
+              "count": 3,
+              "totalMs": 1646
+            },
+            {
+              "key": "GET /api/shard2",
+              "count": 3,
+              "totalMs": 385
+            }
+          ],
+          "violatedKeys": [],
+          "violatedKeyCount": 0
+        },
+        {
+          "title": "tickets › opens the list",
+          "project": "chromium",
+          "file": "tests/tickets.spec.ts",
+          "line": 5,
+          "executions": 3,
+          "requestCount": 6,
+          "errorCount": 0,
+          "totalMs": 1868,
+          "maxRequestMs": 1300,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "GET /api/tickets",
+              "count": 3,
+              "totalMs": 1543
+            },
+            {
+              "key": "GET /api/shard1",
+              "count": 3,
+              "totalMs": 325
+            }
+          ],
+          "violatedKeys": [],
+          "violatedKeyCount": 0
+        },
+        {
+          "title": "tickets › filters the list",
+          "project": "chromium",
+          "file": "tests/tickets.spec.ts",
+          "line": 18,
+          "executions": 3,
+          "requestCount": 6,
+          "errorCount": 0,
+          "totalMs": 1868,
+          "maxRequestMs": 1300,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "GET /api/tickets",
+              "count": 3,
+              "totalMs": 1543
+            },
+            {
+              "key": "GET /api/shard1",
+              "count": 3,
+              "totalMs": 325
+            }
+          ],
+          "violatedKeys": [],
+          "violatedKeyCount": 0
+        }
+      ],
+      "omitted": 0,
+      "waterfalls": [
+        {
+          "test": {
+            "title": "admin › opens the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 7,
+            "repeatEachIndex": 0
+          },
+          "totalMs": 1525,
+          "requestCount": 2,
+          "spanMs": 1400,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 1400,
+              "key": "GET /api/tickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 125,
+              "key": "GET /api/shard2",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        },
+        {
+          "test": {
+            "title": "admin › exports the tickets",
+            "project": "chromium",
+            "file": "tests/admin.spec.ts",
+            "line": 21,
+            "repeatEachIndex": 0
+          },
+          "totalMs": 1525,
+          "requestCount": 2,
+          "spanMs": 1400,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 1400,
+              "key": "GET /api/tickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 125,
+              "key": "GET /api/shard2",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        },
+        {
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 5,
+            "repeatEachIndex": 0
+          },
+          "totalMs": 1405,
+          "requestCount": 2,
+          "spanMs": 1300,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 1300,
+              "key": "GET /api/tickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 105,
+              "key": "GET /api/shard1",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        },
+        {
+          "test": {
+            "title": "tickets › filters the list",
+            "project": "chromium",
+            "file": "tests/tickets.spec.ts",
+            "line": 18,
+            "repeatEachIndex": 0
+          },
+          "totalMs": 1405,
+          "requestCount": 2,
+          "spanMs": 1300,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 1300,
+              "key": "GET /api/tickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 105,
+              "key": "GET /api/shard1",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        }
+      ]
+    }
+  },
+  "expected": {
+    "ok": true
+  }
+}

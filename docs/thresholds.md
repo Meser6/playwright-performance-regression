@@ -13,6 +13,7 @@ in JSON files in your repository and are reviewed and committed like code.
 - [Environments](#environments)
 - [Hand-written entries](#hand-written-entries)
 - [Keys without an entry](#keys-without-an-entry)
+- [Fast failures and workload changes](#fast-failures-and-workload-changes)
 
 ## Files
 
@@ -31,11 +32,13 @@ An entry looks like this:
 ```json
 "GET /api/orders/:id": {
   "maxErrorRate": 0.05,
+  "maxNonSuccessRate": 0.05,
   "maxWilson": 0.08,
   "median": 420,
   "minApdex": 0.86,
   "p99": 1300,
   "percentile": 760,
+  "source": { "count": 40, "passes": 10, "share": 0.0412, "successCount": 40 },
   "t": 500
 }
 ```
@@ -44,8 +47,32 @@ An entry looks like this:
 and `p99` are limits in milliseconds. `t` is the Apdex threshold used by `minApdex` and `maxWilson`
 (the allowed share of samples slower than `t`); they are `null` for keys too slow for a sensible
 `t`. `maxErrorRate` is the allowed share of errors. The `generated` block at the top of the file
-records which run the values came from (browser, Playwright version, machine, normalization). The
-reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the current run differs from it.
+records which run the values came from (browser, Playwright version, machine, normalization,
+`measure.coldSamples`). The reporter warns with `THRESHOLDS_SOURCE_MISMATCH` when the current run
+differs from it.
+
+`maxNonSuccessRate` (endpoints only, from version 1.1.0) is the allowed share of responses outside
+`measure.successStatuses`, such as 401, 403, 404 or 5xx, derived from their share in the
+thresholds run. The `nonSuccess` rule catches fast failures: an endpoint that used to answer 200 in
+120 ms and now answers 401 in 8 ms has no successful samples to time, so the time rules cannot
+fail it, but its non-success share jumps from 0 to 1 (a real run:
+[Fast failures and workload changes](#fast-failures-and-workload-changes)). An endpoint that answers an expected 404 in
+part of its calls gets a limit high enough for that. Keys without an entry are not checked by this
+rule unless you set `checks.nonSuccess.limit.api`. Entries written before 1.1.0 get the field at the
+next thresholds run.
+
+`source` records the samples of the key in the run the limits come from: all samples, timed
+samples, passes and the key's share of all samples. When the current run has a very different
+number of samples per pass (`thresholds.workloadShift.factor`, ×2 by default), the reporter warns
+with `THRESHOLDS_WORKLOAD_SHIFT`, because percentiles of fewer or more samples are not comparable.
+`source` does not take part in deciding whether an entry or the file changes.
+
+The first timed sample of every key in each pass (`measure.coldSamples`, 1 by default) is cold:
+each pass is a new Playwright process, and a `webServer` starts the application again in every
+pass. When at least `checks.time.median.minSamples` warm samples remain, the cold samples stay out
+of the statistics that are evaluated and derived, so a slow first call after start-up does not
+move p95. A key called once per pass keeps all its samples, in the thresholds run and in the test
+run alike. The HTML report shows them under "Cold vs warm".
 
 Calls of Playwright's `request` fixture, `page.request` and `context.request` have keys with the
 prefix `request`, e.g. `request GET /api/orders/:id`. The same endpoint called by the page and by
@@ -192,3 +219,123 @@ the counters: kind, key, samples, median, the evaluated percentile, the default 
 (median / percentile) and the result, keys with a violation first, at most 10 rows. Derive
 thresholds again (`PW_PERF_MODE=thresholds npm run e2e`) to add entries for them; locked entries
 are kept.
+
+## Fast failures and workload changes
+
+A walk through one real run: the `fast-failure` report of the [demo](https://meser6.github.io/playwright-performance-regression/)
+([`fast-failure.html`](https://meser6.github.io/playwright-performance-regression/fast-failure.html)).
+`examples/with-setup` was measured against the demo server of this repository: a thresholds run
+(10 passes), then a test run (10 passes) with three changes on the server. Every console excerpt
+and screenshot below comes from that run (`node scripts/build-demo-report.mjs --docs`); numbers in
+your own runs differ.
+
+### 1. The scenario
+
+`GET /api/products` answered **200 in about 120 ms** in the thresholds run. Then the login broke:
+the same endpoint answers **401 in about 8 ms**, twice per pass, so 20 × 401 in the test run. In a
+chart of response times the endpoint just got more than ten times faster.
+
+### 2. Without the `nonSuccess` rule: the run passes
+
+Timings are computed from successful responses only (`measure.successStatuses`, 2xx and 3xx by
+default), so the key has no timed samples and the time rules (median, p95, p99, Apdex) do not run.
+The `errors` rule passes too: 401 is not in `checks.errors.statuses` (5xx and failed requests by
+default), because many tests call 4xx on purpose. This is how every 1.0.x run ended. The same run
+with `checks: { nonSuccess: { enabled: false } }`:
+
+```text
+╭───────────────────────────────────────────────╮
+│ ✅  PASSED  no violations in 8 evaluated keys │
+╰───────────────────────────────────────────────╯
+```
+
+The endpoints table shows why, in the samples column:
+
+![The endpoint row: pass, 0 / 20 samples, 20 × 401 (not timed)](img/fast-failure-rule-off.png)
+
+Since 1.1.0 the run at least warns, also with the rule turned off:
+
+```text
+│ ⚠ THRESHOLDS_ENTRY_NOT_TIMED: 1 endpoint key with thresholds was not timed because its responses were not            │
+│   successful: GET /api/products (20 × 401).                                                                          │
+│   Hint: Check the login and the test data of the tests that call these keys. The nonSuccess rule fails such a key    │
+│         when its entry has maxNonSuccessRate (written by a thresholds run of version 1.1.0 or later).                │
+```
+
+### 3. With the `nonSuccess` rule (1.1.0): the run fails
+
+The thresholds run wrote `maxNonSuccessRate` for the entry (5% here, the minimum of the margin;
+the share in the thresholds run was 0). The test run has 20 of 20 responses outside the success
+statuses: a share of 1.000, and the lower 95% confidence bound of 0.839 is compared with the
+limit, so even a few samples cannot fail the rule by chance. The column `n` shows `20/20`: all 20
+samples count for this rule, none of them is timed.
+
+```text
+┌────┬──────┬────────────────────────────────┬────────────┬───────────────┬───────┬────────┬───────┬──────┬──────┐
+│    │ kind │ key                            │ rule       │        actual │ limit │   over │     n │ src  │ flag │
+├────┼──────┼────────────────────────────────┼────────────┼───────────────┼───────┼────────┼───────┼──────┼──────┤
+│ ❌ │ api  │ GET /api/products              │ nonSuccess │ 0.839 (1.000) │ 0.050 │ +79 pp │ 20/20 │ file │      │
+└────┴──────┴────────────────────────────────┴────────────┴───────────────┴───────┴────────┴───────┴──────┴──────┘
+  Workload: 10 passes · 1 worker · 60 samples (thresholds run: 10 passes · 1 worker · 80 samples)
+
+╭──────────────────────────────────────────────────────────╮
+│ ❌  FAILED  1 blocking violation in 1 key (tolerance: 0) │
+╰──────────────────────────────────────────────────────────╯
+```
+
+In the key details of the HTML report, the checks table and the durations of the unsuccessful
+responses per status (not part of the time statistics):
+
+![Checks of GET /api/products: error rate passes, non-success share 83.9% bound over the 5.0% limit, blocking](img/fast-failure-checks.png)
+
+![Unsuccessful responses of GET /api/products: 20 × 401 with p50 and p95](img/fast-failure-unsuccessful.png)
+
+Fix the login or the test data, not the thresholds. Re-derive only when the new statuses are
+intended (an endpoint that now answers 404 by design).
+
+### 4. Workload context: the same tests, fewer calls
+
+The second change of the run: the shop page stopped loading the cart, so `GET /api/cart` is called
+once per pass instead of three times. Its median still passes, but percentiles of 10 samples are
+not comparable with percentiles of 30, and a key whose share of the traffic changes often hides a
+change of the tests or of the application. The run warns without blocking:
+
+```text
+│ ⚠ THRESHOLDS_WORKLOAD_SHIFT: 1 endpoint key gets a different share of the traffic than in the thresholds run: GET    │
+│   /api/cart 3.0 → 1.0 samples per pass (×0.33).                                                                      │
+│   Hint: A change of the tests or fixtures changes the number of samples and the percentiles; after an intended       │
+│         change, derive thresholds again with `PW_PERF_MODE=thresholds <your test command>`.                          │
+```
+
+The key details compare the two runs:
+
+![Compared with the thresholds run: GET /api/cart 3.0 → 1.0 samples per pass](img/fast-failure-workload.png)
+
+Read it as a question: did the tests or the application change on purpose? If yes (a fixture
+change, tests removed or added, a page that calls the endpoint less), derive thresholds again in
+that pull request, so the limits come from the new workload. If not, find out why the calls
+disappeared before trusting the result. The `Workload:` line under the results table shows the
+same for the whole run.
+
+### 5. Cold samples: the first call is set apart
+
+The third change: the first call of `GET /api/prices` in every run is about 400 ms slower, as
+after a container start or a lazy service. Since 1.1.0 the first sample of every key in each pass
+(`measure.coldSamples: 1`) is cold: when enough warm samples remain, the cold samples stay out of
+the evaluated statistics and of the derived thresholds, so a slow start does not move p95. The demo
+calls `GET /api/prices` once per pass, so all its samples are cold and stay in the statistics (the
+median of 10 samples does not depend on one slow call); the warning compares the slow call with the
+p50 of all its samples.
+
+```text
+│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 450 ms vs warm p50 65 ms  │
+│   (×6.9).                                                                                                            │
+│   Hint: The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples         │
+│         (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or │
+│         set measure.coldSamples to 0.                                                                                │
+```
+
+![Cold vs warm of GET api/api/prices: the first call several times slower than the p50 of all samples](img/fast-failure-cold.png)
+
+Set `measure.coldSamples: 0` to evaluate the first calls too (the behaviour of 1.0.x), or warm the
+application up before the tests.

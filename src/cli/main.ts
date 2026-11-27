@@ -1,8 +1,9 @@
 // Entry logic of the binary (01, chapter 4.10; 04-REQ-01, D-43): without arguments it runs the
-// wizard, with arguments it prints CLI_UNKNOWN_COMMAND and the help. Every error is caught at this
-// boundary and ends with exit code 3 (01, chapter 8).
+// wizard, or with PW_PERF_MODE=merge the shard merge (17-REQ-12); with arguments it prints
+// CLI_UNKNOWN_COMMAND and the help. Every error is caught at this boundary and ends with exit
+// code 3 (01, chapter 8).
 import type { Issue } from '../core/types/index.ts';
-import { readInitEnv } from '../mode/index.ts';
+import { isMergeMode, readInitEnv } from '../mode/index.ts';
 import { helpText } from './help.ts';
 import type { CliHost } from './host.ts';
 import { runInit } from './init/index.ts';
@@ -33,6 +34,8 @@ export async function main(argv: readonly string[], host: CliHost): Promise<numb
       host.stdout.write(helpText());
       return 3;
     }
+    // ADR-0013: the binary merges shard files instead of running the wizard.
+    if (isMergeMode(host.env)) return await host.runMerge();
     const env = readInitEnv(host.env, LANGUAGES);
     if (!env.ok) {
       host.stderr.write(formatIssues(env.issues, 'error', color(host)));

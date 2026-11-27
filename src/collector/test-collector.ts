@@ -5,10 +5,16 @@ import type { ResolvedConfig } from '../core/config/index.ts';
 import { SAMPLES_ATTACHMENT_NAME } from '../core/types/index.ts';
 import type { RawApiRequestSample, RawRequestSample, SampleBatch } from '../core/types/index.ts';
 import { activeCollector } from '../registry/index.ts';
-import { isApiRequestContext, wrapRequestContext } from './api-requests.ts';
+import {
+  apiOperationBody,
+  isApiRequestContext,
+  urlWithParams,
+  wrapRequestContext,
+} from './api-requests.ts';
 import type { ApiCall, ApiRecorder, ApiSource } from './api-requests.ts';
 import { COLLECTOR_NAME, SAMPLE_LIMIT_PER_TEST } from './constants.ts';
-import { createDiagnostics, errorText } from './diagnostics.ts';
+import { createDiagnostics, errorText, operationUnknown } from './diagnostics.ts';
+import { readOperation } from './operations.ts';
 import { shouldTrackApiCall } from './filters.ts';
 import { createPerfApi } from './perf-api.ts';
 import type { PerfApi } from './perf-api.ts';
@@ -18,6 +24,8 @@ import { pendingBudgetMs, roundMs } from './timing.ts';
 
 export interface TestCollectorOptions {
   measure: ResolvedConfig['measure'];
+  /** keys.operations (18). Default []. */
+  operations?: ResolvedConfig['keys']['operations'];
   /** Package version for collector.version. */
   version: string;
   /** The browserName option of the test, for contexts without a Browser object (05-REQ-29). */
@@ -37,6 +45,8 @@ interface ApiInFlight {
   startTime: number;
   settled: Promise<unknown>;
   done: boolean;
+  /** Operation names read when the method was called (15-REQ-20); absent without keys.operations. */
+  operation: Pick<RawApiRequestSample, 'operation'>;
 }
 
 /** The recorder of the running test, read when a wrapped method is called (15-REQ-03). */
@@ -139,7 +149,12 @@ export class TestCollector implements ApiRecorder {
    * Records one APIRequestContext call (15-REQ-05): the returned promise settles like `result`
    * (same value, same error); the sample is made when it settles or at the end-of-test wait.
    */
-  observeApiCall(call: ApiCall, source: ApiSource, result: Promise<unknown>): Promise<unknown> {
+  observeApiCall(
+    call: ApiCall,
+    source: ApiSource,
+    result: Promise<unknown>,
+    options?: unknown,
+  ): Promise<unknown> {
     if (this.#draining !== undefined) return result;
     const startedAt = this.#opts.now();
     const entry: ApiInFlight = {
@@ -148,6 +163,7 @@ export class TestCollector implements ApiRecorder {
       startTime: Math.round(this.#opts.wallNow()),
       settled: Promise.resolve(),
       done: false,
+      operation: this.#apiOperation(call, options),
     };
     const finish = (
       status: RawApiRequestSample['status'],
@@ -200,6 +216,31 @@ export class TestCollector implements ApiRecorder {
     return out;
   }
 
+  /**
+   * Operation names of an API call (15-REQ-20): options.data or options.multipart for a GraphQL
+   * POST, the URL and options.params for GET, the path for tRPC. Only the names are kept.
+   */
+  #apiOperation(call: ApiCall, options: unknown): Pick<RawApiRequestSample, 'operation'> {
+    const entries = this.#opts.operations ?? [];
+    if (entries.length === 0) return {};
+    // A call the filters skip gives no sample, so its body is not read either (15-REQ-06).
+    if (call.url !== null && !shouldTrackApiCall(call.url, this.#opts.measure)) return {};
+    try {
+      const url = call.url ?? call.rawUrl;
+      const result = readOperation(entries, {
+        method: call.method,
+        url: call.method === 'GET' ? urlWithParams(url, options) : url,
+        body: () => apiOperationBody(options),
+      });
+      if (!result.matched) return { operation: null };
+      if (result.names === null) this.#diag.add(operationUnknown(call.method, result.entry.match));
+      return { operation: result.names };
+    } catch (error) {
+      this.#diag.add(operationUnknown(call.method, null, errorText(error)));
+      return { operation: null };
+    }
+  }
+
   /** The sample of a call, or null when the filters skip its URL (15-REQ-06). */
   #apiSample(
     entry: ApiInFlight,
@@ -217,6 +258,7 @@ export class TestCollector implements ApiRecorder {
       startTime: entry.startTime,
       duration: extra.duration ?? null,
       source: entry.source,
+      ...entry.operation,
     };
   }
 
@@ -243,7 +285,12 @@ export class TestCollector implements ApiRecorder {
         context,
         new RequestTracker(
           context,
-          { measure: this.#opts.measure, now: this.#opts.now, wallNow: this.#opts.wallNow },
+          {
+            measure: this.#opts.measure,
+            operations: this.#opts.operations ?? [],
+            now: this.#opts.now,
+            wallNow: this.#opts.wallNow,
+          },
           this.#diag,
           this.#sink,
         ),
@@ -353,7 +400,7 @@ export class TestCollector implements ApiRecorder {
       this.#dropped = 0;
     }
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       collector: {
         name: COLLECTOR_NAME,
         version: this.#opts.version,

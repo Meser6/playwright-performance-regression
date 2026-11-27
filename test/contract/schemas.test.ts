@@ -37,7 +37,7 @@ const failedRequest = {
   ttfb: null,
 };
 const samples = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   collector: { name: 'playwright', version: '0.1.0', browserName: 'chromium' },
   requests: [requestSample, failedRequest],
   apiRequests: [],
@@ -57,7 +57,7 @@ const derivation = {
   },
 };
 const thresholds = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   kind: 'api',
   generated: null,
   entries: {
@@ -88,7 +88,7 @@ const counts = {
 };
 function runReport(): { [key: string]: Json } {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     tool,
     runId: 'run-1',
     mode: 'test',
@@ -103,6 +103,7 @@ function runReport(): { [key: string]: Json } {
     host: { ...host, nodeVersion: '22.18.0' },
     playwright: { version: '1.57.0' },
     passes: { planned: 1, completed: 1, failed: [] },
+    shards: null,
     runConditions: {
       workers: 1,
       projects: [

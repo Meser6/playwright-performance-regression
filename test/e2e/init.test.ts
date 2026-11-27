@@ -68,7 +68,7 @@ async function setUp(cwd: string): Promise<CliRun & { asked: string[] }> {
   let stderr = '';
   const asked: string[] = [];
   const host = {
-    ...nodeHost(),
+    ...nodeHost(() => Promise.reject(new Error('unexpected merge'))),
     cwd,
     env: { NO_COLOR: '1' },
     stdin: { isTTY: true },

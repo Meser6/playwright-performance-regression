@@ -21,6 +21,10 @@ export interface StartBannerInput {
   report: string | null;
   /** The arguments select no subset of the tests. */
   tip: boolean;
+  /** The estimate is above 2 hours: the tip also suggests --shard (17-REQ-25). */
+  long?: boolean;
+  /** --shard=i/n of the run (17-REQ-04), or null. */
+  shard?: { current: number; total: number } | null;
 }
 
 const TITLES: Record<StartBannerInput['mode'], string> = {
@@ -54,7 +58,15 @@ export function formatStartBanner(
   }
   if (input.estimate !== null) rows.push(['Estimate', input.estimate]);
   rows.push(['Report', input.report ?? 'no files are written']);
-  if (input.tip) rows.push(['Tip', 'measure a subset, e.g. --grep @perf']);
+  const split = 'split it across machines with --shard (docs/ci.md)';
+  if (input.tip) {
+    rows.push([
+      'Tip',
+      `measure a subset, e.g. --grep @perf${input.long === true ? `, or ${split}` : ''}`,
+    ]);
+  } else if (input.long === true) {
+    rows.push(['Tip', split]);
+  }
   // ⏳ has Emoji_Presentation=Yes: two columns in every terminal, unlike ⏱️ (09-D-23).
   const icon = opts.ascii ? '' : '⏳ ';
   const lines = table(
@@ -67,7 +79,11 @@ export function formatStartBanner(
       ...opts,
       border: 'cyan',
       header: false,
-      title: `${icon}${input.packageName} · ${TITLES[input.mode]}`,
+      title: `${icon}${input.packageName} · ${TITLES[input.mode]}${
+        input.shard === undefined || input.shard === null
+          ? ''
+          : ` · shard ${String(input.shard.current)}/${String(input.shard.total)}`
+      }`,
     },
   );
   return `${lines.join('\n')}\n`;

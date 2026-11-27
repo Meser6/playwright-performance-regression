@@ -4,6 +4,8 @@ Catch backend performance regressions from the Playwright tests you already have
 
 ![HTML report of a measurement run](.github/assets/report.png)
 
+Live demo reports of an example project: [a slow endpoint and a fast failure](https://meser6.github.io/playwright-performance-regression/).
+
 ## How it works
 
 1. **Measures** the backend requests your browser makes (and the `request` calls of API tests)
@@ -14,8 +16,9 @@ Catch backend performance regressions from the Playwright tests you already have
    statistics per key: median, p95, p99, error rate and more.
 3. **Derives thresholds** from a run and writes them to JSON files that you review and commit like
    code.
-4. **Fails the run** when an endpoint gets slower or returns more errors than its thresholds
-   allow, with a console summary and a self-contained HTML report.
+4. **Fails the run** when an endpoint gets slower, returns more errors or fails fast more often
+   (a 401 in 8 ms instead of a 200 in 120 ms) than its thresholds allow, with a console summary
+   and a self-contained HTML report.
 
 Your normal `npx playwright test` runs are not changed.
 
@@ -172,7 +175,9 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
 
 ## Limitations
 
-- REST only: every GraphQL query goes to the same endpoint key.
+- Keys come from the method and the URL. GraphQL and tRPC endpoints get a key per operation or
+  procedure only when you list them in `keys.operations`; otherwise every GraphQL query shares
+  one key ([Operations](docs/configuration.md#operations)).
 - Requests made by the browser and calls of Playwright's `request` fixture, `page.request` and
   `context.request` are measured (keys such as `request GET /api/orders/:id`, separate from the
   browser's); other HTTP clients (Node `fetch`, axios) are not. API tests are measured only when
@@ -182,7 +187,9 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
   teardown projects. Chromium is supported; Firefox and WebKit are best effort, so select one engine
   with `--project`.
 - The measurement run is separate from your normal run, uses one worker and runs your test command
-  several times (passes), so it is slow: measure a subset (`run: { grep: '@perf' }`, `--project`).
+  several times (passes), so it is slow: measure a subset (`run: { grep: '@perf' }`, `--project`),
+  or split it across machines with `--shard` and merge the shards in one job
+  ([Sharded runs](docs/ci.md#sharded-runs)).
 - The test command, with its setup steps, runs once per pass; tests that create data without such
   a step can collide in the next pass; make the data unique.
 - A `--reporter` flag in the test command replaces the package reporter, so nothing is reported

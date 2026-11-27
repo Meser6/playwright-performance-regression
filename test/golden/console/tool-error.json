@@ -108,6 +108,18 @@
             },
             "minSamples": 20
           }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          }
         }
       },
       "gate": {
@@ -178,7 +190,8 @@
           "groupBy": "step",
           "normalizeTitles": true,
           "redactQuotedValues": false
-        }
+        },
+        "coldSamples": 0
       },
       "report": {
         "dir": "reports/pw-perf",
@@ -204,7 +217,10 @@
         },
         "loosenWarnRelative": 0.5,
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/work/app",
@@ -221,12 +237,14 @@
             "minApdex": null,
             "p99": 4000,
             "percentile": 2000,
-            "t": null
+            "t": null,
+            "maxNonSuccessRate": null
           },
           "muted": null,
           "reason": "thresholds-error",
           "result": "not-evaluated",
-          "thresholdSource": "default"
+          "thresholdSource": "default",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -286,7 +304,10 @@
             20
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       }
     },
     "steps": {},
@@ -344,6 +365,7 @@
       "completed": 1,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "overriddenSettings": [
         "retries"
@@ -360,7 +382,7 @@
       "workers": 1
     },
     "runId": "2026-11-18T10-00-00-a1b2",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "tests": {
       "expected": 10,

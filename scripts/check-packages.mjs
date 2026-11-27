@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
  * ESM and a CJS build (01-REQ-34), so the code ships twice; the wizard texts in seven languages
  * add about 70 kB.
  */
-export const MAX_PACKED_BYTES = 450_000;
+export const MAX_PACKED_BYTES = 500_000;
 export const MAX_UNPACKED_BYTES = 2_000_000;
 
 /** Paths that must never be published, whatever "files" says. */

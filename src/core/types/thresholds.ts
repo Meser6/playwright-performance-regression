@@ -5,9 +5,16 @@ import type { Entry as ThresholdsEntry, Issue, ThresholdsFile } from './generate
 type Kind = 'api' | 'step';
 
 export type LimitName =
-  't' | 'median' | 'percentile' | 'p99' | 'minApdex' | 'maxWilson' | 'maxErrorRate';
+  | 't'
+  | 'median'
+  | 'percentile'
+  | 'p99'
+  | 'minApdex'
+  | 'maxWilson'
+  | 'maxErrorRate'
+  | 'maxNonSuccessRate';
 
-/** The seven limit fields of a complete entry (02-REQ-21), in file order. */
+/** The seven limit fields of a complete entry (02-REQ-21, 10-REQ-27), in file order. */
 export const LIMIT_NAMES: readonly LimitName[] = [
   't',
   'median',
@@ -17,6 +24,12 @@ export const LIMIT_NAMES: readonly LimitName[] = [
   'maxWilson',
   'maxErrorRate',
 ];
+
+/**
+ * Limits compared by the hysteresis and listed in the diff: the seven of a complete entry and,
+ * from 1.1.0, maxNonSuccessRate of endpoint entries (10-REQ-25), which a complete entry may lack.
+ */
+export const DIFF_LIMIT_NAMES: readonly LimitName[] = [...LIMIT_NAMES, 'maxNonSuccessRate'];
 
 /** Limits of a complete entry. */
 export type EntryLimits = Record<LimitName, number | null>;
@@ -102,6 +115,8 @@ export interface KeyDiff {
   incomplete?: true;
   /** Unchanged because of 10-REQ-18. */
   withinHysteresis?: true;
+  /** Kept entry that got maxNonSuccessRate or source from this run (10-REQ-27). */
+  newFields?: true;
   /** 10-REQ-21: muting of the entry; expired relative to the source report's startedAt. */
   muted?: { until: string; expired: boolean };
   /** Skipped keys of the run: why no entry was derived (10, chapter 9.1, 10-D-21). */
@@ -168,6 +183,8 @@ export function limitLabel(limit: LimitName, level: string): string {
       return 'wilson';
     case 'maxErrorRate':
       return 'errors';
+    case 'maxNonSuccessRate':
+      return 'nonSuccess';
     default:
       return limit;
   }
@@ -218,7 +235,12 @@ export function diffCountsText(diff: ThresholdsDiff): string {
     let extra = '';
     if (category === 'unchanged') {
       const kept = diff.keys.filter((k) => k.withinHysteresis === true).length;
-      if (kept > 0) extra = ` (${kept} within hysteresis)`;
+      const added = diff.keys.filter((k) => k.newFields === true).length;
+      const notes = [
+        ...(kept > 0 ? [`${kept} within hysteresis`] : []),
+        ...(added > 0 ? [`${added} +new fields`] : []),
+      ];
+      if (notes.length > 0) extra = ` (${notes.join(', ')})`;
     } else if (category === 'locked') {
       const incomplete = diff.keys.filter((k) => k.incomplete === true).length;
       if (incomplete > 0)
@@ -240,9 +262,10 @@ export function diffValuesText(
     const shown = (diff.category === 'added') === (side === 'after');
     if (!shown) return '';
     const limits = diff.limits;
-    return LIMIT_NAMES.map(
-      (name) => `${limitLabel(name, level)} ${limitValueText(name, limits[name])}`,
-    ).join(separator);
+    // maxNonSuccessRate only when the entry has it (endpoint entries of 1.1.0, 10-REQ-25).
+    return DIFF_LIMIT_NAMES.filter((name) => name !== 'maxNonSuccessRate' || limits[name] !== null)
+      .map((name) => `${limitLabel(name, level)} ${limitValueText(name, limits[name])}`)
+      .join(separator);
   }
   return diff.changes
     .map((c) => `${limitLabel(c.limit, level)} ${limitValueText(c.limit, c[side])}`)

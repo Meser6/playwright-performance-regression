@@ -1,7 +1,7 @@
 // Helpers on thresholds file entries shared by the derivation and the diff (10, chapters 6, 9).
 import type { ResolvedConfig } from '../config/index.ts';
 import type { ThresholdsEntry } from '../types/index.ts';
-import { LIMIT_NAMES } from './types.ts';
+import { DIFF_LIMIT_NAMES, LIMIT_NAMES } from './types.ts';
 import type { CompleteEntry, EntryLimits, LimitName } from './types.ts';
 
 /** Limits in ms; the others are ratios (02-REQ-08). */
@@ -15,7 +15,7 @@ export function isComplete(entry: ThresholdsEntry): entry is CompleteEntry {
   return LIMIT_NAMES.every((name) => entry[name] !== undefined);
 }
 
-/** The seven limits of an entry; a missing field is null. */
+/** The limits of an entry (DIFF_LIMIT_NAMES); a missing field is null. */
 export function limitsOf(entry: ThresholdsEntry): EntryLimits {
   return {
     t: entry.t ?? null,
@@ -25,6 +25,7 @@ export function limitsOf(entry: ThresholdsEntry): EntryLimits {
     minApdex: entry.minApdex ?? null,
     maxWilson: entry.maxWilson ?? null,
     maxErrorRate: entry.maxErrorRate ?? null,
+    maxNonSuccessRate: entry.maxNonSuccessRate ?? null,
   };
 }
 
@@ -37,16 +38,18 @@ function atMost(a: number, b: number): boolean {
 /**
  * Hysteresis of 10-REQ-18, first condition: every field differs from the new value by at most
  * thresholds.hysteresis.relative of the old value (ms limits) or thresholds.hysteresis.ratio
- * (ratios), and null fields are null in both versions.
+ * (ratios), and null fields are null in both versions. maxNonSuccessRate is compared only when
+ * both versions have it: an entry written before 1.1.0 lacks it (10-REQ-27).
  */
 export function withinHysteresis(
   before: CompleteEntry,
   after: CompleteEntry,
   hysteresis: ResolvedConfig['thresholds']['hysteresis'],
 ): boolean {
-  return LIMIT_NAMES.every((name) => {
+  return DIFF_LIMIT_NAMES.every((name) => {
     const a = before[name];
     const b = after[name];
+    if (a === undefined || b === undefined) return name === 'maxNonSuccessRate';
     if (a === null || b === null) return a === b;
     const allowed = MS_LIMITS.has(name) ? hysteresis.relative * a : hysteresis.ratio;
     return atMost(Math.abs(b - a), allowed);

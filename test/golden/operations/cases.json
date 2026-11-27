@@ -1,0 +1,776 @@
+{
+  "$comment": "18-AC-01: golden cases of the operation extractors (18-REQ-03…06). body: the request text, or {text, padTo, padChar, suffix} for a body padded to padTo characters before suffix. names: the operation field of the sample (null: matched, no name; \"unmatched\": no entry matched). key: the endpoint key built from the sample.",
+  "cases": [
+    {
+      "name": "POST JSON object: operationName",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"GetTickets\",\"query\":\"query Other { a }\",\"variables\":{}}",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets"
+    },
+    {
+      "name": "POST JSON object without operationName: first named operation",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"query GetTickets($id: ID) { ticket(id: $id) { id } } query Second { b }\"}",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets"
+    },
+    {
+      "name": "POST JSON object: mutation",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":null,\"query\":\"mutation CreateOrder { createOrder { id } }\"}",
+      "names": [
+        "CreateOrder"
+      ],
+      "key": "POST /graphql#CreateOrder"
+    },
+    {
+      "name": "POST JSON object: empty operationName counts as none",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"\",\"query\":\"subscription OnTick { tick }\"}",
+      "names": [
+        "OnTick"
+      ],
+      "key": "POST /graphql#OnTick"
+    },
+    {
+      "name": "POST JSON array: batch, names sorted in the key",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[{\"operationName\":\"GetUser\",\"query\":\"query GetUser { me }\"},{\"query\":\"query GetTickets { t }\"}]",
+      "names": [
+        "GetUser",
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets+GetUser"
+    },
+    {
+      "name": "POST JSON array: same batch in another order gives the same key",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[{\"query\":\"query GetTickets { t }\"},{\"operationName\":\"GetUser\",\"query\":\"query GetUser { me }\"}]",
+      "names": [
+        "GetTickets",
+        "GetUser"
+      ],
+      "key": "POST /graphql#GetTickets+GetUser"
+    },
+    {
+      "name": "POST JSON array: duplicate names once in the key",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[{\"operationName\":\"B\"},{\"operationName\":\"A\"},{\"operationName\":\"B\"}]",
+      "names": [
+        "B",
+        "A",
+        "B"
+      ],
+      "key": "POST /graphql#A+B"
+    },
+    {
+      "name": "POST JSON array: one element without a name gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[{\"operationName\":\"A\"},{\"variables\":{}}]",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "POST JSON array: empty batch gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[]",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "POST JSON array: more than 10 names, first 10 sorted and the count",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "[{\"operationName\":\"OpN\"},{\"operationName\":\"OpM\"},{\"operationName\":\"OpL\"},{\"operationName\":\"OpK\"},{\"operationName\":\"OpJ\"},{\"operationName\":\"OpI\"},{\"operationName\":\"OpH\"},{\"operationName\":\"OpG\"},{\"operationName\":\"OpF\"},{\"operationName\":\"OpE\"},{\"operationName\":\"OpD\"},{\"operationName\":\"OpC\"},{\"operationName\":\"OpB\"},{\"operationName\":\"OpA\"}]",
+      "names": [
+        "OpN",
+        "OpM",
+        "OpL",
+        "OpK",
+        "OpJ",
+        "OpI",
+        "OpH",
+        "OpG",
+        "OpF",
+        "OpE",
+        "OpD",
+        "OpC",
+        "OpB",
+        "OpA"
+      ],
+      "key": "POST /graphql#OpA+OpB+OpC+OpD+OpE+OpF+OpG+OpH+OpI+OpJ+…(14)"
+    },
+    {
+      "name": "GET with query and operationName parameters, no body read",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "GET",
+      "url": "https://app.example/graphql?query=query%20X%20%7B%20a%20%7D&operationName=GetTickets&variables=%7B%7D",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "GET /graphql#GetTickets"
+    },
+    {
+      "name": "GET with only query",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "GET",
+      "url": "https://app.example/graphql?query=query%20GetTickets%20%7B%20a%20%7D",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "GET /graphql#GetTickets"
+    },
+    {
+      "name": "GET persisted query without operationName",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "GET",
+      "url": "https://app.example/graphql?extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22abc%22%7D%7D",
+      "names": [
+        "persisted"
+      ],
+      "key": "GET /graphql#persisted"
+    },
+    {
+      "name": "GET without GraphQL parameters gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "GET",
+      "url": "https://app.example/graphql?x=1",
+      "names": null,
+      "key": "GET /graphql?x"
+    },
+    {
+      "name": "POST APQ without query: operationName",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"GetTickets\",\"extensions\":{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"abc\"}}}",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets"
+    },
+    {
+      "name": "POST APQ without query and operationName: persisted",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"extensions\":{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"abc\"}},\"variables\":{\"id\":1}}",
+      "names": [
+        "persisted"
+      ],
+      "key": "POST /graphql#persisted"
+    },
+    {
+      "name": "POST APQ with a rejected operationName gives no name (18-REQ-04)",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"Get Tickets\",\"extensions\":{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"abc\"}}}",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "multipart/form-data upload: the operations field",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "--b0undary\r\nContent-Disposition: form-data; name=\"operations\"\r\n\r\n{\"query\":\"mutation Upload($f: Upload!) { upload(file: $f) }\",\"variables\":{\"f\":null}}\r\n--b0undary\r\nContent-Disposition: form-data; name=\"map\"\r\n\r\n{\"0\":[\"variables.f\"]}\r\n--b0undary\r\nContent-Disposition: form-data; name=\"0\"; filename=\"a.txt\"\r\nContent-Type: text/plain\r\n\r\nsecret file\r\n--b0undary--\r\n",
+      "names": [
+        "Upload"
+      ],
+      "key": "POST /graphql#Upload"
+    },
+    {
+      "name": "multipart/form-data without an operations field gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "--b\r\nContent-Disposition: form-data; name=\"file\"\r\n\r\nx\r\n--b--\r\n",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "operationName outside the name grammar is ignored: the query gives the name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"Get-Tickets\",\"query\":\"query GetTickets { a }\"}",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets"
+    },
+    {
+      "name": "operationName of 101 characters is ignored",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"query\":\"{ a }\"}",
+      "names": [
+        "anonymous"
+      ],
+      "key": "POST /graphql#anonymous"
+    },
+    {
+      "name": "operationName of 100 characters is kept",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"query\":\"{ a }\"}",
+      "names": [
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "key": "POST /graphql#AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "operationName that is not text is ignored",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":42,\"query\":\"query Q { a }\"}",
+      "names": [
+        "Q"
+      ],
+      "key": "POST /graphql#Q"
+    },
+    {
+      "name": "a named operation longer than 100 characters gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"query BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB { a }\"}",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "injected operationName with a body fragment is rejected",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"X\\\"}{\\\"secret\\\":1\",\"query\":\"{ a }\"}",
+      "names": [
+        "anonymous"
+      ],
+      "key": "POST /graphql#anonymous"
+    },
+    {
+      "name": "anonymous shorthand query",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"{ tickets { id } }\"}",
+      "names": [
+        "anonymous"
+      ],
+      "key": "POST /graphql#anonymous"
+    },
+    {
+      "name": "anonymous query with the keyword and variables",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"query ($id: ID) { t(id: $id) }\"}",
+      "names": [
+        "anonymous"
+      ],
+      "key": "POST /graphql#anonymous"
+    },
+    {
+      "name": "a comment before the operation is skipped",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"# query Fake { x }\\nquery Real { a }\"}",
+      "names": [
+        "Real"
+      ],
+      "key": "POST /graphql#Real"
+    },
+    {
+      "name": "a string literal is skipped",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"{ search(text: \\\"query Fake { x }\\\") } query Real { a }\"}",
+      "names": [
+        "Real"
+      ],
+      "key": "POST /graphql#Real"
+    },
+    {
+      "name": "a block string literal is skipped",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"{ a(t: \\\"\\\"\\\"mutation Fake \\\\\\\"\\\"\\\" still \\\"\\\"\\\") } mutation Real { b }\"}",
+      "names": [
+        "Real"
+      ],
+      "key": "POST /graphql#Real"
+    },
+    {
+      "name": "a string with an escaped quote is skipped",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"query\":\"{ a(t: \\\"say \\\\\\\" query Fake {\\\") } query Real { b }\"}",
+      "names": [
+        "Real"
+      ],
+      "key": "POST /graphql#Real"
+    },
+    {
+      "name": "a body that is not JSON gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "query=GetTickets",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "a JSON object without query, operationName or persisted query gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"variables\":{\"a\":1}}",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "no body gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "another method gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "PUT",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"A\"}",
+      "names": null,
+      "key": "PUT /graphql"
+    },
+    {
+      "name": "a body over 65 536 characters: operationName at the start is read",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": {
+        "text": "{\"operationName\":\"GetTickets\",\"query\":\"query GetTickets { a }\",\"variables\":{\"blob\":\"",
+        "padTo": 70000,
+        "padChar": "x",
+        "suffix": "\"}}"
+      },
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /graphql#GetTickets"
+    },
+    {
+      "name": "a body over 65 536 characters: operationName after the cut gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": {
+        "text": "{\"query\":\"query GetTickets { a }\",\"variables\":{\"blob\":\"",
+        "padTo": 70000,
+        "padChar": "x",
+        "suffix": "\"},\"operationName\":\"Late\"}"
+      },
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "a batch over 65 536 characters gives no name",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": {
+        "text": "[{\"operationName\":\"A\",\"variables\":{\"blob\":\"",
+        "padTo": 70000,
+        "padChar": "x",
+        "suffix": "\"}}]"
+      },
+      "names": null,
+      "key": "POST /graphql"
+    },
+    {
+      "name": "a body of exactly 65 536 characters is parsed whole",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": {
+        "text": "{\"query\":\"{ a }\",\"variables\":{\"blob\":\"",
+        "padTo": 65536,
+        "padChar": "x",
+        "suffix": "\"},\"operationName\":\"Last\"}"
+      },
+      "names": [
+        "Last"
+      ],
+      "key": "POST /graphql#Last"
+    },
+    {
+      "name": "Hasury path /v1/graphql with a matching entry",
+      "entry": {
+        "type": "graphql",
+        "match": "/v1/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/v1/graphql",
+      "body": "{\"operationName\":\"GetTickets\"}",
+      "names": [
+        "GetTickets"
+      ],
+      "key": "POST /v1/graphql#GetTickets"
+    },
+    {
+      "name": "a path the entry does not match is not read",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/api/orders",
+      "body": "{\"operationName\":\"X\"}",
+      "names": "unmatched",
+      "key": "POST /api/orders"
+    },
+    {
+      "name": "the query of the URL is not part of the match",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/api?next=/graphql",
+      "body": "{\"operationName\":\"X\"}",
+      "names": "unmatched",
+      "key": "POST /api?next"
+    },
+    {
+      "name": "the key with an operation keeps id normalization of the path",
+      "entry": {
+        "type": "graphql",
+        "match": "/graphql"
+      },
+      "method": "POST",
+      "url": "https://app.example/tenants/123/graphql?x=1",
+      "body": "{\"operationName\":\"A\"}",
+      "names": [
+        "A"
+      ],
+      "key": "POST /tenants/:id/graphql#A"
+    },
+    {
+      "name": "tRPC single procedure: names from the path, the query is dropped",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/post.byId?input=%7B%22id%22%3A1%7D",
+      "names": [
+        "post.byId"
+      ],
+      "key": "GET /api/trpc#post.byId"
+    },
+    {
+      "name": "tRPC batch: comma-separated, sorted in the key (18-AC-03)",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/b.list,a.get?batch=1",
+      "names": [
+        "b.list",
+        "a.get"
+      ],
+      "key": "GET /api/trpc#a.get+b.list"
+    },
+    {
+      "name": "tRPC batch with an encoded comma",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/b.list%2Ca.get?batch=1",
+      "names": [
+        "b.list",
+        "a.get"
+      ],
+      "key": "GET /api/trpc#a.get+b.list"
+    },
+    {
+      "name": "tRPC mutation: the body is not read",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "POST",
+      "url": "https://app.example/api/trpc/order.create",
+      "body": "{\"json\":{\"secret\":1}}",
+      "names": [
+        "order.create"
+      ],
+      "key": "POST /api/trpc#order.create"
+    },
+    {
+      "name": "tRPC with a string match: the text after the prefix",
+      "entry": {
+        "type": "trpc",
+        "match": "/trpc"
+      },
+      "method": "GET",
+      "url": "https://app.example/trpc/user-me_2",
+      "names": [
+        "user-me_2"
+      ],
+      "key": "GET /trpc#user-me_2"
+    },
+    {
+      "name": "tRPC: segment after the prefix up to the next slash",
+      "entry": {
+        "type": "trpc",
+        "match": "/trpc"
+      },
+      "method": "GET",
+      "url": "https://app.example/trpc/user.me/extra",
+      "names": [
+        "user.me"
+      ],
+      "key": "GET /trpc#user.me"
+    },
+    {
+      "name": "tRPC without a procedure name gives no name",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/",
+      "names": null,
+      "key": "GET /api/trpc"
+    },
+    {
+      "name": "tRPC with an invalid procedure name gives no name",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/post.by%20id",
+      "names": null,
+      "key": "GET /api/trpc/post.by%20id"
+    },
+    {
+      "name": "tRPC with an empty name in a batch gives no name",
+      "entry": {
+        "type": "trpc",
+        "match": {
+          "regex": "^/api/trpc/"
+        }
+      },
+      "method": "GET",
+      "url": "https://app.example/api/trpc/a.get,,b.list?batch=1",
+      "names": null,
+      "key": "GET /api/trpc/a.get,,b.list?batch"
+    },
+    {
+      "name": "first matching entry wins",
+      "entry": [
+        {
+          "type": "trpc",
+          "match": "/api/"
+        },
+        {
+          "type": "graphql",
+          "match": "/graphql"
+        }
+      ],
+      "method": "POST",
+      "url": "https://app.example/api/graphql",
+      "body": "{\"operationName\":\"X\"}",
+      "names": [
+        "graphql"
+      ],
+      "key": "POST /api#graphql"
+    },
+    {
+      "name": "a regex match with flags",
+      "entry": {
+        "type": "graphql",
+        "match": {
+          "regex": "/GRAPHQL$",
+          "flags": "i"
+        }
+      },
+      "method": "POST",
+      "url": "https://app.example/graphql",
+      "body": "{\"operationName\":\"X\"}",
+      "names": [
+        "X"
+      ],
+      "key": "POST /graphql#X"
+    }
+  ]
+}

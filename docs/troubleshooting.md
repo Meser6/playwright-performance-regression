@@ -42,6 +42,7 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 - [Step keys](#step-keys)
 - [Statistics](#statistics)
 - [Run and reporter](#run-and-reporter)
+- [Shards and merge](#shards-and-merge)
 - [Evaluation](#evaluation)
 - [Thresholds derivation](#thresholds-derivation)
 - [Files and schemas](#files-and-schemas)
@@ -83,7 +84,7 @@ names (`pw-perf-thresholds.steps.json`). The message names the option and the va
 `null` (for example `https://undefined.example.com`, the result of an unset environment
 variable). The tests probably run against the wrong address. If `baseURL` comes from environment
 variables, run the tests through the script that sets them, e.g. `PW_PERF_MODE=test npm run
-e2e:qa`.
+e2e:qa` (`yarn e2e:qa`, `pnpm run e2e:qa`: the hint uses the package manager of the project).
 
 ### CONFIG_FILE_NOT_PASSED
 
@@ -274,6 +275,17 @@ Exclude such URLs with `measure.exclude` (this also removes the wait at test end
 was measured for it. Pass the object returned by `playwright.request.newContext()`. The test result
 is not affected.
 
+### COLLECTOR_OPERATION_UNKNOWN
+
+**Warning.** A request matched an entry of [`keys.operations`](configuration.md#operations), but
+no operation name could be read, so its sample keeps the key without an operation (for example
+`POST /graphql`); the message gives the method, the pattern of the entry and how often it
+happened. Typical causes: a GraphQL body that is not JSON, has neither `operationName` nor a named
+operation and is not a persisted query, an `operationName` that is not a valid GraphQL name, a
+batch with one such operation, a body cut at 64 KB before `operationName`, or a tRPC path without
+procedure names. If the matched endpoint is not GraphQL or tRPC (for example a GraphiQL page),
+narrow the `match` of the entry. The test result is not affected.
+
 ## Endpoint keys
 
 ### NORMALIZE_KEY_BUILDER_THREW
@@ -362,6 +374,18 @@ project.
 mixed in the same keys. Measure one browser engine per run: select its projects with `--project`
 in the measurement command, e.g. `--project chromium`.
 
+### STATS_COLD_SLOW
+
+**Warning.** The first call of some keys in the run was much slower than their usual (warm)
+median: at least three times slower and at least 100 ms more, typically right after the
+application or its container started (JIT, connection pools, caches). The message names up to
+three keys with the slowest first call, the warm p50 and the ratio. The first `measure.coldSamples`
+timed samples of a key in each pass (1 by default) are cold, as every pass starts Playwright and,
+with `webServer`, the application again: when at least `checks.time.median.minSamples` warm samples
+remain, they stay out of the evaluated statistics, so this warning does not change the result. The HTML report shows them under "Cold vs warm" and ranks the
+keys under "Slowest first calls". To measure first calls too, warm the application up before the
+tests or set `measure.coldSamples` to `0`.
+
 ## Run and reporter
 
 ### CHECK_RANDOM_HOST
@@ -414,9 +438,9 @@ failure limit stops the run (perf mode sets Playwright's own `globalTimeout` and
 
 ### RUN_SHARDED
 
-**Tool error (exit code 3).** The perf-mode run was started with `--shard`. Each shard would
-evaluate only part of the keys with only part of the samples. Run perf mode on one machine
-without sharding.
+**Withdrawn in 1.1.0.** Up to 1.0.x a perf-mode run with `--shard` ended with this tool error.
+Since 1.1.0 each shard writes a shard file and a separate merge job evaluates them together; see
+[Sharded runs](ci.md#sharded-runs).
 
 ### RUN_CONDITIONS_CHANGED
 
@@ -515,6 +539,82 @@ file, set `report.junit` to `false`.
 **Tool error (exit code 3).** An unexpected error in the package reporter. This is a bug in the
 package; please open an issue with the full message.
 
+## Shards and merge
+
+A perf-mode run with `--shard=i/n` writes `reports/pw-perf/shard-<i>-of-<n>.json` and does not
+evaluate; `PW_PERF_MODE=merge npx pw-perf` in a merge job reads all shard files from
+`reports/pw-perf/` and evaluates them as one run. See [Sharded runs](ci.md#sharded-runs).
+
+### SHARD_WRITE_FAILED
+
+**Tool error of the shard (exit code 3).** The shard file could not be written to `report.dir`,
+for example because the folder is not writable or the disk is full. The merge then misses this
+shard (`MERGE_SHARD_MISSING`). Check that `report.dir` is writable and run the shard again.
+
+### MERGE_NO_SHARD_FILES
+
+**Tool error (exit code 3).** The merge found no `shard-<i>-of-<n>.json` file in
+`reports/pw-perf/` of the working directory; no report and no `outcome.json` are written. Download
+the shard files of all shard jobs to `reports/pw-perf/` (in GitHub Actions: `download-artifact`
+with `merge-multiple: true`) and run the merge from the root of the checkout. With a custom
+`report.dir` the shards write their files there; copy them to `reports/pw-perf/` of the merge job.
+
+### MERGE_SHARD_INVALID
+
+**Tool error (exit code 3).** A shard file is no valid JSON, has another format version or lacks
+fields, e.g. after a truncated upload or a manual edit. The file is skipped and its shard counts as
+missing. Use the shard files exactly as the shard jobs wrote them.
+
+### MERGE_SHARD_MISMATCH
+
+**Tool error (exit code 3).** The shard files differ in a field that must be the same on every
+machine: package version, Playwright version, mode, environment label, number of shards, package
+config, normalization or paths. The message names the field and the files. Nothing is evaluated.
+Common causes: shard files of two runs in one folder, a different `--shard=i/n` total in one job,
+or a different lock file on one machine. Merge the files of one pipeline run.
+
+### MERGE_SHARD_DUPLICATE
+
+**Tool error (exit code 3).** Two files belong to the same shard number, usually a file of an
+earlier run left in `reports/pw-perf/`. Nothing is evaluated. Keep one file per shard; start the
+merge job from a clean checkout.
+
+### MERGE_SHARD_MISSING
+
+**Tool error (exit code 3).** Some shard numbers from 1 to n have no file, e.g. a shard job hit its
+time limit or did not upload its artifact. The report covers the other shards for diagnosis, but no
+thresholds files are written. Check the shard jobs; every shard must upload
+`reports/pw-perf/shard-*.json`, also when it failed (`if: always()`).
+
+### MERGE_WRONG_DIRECTORY
+
+**Tool error (exit code 3).** The Playwright config the shards ran with is not found below the
+working directory of the merge, so the thresholds files could not be located. Run the merge from
+the directory where the shards ran the test command (in CI: the root of the checkout).
+
+### MERGE_SHARDS_DIFFERENT_COMMIT
+
+**Warning.** The shards ran on different commits, so they measured different code. The merge goes
+on. Merge the shard files of one pipeline run; re-run all shards after a new commit.
+
+### MERGE_SHARDS_DIFFERENT_HOSTS
+
+**Warning.** The shards ran on machines with different CPU, core count or system. Different
+machines add noise to the statistics; the summary shows a table of the shards. Run all shards on
+the same machine type, and derive the thresholds with the same number of shards and machine type
+as the measurement.
+
+### MERGE_ENV_IGNORED
+
+**Warning.** `PW_PERF_ENV`, `PW_PERF_PRUNE` or `PW_PERF_PASSES` was set in the merge job with a
+value other than the one in the shard files. These variables belong to the test command: the merge
+uses the values of the shard files. Set them in the shard jobs.
+
+### MERGE_INTERNAL_ERROR
+
+**Tool error (exit code 3).** An unexpected error in the merge. This is a bug in the package;
+please open an issue with the full message.
+
 ## Evaluation
 
 ### EVAL_NO_SAMPLES
@@ -587,9 +687,37 @@ written for. Check `PW_PERF_ENV` and `run.env`, and derive thresholds for each e
 
 **Warning.** A thresholds file was derived under other conditions than the current run (or the
 source report): another browser, Playwright version (major.minor), machine or normalization
-rules. Timings from another machine or browser are not comparable: derive thresholds on the same
-infrastructure that runs the gate, usually CI (see [thresholds.md](thresholds.md)). After a change
-of normalization, derive again so the keys match.
+rules, or another `measure.coldSamples` (files written before 1.1.0 do not record it and are not
+compared on it). Timings from another machine or browser are not comparable: derive thresholds on
+the same infrastructure that runs the gate, usually CI (see [thresholds.md](thresholds.md)). After a
+change of normalization or of `measure.coldSamples`, derive again so the keys and samples match;
+after a change of normalization (`keys.*` options such as `keys.operations`, or the `baseURL`
+origins) add `PW_PERF_PRUNE=1` to the thresholds run, so the entries of the old keys are removed.
+
+### THRESHOLDS_ENTRY_NOT_TIMED
+
+**Warning.** Keys with an entry in the thresholds file were called often enough
+(`checks.time.median.minSamples`), but too few of their responses were successful
+(`measure.successStatuses`), so their time limits could not be checked. The message names up to
+three keys with their statuses, e.g. `GET /api/me (20 × 401)`. Typical causes are an expired login,
+missing test data or a changed backend that now answers 401, 403, 404 or 5xx quickly. Check the
+login and the test data of the tests that call these keys. The `nonSuccess` rule fails such a key
+when its entry has `maxNonSuccessRate`, which thresholds runs of version 1.1.0 or later write; see
+[thresholds.md](thresholds.md).
+
+### THRESHOLDS_WORKLOAD_SHIFT
+
+**Warning.** Some keys got a different number of samples per pass than in the thresholds run, by
+`thresholds.workloadShift.factor` (2 by default) or more in either direction, e.g. after a change
+of the tests, fixtures or test data. Percentiles of fewer or more samples are not comparable, so a
+change of the result may come from the tests, not from the application. The message names up to
+three keys with the largest change (`4.0 → 0.8 samples per pass (×0.20)`); the console shows the
+samples as `now/base` in the violations table and the HTML report has a "Compared with the
+thresholds run" block. Retries of failed tests add samples too: when shifted keys have samples
+from failed tests, the hint says so first, and the shift usually goes away once the tests pass. The
+warning does not change the result. After an intended change of the
+tests, derive thresholds again with `PW_PERF_MODE=thresholds npm run e2e`; set
+`thresholds.workloadShift.factor` to `null` to turn the warning off.
 
 ### THRESHOLDS_MUTED
 

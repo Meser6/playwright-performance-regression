@@ -26,6 +26,7 @@ function allRulesOn(checks: Checks): Checks {
       wilson: on(checks.slowShare.wilson),
     },
     errors: on(checks.errors),
+    nonSuccess: on(checks.nonSuccess),
   };
 }
 

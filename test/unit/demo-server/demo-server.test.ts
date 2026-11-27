@@ -94,9 +94,32 @@ describe('demo server', () => {
     await reader?.cancel();
   });
 
+  test('13-REQ-29 fast-failure switches: statuses, a shop page without the cart, a cold call', async () => {
+    const control = (body: unknown) =>
+      fetch(`${server.url}/__control`, { method: 'POST', body: JSON.stringify(body) });
+    await control({
+      delays: { 'GET /api/orders': 5 },
+      statuses: { 'GET /api/orders': 401 },
+      appSkip: ['/api/cart'],
+      cold: { 'GET /api/items': 120 },
+    });
+    expect((await fetch(`${server.url}/api/orders`)).status).toBe(401);
+    expect(await (await fetch(`${server.url}/app`)).text()).toContain(
+      '["/api/products","/api/users/"]',
+    );
+    const [first] = await timed(`${server.url}/api/items`);
+    const [second] = await timed(`${server.url}/api/items`);
+    expect(first).toBeGreaterThanOrEqual(115);
+    expect(second).toBeLessThan(100);
+    // Every control call resets the switches.
+    await control({ delays: {} });
+    expect((await fetch(`${server.url}/api/orders`)).status).toBe(200);
+    expect(await (await fetch(`${server.url}/app`)).text()).toContain('"/api/cart"');
+  });
+
   test('serves the shop page and listens on given ports', async () => {
     const app = await (await fetch(`${server.url}/app`)).text();
-    expect(app).toContain("'/api/products', '/api/cart', '/api/users/'");
+    expect(app).toContain('["/api/products","/api/cart","/api/users/"]');
     const probe = await startDemoServer();
     const ports = [Number(probe.url.split(':')[2]), Number(probe.apiUrl.split(':')[2])];
     await probe.close();

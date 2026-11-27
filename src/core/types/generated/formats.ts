@@ -49,6 +49,10 @@ export type RequestSample = {
    * True when Response.fromServiceWorker() reported that a service worker produced the response; such samples are excluded from time statistics (05-REQ-05). False for FAILED and PENDING.
    */
   fromServiceWorker: boolean;
+  /**
+   * Operation names read by keys.operations (18-REQ-09), in request order; null when the request matched no entry or no name could be read. Written only when keys.operations is not empty; a missing field means null. Never the request body (P-07).
+   */
+  operation?: [string, ...string[]] | null;
 };
 /**
  * One call of an APIRequestContext method, timed with the worker's clock (15-REQ-05).
@@ -82,6 +86,10 @@ export type ApiRequestSample = {
    * request: the request fixture; context: page.request or context.request; tracked: a context passed to trackRequestContext(). Informational: all give keys with the same prefix (15-REQ-05).
    */
   source: 'request' | 'context' | 'tracked';
+  /**
+   * Operation names read by keys.operations (18-REQ-09), in request order; null when the request matched no entry or no name could be read. Written only when keys.operations is not empty; a missing field means null. Never the request body (P-07).
+   */
+  operation?: [string, ...string[]] | null;
 };
 /**
  * Limits for one key. A complete entry has all seven limit fields; the generator always writes complete entries. t, minApdex and maxWilson may be null: the apdex and wilson rules do not apply to this key (10-REQ-06). Hand-written entries may omit fields (02-REQ-21): missing median, percentile, p99 and maxErrorRate come from checks.<group>.<rule>.limit of the current config; without t the apdex and wilson rules are off; with t, a missing minApdex or maxWilson comes from checks.slowShare.apdex.limit / wilson.limit. An entry may contain only muting (gate, note, until) without any limit (02-REQ-29). An entry with a missing field is never overwritten by the generator (10-REQ-08).
@@ -117,6 +125,31 @@ export type Entry = {
    * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
    */
   maxErrorRate?: number;
+  /**
+   * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+   */
+  maxNonSuccessRate?: number;
+  /**
+   * Samples of the run the limits of this entry come from (10-REQ-26); kept with the limits, ignored by hysteresis. Used for the workload comparison (09-REQ-40).
+   */
+  source?: {
+    /**
+     * Non-negative integer counter.
+     */
+    count: number;
+    /**
+     * Non-negative integer counter.
+     */
+    successCount: number;
+    /**
+     * Completed passes of the run.
+     */
+    passes: number;
+    /**
+     * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+     */
+    share: number;
+  };
   /**
    * Pinned by hand: the generator never changes or removes this entry (D-19). Omitted when not locked.
    */
@@ -269,6 +302,10 @@ export interface PackageConfig {
      */
     successStatuses?: [string, ...string[]];
     /**
+     * The first N timed samples of every key in each pass are cold (first call after the start of the application, which webServer starts again in every pass): they stay out of the evaluated time statistics when at least checks.time.median.minSamples warm samples are left (08-REQ-41, 08-REQ-42). 0 turns it off.
+     */
+    coldSamples?: number;
+    /**
      * Durations of test.step steps as keys of kind 'step' (06). true (default) enables with defaults, false disables, an object enables with settings (03-REQ-18).
      */
     steps?:
@@ -394,6 +431,24 @@ export interface PackageConfig {
      * Query parameter names always removed from the key (e.g. cache busters with fixed names).
      */
     dropQueryParams?: string[];
+    /**
+     * Endpoints that get a key per operation (18): GraphQL ('graphql': operationName or the first named operation, batches by the sorted names) and tRPC ('trpc': procedure names from the path), e.g. [{"type": "graphql", "match": "/graphql"}] gives 'POST /graphql#GetTickets'. match is tested against the URL path without the query; the first matching entry wins. The request body is read only for POST requests matching a graphql entry, up to 64 KB, in the worker, and never written anywhere.
+     */
+    operations?: {
+      /**
+       * Built-in operation extractor.
+       */
+      type: 'graphql' | 'trpc';
+      /**
+       * A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.
+       */
+      match:
+        | string
+        | {
+            regex: string;
+            flags?: string;
+          };
+    }[];
     /**
      * Snapshot only: "[function]" when a custom keyBuilder function was configured (TypeScript/JavaScript config).
      */
@@ -716,6 +771,45 @@ export interface PackageConfig {
         min?: number;
       };
     };
+    /**
+     * Share of responses outside measure.successStatuses (e.g. fast 401s) must not exceed the limit; lower Wilson bound compared (09-REQ-38). Endpoint keys only.
+     */
+    nonSuccess?: {
+      /**
+       * Run this rule.
+       */
+      enabled?: boolean;
+      /**
+       * Minimum samples for the rule to run (09-REQ-07).
+       */
+      minSamples?: number;
+      /**
+       * Limit for keys without an entry in the thresholds file. null (default): the rule runs only for keys whose entry has maxNonSuccessRate.
+       */
+      limit?: {
+        /**
+         * Endpoint keys: maximum share of responses outside measure.successStatuses, or null.
+         */
+        api?: number | null;
+      };
+      /**
+       * Headroom added to the source run value when deriving this limit (10, chapter 5).
+       */
+      margin?: {
+        /**
+         * Multiplier of the source non-success rate.
+         */
+        factor?: number;
+        /**
+         * Added after multiplying.
+         */
+        add?: number;
+        /**
+         * Minimum derived limit.
+         */
+        min?: number;
+      };
+    };
   };
   /**
    * Gate policy: when violations fail the run (09, D-16, D-17).
@@ -779,6 +873,15 @@ export interface PackageConfig {
      * Warn (THRESHOLDS_LOOSENED_MUCH) when a derived time limit grows by more than this share (10-REQ-20).
      */
     loosenWarnRelative?: number;
+    /**
+     * Warning THRESHOLDS_WORKLOAD_SHIFT when a key gets a different number of samples per pass than in the thresholds run (09-REQ-41).
+     */
+    workloadShift?: {
+      /**
+       * Warn when samples per pass change by this factor or more in either direction; null turns the warning off.
+       */
+      factor?: number | null;
+    };
   };
   /**
    * Run outputs (02, 11).
@@ -819,7 +922,7 @@ export interface PackageConfig {
  * Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
  */
 export interface SampleBatch {
-  schemaVersion: 3;
+  schemaVersion: 4;
   /**
    * Collector that produced the batch.
    */
@@ -875,7 +978,7 @@ export interface Issue {
  * Result of one perf-mode run. Written by the reporter in onEnd; read by the CLI (thresholds --from, report) and rendered to HTML (11). Everything the HTML report shows must be here (01-REQ-22).
  */
 export interface RunReport {
-  schemaVersion: 4;
+  schemaVersion: 5;
   tool: Tool;
   /**
    * Run identifier, generated by the CLI or by the reporter.
@@ -921,58 +1024,63 @@ export interface RunReport {
    * CI metadata read from well-known environment variables (02-REQ-28); null outside CI or when no known provider is detected and CI is unset.
    */
   ci: CiInfo | null;
-  /**
-   * Machine that ran the tests (02-REQ-28).
-   */
-  host: {
-    /**
-     * process.platform
-     */
-    platform: string;
-    /**
-     * process.arch
-     */
-    arch: string;
-    /**
-     * process.version
-     */
-    nodeVersion: string;
-    /**
-     * True when the CI environment variable is set.
-     */
-    ci: boolean;
-    /**
-     * os.availableParallelism()
-     */
-    cpuCount: number;
-    /**
-     * os.cpus()[0].model, trimmed; empty string when unknown.
-     */
-    cpuModel: string;
-  };
+  host: Host;
   playwright: {
     /**
      * FullConfig.version
      */
     version: string;
   };
+  passes: Passes;
   /**
-   * Passes of the run (D-39, 02-REQ-37): the test command runs once per pass and the first pass merges them.
+   * Shards merged into this report (17-REQ-17): null for a run without shards, an object after PW_PERF_MODE=merge.
    */
-  passes: {
+  shards: {
     /**
-     * Passes of the run (run.passes.<mode>, PW_PERF_PASSES).
+     * n of --shard=i/n.
      */
-    planned: number;
+    total: number;
     /**
-     * Passes whose data are in the report, including the first one.
+     * Shard numbers without a shard file (MERGE_SHARD_MISSING), ascending.
      */
-    completed: number;
+    missing: number[];
     /**
-     * Numbers of passes without data (RUN_PASS_FAILED), ascending.
+     * The merged shards by index, ascending.
      */
-    failed: number[];
-  };
+    list: {
+      /**
+       * i of --shard=i/n.
+       */
+      index: number;
+      /**
+       * Run identifier, generated by the CLI or by the reporter.
+       */
+      runId: string;
+      /**
+       * UTC timestamp in ISO 8601 with milliseconds, e.g. 2026-11-18T10:00:00.000Z.
+       */
+      startedAt: string;
+      /**
+       * UTC timestamp in ISO 8601 with milliseconds, e.g. 2026-11-18T10:00:00.000Z.
+       */
+      finishedAt: string;
+      /**
+       * Overall Playwright run status (FullResult.status).
+       */
+      status: 'passed' | 'failed' | 'timedout' | 'interrupted';
+      passes: Passes;
+      tests: Tests;
+      /**
+       * Non-negative integer counter.
+       */
+      samples: number;
+      host: Host;
+      /**
+       * ci.buildUrl of the shard job, or null.
+       */
+      buildUrl: string | null;
+    }[];
+  } | null;
   /**
    * Effective run conditions read from FullConfig in onBegin (ADR-0006).
    */
@@ -1000,31 +1108,7 @@ export interface RunReport {
      */
     overriddenSettings: string[];
   };
-  /**
-   * Functional test results, independent of the evaluation (P-08). Counters follow TestCase.outcome().
-   */
-  tests: {
-    /**
-     * Overall Playwright run status (FullResult.status).
-     */
-    status: 'passed' | 'failed' | 'timedout' | 'interrupted';
-    /**
-     * Non-negative integer counter.
-     */
-    expected: number;
-    /**
-     * Non-negative integer counter.
-     */
-    unexpected: number;
-    /**
-     * Non-negative integer counter.
-     */
-    flaky: number;
-    /**
-     * Non-negative integer counter.
-     */
-    skipped: number;
-  };
+  tests: Tests;
   /**
    * Run-level evaluation summary. Per-key details live in endpoints and steps (02-REQ-15).
    */
@@ -1138,6 +1222,77 @@ export interface CiInfo {
    * URL of the CI job or build, or null when unknown.
    */
   buildUrl: string | null;
+}
+/**
+ * Machine that ran the tests (02-REQ-28).
+ */
+export interface Host {
+  /**
+   * process.platform
+   */
+  platform: string;
+  /**
+   * process.arch
+   */
+  arch: string;
+  /**
+   * process.version
+   */
+  nodeVersion: string;
+  /**
+   * True when the CI environment variable is set.
+   */
+  ci: boolean;
+  /**
+   * os.availableParallelism()
+   */
+  cpuCount: number;
+  /**
+   * os.cpus()[0].model, trimmed; empty string when unknown.
+   */
+  cpuModel: string;
+}
+/**
+ * Passes of the run (D-39, 02-REQ-37): the test command runs once per pass and the first pass merges them.
+ */
+export interface Passes {
+  /**
+   * Passes of the run (run.passes.<mode>, PW_PERF_PASSES).
+   */
+  planned: number;
+  /**
+   * Passes whose data are in the report, including the first one.
+   */
+  completed: number;
+  /**
+   * Numbers of passes without data (RUN_PASS_FAILED), ascending.
+   */
+  failed: number[];
+}
+/**
+ * Functional test results, independent of the evaluation (P-08). Counters follow TestCase.outcome().
+ */
+export interface Tests {
+  /**
+   * Overall Playwright run status (FullResult.status).
+   */
+  status: 'passed' | 'failed' | 'timedout' | 'interrupted';
+  /**
+   * Non-negative integer counter.
+   */
+  expected: number;
+  /**
+   * Non-negative integer counter.
+   */
+  unexpected: number;
+  /**
+   * Non-negative integer counter.
+   */
+  flaky: number;
+  /**
+   * Non-negative integer counter.
+   */
+  skipped: number;
 }
 export interface EvaluationCounts {
   /**
@@ -1481,6 +1636,26 @@ export interface Aggregate {
     counts: [number, ...number[]];
   } | null;
   /**
+   * Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
+   */
+  cold: Cold | null;
+  /**
+   * Endpoints: samples with an HTTP status outside measure.successStatuses, whatever checks.errors.statuses says (08-REQ-46). Null for steps.
+   */
+  nonSuccessCount: number | null;
+  /**
+   * Endpoints: durations of the non-success samples per status, up to 5 statuses with the most samples (08-REQ-47); not part of the time statistics. Empty for steps.
+   *
+   * @maxItems 5
+   */
+  failedTimings:
+    | []
+    | [FailedTiming]
+    | [FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming, FailedTiming, FailedTiming];
+  /**
    * Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.
    *
    * @maxItems 3
@@ -1516,7 +1691,7 @@ export interface SlowSample {
    */
   duration: number;
   /**
-   * Start of the request (startTime), UTC.
+   * UTC timestamp in ISO 8601 with milliseconds, e.g. 2026-11-18T10:00:00.000Z.
    */
   startedAt: string;
   test: TestRef;
@@ -1574,6 +1749,10 @@ export interface KeyEvaluation {
      * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
      */
     maxErrorRate: number;
+    /**
+     * Limit of the nonSuccess rule (09-REQ-38): from the entry, or checks.nonSuccess.limit.api for endpoint keys without one; null when the rule does not apply.
+     */
+    maxNonSuccessRate: number | null;
   };
   /**
    * Checks that were run (which ones depends on the sample count, 09). Empty when not evaluated.
@@ -1590,12 +1769,16 @@ export interface KeyEvaluation {
      */
     expired: boolean;
   } | null;
+  /**
+   * Workload of the key compared with the thresholds run (09-REQ-40); null without an entry with a source block.
+   */
+  workload: Workload | null;
 }
 export interface Check {
   /**
-   * Rule name (09, 5.2). apdex, wilson and errors compare a bound of a 95% interval (09-REQ-09).
+   * Rule name (09, 5.2). apdex, wilson, errors and nonSuccess compare a bound of a 95% interval (09-REQ-09).
    */
-  rule: 'median' | 'percentile' | 'p99' | 'apdex' | 'wilson' | 'errors';
+  rule: 'median' | 'percentile' | 'p99' | 'apdex' | 'wilson' | 'errors' | 'nonSuccess';
   /**
    * Samples the rule used: retained timing samples for time, apdex and wilson rules, all samples of the key for errors.
    */
@@ -1622,6 +1805,96 @@ export interface Check {
    * Part of the limit used, 4 decimal places (11-REQ-30): actual / limit, for apdex (1 - actual) / (1 - limit); at most 1 for a passed check. Null when the limit leaves no headroom (limit 0, apdex limit 1) and the value is not at it, or in a report migrated from version 1.
    */
   usage: number | null;
+}
+/**
+ * Samples of the key in the thresholds run (base, the source block of the entry) and in this run (now) (09-REQ-40).
+ */
+export interface Workload {
+  base: WorkloadSide;
+  now: WorkloadSide;
+  /**
+   * (now.count / now.passes) / (base.count / base.passes), 2 decimal places; null when base.count is 0.
+   */
+  perPassRatio: number | null;
+  /**
+   * perPassRatio is at least thresholds.workloadShift.factor or at most its inverse (09-REQ-41).
+   */
+  shifted: boolean;
+}
+export interface WorkloadSide {
+  /**
+   * Non-negative integer counter.
+   */
+  count: number;
+  /**
+   * Non-negative integer counter.
+   */
+  successCount: number;
+  passes: number;
+  workers: number;
+  /**
+   * Value between 0 and 1 inclusive. The thresholds generator writes at most 3 decimal places (02-REQ-08); hand-written values with more decimals are accepted (02-D-11).
+   */
+  share: number;
+}
+/**
+ * Cold samples of one key (08-REQ-43).
+ */
+export interface Cold {
+  /**
+   * Number of cold samples (at most measure.coldSamples per pass and shard).
+   */
+  count: number;
+  /**
+   * True when the cold samples are left out of the time statistics and successCount (08-REQ-42).
+   */
+  excluded: boolean;
+  /**
+   * too-few-samples: without the cold samples the key would have fewer than checks.time.median.minSamples warm samples, so the cold samples stay in the statistics.
+   */
+  reason: 'too-few-samples' | null;
+  /**
+   * Durations of the cold samples in input order, at most the first 5.
+   *
+   * @minItems 1
+   * @maxItems 5
+   *
+   * Items: Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+   */
+  durations:
+    | [number]
+    | [number, number]
+    | [number, number, number]
+    | [number, number, number, number]
+    | [number, number, number, number, number];
+  /**
+   * Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+   */
+  max: number;
+  /**
+   * p50 of the warm samples; when every sample is cold (excluded false), the p50 of all timed samples (08-REQ-43).
+   */
+  warmP50: number | null;
+  /**
+   * max / warmP50, 2 decimal places; null when warmP50 is null or 0.
+   */
+  ratio: number | null;
+  test: TestRef;
+}
+export interface FailedTiming {
+  status: number;
+  /**
+   * Timed samples with this status.
+   */
+  count: number;
+  /**
+   * Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+   */
+  p50: number;
+  /**
+   * Duration in milliseconds, rounded to 0.1 ms (02-REQ-07).
+   */
+  p95: number;
 }
 /**
  * A rule-based one-sentence explanation of the key result; the HTML report builds the text from code and params (11-REQ-34).
@@ -1923,6 +2196,26 @@ export interface StepAggregate {
     counts: [number, ...number[]];
   } | null;
   /**
+   * Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
+   */
+  cold: Cold | null;
+  /**
+   * Endpoints: samples with an HTTP status outside measure.successStatuses, whatever checks.errors.statuses says (08-REQ-46). Null for steps.
+   */
+  nonSuccessCount: number | null;
+  /**
+   * Endpoints: durations of the non-success samples per status, up to 5 statuses with the most samples (08-REQ-47); not part of the time statistics. Empty for steps.
+   *
+   * @maxItems 5
+   */
+  failedTimings:
+    | []
+    | [FailedTiming]
+    | [FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming, FailedTiming]
+    | [FailedTiming, FailedTiming, FailedTiming, FailedTiming, FailedTiming];
+  /**
    * Hints that explain the result of the key, in rule priority order (11-REQ-34); at most 3.
    *
    * @maxItems 3
@@ -2152,7 +2445,7 @@ export interface WaterfallRequest {
  * Committed thresholds for one category (kind) and optionally one environment. Written by the thresholds generator (10) or by hand; read by the reporter and the CLI.
  */
 export interface ThresholdsFile {
-  schemaVersion: 2;
+  schemaVersion: 3;
   /**
    * Sample category: 'api' (backend endpoints) or 'step' (test.step durations, 06).
    */
@@ -2179,7 +2472,7 @@ export interface Generated {
    */
   sourceRunId: string;
   /**
-   * startedAt of that report.
+   * UTC timestamp in ISO 8601 with milliseconds, e.g. 2026-11-18T10:00:00.000Z.
    */
   sourceRunStartedAt: string;
   /**
@@ -2204,6 +2497,14 @@ export interface Generated {
    * 53-bit hash53 value (08) as 14 lowercase hexadecimal digits, zero-padded.
    */
   normalization: string;
+  /**
+   * measure.coldSamples of the source run (08-REQ-41); compared with the evaluated run (09-REQ-04). Missing in files written by 1.0.x.
+   */
+  coldSamples?: number;
+  /**
+   * Completed passes of the source run (10-REQ-26). Missing in files written by 1.0.x.
+   */
+  sourcePasses?: number;
 }
 /**
  * Effective settings used to derive a thresholds file of one kind: T settings of that kind (checks.slowShare.t.<kind>), thresholds.smallSampleN and the margin of each rule (snapshot, 10).
@@ -2302,6 +2603,23 @@ export interface DerivationSettings {
     errors: {
       /**
        * Multiplier of the source error rate.
+       */
+      factor?: number;
+      /**
+       * Added after multiplying.
+       */
+      add?: number;
+      /**
+       * Minimum derived limit.
+       */
+      min?: number;
+    };
+    /**
+     * Since 1.1.0 (10-REQ-25); missing in files written by 1.0.x.
+     */
+    nonSuccess?: {
+      /**
+       * Multiplier of the source non-success rate.
        */
       factor?: number;
       /**

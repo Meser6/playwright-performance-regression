@@ -37,7 +37,7 @@ describe('TestCollector', () => {
     await empty.drain();
     const emptyBatch = empty.batch();
     expect(emptyBatch).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       collector: { name: 'playwright-js', version: '1.2.3', browserName: null },
       requests: [],
       apiRequests: [],

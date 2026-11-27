@@ -135,7 +135,7 @@ describe('keyBuilder (07-REQ-15, 07-REQ-16)', () => {
       return undefined;
     }, 'https://app.example.com/a b');
     expect(calls).toEqual([
-      { method: 'GET', url: 'https://app.example.com/a b', resourceType: 'xhr' },
+      { method: 'GET', url: 'https://app.example.com/a b', resourceType: 'xhr', operation: null },
     ]);
   });
 

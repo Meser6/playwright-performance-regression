@@ -1,0 +1,80 @@
+// Sharded performance runs with playwright-performance-regression (pw-perf). Use as the script of
+// a pipeline job instead of the basic recipe when one agent takes too long (docs/ci.md, "Sharded
+// runs"). Each branch of the Shards stage measures its part of the tests in all passes and stashes
+// reports/pw-perf/shard-*.json; the Merge stage (no browsers) evaluates all shards as one run.
+// Derive the thresholds with the same number of shards and agent type as the measurement.
+// Exit code of the merge: 2 (performance regression) marks the build UNSTABLE, 3 (tool or config
+// error, e.g. a missing shard) fails it.
+def SHARDS = 4 // the number of shards
+
+pipeline {
+  agent none
+  parameters {
+    choice(name: 'MODE', choices: ['test', 'thresholds'], description: 'test: measurement run, thresholds: derive the thresholds files')
+  }
+  options {
+    timeout(time: 150, unit: 'MINUTES')
+  }
+  triggers {
+    cron('H 3 * * 1')
+  }
+  stages {
+    stage('Shards') {
+      steps {
+        script {
+          def branches = [:]
+          for (int i = 1; i <= SHARDS; i++) {
+            def n = i
+            branches["shard ${n}/${SHARDS}"] = {
+              node {
+                checkout scm
+                withEnv(["PW_PERF_MODE=${params.MODE ?: 'test'}"]) {
+                  sh 'npm ci'
+                  sh 'npx playwright install --with-deps chromium'
+                  sh 'rm -f reports/pw-perf/outcome.json'
+                  sh(script: "npm run e2e -- --shard=${n}/${SHARDS}", returnStatus: true)
+                  stash name: "pw-perf-shard-${n}", includes: 'reports/pw-perf/shard-*.json', allowEmpty: true
+                  def code = sh(script: 'node -p "require(\'./reports/pw-perf/outcome.json\').exitCode" 2>/dev/null || echo 3', returnStdout: true).trim()
+                  if (code != '0') {
+                    unstable("Shard ${n}/${SHARDS} ended with exit code ${code}")
+                  }
+                }
+              }
+            }
+          }
+          parallel branches
+        }
+      }
+    }
+    stage('Merge') {
+      agent any
+      steps {
+        sh 'npm ci'
+        script {
+          for (int i = 1; i <= SHARDS; i++) {
+            try {
+              unstash "pw-perf-shard-${i}"
+            } catch (err) {
+              echo "No shard file of shard ${i}: the merge reports MERGE_SHARD_MISSING"
+            }
+          }
+          def code = 3
+          withEnv(['PW_PERF_MODE=merge']) {
+            code = sh(script: 'npx pw-perf', returnStatus: true)
+          }
+          if (code == 2) {
+            unstable('Performance regression (exit code 2)')
+          } else if (code != 0) {
+            error("Performance merge failed with exit code ${code}")
+          }
+        }
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'reports/pw-perf/**', allowEmptyArchive: true
+          junit testResults: 'reports/pw-perf/junit.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true
+        }
+      }
+    }
+  }
+}

@@ -92,6 +92,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ];
 
 /**

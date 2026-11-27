@@ -1,0 +1,5 @@
+{
+  "name": "integration-sharding",
+  "private": true,
+  "type": "module"
+}

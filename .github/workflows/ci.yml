@@ -57,7 +57,7 @@ jobs:
       # 13-AC-07: actionlint (workflow linter) on the GitHub Actions recipe and on the workflows
       # of this repository (the other recipes are checked by test/contract/ci-recipes.test.ts).
       - name: Lint the GitHub Actions recipe and workflows
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color examples/ci/github-actions.yml .github/workflows/*.yml
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color examples/ci/github-actions.yml examples/ci/sharded/github-actions.yml .github/workflows/*.yml
       - run: pnpm check:ac
       - run: pnpm build
       # 13-REQ-11: package.json rules, packed contents and unpacked size of both packages.

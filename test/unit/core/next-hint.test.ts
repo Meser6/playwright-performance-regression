@@ -108,7 +108,7 @@ describe('09-AC-26 nextHint', () => {
     mode: 'test',
     toolErrors: [],
     warnings: [],
-    endpoints: { 'GET /a': {} as never },
+    endpoints: { 'GET /a': { evaluation: { checks: [] } } as never },
     steps: {},
     ci: null,
     evaluation: { status: 'passed', gateEnabled: true, counts: {} as never },
@@ -160,5 +160,29 @@ describe('09-AC-26 nextHint', () => {
       'open the report; if the slowdown is intended, derive thresholds again: PW_PERF_MODE=thresholds npm run e2e:qa',
     );
     expect(hint({})).toBeNull();
+  });
+
+  test('09-AC-42 a run failed only by nonSuccess or errors checks talks about response statuses', () => {
+    const failed = { status: 'failed', gateEnabled: true, counts: {} as never } as const;
+    const key = (...rules: string[]) =>
+      ({
+        evaluation: { checks: rules.map((rule) => ({ rule, blocking: true })) },
+      }) as never;
+    expect(hint({ evaluation: failed, endpoints: { 'GET /a': key('nonSuccess') } })).toBe(
+      'open the report; if the new response statuses are intended, derive thresholds again: PW_PERF_MODE=thresholds npm run e2e:qa',
+    );
+    expect(
+      hint({
+        evaluation: failed,
+        endpoints: { 'GET /a': key('errors'), 'GET /b': key('nonSuccess') },
+      }),
+    ).toContain('if the new response statuses are intended');
+    // A time rule next to nonSuccess: the slowdown text.
+    expect(
+      hint({
+        evaluation: failed,
+        endpoints: { 'GET /a': key('nonSuccess'), 'GET /b': key('median') },
+      }),
+    ).toContain('if the slowdown is intended');
   });
 });

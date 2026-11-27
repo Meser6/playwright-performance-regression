@@ -25,6 +25,18 @@
             "PENDING"
           ]
         },
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        },
         "slowShare": {
           "apdex": {
             "enabled": true,
@@ -127,10 +139,12 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },
       "measure": {
+        "coldSamples": 0,
         "exclude": [
           "/socket.io/"
         ],
@@ -203,7 +217,10 @@
         "loosenWarnRelative": 0.5,
         "preset": "normal",
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
@@ -275,7 +292,8 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
+    "shards": null,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},
@@ -325,6 +343,18 @@
             "PENDING"
           ]
         },
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        },
         "slowShare": {
           "apdex": {
             "enabled": true,
@@ -427,10 +457,12 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },
       "measure": {
+        "coldSamples": 0,
         "exclude": [
           "/socket.io/"
         ],
@@ -503,7 +535,10 @@
         "loosenWarnRelative": 0.5,
         "preset": "normal",
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
@@ -575,7 +610,8 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
+    "shards": null,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},

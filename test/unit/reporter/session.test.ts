@@ -293,15 +293,15 @@ describe('reporter session in test mode', () => {
     }
   });
 
-  test('RUN_INCOMPLETE for an interrupted run; RUN_SHARDED in onBegin', async () => {
+  test('RUN_INCOMPLETE for an interrupted run', async () => {
     const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
-    s.begin(fakeConfig(dir, { shard: { current: 1, total: 2 } }), ROOT);
+    s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 3, PATHS, steady);
     expect(await s.end({ status: 'interrupted' })).toEqual({ status: 'failed' });
     const outcome = readOutcome(outcomeFile);
     expect(outcome.exitCode).toBe(3);
-    expect(codes(outcome.toolErrors)).toEqual(['RUN_SHARDED', 'RUN_INCOMPLETE']);
+    expect(codes(outcome.toolErrors)).toEqual(['RUN_INCOMPLETE']);
   });
 
   test('04-AC-12 only the projects of the run count; a run of setup projects only is CONFIG_NO_MEASURED_PROJECT', async () => {
@@ -410,7 +410,7 @@ describe('reporter session in test mode', () => {
     s.testBegin();
     s.testEnd(
       fakeTest(dir, { title: 'broken' }),
-      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 4 as 3 }))]),
+      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 5 as 4 }))]),
     );
     await s.end({ status: 'passed' });
     const report = readReport();
@@ -1179,6 +1179,34 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
       };
       const warning = report.warnings.find((w) => w.code === 'CONFIG_BASEURL_EMPTY');
       expect(warning?.message, baseURL).toBe('Measured project chromium has an empty use.baseURL.');
+    }
+  });
+
+  test('03-AC-23 the CONFIG_BASEURL_EMPTY hint uses the package manager of the project', async () => {
+    const cases: [Record<string, string>, string | null, string][] = [
+      [{}, 'yarn.lock', 'PW_PERF_MODE=test yarn e2e:qa'],
+      [
+        { npm_config_user_agent: 'pnpm/10.16.1 npm/? node/v24.2.0' },
+        null,
+        'PW_PERF_MODE=test pnpm run e2e:qa',
+      ],
+      [{}, null, 'PW_PERF_MODE=test npm run e2e:qa'],
+    ];
+    for (const [env, lockFile, command] of cases) {
+      const d = tempDir();
+      writeFileSync(join(d, 'package.json'), '{}');
+      if (lockFile !== null) writeFileSync(join(d, lockFile), '');
+      const s = session(fakeHost(d, { env }), registered({}, { mode: 'test' }));
+      s.begin(fakeConfig(d, { projects: [project('chromium', { use: { baseURL: '' } })] }), ROOT);
+      runTests(s, d, 5, PATHS, steady);
+      await s.end({ status: 'passed' });
+      const report = JSON.parse(
+        readFileSync(join(d, 'reports/pw-perf', 'report.json'), 'utf8'),
+      ) as { warnings: { code: string; hint: string }[] };
+      const warning = report.warnings.find((w) => w.code === 'CONFIG_BASEURL_EMPTY');
+      expect(warning?.hint, command).toContain(
+        `(e.g. ${command}, see docs/dynamic-environments.md)`,
+      );
     }
   });
 });

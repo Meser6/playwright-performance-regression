@@ -10,6 +10,12 @@ import { parse } from 'yaml';
 
 const DIR = join(import.meta.dirname, '../../examples/ci');
 const read = (name: string): string => readFileSync(join(DIR, name), 'utf8');
+/** The basic recipes: the files of examples/ci, without the sharded/ folder. */
+const files = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .sort();
 type Obj = Record<string, unknown>;
 
 /** Strict YAML: duplicate keys, tabs and syntax errors throw. */
@@ -42,16 +48,36 @@ const oneOf = (step: Obj, kinds: string[], what: string): string => {
 };
 const CRON = /^(\S+\s+){4}\S+$/u;
 
+/**
+ * Lexical check of a Jenkinsfile: strings and comments removed, then every string must be closed
+ * on its line and the brackets must balance. Returns the code without strings.
+ */
+function groovy(text: string): string {
+  const code = text
+    .replace(/\/\/[^\n]*/gu, '')
+    .replace(/"(?:[^"\\\n]|\\.)*"/gu, 'STR')
+    .replace(/'(?:[^'\\\n]|\\.)*'/gu, 'STR');
+  expect(code).not.toMatch(/["']/u);
+  const stack: string[] = [];
+  const pairs: Record<string, string> = { ')': '(', '}': '{', ']': '[' };
+  for (const char of code) {
+    if ('({['.includes(char)) stack.push(char);
+    else if (char in pairs) expect(stack.pop(), `unbalanced ${char}`).toBe(pairs[char]);
+  }
+  expect(stack).toEqual([]);
+  return code;
+}
+
 describe('13-AC-07 CI recipes in examples/ci', () => {
   test('there is one recipe per documented platform and docs/ci.md links each', () => {
-    expect(readdirSync(DIR).sort()).toEqual([
+    expect(files(DIR)).toEqual([
       'Jenkinsfile',
       'azure-pipelines.yml',
       'github-actions.yml',
       'gitlab-ci.yml',
     ]);
     const docs = readFileSync(join(import.meta.dirname, '../../docs/ci.md'), 'utf8');
-    for (const name of readdirSync(DIR)) expect(docs).toContain(`../examples/ci/${name}`);
+    for (const name of files(DIR)) expect(docs).toContain(`../examples/ci/${name}`);
   });
 
   /** The run step of every job: outcome.json removed, the project command, exit code from it. */
@@ -201,20 +227,7 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
 
   test('04-AC-49 Jenkins: balanced declarative pipeline, MODE parameter, UNSTABLE on 2, archive always', () => {
     const text = read('Jenkinsfile');
-    // Lexical check: strings and comments removed, then brackets must balance.
-    const code = text
-      .replace(/\/\/[^\n]*/gu, '')
-      .replace(/"(?:[^"\\\n]|\\.)*"/gu, 'STR')
-      .replace(/'(?:[^'\\\n]|\\.)*'/gu, 'STR');
-    // No quote is left over: every string is closed on its line.
-    expect(code).not.toMatch(/["']/u);
-    const stack: string[] = [];
-    const pairs: Record<string, string> = { ')': '(', '}': '{', ']': '[' };
-    for (const char of code) {
-      if ('({['.includes(char)) stack.push(char);
-      else if (char in pairs) expect(stack.pop(), `unbalanced ${char}`).toBe(pairs[char]);
-    }
-    expect(stack).toEqual([]);
+    const code = groovy(text);
     expect(code).toMatch(/^pipeline \{/mu);
     for (const block of [
       'agent',
@@ -232,5 +245,106 @@ describe('13-AC-07 CI recipes in examples/ci', () => {
     expect(text).toContain("sh(script: 'npm run e2e', returnStatus: true)");
     expect(text).toMatch(/if \(code == '2'\) \{\s+unstable\(/u);
     expect(text).toMatch(/always \{\s+archiveArtifacts artifacts: 'reports\/pw-perf\/\*\*'/u);
+  });
+});
+
+describe('17-AC-10 sharded CI recipes in examples/ci/sharded', () => {
+  const SHARDED = join(DIR, 'sharded');
+  const text = (name: string): string => readFileSync(join(SHARDED, name), 'utf8');
+  const strict = (name: string): Obj =>
+    parse(text(name), { strict: true, uniqueKeys: true, prettyErrors: true }) as Obj;
+  const ARTIFACT = 'reports/pw-perf/shard-*.json';
+
+  test('one recipe per platform, each linked from docs/ci.md, with --shard and the merge mode', () => {
+    expect(files(SHARDED)).toEqual([
+      'Jenkinsfile',
+      'azure-pipelines.yml',
+      'github-actions.yml',
+      'gitlab-ci.yml',
+    ]);
+    const docs = readFileSync(join(import.meta.dirname, '../../docs/ci.md'), 'utf8');
+    for (const name of files(SHARDED)) {
+      expect(docs).toContain(`../examples/ci/sharded/${name}`);
+      expect(text(name)).toContain('--shard=');
+      expect(text(name)).toMatch(/PW_PERF_MODE(: |=)merge/u);
+    }
+  });
+
+  test('GitHub Actions: a shard matrix uploads shard-*.json, the merge job runs also after a failed shard', () => {
+    const jobs = obj(strict('github-actions.yml').jobs, 'jobs');
+    expect(Object.keys(jobs)).toEqual(['shard', 'merge']);
+    const shard = obj(jobs.shard, 'shard');
+    const strategy = obj(shard.strategy, 'strategy');
+    expect(strategy['fail-fast']).toBe(false);
+    const matrix = list(obj(strategy.matrix, 'matrix').shard, 'matrix.shard');
+    const steps = list(shard.steps, 'steps').map((s, i) => obj(s, `step ${i}`));
+    const run = String(steps.find((s) => String(s.run).includes('--shard'))?.run);
+    expect(run).toContain(`--shard=\${{ matrix.shard }}/${String(matrix.length)}`);
+    expect(run).toMatch(/outcome\.json'\)\.exitCode/u);
+    const upload = steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
+    expect(upload?.if).toBe('always()');
+    expect(obj(upload?.with, 'with').path).toBe(ARTIFACT);
+    const merge = obj(jobs.merge, 'merge');
+    expect(merge.needs).toBe('shard');
+    expect(merge.if).toBe('always()');
+    expect(obj(merge.env, 'env').PW_PERF_MODE).toBe('merge');
+    const mergeSteps = list(merge.steps, 'steps').map((s, i) => obj(s, `step ${i}`));
+    // No browsers in the merge job.
+    expect(mergeSteps.some((s) => String(s.run).includes('playwright install'))).toBe(false);
+    expect(mergeSteps.some((s) => s.run === 'npx pw-perf')).toBe(true);
+    const download = mergeSteps.find((s) =>
+      String(s.uses).startsWith('actions/download-artifact@'),
+    );
+    expect(obj(download?.with, 'with')).toMatchObject({
+      path: 'reports/pw-perf',
+      'merge-multiple': true,
+    });
+  });
+
+  test('GitLab CI: parallel shards keep shard-*.json, the merge needs them, code 2 is soft', () => {
+    const file = strict('gitlab-ci.yml');
+    const shard = obj(file['perf-shard'], 'perf-shard');
+    expect(shard.parallel).toBe(4);
+    expect(obj(shard.variables, 'variables').PW_PERF_MODE).toBe('$PERF_MODE');
+    expect(list(shard.script, 'script').join('\n')).toContain(
+      '--shard=$CI_NODE_INDEX/$CI_NODE_TOTAL',
+    );
+    expect(obj(shard.artifacts, 'artifacts')).toMatchObject({ when: 'always', paths: [ARTIFACT] });
+    const merge = obj(file['perf-merge'], 'perf-merge');
+    expect(merge.needs).toEqual(['perf-shard']);
+    expect(obj(merge.variables, 'variables').PW_PERF_MODE).toBe('merge');
+    expect(list(merge.rules, 'rules').every((r) => obj(r, 'rule').when === 'always')).toBe(true);
+    expect(obj(merge.allow_failure, 'allow_failure').exit_codes).toBe(2);
+    expect(list(merge.script, 'script')).toEqual(['npx pw-perf']);
+    expect(obj(obj(merge.artifacts, 'artifacts').reports, 'reports').junit).toBe(
+      'reports/pw-perf/junit.xml',
+    );
+  });
+
+  test('Azure Pipelines: parallel shard job, the merge job runs after a failed shard', () => {
+    const jobs = list(strict('azure-pipelines.yml').jobs, 'jobs').map((j, i) => obj(j, `job ${i}`));
+    const [shard, merge] = jobs;
+    expect(obj(shard?.strategy, 'strategy').parallel).toBe(4);
+    expect(JSON.stringify(shard?.steps)).toContain(
+      '--shard=$(System.JobPositionInPhase)/$(System.TotalJobsInPhase)',
+    );
+    expect(merge?.dependsOn).toBe('shard');
+    expect(merge?.condition).toBe('succeededOrFailed()');
+    expect(obj(merge?.variables, 'variables').PW_PERF_MODE).toBe('merge');
+    const steps = JSON.stringify(merge?.steps);
+    expect(steps).toContain('npx pw-perf');
+    expect(steps).toContain('##vso[task.complete result=SucceededWithIssues;]');
+    expect(steps).not.toContain('playwright install');
+  });
+
+  test('Jenkins: parallel shard branches stash shard-*.json, the merge unstashes each in try', () => {
+    const source = text('Jenkinsfile');
+    const code = groovy(source);
+    expect(code).toMatch(/^pipeline \{/mu);
+    expect(source).toContain('npm run e2e -- --shard=${n}/${SHARDS}');
+    expect(source).toContain(`includes: '${ARTIFACT}', allowEmpty: true`);
+    expect(source).toMatch(/try \{\s+unstash "pw-perf-shard-\$\{i\}"/u);
+    expect(source).toContain("withEnv(['PW_PERF_MODE=merge'])");
+    expect(source).toMatch(/if \(code == 2\) \{\s+unstable\(/u);
   });
 });

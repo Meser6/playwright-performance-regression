@@ -1117,6 +1117,27 @@ export default defineConfig({
     expect(fake.written).toEqual([]);
   });
 
+  test('17-AC-07 PW_PERF_MODE=merge runs the merge, with an argument it is CLI_UNKNOWN_COMMAND', async () => {
+    const dir = copyProject('init-esm-ts');
+    let merges = 0;
+    const merge = fakeCliHost({
+      cwd: dir,
+      playwright: null,
+      env: { PW_PERF_MODE: 'merge' },
+      runMerge: async () => {
+        merges += 1;
+        return 2;
+      },
+    });
+    expect(await main([], merge.host)).toBe(2);
+    expect(merges).toBe(1);
+    expect(merge.stdout.join('')).not.toContain('[0/9]');
+    expect(await main(['merge'], merge.host)).toBe(3);
+    expect(merges).toBe(1);
+    expect(merge.stderr.join('')).toContain('error CLI_UNKNOWN_COMMAND');
+    expect(merge.written).toEqual([]);
+  });
+
   test('04-AC-01 arguments end with CLI_UNKNOWN_COMMAND and the help, without the wizard', async () => {
     const dir = copyProject('init-esm-ts');
     const fake = fakeCliHost({ cwd: dir, playwright: null });
