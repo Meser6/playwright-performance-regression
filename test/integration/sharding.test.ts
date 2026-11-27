@@ -13,17 +13,15 @@ import type { Harness } from './harness.ts';
 
 const REPORTS = 'reports/pw-perf';
 let harness: Harness;
-let base = '';
 
 beforeAll(async () => {
   harness = await startHarness();
-  base = harness.copy('sharding');
   await control({ delays: { 'GET /api/a': 60, 'GET /api/b': 60, 'GET /api/shared': 60 } });
-});
+}, RUN_TIMEOUT);
 
 afterAll(async () => {
   await harness?.close();
-});
+}, RUN_TIMEOUT);
 
 /** Sets the delays of the demo server (POST /__control). */
 async function control(body: unknown): Promise<void> {
@@ -34,12 +32,9 @@ async function control(body: unknown): Promise<void> {
   expect(response.ok).toBe(true);
 }
 
-/** Another copy of the project: each shard runs in its own directory, like on its own machine. */
+/** A copy of the project: each shard runs in its own directory, like on its own machine. */
 function clone(name: string): string {
-  const dir = `${base} ${name}`;
-  rmSync(dir, { recursive: true, force: true });
-  cpSync(base, dir, { recursive: true, verbatimSymlinks: true });
-  return dir;
+  return harness.copy('sharding', undefined, `sharding ${name}`);
 }
 
 function readJson<T>(path: string, parse: (text: string, path: string) => unknown): T {
