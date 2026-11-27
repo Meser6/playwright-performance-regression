@@ -42,6 +42,7 @@ existing projects in [adoption.md](adoption.md); CI in [ci.md](ci.md).
 - [Step keys](#step-keys)
 - [Statistics](#statistics)
 - [Run and reporter](#run-and-reporter)
+- [Shards and merge](#shards-and-merge)
 - [Evaluation](#evaluation)
 - [Thresholds derivation](#thresholds-derivation)
 - [Files and schemas](#files-and-schemas)
@@ -437,9 +438,9 @@ failure limit stops the run (perf mode sets Playwright's own `globalTimeout` and
 
 ### RUN_SHARDED
 
-**Tool error (exit code 3).** The perf-mode run was started with `--shard`. Each shard would
-evaluate only part of the keys with only part of the samples. Run perf mode on one machine
-without sharding.
+**Withdrawn in 1.1.0.** Up to 1.0.x a perf-mode run with `--shard` ended with this tool error.
+Since 1.1.0 each shard writes a shard file and a separate merge job evaluates them together; see
+[Sharded runs](ci.md#sharded-runs).
 
 ### RUN_CONDITIONS_CHANGED
 
@@ -537,6 +538,82 @@ file, set `report.junit` to `false`.
 
 **Tool error (exit code 3).** An unexpected error in the package reporter. This is a bug in the
 package; please open an issue with the full message.
+
+## Shards and merge
+
+A perf-mode run with `--shard=i/n` writes `reports/pw-perf/shard-<i>-of-<n>.json` and does not
+evaluate; `PW_PERF_MODE=merge npx pw-perf` in a merge job reads all shard files from
+`reports/pw-perf/` and evaluates them as one run. See [Sharded runs](ci.md#sharded-runs).
+
+### SHARD_WRITE_FAILED
+
+**Tool error of the shard (exit code 3).** The shard file could not be written to `report.dir`,
+for example because the folder is not writable or the disk is full. The merge then misses this
+shard (`MERGE_SHARD_MISSING`). Check that `report.dir` is writable and run the shard again.
+
+### MERGE_NO_SHARD_FILES
+
+**Tool error (exit code 3).** The merge found no `shard-<i>-of-<n>.json` file in
+`reports/pw-perf/` of the working directory; no report and no `outcome.json` are written. Download
+the shard files of all shard jobs to `reports/pw-perf/` (in GitHub Actions: `download-artifact`
+with `merge-multiple: true`) and run the merge from the root of the checkout. With a custom
+`report.dir` the shards write their files there; copy them to `reports/pw-perf/` of the merge job.
+
+### MERGE_SHARD_INVALID
+
+**Tool error (exit code 3).** A shard file is no valid JSON, has another format version or lacks
+fields, e.g. after a truncated upload or a manual edit. The file is skipped and its shard counts as
+missing. Use the shard files exactly as the shard jobs wrote them.
+
+### MERGE_SHARD_MISMATCH
+
+**Tool error (exit code 3).** The shard files differ in a field that must be the same on every
+machine: package version, Playwright version, mode, environment label, number of shards, package
+config, normalization or paths. The message names the field and the files. Nothing is evaluated.
+Common causes: shard files of two runs in one folder, a different `--shard=i/n` total in one job,
+or a different lock file on one machine. Merge the files of one pipeline run.
+
+### MERGE_SHARD_DUPLICATE
+
+**Tool error (exit code 3).** Two files belong to the same shard number, usually a file of an
+earlier run left in `reports/pw-perf/`. Nothing is evaluated. Keep one file per shard; start the
+merge job from a clean checkout.
+
+### MERGE_SHARD_MISSING
+
+**Tool error (exit code 3).** Some shard numbers from 1 to n have no file, e.g. a shard job hit its
+time limit or did not upload its artifact. The report covers the other shards for diagnosis, but no
+thresholds files are written. Check the shard jobs; every shard must upload
+`reports/pw-perf/shard-*.json`, also when it failed (`if: always()`).
+
+### MERGE_WRONG_DIRECTORY
+
+**Tool error (exit code 3).** The Playwright config the shards ran with is not found below the
+working directory of the merge, so the thresholds files could not be located. Run the merge from
+the directory where the shards ran the test command (in CI: the root of the checkout).
+
+### MERGE_SHARDS_DIFFERENT_COMMIT
+
+**Warning.** The shards ran on different commits, so they measured different code. The merge goes
+on. Merge the shard files of one pipeline run; re-run all shards after a new commit.
+
+### MERGE_SHARDS_DIFFERENT_HOSTS
+
+**Warning.** The shards ran on machines with different CPU, core count or system. Different
+machines add noise to the statistics; the summary shows a table of the shards. Run all shards on
+the same machine type, and derive the thresholds with the same number of shards and machine type
+as the measurement.
+
+### MERGE_ENV_IGNORED
+
+**Warning.** `PW_PERF_ENV`, `PW_PERF_PRUNE` or `PW_PERF_PASSES` was set in the merge job with a
+value other than the one in the shard files. These variables belong to the test command: the merge
+uses the values of the shard files. Set them in the shard jobs.
+
+### MERGE_INTERNAL_ERROR
+
+**Tool error (exit code 3).** An unexpected error in the merge. This is a bug in the package;
+please open an issue with the full message.
 
 ## Evaluation
 

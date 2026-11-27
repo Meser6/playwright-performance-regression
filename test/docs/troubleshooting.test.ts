@@ -18,6 +18,7 @@ const PREFIXES = [
   'EVAL',
   'HTML',
   'INIT',
+  'MERGE',
   'MODE',
   'NORMALIZE',
   'NOT_WRAPPED',
@@ -26,12 +27,16 @@ const PREFIXES = [
   'REPORTER',
   'RUN',
   'SCHEMA',
+  'SHARD',
   'STATS',
   'STEPS',
   'TESTS',
   'THRESHOLDS',
 ];
 const CODE = `(?:${PREFIXES.join('|')})_[A-Z0-9_]+`;
+
+/** Withdrawn codes: their sections stay, marked "withdrawn in <version>", for old CI logs. */
+const WITHDRAWN = ['RUN_SHARDED'];
 
 /**
  * Codes appear in src/ in two forms:
@@ -85,8 +90,20 @@ describe('docs', () => {
 
   test('13-AC-06 docs/troubleshooting.md has no section for a code that src/ no longer emits', () => {
     const codes = codesInSource();
-    const stale = [...documentedCodes()].filter((code) => !codes.has(code)).sort();
+    const stale = [...documentedCodes()]
+      .filter((code) => !codes.has(code) && !WITHDRAWN.includes(code))
+      .sort();
     expect(stale, 'sections of codes that do not exist').toEqual([]);
+  });
+
+  test('13-AC-06 a withdrawn code is no longer emitted and its section says since when', () => {
+    const codes = codesInSource();
+    const text = readFileSync(join(docsDir, 'troubleshooting.md'), 'utf8');
+    for (const code of WITHDRAWN) {
+      expect(codes.has(code), code).toBe(false);
+      const section = text.split(/^### /mu).find((s) => s.startsWith(`${code}\n`)) ?? '';
+      expect(section, code).toMatch(/withdrawn in \d+\.\d+\.\d+/iu);
+    }
   });
 
   test('no user documentation file refers to specification IDs', () => {

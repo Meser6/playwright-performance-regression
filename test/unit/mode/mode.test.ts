@@ -93,6 +93,16 @@ describe('readModeState', () => {
     ]);
   });
 
+  test('17-AC-07 PW_PERF_MODE=merge before the test command is MODE_INVALID_VALUE with a hint', () => {
+    expect(issuesOf({ PW_PERF_MODE: 'merge' })).toEqual([
+      {
+        code: 'MODE_INVALID_VALUE',
+        message: 'PW_PERF_MODE: expected "test", "thresholds" or "check", got "merge"',
+        hint: 'merge runs without tests: PW_PERF_MODE=merge npx pw-perf',
+      },
+    ]);
+  });
+
   test('03-AC-03 MODE_INVALID_VALUE for PW_PERF_PASSES, PW_PERF_ENV and PW_PERF_PRUNE, all at once', () => {
     const issues = issuesOf({
       PW_PERF_MODE: 'test',

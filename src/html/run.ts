@@ -249,6 +249,38 @@ function configurationSection(report: RunReport): SafeHtml {
   );
 }
 
+/** The merged shards (17-REQ-21): one row per shard, missing shards included; null without shards. */
+function shardsSection(report: RunReport): SafeHtml | null {
+  const shards = report.shards;
+  if (shards === null) return null;
+  const rows = [
+    ...shards.list.map((s) => ({
+      index: s.index,
+      row: join(
+        html`<tr><th scope="row">${s.index}/${shards.total}</th><td class="num">${formatRunDuration(s.startedAt, s.finishedAt)}</td>`,
+        html`<td class="num">${s.tests.expected + s.tests.unexpected + s.tests.flaky}</td><td class="num">${s.samples}</td>`,
+        html`<td>${passesText(s.passes)}</td><td>${s.host.cpuModel === '' ? 'unknown' : s.host.cpuModel} (${s.host.platform} ${s.host.arch})</td>`,
+        html`<td>${buildLink(s.buildUrl)}</td></tr>`,
+      ),
+    })),
+    ...shards.missing.map((index) => ({
+      index,
+      row: html`<tr><th scope="row">${index}/${shards.total}</th><td colspan="6">missing: no shard file</td></tr>`,
+    })),
+  ].sort((a, b) => a.index - b.index);
+  return card(
+    'shards-h',
+    'Shards',
+    html`<p class="card-p">Merged from ${shards.list.length} of ${plural(shards.total, 'shard')} with PW_PERF_MODE=merge.</p>`,
+    join(
+      html`<div class="scroll" tabindex="0" role="region" aria-label="Shards table"><table><caption>Shards</caption><thead><tr>`,
+      html`<th scope="col">Shard</th><th scope="col" class="num">Duration</th><th scope="col" class="num">Tests</th>`,
+      html`<th scope="col" class="num">Samples</th><th scope="col">Passes</th><th scope="col">Machine</th><th scope="col">Build</th>`,
+      html`</tr></thead><tbody>${rows.map((r) => r.row)}</tbody></table></div>`,
+    ),
+  );
+}
+
 /** Content of the Run & config tab (11-REQ-46). */
 export function runTab(report: RunReport): SafeHtml {
   return join(
@@ -258,6 +290,7 @@ export function runTab(report: RunReport): SafeHtml {
     originsSection(report),
     conditionsSection(report),
     html`</div></div>`,
+    shardsSection(report),
     thresholdsSection(report),
     configurationSection(report),
   );

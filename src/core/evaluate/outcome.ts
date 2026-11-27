@@ -8,8 +8,6 @@ export interface RunAssessmentInput {
   tests: RunReport['tests'];
   /** FullConfig.maxFailures; 0 when not set. */
   maxFailures: number;
-  /** FullConfig.shard is not null. */
-  sharded: boolean;
 }
 
 export interface RunAssessment {
@@ -23,14 +21,14 @@ function percent(share: number): string {
 
 /**
  * Whether the run result can be trusted, from the Playwright results (09-REQ-24). Pure: failed
- * tests are a warning up to gate.maxFailedTestShare and a tool error above it; an incomplete or
- * sharded run is a tool error.
+ * tests are a warning up to gate.maxFailedTestShare and a tool error above it; an incomplete run
+ * is a tool error. A sharded run is no longer one (RUN_SHARDED withdrawn, 17-REQ-01).
  */
 export function assessRun(
   input: RunAssessmentInput,
   gate: Pick<ResolvedConfig['gate'], 'maxFailedTestShare'>,
 ): RunAssessment {
-  const { tests, maxFailures, sharded } = input;
+  const { tests, maxFailures } = input;
   const warnings: Issue[] = [];
   const toolErrors: Issue[] = [];
   const executions = tests.expected + tests.unexpected + tests.flaky;
@@ -65,14 +63,6 @@ export function assessRun(
     });
   }
 
-  if (sharded) {
-    toolErrors.push({
-      code: 'RUN_SHARDED',
-      message:
-        'The perf-mode run is sharded (--shard): each machine would evaluate only part of the keys.',
-      hint: 'Run perf mode on one machine without --shard.',
-    });
-  }
   return { warnings, toolErrors };
 }
 

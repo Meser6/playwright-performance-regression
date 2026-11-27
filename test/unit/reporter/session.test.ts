@@ -293,15 +293,15 @@ describe('reporter session in test mode', () => {
     }
   });
 
-  test('RUN_INCOMPLETE for an interrupted run; RUN_SHARDED in onBegin', async () => {
+  test('RUN_INCOMPLETE for an interrupted run', async () => {
     const outcomeFile = join(dir, 'reports/pw-perf', 'outcome.json');
     const s = session(fakeHost(dir), registered({}, { mode: 'test' }));
-    s.begin(fakeConfig(dir, { shard: { current: 1, total: 2 } }), ROOT);
+    s.begin(fakeConfig(dir), ROOT);
     runTests(s, dir, 3, PATHS, steady);
     expect(await s.end({ status: 'interrupted' })).toEqual({ status: 'failed' });
     const outcome = readOutcome(outcomeFile);
     expect(outcome.exitCode).toBe(3);
-    expect(codes(outcome.toolErrors)).toEqual(['RUN_SHARDED', 'RUN_INCOMPLETE']);
+    expect(codes(outcome.toolErrors)).toEqual(['RUN_INCOMPLETE']);
   });
 
   test('04-AC-12 only the projects of the run count; a run of setup projects only is CONFIG_NO_MEASURED_PROJECT', async () => {

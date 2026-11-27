@@ -48,7 +48,11 @@ function minimumPlaywright(): string {
   return /\d+\.\d+\.\d+/u.exec(range)?.[0] ?? '0.0.0';
 }
 
-export function nodeHost(): CliHost {
+/**
+ * The host of this process. `runMerge` is the shard merge of the reporter module (17-REQ-12): the
+ * entry point passes it in, because src/cli does not import the reporter (01, chapter 5).
+ */
+export function nodeHost(runMerge: () => Promise<number>): CliHost {
   return {
     cwd: process.cwd(),
     paths: { join, resolve, dirname },
@@ -92,5 +96,6 @@ export function nodeHost(): CliHost {
     makeTempDir: (prefix) => mkdtemp(join(tmpdir(), prefix)),
     removeDir: (path) => rm(path, { recursive: true, force: true }),
     createPrompt: () => readlinePrompt(process.stdin, process.stdout),
+    runMerge,
   };
 }

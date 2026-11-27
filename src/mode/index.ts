@@ -39,6 +39,29 @@ const LANG = 'PW_PERF_LANG';
 const DRY_RUN = 'PW_PERF_DRY_RUN';
 const NO_TUTORIAL = 'PW_PERF_NO_TUTORIAL';
 
+/** PW_PERF_MODE of the shard merge, for the binary only (17-REQ-12). */
+const MERGE_MODE = 'merge';
+
+/** True when the binary merges shard files instead of running the wizard (17-REQ-12). */
+export function isMergeMode(env: ModeEnv): boolean {
+  return read(env, MODE) === MERGE_MODE;
+}
+
+/**
+ * The PW_PERF_* variables that belong to the test command and are ignored by the merge
+ * (17-REQ-14, MERGE_ENV_IGNORED): their values as set, unset ones left out.
+ */
+export function mergeIgnoredEnv(env: ModeEnv): { env?: string; prune?: string; passes?: string } {
+  const out: { env?: string; prune?: string; passes?: string } = {};
+  const label = read(env, ENV);
+  if (label !== undefined) out.env = label;
+  const prune = read(env, PRUNE);
+  if (prune !== undefined) out.prune = prune;
+  const passes = read(env, PASSES);
+  if (passes !== undefined) out.passes = passes;
+  return out;
+}
+
 /** Name of the state file of a check in the temporary directory (04-REQ-49). */
 export function checkStateFileName(runId: string): string {
   return `playwright-performance-regression-${runId}.check.json`;
@@ -112,7 +135,17 @@ export function readModeState(env: ModeEnv): Result<PerfModeState | null, ModeIs
   if (mode === undefined) return { ok: true, value: null };
 
   const issues: ModeIssue[] = [];
-  if (mode !== 'test' && mode !== 'thresholds' && mode !== 'check') {
+  if (mode === MERGE_MODE) {
+    // The merge runs without tests, from the binary (17-REQ-12).
+    issues.push(
+      invalid(
+        MODE,
+        '"test", "thresholds" or "check"',
+        mode,
+        'merge runs without tests: PW_PERF_MODE=merge npx pw-perf',
+      ),
+    );
+  } else if (mode !== 'test' && mode !== 'thresholds' && mode !== 'check') {
     issues.push(
       invalid(
         MODE,

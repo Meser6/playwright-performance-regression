@@ -148,8 +148,11 @@ class KeyState {
   successCount = 0;
   /** Timed samples seen, cold ones included (08-REQ-41). */
   timed = 0;
-  /** The first measure.coldSamples timed samples, in input order (08-REQ-41). */
+  /** The first measure.coldSamples timed samples, in input order (08-REQ-41), per segment. */
   readonly cold: TimedSample[] = [];
+  /** Segment of the last cold sample and the cold samples taken in it (17-REQ-15). */
+  coldSegment = 0;
+  coldInSegment = 0;
   /** Endpoints: samples with an HTTP status outside successStatuses (08-REQ-46). */
   nonSuccessCount = 0;
   /** Endpoints: timed non-success samples per HTTP status (08-REQ-47). */
@@ -232,12 +235,23 @@ export class Aggregator {
   /** Keys for STATS_COLD_SLOW (08-REQ-44), filled by finalize(). */
   private readonly coldSlow: { key: string; max: number; warmP50: number; ratio: number }[] = [];
   private finalized = false;
+  /** Input segment: every shard of a merge starts one, so its first samples are cold (17-REQ-15). */
+  private segment = 0;
 
   constructor(opts: AggregatorOptions) {
     this.opts = opts;
     this.isSuccess = compileStatusMatcher(opts.successStatuses);
     this.isError = compileStatusMatcher(opts.errors.statuses);
     this.percentiles = percentileNames(opts.evaluatedPercentile);
+  }
+
+  /**
+   * Starts a new input segment (17-REQ-15): the cold-sample counter of every key starts again
+   * from zero, as each shard machine starts its own application. Without it the whole input is
+   * one segment.
+   */
+  startSegment(): void {
+    this.segment += 1;
   }
 
   /**
@@ -398,8 +412,14 @@ export class Aggregator {
     time: TimedSample['time'],
   ): void {
     state.timed += 1;
-    // The first timed samples of the key wait until finalize() decides on them (08-REQ-42).
-    if (state.cold.length < (this.opts.coldSamples ?? 0)) {
+    // The first timed samples of the key in each segment wait until finalize() decides on them
+    // (08-REQ-42, 17-REQ-15).
+    if (state.coldSegment !== this.segment) {
+      state.coldSegment = this.segment;
+      state.coldInSegment = 0;
+    }
+    if (state.coldInSegment < (this.opts.coldSamples ?? 0)) {
+      state.coldInSegment += 1;
       state.cold.push({ test, ordinal, time });
       return;
     }

@@ -52,6 +52,19 @@ describe('golden run reports of 1.1.0 (02-REQ-43)', () => {
     expect(report.warnings.map((w) => w.code)).toContain('STATS_COLD_SLOW');
   });
 
+  test('17-AC-09 the merged golden report has two shards, a cold sample per shard and is valid', () => {
+    const report = goldenReportCase('merged').input;
+    expect(report.shards?.total).toBe(2);
+    expect(report.shards?.list.map((s) => s.index)).toEqual([1, 2]);
+    expect(report.endpoints['GET /api/tickets']?.cold).toMatchObject({
+      count: 2,
+      excluded: true,
+      durations: [1300, 1400],
+    });
+    const parsed = parseRunReport(text(report), 'merged.json');
+    expect(parsed.ok).toBe(true);
+  });
+
   test('08-AC-26 replaying the pass journal picks the same cold samples (golden report cold)', () => {
     const resolved = resolveConfig({}, {});
     if (!resolved.ok) throw new Error('config');

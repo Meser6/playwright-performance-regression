@@ -308,6 +308,17 @@ code,
   color: var(--fg-3);
 }
 
+.chip.warn,
+.chip.warn b,
+.chip.warn .i {
+  color: var(--warn);
+}
+
+.chip.warn {
+  border-color: var(--warn-mark);
+  background: var(--warn-soft);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

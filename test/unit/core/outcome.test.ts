@@ -41,7 +41,6 @@ interface Run {
   tests?: Tests;
   mode?: 'test' | 'thresholds';
   maxFailures?: number;
-  sharded?: boolean;
 }
 
 /** The reporter's onEnd in core terms: evaluate, assess, build report and outcome. */
@@ -59,7 +58,7 @@ function run(r: Run = {}): { report: RunReport; outcome: Outcome } {
     options({ mode }),
   );
   const assessment = assessRun(
-    { tests: r.tests ?? tests(0), maxFailures: r.maxFailures ?? 0, sharded: r.sharded ?? false },
+    { tests: r.tests ?? tests(0), maxFailures: r.maxFailures ?? 0 },
     cfg.gate,
   );
   const report = buildRunReport({
@@ -113,10 +112,7 @@ describe('assessRun (09-REQ-24)', () => {
   });
 
   test('exactly gate.maxFailedTestShare is still a warning', () => {
-    const result = assessRun(
-      { tests: tests(10), maxFailures: 0, sharded: false },
-      { maxFailedTestShare: 0.1 },
-    );
+    const result = assessRun({ tests: tests(10), maxFailures: 0 }, { maxFailedTestShare: 0.1 });
     expect(codes(result.warnings)).toEqual(['TESTS_FAILED']);
     expect(result.toolErrors).toEqual([]);
   });
@@ -126,7 +122,6 @@ describe('assessRun (09-REQ-24)', () => {
       {
         tests: { status: 'failed', expected: 8, unexpected: 1, flaky: 1, skipped: 50 },
         maxFailures: 0,
-        sharded: false,
       },
       { maxFailedTestShare: 0.1 },
     );
@@ -139,23 +134,21 @@ describe('assessRun (09-REQ-24)', () => {
       {
         tests: { status: 'passed', expected: 0, unexpected: 0, flaky: 0, skipped: 3 },
         maxFailures: 0,
-        sharded: false,
       },
       { maxFailedTestShare: 0 },
     );
     expect(result).toEqual({ warnings: [], toolErrors: [] });
   });
 
-  test('interrupted, maxFailures reached and sharded runs are tool errors', () => {
+  test('interrupted runs and runs stopped by maxFailures are tool errors', () => {
     const gate = { maxFailedTestShare: 1 };
     const one = (input: Parameters<typeof assessRun>[0]) =>
       codes(assessRun(input, gate).toolErrors);
-    expect(
-      one({ tests: tests(0, { status: 'interrupted' }), maxFailures: 0, sharded: false }),
-    ).toEqual(['RUN_INCOMPLETE']);
-    expect(one({ tests: tests(3), maxFailures: 3, sharded: false })).toEqual(['RUN_INCOMPLETE']);
-    expect(one({ tests: tests(2), maxFailures: 3, sharded: false })).toEqual([]);
-    expect(one({ tests: tests(0), maxFailures: 0, sharded: true })).toEqual(['RUN_SHARDED']);
+    expect(one({ tests: tests(0, { status: 'interrupted' }), maxFailures: 0 })).toEqual([
+      'RUN_INCOMPLETE',
+    ]);
+    expect(one({ tests: tests(3), maxFailures: 3 })).toEqual(['RUN_INCOMPLETE']);
+    expect(one({ tests: tests(2), maxFailures: 3 })).toEqual([]);
   });
 });
 

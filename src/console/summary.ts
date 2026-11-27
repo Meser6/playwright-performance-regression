@@ -35,6 +35,8 @@ export interface SummaryOptions {
   ascii?: boolean;
   /** Whether report.html was written; default: report.html of the config snapshot. */
   html?: boolean;
+  /** Absolute folder of the report files; default: report.dir of the snapshot below configDir. */
+  reportDir?: string;
 }
 
 /** At most this many warnings are listed; tool errors are always listed in full (chapter 8.1). */
@@ -113,6 +115,15 @@ function header(report: RunReport, paint: Paint): string {
   if (t.flaky > 0) details.push(`${t.flaky} flaky`);
   if (t.skipped > 0) details.push(`${t.skipped} skipped`);
   const parts = [report.tool.name, `mode: ${report.mode}`];
+  // 17-REQ-19: a merged report names its shards.
+  const shards = report.shards;
+  if (shards !== null) {
+    parts.push(
+      shards.missing.length === 0
+        ? `merged from ${plural(shards.total, 'shard')}`
+        : `merged from ${String(shards.list.length)} of ${plural(shards.total, 'shard')}`,
+    );
+  }
   if (report.env !== null) parts.push(`env: ${report.env}`);
   parts.push(`${plural(executions, 'test')} (${details.join(', ')})`);
   const ci = report.ci;
@@ -448,7 +459,6 @@ function errorCauses(report: RunReport): string[] {
   const named: Record<string, string> = {
     TESTS_FAILED_TOO_MANY: `too many failed tests (${t.unexpected} of ${t.expected + t.unexpected + t.flaky} executions)`,
     RUN_INCOMPLETE: 'the run did not complete',
-    RUN_SHARDED: 'the run is sharded',
   };
   const causes: string[] = [];
   let other = 0;
@@ -555,12 +565,73 @@ function resolvePath(base: string, path: string): string {
  * One line with the absolute path of report.html, or report.json without HTML (09-REQ-30):
  * terminals show an absolute path as a link whatever the current directory.
  */
-function reportLine(report: RunReport, html: boolean | undefined, paint: Paint): string[] {
+function reportLine(
+  report: RunReport,
+  html: boolean | undefined,
+  paint: Paint,
+  reportDir?: string,
+): string[] {
   const options = report.config.report;
-  if (options?.dir === undefined) return [];
-  const dir = resolvePath(report.configDir, options.dir);
-  const file = (html ?? options.html !== false) ? 'report.html' : 'report.json';
+  if (options?.dir === undefined && reportDir === undefined) return [];
+  const dir = toSlash(reportDir ?? resolvePath(report.configDir, options?.dir ?? '.'));
+  const file = (html ?? options?.html !== false) ? 'report.html' : 'report.json';
   return [`${paint('Report:', 'bold')} ${dir}/${file}`];
+}
+
+/** Duration between two timestamps, e.g. "1h 04m", "12m 05s", "48s". */
+function durationText(from: string, to: string): string {
+  const s = Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${String(h)}h ${String(m).padStart(2, '0')}m`;
+  if (m > 0) return `${String(m)}m ${String(sec).padStart(2, '0')}s`;
+  return `${String(sec)}s`;
+}
+
+const CPU_WIDTH = 28;
+
+/**
+ * The table of shards before the verdict (17-REQ-19), when shards are missing or ran on different
+ * machines (MERGE_SHARDS_DIFFERENT_HOSTS): number, tests, samples, time, passes and CPU.
+ */
+function shardLines(report: RunReport, frame: FrameOptions): string[] {
+  const shards = report.shards;
+  if (shards === null) return [];
+  const hosts = report.warnings.some((w) => w.code === 'MERGE_SHARDS_DIFFERENT_HOSTS');
+  if (!hosts && shards.missing.length === 0) return [];
+  const rows = [
+    ...shards.list.map((s) => ({
+      index: s.index,
+      cells: [
+        `${String(s.index)}/${String(shards.total)}`,
+        String(s.tests.expected + s.tests.unexpected + s.tests.flaky),
+        s.samples.toLocaleString('en-US'),
+        durationText(s.startedAt, s.finishedAt),
+        `${String(s.passes.completed)}/${String(s.passes.planned)}`,
+        truncateMiddle(s.host.cpuModel === '' ? 'unknown' : s.host.cpuModel, CPU_WIDTH),
+      ],
+    })),
+    ...shards.missing.map((index) => ({
+      index,
+      cells: [`${String(index)}/${String(shards.total)}`, '—', '—', '—', '—', 'missing'],
+    })),
+  ].sort((a, b) => a.index - b.index);
+  return [
+    ...table(
+      [
+        { header: 'shard' },
+        { header: 'tests', align: 'right' },
+        { header: 'samples', align: 'right' },
+        { header: 'time', align: 'right' },
+        { header: 'passes', align: 'right' },
+        { header: 'cpu', flex: true, minWidth: 8 },
+      ],
+      rows.map((r) => ({ cells: r.cells })),
+      { ...frame, border: 'dim' },
+    ),
+    '',
+  ];
 }
 
 /** Console summary of a run report (09, chapter 8). Ends with a newline. */
@@ -585,6 +656,10 @@ export function formatSummary(report: RunReport, opts: SummaryOptions): string {
     if (slowest.length > 0) lines.push(...slowest);
     lines.push('');
   }
-  lines.push(...resultLines(report, frame, m), ...reportLine(report, opts.html, paint));
+  lines.push(...shardLines(report, frame));
+  lines.push(
+    ...resultLines(report, frame, m),
+    ...reportLine(report, opts.html, paint, opts.reportDir),
+  );
   return `${lines.join('\n')}\n`;
 }
