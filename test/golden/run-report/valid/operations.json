@@ -275,6 +275,7 @@
       "completed": 5,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "workers": 1,
       "projects": [

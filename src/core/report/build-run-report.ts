@@ -66,6 +66,8 @@ export interface RunReportInput {
   stepNormalization: string | null;
   /** Passes of the run (02-REQ-37); one pass when left out. */
   passes?: RunReport['passes'];
+  /** Shards merged into the report (17-REQ-17); null or left out for a run without shards. */
+  shards?: RunReport['shards'];
   runConditions: RunReport['runConditions'];
   tests: RunReport['tests'];
   aggregates: RunReportAggregates;
@@ -280,6 +282,8 @@ export function buildRunReport(input: RunReportInput): RunReport {
       input.passes === undefined
         ? { planned: 1, completed: 1, failed: [] }
         : { ...input.passes, failed: [...input.passes.failed].sort((a, b) => a - b) },
+    shards:
+      input.shards === undefined || input.shards === null ? null : structuredClone(input.shards),
     runConditions: structuredClone(input.runConditions),
     tests: { ...input.tests },
     evaluation: {

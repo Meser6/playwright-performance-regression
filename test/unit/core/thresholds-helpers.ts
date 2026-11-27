@@ -115,6 +115,7 @@ export function runReport(spec: ReportSpec = {}): RunReport {
     host: { ...HOST, ...spec.host },
     playwright: { version: spec.playwrightVersion ?? '1.57.0' },
     passes: { planned: 10, completed: 10, failed: [] },
+    shards: null,
     runConditions: {
       workers: 1,
       projects: spec.projects ?? [

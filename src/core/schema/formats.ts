@@ -631,6 +631,38 @@ const stepAggregate = obj(
   { required: [...aggregateRequired, 'location', 'stepErrorsFromFailedTests'] },
 );
 
+const hostInfo = obj(
+  {
+    platform: str(),
+    arch: str(),
+    nodeVersion: str(),
+    ci: bool,
+    cpuCount: int({ minimum: 1 }),
+    cpuModel: str(),
+  },
+  { required: ['platform', 'arch', 'nodeVersion', 'ci', 'cpuCount', 'cpuModel'] },
+);
+
+const passesInfo = obj(
+  {
+    planned: int({ minimum: 1 }),
+    completed: int({ minimum: 1 }),
+    failed: arr(int({ minimum: 2 })),
+  },
+  { required: ['planned', 'completed', 'failed'] },
+);
+
+const testsInfo = obj(
+  {
+    status: testsStatus,
+    expected: count,
+    unexpected: count,
+    flaky: count,
+    skipped: count,
+  },
+  { required: ['status', 'expected', 'unexpected', 'flaky', 'skipped'] },
+);
+
 export const runReport = obj(
   {
     schemaVersion: constant(5),
@@ -661,25 +693,49 @@ export const runReport = obj(
       ),
       nul,
     ),
-    host: obj(
-      {
-        platform: str(),
-        arch: str(),
-        nodeVersion: str(),
-        ci: bool,
-        cpuCount: int({ minimum: 1 }),
-        cpuModel: str(),
-      },
-      { required: ['platform', 'arch', 'nodeVersion', 'ci', 'cpuCount', 'cpuModel'] },
-    ),
+    host: hostInfo,
     playwright: obj({ version: str() }, { required: ['version'] }),
-    passes: obj(
-      {
-        planned: int({ minimum: 1 }),
-        completed: int({ minimum: 1 }),
-        failed: arr(int({ minimum: 2 })),
-      },
-      { required: ['planned', 'completed', 'failed'] },
+    passes: passesInfo,
+    // 17-REQ-17: null without shards, the merged shards after PW_PERF_MODE=merge.
+    shards: oneOf(
+      obj(
+        {
+          total: int({ minimum: 1 }),
+          missing: arr(int({ minimum: 1 })),
+          list: arr(
+            obj(
+              {
+                index: int({ minimum: 1 }),
+                runId,
+                startedAt: timestamp,
+                finishedAt: timestamp,
+                status: testsStatus,
+                passes: passesInfo,
+                tests: testsInfo,
+                samples: count,
+                host: hostInfo,
+                buildUrl: nonEmptyOrNull,
+              },
+              {
+                required: [
+                  'index',
+                  'runId',
+                  'startedAt',
+                  'finishedAt',
+                  'status',
+                  'passes',
+                  'tests',
+                  'samples',
+                  'host',
+                  'buildUrl',
+                ],
+              },
+            ),
+          ),
+        },
+        { required: ['total', 'missing', 'list'] },
+      ),
+      nul,
     ),
     runConditions: obj(
       {
@@ -701,16 +757,7 @@ export const runReport = obj(
       },
       { required: ['workers', 'projects', 'overriddenSettings'] },
     ),
-    tests: obj(
-      {
-        status: testsStatus,
-        expected: count,
-        unexpected: count,
-        flaky: count,
-        skipped: count,
-      },
-      { required: ['status', 'expected', 'unexpected', 'flaky', 'skipped'] },
-    ),
+    tests: testsInfo,
     evaluation: obj(
       {
         status: evaluationStatus,
@@ -752,6 +799,7 @@ export const runReport = obj(
       'host',
       'playwright',
       'passes',
+      'shards',
       'runConditions',
       'tests',
       'evaluation',

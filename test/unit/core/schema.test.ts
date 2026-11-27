@@ -644,7 +644,7 @@ describe('formats without custom measurements (02-REQ-33, D-32)', () => {
 describe('formats of 1.1.0 (02-REQ-43)', () => {
   const raw = (...path: string[]): string => readFileSync(join(GOLDEN_DIR, ...path), 'utf8');
 
-  test('02-AC-24 v4 golden reports and v2 thresholds files migrate to v5 and v3 and validate', () => {
+  test('02-AC-24 17-AC-09 v4 golden reports and v2 thresholds files migrate to v5 and v3 and validate', () => {
     for (const file of readdirSync(join(GOLDEN_DIR, 'run-report', 'v4'))) {
       const text = raw('run-report', 'v4', file);
       const before = JSON.parse(text) as {
@@ -655,6 +655,8 @@ describe('formats of 1.1.0 (02-REQ-43)', () => {
       if (!result.ok) throw new Error(`${file}: ${JSON.stringify(result.issues)}`);
       const report = result.value;
       expect(report.schemaVersion, file).toBe(5);
+      // 17-AC-09: a v4 run was never merged from shards (17-REQ-26).
+      expect(report.shards, file).toBeNull();
       // An old run did not set cold samples apart (02-REQ-43).
       expect(report.config.measure?.coldSamples, file).toBe(0);
       // An old run had no operation keys (02-REQ-43, 18-REQ-09).

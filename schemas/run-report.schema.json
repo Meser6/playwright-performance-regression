@@ -21,6 +21,7 @@
     "host",
     "playwright",
     "passes",
+    "shards",
     "runConditions",
     "tests",
     "evaluation",
@@ -113,6 +114,46 @@
           "items": { "type": "integer", "minimum": 2 }
         }
       }
+    },
+    "shards": {
+      "description": "Shards merged into this report (17-REQ-17): null for a run without shards, an object after PW_PERF_MODE=merge.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total", "missing", "list"],
+          "properties": {
+            "total": {"description": "n of --shard=i/n.", "type": "integer", "minimum": 1},
+            "missing": {
+              "description": "Shard numbers without a shard file (MERGE_SHARD_MISSING), ascending.",
+              "type": "array",
+              "items": {"type": "integer", "minimum": 1}
+            },
+            "list": {
+              "description": "The merged shards by index, ascending.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["index", "runId", "startedAt", "finishedAt", "status", "passes", "tests", "samples", "host", "buildUrl"],
+                "properties": {
+                  "index": {"description": "i of --shard=i/n.", "type": "integer", "minimum": 1},
+                  "runId": {"$ref": "common.schema.json#/$defs/runId"},
+                  "startedAt": {"$ref": "common.schema.json#/$defs/timestamp"},
+                  "finishedAt": {"$ref": "common.schema.json#/$defs/timestamp"},
+                  "status": {"$ref": "common.schema.json#/$defs/testsStatus"},
+                  "passes": {"$ref": "#/properties/passes"},
+                  "tests": {"$ref": "#/properties/tests"},
+                  "samples": {"description": "Request and step samples of the shard.", "$ref": "common.schema.json#/$defs/count"},
+                  "host": {"$ref": "#/properties/host"},
+                  "buildUrl": {"description": "ci.buildUrl of the shard job, or null.", "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
+                }
+              }
+            }
+          }
+        },
+        {"type": "null"}
+      ]
     },
     "runConditions": {
       "description": "Effective run conditions read from FullConfig in onBegin (ADR-0006).",
