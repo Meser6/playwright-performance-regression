@@ -379,10 +379,10 @@ in the measurement command, e.g. `--project chromium`.
 **Warning.** The first call of some keys in the run was much slower than their usual (warm)
 median: at least three times slower and at least 100 ms more, typically right after the
 application or its container started (JIT, connection pools, caches). The message names up to
-three keys with the first call, the warm p50 and the ratio. The first `measure.coldSamples` timed
-samples of a key (1 by default) are cold: when the key has at least `measure.coldSamples +
-checks.time.median.minSamples` timed samples, they stay out of the evaluated statistics, so this
-warning does not change the result. The HTML report shows them under "Cold vs warm" and ranks the
+three keys with the slowest first call, the warm p50 and the ratio. The first `measure.coldSamples`
+timed samples of a key in each pass (1 by default) are cold, as every pass starts Playwright and,
+with `webServer`, the application again: when at least `checks.time.median.minSamples` warm samples
+remain, they stay out of the evaluated statistics, so this warning does not change the result. The HTML report shows them under "Cold vs warm" and ranks the
 keys under "Slowest first calls". To measure first calls too, warm the application up before the
 tests or set `measure.coldSamples` to `0`.
 

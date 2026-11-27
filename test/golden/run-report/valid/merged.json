@@ -402,7 +402,7 @@
       {
         "code": "STATS_COLD_SLOW",
         "message": "1 key is much slower on the first call (cold start): GET /api/tickets 1,400 ms vs warm p50 125 ms (×11.2).",
-        "hint": "Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0."
+        "hint": "The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0."
       },
       {
         "code": "THRESHOLDS_FILE_MISSING",
@@ -421,7 +421,7 @@
     "endpoints": {
       "GET /api/shard1": {
         "count": 6,
-        "successCount": 5,
+        "successCount": 6,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 2,
@@ -434,7 +434,7 @@
         },
         "stats": {
           "min": 105,
-          "avg": 109,
+          "avg": 108.3,
           "max": 112,
           "percentiles": {
             "p50": 108,
@@ -502,6 +502,7 @@
         "samples": {
           "durations": [
             105,
+            105,
             108,
             108,
             112,
@@ -516,20 +517,22 @@
             115.5
           ],
           "counts": [
-            3,
+            4,
             2
           ]
         },
         "cold": {
-          "count": 1,
-          "excluded": true,
-          "reason": null,
+          "count": 3,
+          "excluded": false,
+          "reason": "too-few-samples",
           "durations": [
-            105
+            105,
+            112,
+            108
           ],
-          "max": 105,
+          "max": 112,
           "warmP50": 108,
-          "ratio": 0.97,
+          "ratio": 1.04,
           "test": {
             "title": "tickets › opens the list",
             "project": "chromium",
@@ -557,7 +560,7 @@
           "checks": [
             {
               "rule": "median",
-              "n": 5,
+              "n": 6,
               "actual": 108,
               "observed": null,
               "limit": 2000,
@@ -585,7 +588,7 @@
       },
       "GET /api/shard2": {
         "count": 6,
-        "successCount": 5,
+        "successCount": 6,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 2,
@@ -598,7 +601,7 @@
         },
         "stats": {
           "min": 125,
-          "avg": 129,
+          "avg": 128.3,
           "max": 132,
           "percentiles": {
             "p50": 128,
@@ -666,6 +669,7 @@
         "samples": {
           "durations": [
             125,
+            125,
             128,
             128,
             132,
@@ -680,20 +684,22 @@
             133.4
           ],
           "counts": [
-            1,
+            2,
             4
           ]
         },
         "cold": {
-          "count": 1,
-          "excluded": true,
-          "reason": null,
+          "count": 3,
+          "excluded": false,
+          "reason": "too-few-samples",
           "durations": [
-            125
+            125,
+            132,
+            128
           ],
-          "max": 125,
+          "max": 132,
           "warmP50": 128,
-          "ratio": 0.98,
+          "ratio": 1.03,
           "test": {
             "title": "admin › opens the tickets",
             "project": "chromium",
@@ -721,7 +727,7 @@
           "checks": [
             {
               "rule": "median",
-              "n": 5,
+              "n": 6,
               "actual": 128,
               "observed": null,
               "limit": 2000,
@@ -749,7 +755,7 @@
       },
       "GET /api/tickets": {
         "count": 12,
-        "successCount": 10,
+        "successCount": 6,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 4,
@@ -762,18 +768,18 @@
         },
         "stats": {
           "min": 118,
-          "avg": 367.8,
+          "avg": 531.5,
           "max": 1400,
           "percentiles": {
             "p50": 125,
-            "p90": 1310,
-            "p95": 1355,
-            "p99": 1391
+            "p90": 1350,
+            "p95": 1375,
+            "p99": 1395
           }
         },
         "ttfb": {
           "p50": 75,
-          "p95": 813,
+          "p95": 825,
           "otherP50": 50
         },
         "slowest": [
@@ -803,10 +809,10 @@
             "duration": 125,
             "startedAt": "2026-11-26T10:01:00.000Z",
             "test": {
-              "title": "admin › opens the tickets",
+              "title": "admin › exports the tickets",
               "project": "chromium",
               "file": "tests/admin.spec.ts",
-              "line": 7,
+              "line": 21,
               "repeatEachIndex": 1
             }
           }
@@ -844,11 +850,7 @@
         "samples": {
           "durations": [
             118,
-            118,
             121,
-            121,
-            125,
-            125,
             125,
             125,
             1300,
@@ -888,7 +890,7 @@
             1540
           ],
           "counts": [
-            8,
+            4,
             0,
             0,
             0,
@@ -918,12 +920,15 @@
           ]
         },
         "cold": {
-          "count": 2,
+          "count": 6,
           "excluded": true,
           "reason": null,
           "durations": [
             1300,
-            1400
+            118,
+            125,
+            1400,
+            125
           ],
           "max": 1400,
           "warmP50": 125,
@@ -955,7 +960,7 @@
           "checks": [
             {
               "rule": "median",
-              "n": 10,
+              "n": 6,
               "actual": 125,
               "observed": null,
               "limit": 2000,

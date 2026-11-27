@@ -423,7 +423,7 @@
     "endpoints": {
       "GET /api/search": {
         "count": 6,
-        "successCount": 5,
+        "successCount": 6,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 1,
@@ -435,20 +435,20 @@
           "node": 0
         },
         "stats": {
-          "min": 418,
-          "avg": 421.6,
+          "min": 415,
+          "avg": 420.5,
           "max": 425,
           "percentiles": {
-            "p50": 422,
-            "p90": 423.8,
-            "p95": 424.4,
+            "p50": 421.5,
+            "p90": 423.5,
+            "p95": 424.3,
             "p99": 424.9
           }
         },
         "ttfb": {
-          "p50": 253.2,
+          "p50": 252.9,
           "p95": 254.6,
-          "otherP50": 168.8
+          "otherP50": 168.6
         },
         "slowest": [
           {
@@ -496,6 +496,7 @@
         ],
         "samples": {
           "durations": [
+            415,
             418,
             421,
             422,
@@ -511,20 +512,24 @@
             442.4
           ],
           "counts": [
-            2,
+            3,
             3
           ]
         },
         "cold": {
-          "count": 1,
-          "excluded": true,
-          "reason": null,
+          "count": 5,
+          "excluded": false,
+          "reason": "too-few-samples",
           "durations": [
-            415
+            415,
+            422,
+            418,
+            425,
+            421
           ],
-          "max": 415,
+          "max": 425,
           "warmP50": 422,
-          "ratio": 0.98,
+          "ratio": 1.01,
           "test": {
             "title": "search › finds a ticket",
             "project": "chromium",
@@ -552,14 +557,14 @@
           "checks": [
             {
               "rule": "median",
-              "n": 5,
-              "actual": 422,
+              "n": 6,
+              "actual": 421.5,
               "observed": null,
               "limit": 300,
               "passed": false,
               "hardLimitExceeded": false,
               "blocking": true,
-              "usage": 1.4067
+              "usage": 1.405
             },
             {
               "rule": "errors",
@@ -595,7 +600,7 @@
             },
             "now": {
               "count": 6,
-              "successCount": 5,
+              "successCount": 6,
               "passes": 5,
               "workers": 1,
               "share": 0.3158
@@ -608,20 +613,20 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4067
+              "usage": 1.405
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 5
+              "n": 6
             }
           }
         ]
       },
       "GET /api/tickets": {
         "count": 13,
-        "successCount": 12,
+        "successCount": 8,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 1,
@@ -634,24 +639,35 @@
         },
         "stats": {
           "min": 306,
-          "avg": 310.4,
-          "max": 315,
+          "avg": 308.9,
+          "max": 312,
           "percentiles": {
-            "p50": 310.5,
-            "p90": 313.9,
-            "p95": 314.5,
-            "p99": 314.9
+            "p50": 308.5,
+            "p90": 311.3,
+            "p95": 311.7,
+            "p99": 311.9
           }
         },
         "ttfb": {
-          "p50": 186.3,
-          "p95": 188.7,
-          "otherP50": 124.2
+          "p50": 185.1,
+          "p95": 187,
+          "otherP50": 123.4
         },
         "slowest": [
           {
-            "duration": 315,
-            "startedAt": "2026-11-26T10:01:00.000Z",
+            "duration": 312,
+            "startedAt": "2026-11-26T10:00:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 0
+            }
+          },
+          {
+            "duration": 311,
+            "startedAt": "2026-11-26T10:01:01.000Z",
             "test": {
               "title": "tickets › opens the list",
               "project": "chromium",
@@ -661,25 +677,14 @@
             }
           },
           {
-            "duration": 314,
-            "startedAt": "2026-11-26T10:02:00.000Z",
+            "duration": 310,
+            "startedAt": "2026-11-26T10:02:01.000Z",
             "test": {
               "title": "tickets › opens the list",
               "project": "chromium",
               "file": "tests/app.spec.ts",
               "line": 12,
               "repeatEachIndex": 2
-            }
-          },
-          {
-            "duration": 313,
-            "startedAt": "2026-11-26T10:03:00.000Z",
-            "test": {
-              "title": "tickets › opens the list",
-              "project": "chromium",
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "repeatEachIndex": 3
             }
           }
         ],
@@ -701,11 +706,7 @@
             309,
             310,
             311,
-            312,
-            312,
-            313,
-            314,
-            315
+            312
           ],
           "sampled": false
         },
@@ -715,19 +716,23 @@
             316.2
           ],
           "counts": [
-            12
+            8
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 5,
           "excluded": true,
           "reason": null,
           "durations": [
-            305
+            305,
+            315,
+            314,
+            313,
+            312
           ],
-          "max": 305,
-          "warmP50": 310.5,
-          "ratio": 0.98,
+          "max": 315,
+          "warmP50": 308.5,
+          "ratio": 1.02,
           "test": {
             "title": "tickets › opens the list",
             "project": "chromium",
@@ -755,14 +760,14 @@
           "checks": [
             {
               "rule": "median",
-              "n": 12,
-              "actual": 310.5,
+              "n": 8,
+              "actual": 308.5,
               "observed": null,
               "limit": 220,
               "passed": false,
               "hardLimitExceeded": false,
               "blocking": true,
-              "usage": 1.4114
+              "usage": 1.4023
             },
             {
               "rule": "errors",
@@ -798,7 +803,7 @@
             },
             "now": {
               "count": 13,
-              "successCount": 12,
+              "successCount": 8,
               "passes": 5,
               "workers": 1,
               "share": 0.6842
@@ -811,13 +816,13 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4114
+              "usage": 1.4023
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 12
+              "n": 8
             }
           }
         ]

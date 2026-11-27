@@ -67,9 +67,12 @@ number of samples per pass (`thresholds.workloadShift.factor`, ×2 by default), 
 with `THRESHOLDS_WORKLOAD_SHIFT`, because percentiles of fewer or more samples are not comparable.
 `source` does not take part in deciding whether an entry or the file changes.
 
-The first timed sample of every key in a run (`measure.coldSamples`, 1 by default) is cold: when
-the key has enough samples, it stays out of the statistics that are evaluated and derived, so a
-slow first call after start-up does not move p95. The HTML report shows it under "Cold vs warm".
+The first timed sample of every key in each pass (`measure.coldSamples`, 1 by default) is cold:
+each pass is a new Playwright process, and a `webServer` starts the application again in every
+pass. When at least `checks.time.median.minSamples` warm samples remain, the cold samples stay out
+of the statistics that are evaluated and derived, so a slow first call after start-up does not
+move p95. A key called once per pass keeps all its samples, in the thresholds run and in the test
+run alike. The HTML report shows them under "Cold vs warm".
 
 Calls of Playwright's `request` fixture, `page.request` and `context.request` have keys with the
 prefix `request`, e.g. `request GET /api/orders/:id`. The same endpoint called by the page and by
@@ -273,7 +276,7 @@ samples count for this rule, none of them is timed.
 ├────┼──────┼────────────────────────────────┼────────────┼───────────────┼───────┼────────┼───────┼──────┼──────┤
 │ ❌ │ api  │ GET /api/products              │ nonSuccess │ 0.839 (1.000) │ 0.050 │ +79 pp │ 20/20 │ file │      │
 └────┴──────┴────────────────────────────────┴────────────┴───────────────┴───────┴────────┴───────┴──────┴──────┘
-  Workload: 10 passes · 1 worker · 74 samples (thresholds run: 10 passes · 1 worker · 113 samples)
+  Workload: 10 passes · 1 worker · 60 samples (thresholds run: 10 passes · 1 worker · 80 samples)
 
 ╭──────────────────────────────────────────────────────────╮
 │ ❌  FAILED  1 blocking violation in 1 key (tolerance: 0) │
@@ -317,19 +320,22 @@ same for the whole run.
 ### 5. Cold samples: the first call is set apart
 
 The third change: the first call of `GET /api/prices` in every run is about 400 ms slower, as
-after a container start or a lazy service. Since 1.1.0 the first sample of every key
-(`measure.coldSamples: 1`) is cold: when the key has enough samples, it stays out of the
-evaluated statistics and of the derived thresholds, so one slow start does not move p95.
+after a container start or a lazy service. Since 1.1.0 the first sample of every key in each pass
+(`measure.coldSamples: 1`) is cold: when enough warm samples remain, the cold samples stay out of
+the evaluated statistics and of the derived thresholds, so a slow start does not move p95. The demo
+calls `GET /api/prices` once per pass, so all its samples are cold and stay in the statistics (the
+median of 10 samples does not depend on one slow call); the warning compares the slow call with the
+p50 of all its samples.
 
 ```text
-│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 449 ms vs warm p50 61 ms  │
-│   (×7.3).                                                                                                            │
-│   Hint: Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples +       │
-│         checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or  │
+│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 450 ms vs warm p50 65 ms  │
+│   (×6.9).                                                                                                            │
+│   Hint: The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples         │
+│         (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or │
 │         set measure.coldSamples to 0.                                                                                │
 ```
 
-![Cold vs warm of GET api/api/prices: the first call several times slower than the warm p50](img/fast-failure-cold.png)
+![Cold vs warm of GET api/api/prices: the first call several times slower than the p50 of all samples](img/fast-failure-cold.png)
 
 Set `measure.coldSamples: 0` to evaluate the first calls too (the behaviour of 1.0.x), or warm the
 application up before the tests.

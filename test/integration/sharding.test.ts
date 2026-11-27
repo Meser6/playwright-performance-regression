@@ -190,8 +190,9 @@ describe('17 sharded runs', () => {
       expect(merged.shards?.total).toBe(2);
       expect(merged.shards?.list.map((s) => s.index)).toEqual([1, 2]);
       expect(merged.endpoints['GET /api/a']?.evaluation.result).toBe('fail');
-      // 17-AC-11: the shared key has one cold sample per shard.
-      expect(merged.endpoints['GET /api/shared']?.cold?.count).toBe(2);
+      // 17-AC-11: the shared key has one cold sample per shard and pass (08-REQ-41).
+      expect(merged.passes.planned).toBe(3);
+      expect(merged.endpoints['GET /api/shared']?.cold?.count).toBe(2 * 3);
       expect(readFileSync(join(m, REPORTS, 'report.html'), 'utf8')).toContain(
         '<h3 id="shards-h">Shards</h3>',
       );

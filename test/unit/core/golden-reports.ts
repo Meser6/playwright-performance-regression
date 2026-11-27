@@ -67,7 +67,22 @@ function urlOf(key: string): string {
   return `${ORIGIN}${path.replace(':id', '7').split('#', 1)[0] ?? ''}`;
 }
 
-/** Feeds the results to an aggregator in order, as the reporter does (08-REQ-41). */
+/**
+ * Feeds the results pass by pass, as the reporter does: the results of pass 1, then a new segment
+ * and the results of pass 2, … (08-REQ-41); the order within a pass is kept.
+ */
+export function feedPasses(agg: Aggregator, results: readonly Result[]): void {
+  const passes = [...new Set(results.map((r) => r.pass))].sort((a, b) => a - b);
+  passes.forEach((pass, i) => {
+    if (i > 0) agg.startSegment();
+    feed(
+      agg,
+      results.filter((r) => r.pass === pass),
+    );
+  });
+}
+
+/** Feeds the results to an aggregator in order, within one pass (08-REQ-41). */
 export function feed(agg: Aggregator, results: readonly Result[]): void {
   for (const r of results) {
     const test = metaOf(r);
@@ -163,13 +178,14 @@ const MERGED: Scenario = {
 
 const SCENARIOS: Record<GoldenReportName, Scenario> = {
   merged: MERGED,
-  // 08-REQ-41…44: a slow first call excluded (10 samples), one kept for too few samples (5).
+  // 08-REQ-41…44: a slow first call in every pass excluded (2 calls per pass), the cold samples of a
+  // key called once per pass kept for too few warm samples.
   cold: {
-    name: 'cold samples: a slow first call left out of the statistics, one kept with too few samples (08-REQ-41…44)',
+    name: 'cold samples: a slow first call in each pass left out of the statistics, one kept with too few warm samples (08-REQ-41…44)',
     config: {},
     passes: 5,
     results: passesOf(5, 'tickets › opens the list', (pass) => [
-      ['GET /api/tickets', 200, pass === 0 ? 1840 : around(120, pass)],
+      ['GET /api/tickets', 200, 1840 - pass * 60],
       ['GET /api/tickets', 200, around(120, pass + 5)],
       ['GET /api/users', 200, pass === 0 ? 900 : around(100, pass)],
       ['POST /api/orders', 200, around(130, pass)],
@@ -382,13 +398,13 @@ export function goldenReportCase(name: GoldenReportName): {
     coldSamples: cfg.measure.coldSamples,
     minSamples: cfg.checks.time.median.minSamples,
   });
-  if (s.shards === undefined) feed(agg, s.results);
+  if (s.shards === undefined) feedPasses(agg, s.results);
   else {
-    // Each shard is a segment: its first calls are cold again (17-REQ-15).
+    // Each shard and each of its passes is a segment: its first calls are cold again (17-REQ-15).
     let offset = 0;
     for (const count of s.shards) {
       agg.startSegment();
-      feed(agg, s.results.slice(offset, offset + count));
+      feedPasses(agg, s.results.slice(offset, offset + count));
       offset += count;
     }
   }

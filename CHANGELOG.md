@@ -9,12 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Cold and warm samples.** The first timed sample of every key in a run is cold
+- **Cold and warm samples.** The first timed sample of every key in each pass is cold
   (`measure.coldSamples`, 1 by default, 0 turns it off): a slow first call after the application
-  or its container started no longer moves p95 on small sample counts. A cold sample stays out of
-  the evaluated statistics only when the key has at least `measure.coldSamples +
-checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samples are still
-  evaluated by their median. The report has a `cold` block per key, the HTML report a "Cold vs
+  or its container started no longer moves p95 on small sample counts. Each pass is a new
+  Playwright process, and a `webServer` starts the application again in every pass, so the counter
+  starts again in every pass (and every shard). Cold samples stay out of the evaluated statistics
+  only when at least `checks.time.median.minSamples` warm samples remain (5 by default), so a key
+  called once per pass is still evaluated by the median of all its samples. The report has a `cold` block per key, the HTML report a "Cold vs
   warm" block and a "Slowest first calls" ranking, and the new warning `STATS_COLD_SLOW` names keys
   whose first call is at least three times slower than their warm median.
 - **Fast failures: the `nonSuccess` rule.** An endpoint that starts answering 401, 403, 404 or 5xx
@@ -48,7 +49,7 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   `reports/pw-perf/shard-<i>-of-<n>.json` without evaluating, and `PW_PERF_MODE=merge npx pw-perf`
   in a merge job (no browsers needed) evaluates all shards as one run, with one report,
   `junit.xml`, `outcome.json` and, in a thresholds run, one complete set of thresholds files.
-  Cold samples are counted per shard. The run report has a `shards` field (`null` without shards),
+  Cold samples are counted per shard and pass. The run report has a `shards` field (`null` without shards),
   the console and the HTML report say `merged from 4 shards` and list the shards. A check with
   `--shard` checks the tests of that shard. New codes: `SHARD_WRITE_FAILED`, `MERGE_NO_SHARD_FILES`,
   `MERGE_SHARD_INVALID`, `MERGE_SHARD_MISMATCH`, `MERGE_SHARD_DUPLICATE`, `MERGE_SHARD_MISSING`,

@@ -302,7 +302,7 @@ export interface PackageConfig {
      */
     successStatuses?: [string, ...string[]];
     /**
-     * The first N timed samples of every key in the run are cold (first call after start-up): they stay out of the evaluated time statistics when the key has at least coldSamples + checks.time.median.minSamples timed samples (08-REQ-41, 08-REQ-42). 0 turns it off.
+     * The first N timed samples of every key in each pass are cold (first call after the start of the application, which webServer starts again in every pass): they stay out of the evaluated time statistics when at least checks.time.median.minSamples warm samples are left (08-REQ-41, 08-REQ-42). 0 turns it off.
      */
     coldSamples?: number;
     /**
@@ -1636,7 +1636,7 @@ export interface Aggregate {
     counts: [number, ...number[]];
   } | null;
   /**
-   * Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
+   * Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
    */
   cold: Cold | null;
   /**
@@ -1842,7 +1842,7 @@ export interface WorkloadSide {
  */
 export interface Cold {
   /**
-   * Number of cold samples (at most measure.coldSamples per shard).
+   * Number of cold samples (at most measure.coldSamples per pass and shard).
    */
   count: number;
   /**
@@ -1850,7 +1850,7 @@ export interface Cold {
    */
   excluded: boolean;
   /**
-   * too-few-samples: the key has fewer than coldSamples + checks.time.median.minSamples timed samples, so the cold samples stay in the statistics.
+   * too-few-samples: without the cold samples the key would have fewer than checks.time.median.minSamples warm samples, so the cold samples stay in the statistics.
    */
   reason: 'too-few-samples' | null;
   /**
@@ -1872,7 +1872,7 @@ export interface Cold {
    */
   max: number;
   /**
-   * p50 of the warm samples, or null when there are none.
+   * p50 of the warm samples; when every sample is cold (excluded false), the p50 of all timed samples (08-REQ-43).
    */
   warmP50: number | null;
   /**
@@ -2196,7 +2196,7 @@ export interface StepAggregate {
     counts: [number, ...number[]];
   } | null;
   /**
-   * Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
+   * Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.
    */
   cold: Cold | null;
   /**

@@ -11,7 +11,12 @@ import { Aggregator } from '../../../src/core/stats/index.ts';
 import { JournalAggregator, replayEntries } from '../../../src/reporter/pass-file.ts';
 import type { PassEntry } from '../../../src/reporter/pass-file.ts';
 import { GOLDEN_DIR } from '../../contract/golden.ts';
-import { GOLDEN_REPORT_NAMES, feed, goldenReportCase, scenarioResults } from './golden-reports.ts';
+import {
+  GOLDEN_REPORT_NAMES,
+  feedPasses,
+  goldenReportCase,
+  scenarioResults,
+} from './golden-reports.ts';
 
 const update = process.env['GOLDEN_UPDATE'] === '1';
 
@@ -39,16 +44,22 @@ describe('golden run reports of 1.1.0 (02-REQ-43)', () => {
 
   test('the cold report has an excluded and a kept cold block and STATS_COLD_SLOW', () => {
     const report = goldenReportCase('cold').input;
+    // One cold sample in each of the 5 passes (08-REQ-41).
     expect(report.endpoints['GET /api/tickets']?.cold).toMatchObject({
-      count: 1,
+      count: 5,
       excluded: true,
       reason: null,
       max: 1840,
     });
+    // Called once per pass: every sample is cold, all stay in the statistics.
     expect(report.endpoints['GET /api/users']?.cold).toMatchObject({
+      count: 5,
       excluded: false,
       reason: 'too-few-samples',
     });
+    // Its warmP50 is the p50 of all its samples, so its slow start still gives a ratio.
+    const users = report.endpoints['GET /api/users'];
+    expect(users?.cold?.warmP50).toBe(users?.stats?.percentiles['p50']);
     expect(report.warnings.map((w) => w.code)).toContain('STATS_COLD_SLOW');
   });
 
@@ -56,11 +67,14 @@ describe('golden run reports of 1.1.0 (02-REQ-43)', () => {
     const report = goldenReportCase('merged').input;
     expect(report.shards?.total).toBe(2);
     expect(report.shards?.list.map((s) => s.index)).toEqual([1, 2]);
+    // One cold sample per shard and pass: 2 shards × 3 passes (17-REQ-15, 17-AC-11).
     expect(report.endpoints['GET /api/tickets']?.cold).toMatchObject({
-      count: 2,
+      count: 6,
       excluded: true,
-      durations: [1300, 1400],
+      max: 1400,
     });
+    expect(report.endpoints['GET /api/tickets']?.cold?.durations[0]).toBe(1300);
+    expect(report.endpoints['GET /api/tickets']?.cold?.durations[3]).toBe(1400);
     const parsed = parseRunReport(text(report), 'merged.json');
     expect(parsed.ok).toBe(true);
   });
@@ -84,7 +98,9 @@ describe('golden run reports of 1.1.0 (02-REQ-43)', () => {
     const journal: PassEntry[] = [];
     live.journal = journal;
     const report = goldenReportCase('cold').input;
-    feed(live, scenarioResults('cold'));
+    // Pass boundaries go to the journal too (08-REQ-41, 17-REQ-10).
+    feedPasses(live, scenarioResults('cold'));
+    expect(journal.filter((e) => e[0] === 'p')).toHaveLength(4);
     const replayed = new Aggregator(options);
     // The pass file is JSON: the replay reads what was written.
     replayEntries(replayed, JSON.parse(JSON.stringify(journal)) as PassEntry[]);

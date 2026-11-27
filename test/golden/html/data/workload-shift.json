@@ -240,14 +240,18 @@
     "endpoints": {
       "GET /api/search": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            415
+            415,
+            422,
+            418,
+            425,
+            421
           ],
-          "excluded": true,
-          "max": 415,
-          "ratio": 0.98,
-          "reason": null,
+          "excluded": false,
+          "max": 425,
+          "ratio": 1.01,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/search.spec.ts",
             "line": 20,
@@ -262,15 +266,15 @@
         "evaluation": {
           "checks": [
             {
-              "actual": 422,
+              "actual": 421.5,
               "blocking": true,
               "hardLimitExceeded": false,
               "limit": 300,
-              "n": 5,
+              "n": 6,
               "observed": null,
               "passed": false,
               "rule": "median",
-              "usage": 1.4067
+              "usage": 1.405
             },
             {
               "actual": 0,
@@ -321,7 +325,7 @@
               "count": 6,
               "passes": 5,
               "share": 0.3158,
-              "successCount": 5,
+              "successCount": 6,
               "workers": 1
             },
             "perPassRatio": 0.3,
@@ -334,19 +338,19 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4067
+              "usage": 1.405
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 5
+              "n": 6
             }
           }
         ],
         "histogram": {
           "counts": [
-            2,
+            3,
             3
           ],
           "edges": [
@@ -357,7 +361,7 @@
         },
         "nonSuccessCount": 0,
         "samples": {
-          "retained": 5,
+          "retained": 6,
           "sampled": false
         },
         "slowest": [
@@ -396,20 +400,20 @@
           }
         ],
         "stats": {
-          "avg": 421.6,
+          "avg": 420.5,
           "max": 425,
-          "min": 418,
+          "min": 415,
           "percentiles": {
-            "p50": 422,
-            "p90": 423.8,
-            "p95": 424.4,
+            "p50": 421.5,
+            "p90": 423.5,
+            "p95": 424.3,
             "p99": 424.9
           }
         },
         "statuses": {
           "200": 6
         },
-        "successCount": 5,
+        "successCount": 6,
         "testCount": 1,
         "timeSources": {
           "browser": 6,
@@ -425,20 +429,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 168.8,
-          "p50": 253.2,
+          "otherP50": 168.6,
+          "p50": 252.9,
           "p95": 254.6
         }
       },
       "GET /api/tickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            305
+            305,
+            315,
+            314,
+            313,
+            312
           ],
           "excluded": true,
-          "max": 305,
-          "ratio": 0.98,
+          "max": 315,
+          "ratio": 1.02,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -447,22 +455,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 310.5
+          "warmP50": 308.5
         },
         "count": 13,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 310.5,
+              "actual": 308.5,
               "blocking": true,
               "hardLimitExceeded": false,
               "limit": 220,
-              "n": 12,
+              "n": 8,
               "observed": null,
               "passed": false,
               "rule": "median",
-              "usage": 1.4114
+              "usage": 1.4023
             },
             {
               "actual": 0,
@@ -513,7 +521,7 @@
               "count": 13,
               "passes": 5,
               "share": 0.6842,
-              "successCount": 12,
+              "successCount": 8,
               "workers": 1
             },
             "perPassRatio": 0.65,
@@ -526,19 +534,19 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4114
+              "usage": 1.4023
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 12
+              "n": 8
             }
           }
         ],
         "histogram": {
           "counts": [
-            12
+            8
           ],
           "edges": [
             301.4,
@@ -547,13 +555,24 @@
         },
         "nonSuccessCount": 0,
         "samples": {
-          "retained": 12,
+          "retained": 8,
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 315,
-            "startedAt": "2026-11-26T10:01:00.000Z",
+            "duration": 312,
+            "startedAt": "2026-11-26T10:00:01.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 0,
+              "title": "tickets › opens the list"
+            }
+          },
+          {
+            "duration": 311,
+            "startedAt": "2026-11-26T10:01:01.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -563,8 +582,8 @@
             }
           },
           {
-            "duration": 314,
-            "startedAt": "2026-11-26T10:02:00.000Z",
+            "duration": 310,
+            "startedAt": "2026-11-26T10:02:01.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -572,34 +591,23 @@
               "repeatEachIndex": 2,
               "title": "tickets › opens the list"
             }
-          },
-          {
-            "duration": 313,
-            "startedAt": "2026-11-26T10:03:00.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 3,
-              "title": "tickets › opens the list"
-            }
           }
         ],
         "stats": {
-          "avg": 310.4,
-          "max": 315,
+          "avg": 308.9,
+          "max": 312,
           "min": 306,
           "percentiles": {
-            "p50": 310.5,
-            "p90": 313.9,
-            "p95": 314.5,
-            "p99": 314.9
+            "p50": 308.5,
+            "p90": 311.3,
+            "p95": 311.7,
+            "p99": 311.9
           }
         },
         "statuses": {
           "200": 13
         },
-        "successCount": 12,
+        "successCount": 8,
         "testCount": 1,
         "timeSources": {
           "browser": 13,
@@ -615,9 +623,9 @@
           }
         ],
         "ttfb": {
-          "otherP50": 124.2,
-          "p50": 186.3,
-          "p95": 188.7
+          "otherP50": 123.4,
+          "p50": 185.1,
+          "p95": 187
         }
       }
     },
@@ -1159,14 +1167,18 @@
     "endpoints": {
       "GET /api/search": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            415
+            415,
+            422,
+            418,
+            425,
+            421
           ],
-          "excluded": true,
-          "max": 415,
-          "ratio": 0.98,
-          "reason": null,
+          "excluded": false,
+          "max": 425,
+          "ratio": 1.01,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/search.spec.ts",
             "line": 20,
@@ -1181,15 +1193,15 @@
         "evaluation": {
           "checks": [
             {
-              "actual": 422,
+              "actual": 421.5,
               "blocking": true,
               "hardLimitExceeded": false,
               "limit": 300,
-              "n": 5,
+              "n": 6,
               "observed": null,
               "passed": false,
               "rule": "median",
-              "usage": 1.4067
+              "usage": 1.405
             },
             {
               "actual": 0,
@@ -1240,7 +1252,7 @@
               "count": 6,
               "passes": 5,
               "share": 0.3158,
-              "successCount": 5,
+              "successCount": 6,
               "workers": 1
             },
             "perPassRatio": 0.3,
@@ -1253,19 +1265,19 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4067
+              "usage": 1.405
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 5
+              "n": 6
             }
           }
         ],
         "histogram": {
           "counts": [
-            2,
+            3,
             3
           ],
           "edges": [
@@ -1277,6 +1289,7 @@
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
+            415,
             418,
             421,
             422,
@@ -1321,20 +1334,20 @@
           }
         ],
         "stats": {
-          "avg": 421.6,
+          "avg": 420.5,
           "max": 425,
-          "min": 418,
+          "min": 415,
           "percentiles": {
-            "p50": 422,
-            "p90": 423.8,
-            "p95": 424.4,
+            "p50": 421.5,
+            "p90": 423.5,
+            "p95": 424.3,
             "p99": 424.9
           }
         },
         "statuses": {
           "200": 6
         },
-        "successCount": 5,
+        "successCount": 6,
         "testCount": 1,
         "timeSources": {
           "browser": 6,
@@ -1350,20 +1363,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 168.8,
-          "p50": 253.2,
+          "otherP50": 168.6,
+          "p50": 252.9,
           "p95": 254.6
         }
       },
       "GET /api/tickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            305
+            305,
+            315,
+            314,
+            313,
+            312
           ],
           "excluded": true,
-          "max": 305,
-          "ratio": 0.98,
+          "max": 315,
+          "ratio": 1.02,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -1372,22 +1389,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 310.5
+          "warmP50": 308.5
         },
         "count": 13,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 310.5,
+              "actual": 308.5,
               "blocking": true,
               "hardLimitExceeded": false,
               "limit": 220,
-              "n": 12,
+              "n": 8,
               "observed": null,
               "passed": false,
               "rule": "median",
-              "usage": 1.4114
+              "usage": 1.4023
             },
             {
               "actual": 0,
@@ -1438,7 +1455,7 @@
               "count": 13,
               "passes": 5,
               "share": 0.6842,
-              "successCount": 12,
+              "successCount": 8,
               "workers": 1
             },
             "perPassRatio": 0.65,
@@ -1451,19 +1468,19 @@
           {
             "code": "HINT_SLOWDOWN",
             "params": {
-              "usage": 1.4114
+              "usage": 1.4023
             }
           },
           {
             "code": "HINT_MEDIAN_ONLY",
             "params": {
-              "n": 12
+              "n": 8
             }
           }
         ],
         "histogram": {
           "counts": [
-            12
+            8
           ],
           "edges": [
             301.4,
@@ -1480,18 +1497,25 @@
             309,
             310,
             311,
-            312,
-            312,
-            313,
-            314,
-            315
+            312
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 315,
-            "startedAt": "2026-11-26T10:01:00.000Z",
+            "duration": 312,
+            "startedAt": "2026-11-26T10:00:01.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 0,
+              "title": "tickets › opens the list"
+            }
+          },
+          {
+            "duration": 311,
+            "startedAt": "2026-11-26T10:01:01.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -1501,8 +1525,8 @@
             }
           },
           {
-            "duration": 314,
-            "startedAt": "2026-11-26T10:02:00.000Z",
+            "duration": 310,
+            "startedAt": "2026-11-26T10:02:01.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -1510,34 +1534,23 @@
               "repeatEachIndex": 2,
               "title": "tickets › opens the list"
             }
-          },
-          {
-            "duration": 313,
-            "startedAt": "2026-11-26T10:03:00.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 3,
-              "title": "tickets › opens the list"
-            }
           }
         ],
         "stats": {
-          "avg": 310.4,
-          "max": 315,
+          "avg": 308.9,
+          "max": 312,
           "min": 306,
           "percentiles": {
-            "p50": 310.5,
-            "p90": 313.9,
-            "p95": 314.5,
-            "p99": 314.9
+            "p50": 308.5,
+            "p90": 311.3,
+            "p95": 311.7,
+            "p99": 311.9
           }
         },
         "statuses": {
           "200": 13
         },
-        "successCount": 12,
+        "successCount": 8,
         "testCount": 1,
         "timeSources": {
           "browser": 13,
@@ -1553,9 +1566,9 @@
           }
         ],
         "ttfb": {
-          "otherP50": 124.2,
-          "p50": 186.3,
-          "p95": 188.7
+          "otherP50": 123.4,
+          "p50": 185.1,
+          "p95": 187
         }
       }
     },

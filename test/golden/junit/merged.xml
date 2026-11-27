@@ -24,14 +24,10 @@ THRESHOLDS_FILE_MISSING: Thresholds file pw-perf-thresholds.json not found; endp
     </testcase>
   </testsuite>
   <testsuite name="pw-perf endpoints" tests="3" failures="0" errors="0" skipped="0" time="0.361" timestamp="2026-11-18T10:00:00.000Z">
-    <testcase classname="pw-perf.endpoints" name="GET /api/shard1" time="0.108">
-      <system-out>cold start: first call 105 ms, warm p50 108 ms</system-out>
-    </testcase>
-    <testcase classname="pw-perf.endpoints" name="GET /api/shard2" time="0.128">
-      <system-out>cold start: first call 125 ms, warm p50 128 ms</system-out>
-    </testcase>
+    <testcase classname="pw-perf.endpoints" name="GET /api/shard1" time="0.108"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/shard2" time="0.128"/>
     <testcase classname="pw-perf.endpoints" name="GET /api/tickets" time="0.125">
-      <system-out>cold start: first call 1400 ms, warm p50 125 ms</system-out>
+      <system-out>cold start: slowest of 6 first calls 1400 ms, warm p50 125 ms</system-out>
     </testcase>
   </testsuite>
 </testsuites>

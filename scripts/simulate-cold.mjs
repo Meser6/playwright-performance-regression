@@ -5,10 +5,12 @@
 // - evaluated keys and violations of the test runs against thresholds derived from the
 //   thresholds run (no change of the application, so every violation is a false alarm);
 // - whether a slowdown ×1.5 of one endpoint in the first test run is detected.
+// Cold samples are counted per pass like the reporter does (08-REQ-41); --per-run counts them per
+// run instead (the semantics before 2026-11-27), to compare both.
 //
 // Usage (the core is imported from src, no build needed):
 //   node scripts/simulate-cold.mjs --thresholds <report dir> --test <report dir> [--test <dir>]
-//        [--slow "<endpoint key>"] [--json]
+//        [--slow "<endpoint key>"] [--per-run] [--json]
 // Each report dir holds report.json and pass-1.json … pass-N.json of one run: run the test
 // command with PW_PERF_MODE=thresholds, copy reports/pw-perf aside, then twice PW_PERF_MODE=test.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -41,18 +43,22 @@ const { values } = parseArgs({
     thresholds: { type: 'string' },
     test: { type: 'string', multiple: true },
     slow: { type: 'string' },
+    'per-run': { type: 'boolean', default: false },
     json: { type: 'boolean', default: false },
   },
 });
 if (values.thresholds === undefined || (values.test ?? []).length === 0) {
   process.stderr.write(
-    'usage: node scripts/simulate-cold.mjs --thresholds <dir> --test <dir> [--test <dir>] [--slow "<key>"] [--json]\n',
+    'usage: node scripts/simulate-cold.mjs --thresholds <dir> --test <dir> [--test <dir>] [--slow "<key>"] [--per-run] [--json]\n',
   );
   process.exit(2);
 }
 
+const perRun = values['per-run'] === true;
+
 /**
- * report.json and the entries of every pass file of a report dir, passes in order.
+ * report.json and the entries of every pass file of a report dir, passes in order; each pass after
+ * the first starts with a pass boundary (08-REQ-41), unless --per-run.
  * @param {string} dir
  * @returns {Run}
  */
@@ -67,12 +73,14 @@ function readRun(dir) {
   if (passes.length === 0) {
     throw new Error(`${base}: no pass files; run with at least 2 passes (run.passes)`);
   }
-  const entries = passes.flatMap(
-    (k) =>
-      /** @type {{ entries: PassEntry[] }} */ (
-        JSON.parse(readFileSync(join(base, `pass-${String(k)}.json`), 'utf8'))
-      ).entries,
-  );
+  const entries = passes.flatMap((k, i) => {
+    const file = /** @type {{ entries: PassEntry[] }} */ (
+      JSON.parse(readFileSync(join(base, `pass-${String(k)}.json`), 'utf8'))
+    );
+    /** @type {PassEntry[]} */
+    const boundary = i === 0 || perRun ? [] : [['p']];
+    return [...boundary, ...file.entries];
+  });
   return { report: parsed.value, entries, passes: passes.length };
 }
 
@@ -274,8 +282,11 @@ const results = COLD_VALUES.map((cold) => {
 });
 
 if (values.json) {
-  process.stdout.write(`${JSON.stringify({ slowKey, results }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ per: perRun ? 'run' : 'pass', slowKey, results }, null, 2)}\n`,
+  );
 } else {
+  process.stdout.write(`cold samples counted per ${perRun ? 'run' : 'pass'}\n`);
   process.stdout.write(`slowdown ×${SLOWDOWN} of: ${slowKey ?? '(no endpoint)'}\n`);
   process.stdout.write(
     'coldSamples | evaluated keys per test run | false alarms per test run | slowdown detected\n',

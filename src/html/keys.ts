@@ -451,10 +451,14 @@ function statusesPart(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate)
   );
 }
 
-/** "First call" or "First 3 calls" with their durations (11-REQ-61). */
+/**
+ * "First call 1,840 ms" or "First 5 calls 1,840 ms, 1,620 ms, … · max 1,840 ms": at most 5
+ * durations, "…" when there are more cold samples (11-REQ-61).
+ */
 function coldCalls(cold: NonNullable<HtmlAggregate['cold']>): string {
-  const label = cold.count === 1 ? 'First call' : `First ${String(cold.count)} calls`;
-  return `${label} ${cold.durations.map(formatMs).join(', ')}`;
+  if (cold.count === 1) return `First call ${cold.durations.map(formatMs).join(', ')}`;
+  const more = cold.count > cold.durations.length ? ', …' : '';
+  return `First ${String(cold.count)} calls ${cold.durations.map(formatMs).join(', ')}${more} · max ${formatMs(cold.max)}`;
 }
 
 /** Cold vs warm (11-REQ-61): the cold samples next to the warm median. */
@@ -464,16 +468,19 @@ function coldPart(agg: HtmlAggregate): SafeHtml | null {
   const slow = cold.ratio !== null && cold.ratio >= COLD_WARN_RATIO;
   return part(
     'Cold vs warm',
-    'first calls in the run',
+    'first calls in each pass',
     html`<p class="cw">${coldCalls(cold)}`,
-    cold.warmP50 === null ? null : html` · warm p50 ${formatMs(cold.warmP50)}`,
+    cold.warmP50 === null
+      ? null
+      : // Only cold samples (a key called once per pass): their p50 (08-REQ-43).
+        html` · ${!cold.excluded && cold.count === agg.successCount ? 'p50 of all samples' : 'warm p50'} ${formatMs(cold.warmP50)}`,
     cold.ratio === null
       ? null
       : html` · <b${slow ? html` class="wv"` : null}>×${cold.ratio.toFixed(1)}</b>`,
     html`</p><p class="facts"><span>First cold sample: ${testRef(cold.test)}</span><span>${
       cold.excluded
         ? 'Cold samples are not evaluated.'
-        : 'Too few samples to set the first call apart: it is included in the statistics.'
+        : 'Too few warm samples to set the first calls apart: they are included in the statistics.'
     }</span></p>`,
   );
 }

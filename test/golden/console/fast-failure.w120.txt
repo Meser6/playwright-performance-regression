@@ -2,10 +2,10 @@
 playwright-performance-regression · mode: test · 50 tests (50 passed, 0 failed)
 
 ╭─ ⚠ Warnings (3) ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 449 ms vs warm p50 61 ms  │
-│   (×7.3).                                                                                                            │
-│   Hint: Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples +       │
-│         checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or  │
+│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 450 ms vs warm p50 65 ms  │
+│   (×6.9).                                                                                                            │
+│   Hint: The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples         │
+│         (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or │
 │         set measure.coldSamples to 0.                                                                                │
 │ ⚠ THRESHOLDS_ENTRY_NOT_TIMED: 1 endpoint key with thresholds was not timed because its responses were not            │
 │   successful: GET /api/products (20 × 401).                                                                          │
@@ -30,7 +30,7 @@ playwright-performance-regression · mode: test · 50 tests (50 passed, 0 failed
 ├────┼──────┼────────────────────────────────┼────────────┼───────────────┼───────┼────────┼───────┼──────┼──────┤
 │ ❌ │ api  │ GET /api/products              │ nonSuccess │ 0.839 (1.000) │ 0.050 │ +79 pp │ 20/20 │ file │      │
 └────┴──────┴────────────────────────────────┴────────────┴───────────────┴───────┴────────┴───────┴──────┴──────┘
-  Workload: 10 passes · 1 worker · 74 samples (thresholds run: 10 passes · 1 worker · 113 samples)
+  Workload: 10 passes · 1 worker · 60 samples (thresholds run: 10 passes · 1 worker · 80 samples)
 
 ╭──────────────────────────────────────────────────────────╮
 │ ❌  FAILED  1 blocking violation in 1 key (tolerance: 0) │

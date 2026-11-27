@@ -239,14 +239,18 @@
     "endpoints": {
       "GET /api/cart": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            89.5
+            88.3,
+            79,
+            86.2,
+            66.1,
+            71
           ],
-          "excluded": true,
-          "max": 89.5,
-          "ratio": 1.22,
-          "reason": null,
+          "excluded": false,
+          "max": 126.7,
+          "ratio": 1.67,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 13,
@@ -254,22 +258,22 @@
             "repeatEachIndex": 0,
             "title": "the cart loads"
           },
-          "warmP50": 73.1
+          "warmP50": 76
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 73.1,
+              "actual": 76,
               "blocking": false,
               "hardLimitExceeded": false,
-              "limit": 189,
-              "n": 9,
+              "limit": 187,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.3868
+              "usage": 0.4064
             },
             {
               "actual": 0,
@@ -298,10 +302,10 @@
             "maxErrorRate": 0.05,
             "maxNonSuccessRate": 0.05,
             "maxWilson": 0.03,
-            "median": 189,
+            "median": 187,
             "minApdex": 0.95,
-            "p99": 256,
-            "percentile": 206,
+            "p99": 255,
+            "percentile": 205,
             "t": 500
           },
           "muted": null,
@@ -313,14 +317,14 @@
               "count": 30,
               "passes": 10,
               "share": 0.25,
-              "successCount": 29,
+              "successCount": 20,
               "workers": 1
             },
             "now": {
               "count": 10,
               "passes": 10,
               "share": 0.1,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 0.33,
@@ -338,7 +342,7 @@
             0,
             1,
             1,
-            0,
+            1,
             0,
             1,
             0,
@@ -369,21 +373,22 @@
         "samples": {
           "durations": [
             65.1,
-            66,
-            70,
-            70.1,
-            73.1,
+            66.1,
+            69.4,
+            71,
+            73,
             79,
-            86.1,
-            97.3,
-            126.6
+            86.2,
+            88.3,
+            96.8,
+            126.7
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 126.6,
-            "startedAt": "2026-11-27T03:37:41.103Z",
+            "duration": 126.7,
+            "startedAt": "2026-11-27T12:48:12.797Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -393,8 +398,8 @@
             }
           },
           {
-            "duration": 97.3,
-            "startedAt": "2026-11-27T03:37:35.366Z",
+            "duration": 96.8,
+            "startedAt": "2026-11-27T12:48:07.045Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -404,32 +409,32 @@
             }
           },
           {
-            "duration": 86.1,
-            "startedAt": "2026-11-27T03:37:29.648Z",
+            "duration": 88.3,
+            "startedAt": "2026-11-27T12:47:57.554Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
               "project": "chromium",
-              "repeatEachIndex": 2,
+              "repeatEachIndex": 0,
               "title": "the cart loads"
             }
           }
         ],
         "stats": {
-          "avg": 81.5,
-          "max": 126.6,
+          "avg": 82.2,
+          "max": 126.7,
           "min": 65.1,
           "percentiles": {
-            "p50": 73.1,
-            "p90": 103.2,
-            "p95": 114.9,
-            "p99": 124.3
+            "p50": 76,
+            "p90": 99.8,
+            "p95": 113.2,
+            "p99": 124
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 10,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -445,21 +450,25 @@
           }
         ],
         "ttfb": {
-          "otherP50": 0.5,
-          "p50": 72.5,
-          "p95": 114.3
+          "otherP50": 0.6,
+          "p50": 75.5,
+          "p95": 112.7
         }
       },
       "GET /api/cart/items": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            83
+            83.1,
+            85.3,
+            86.2,
+            97.1,
+            78.6
           ],
-          "excluded": true,
-          "max": 83,
-          "ratio": 0.95,
-          "reason": null,
+          "excluded": false,
+          "max": 97.1,
+          "ratio": 1.13,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 13,
@@ -467,22 +476,22 @@
             "repeatEachIndex": 0,
             "title": "the cart loads"
           },
-          "warmP50": 87.3
+          "warmP50": 85.9
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 87.3,
+              "actual": 85.9,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 193,
-              "n": 9,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.4523
+              "usage": 0.4451
             },
             {
               "actual": 0,
@@ -513,8 +522,8 @@
             "maxWilson": 0.1,
             "median": 193,
             "minApdex": 0.9,
-            "p99": 256,
-            "percentile": 206,
+            "p99": 257,
+            "percentile": 207,
             "t": 500
           },
           "muted": null,
@@ -526,14 +535,14 @@
               "count": 10,
               "passes": 10,
               "share": 0.0833,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 10,
               "passes": 10,
               "share": 0.1,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -551,8 +560,8 @@
             0,
             1,
             0,
-            1,
             4,
+            2,
             1,
             1
           ],
@@ -573,22 +582,23 @@
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
-            64.2,
-            77.6,
-            86,
-            86.6,
-            87.3,
+            62.4,
+            78.6,
+            83.1,
+            85.3,
+            85.5,
+            86.2,
             88.1,
-            88.1,
-            95.1,
-            97.2
+            88.4,
+            92.2,
+            97.1
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 97.2,
-            "startedAt": "2026-11-27T03:37:31.582Z",
+            "duration": 97.1,
+            "startedAt": "2026-11-27T12:48:03.273Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -598,8 +608,8 @@
             }
           },
           {
-            "duration": 95.1,
-            "startedAt": "2026-11-27T03:37:39.182Z",
+            "duration": 92.2,
+            "startedAt": "2026-11-27T12:48:10.904Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -609,8 +619,8 @@
             }
           },
           {
-            "duration": 88.1,
-            "startedAt": "2026-11-27T03:37:37.286Z",
+            "duration": 88.4,
+            "startedAt": "2026-11-27T12:48:08.971Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -621,20 +631,20 @@
           }
         ],
         "stats": {
-          "avg": 85.6,
-          "max": 97.2,
-          "min": 64.2,
+          "avg": 84.7,
+          "max": 97.1,
+          "min": 62.4,
           "percentiles": {
-            "p50": 87.3,
-            "p90": 95.5,
-            "p95": 96.4,
-            "p99": 97
+            "p50": 85.9,
+            "p90": 92.7,
+            "p95": 94.9,
+            "p99": 96.7
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 10,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -651,8 +661,8 @@
         ],
         "ttfb": {
           "otherP50": 0.5,
-          "p50": 86.8,
-          "p95": 95.9
+          "p50": 85.3,
+          "p95": 94.5
         }
       },
       "GET /api/products": {
@@ -688,10 +698,10 @@
             "maxErrorRate": 0.05,
             "maxNonSuccessRate": 0.05,
             "maxWilson": 0.1,
-            "median": 229,
+            "median": 247,
             "minApdex": 0.9,
-            "p99": 338,
-            "percentile": 288,
+            "p99": 335,
+            "percentile": 285,
             "t": 500
           },
           "muted": null,
@@ -703,7 +713,7 @@
               "count": 20,
               "passes": 10,
               "share": 0.1666,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
@@ -720,8 +730,8 @@
         "failedTimings": [
           {
             "count": 20,
-            "p50": 9.1,
-            "p95": 13.7,
+            "p50": 10,
+            "p95": 12.6,
             "status": 401
           }
         ],
@@ -764,13 +774,17 @@
       },
       "GET /api/users/:id": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            2.5
+            2.3,
+            2.3,
+            2.2,
+            2.3,
+            2.3
           ],
           "excluded": true,
-          "max": 2.5,
-          "ratio": 1.14,
+          "max": 2.6,
+          "ratio": 1.24,
           "reason": null,
           "test": {
             "file": "tests/shop.spec.ts",
@@ -779,22 +793,22 @@
             "repeatEachIndex": 0,
             "title": "the shop loads"
           },
-          "warmP50": 2.2
+          "warmP50": 2.1
         },
         "count": 20,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 2.2,
+              "actual": 2.1,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 103,
-              "n": 19,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0214
+              "usage": 0.0204
             },
             {
               "actual": 0,
@@ -838,14 +852,14 @@
               "count": 20,
               "passes": 10,
               "share": 0.1666,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 20,
               "passes": 10,
               "share": 0.2,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -857,57 +871,22 @@
         "hints": [],
         "histogram": {
           "counts": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            7,
             2,
-            1,
-            6,
-            2
+            5,
+            3
           ],
           "edges": [
-            0,
-            1.049,
-            1.101,
-            1.155,
-            1.212,
-            1.271,
-            1.334,
-            1.399,
-            1.468,
-            1.54,
-            1.616,
-            1.695,
-            1.778,
-            1.866,
             1.957,
             2.054,
             2.154,
-            2.26,
-            2.371,
-            2.488,
-            2.61
+            2.26
           ]
         },
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
-            0.7,
-            2.1,
-            2.1,
+            2,
+            2,
             2.1,
             2.1,
             2.1,
@@ -915,68 +894,60 @@
             2.1,
             2.2,
             2.2,
-            2.3,
-            2.4,
-            2.4,
-            2.4,
-            2.4,
-            2.4,
-            2.4,
-            2.5,
-            2.5
+            2.2
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 2.5,
-            "startedAt": "2026-11-27T03:37:29.426Z",
+            "duration": 2.2,
+            "startedAt": "2026-11-27T12:47:56.985Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 2,
-              "title": "the shop loads"
+              "repeatEachIndex": 0,
+              "title": "prices come from the API"
             }
           },
           {
-            "duration": 2.5,
-            "startedAt": "2026-11-27T03:37:35.163Z",
+            "duration": 2.2,
+            "startedAt": "2026-11-27T12:48:06.917Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
               "repeatEachIndex": 5,
-              "title": "the shop loads"
+              "title": "prices come from the API"
             }
           },
           {
-            "duration": 2.4,
-            "startedAt": "2026-11-27T03:37:27.529Z",
+            "duration": 2.2,
+            "startedAt": "2026-11-27T12:48:10.764Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 1,
-              "title": "the shop loads"
+              "repeatEachIndex": 7,
+              "title": "prices come from the API"
             }
           }
         ],
         "stats": {
-          "avg": 2.2,
-          "max": 2.5,
-          "min": 0.7,
+          "avg": 2.1,
+          "max": 2.2,
+          "min": 2,
           "percentiles": {
-            "p50": 2.2,
-            "p90": 2.4,
-            "p95": 2.5,
-            "p99": 2.5
+            "p50": 2.1,
+            "p90": 2.2,
+            "p95": 2.2,
+            "p99": 2.2
           }
         },
         "statuses": {
           "200": 20
         },
-        "successCount": 19,
+        "successCount": 10,
         "testCount": 2,
         "timeSources": {
           "browser": 20,
@@ -999,20 +970,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 0.6,
+          "otherP50": 0.5,
           "p50": 1.6,
-          "p95": 1.7
+          "p95": 1.6
         }
       },
       "GET /app": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
+            1.1,
+            1.3,
+            1.2,
+            1.2,
             1.2
           ],
           "excluded": true,
-          "max": 1.2,
-          "ratio": 1.5,
+          "max": 1.3,
+          "ratio": 1.63,
           "reason": null,
           "test": {
             "file": "tests/shop.spec.ts",
@@ -1032,7 +1007,7 @@
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 101,
-              "n": 19,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
@@ -1067,8 +1042,8 @@
             "maxWilson": 0.1,
             "median": 101,
             "minApdex": 0.9,
-            "p99": 152,
-            "percentile": 102,
+            "p99": 151,
+            "percentile": 101,
             "t": 500
           },
           "muted": null,
@@ -1080,14 +1055,14 @@
               "count": 20,
               "passes": 10,
               "share": 0.1666,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 20,
               "passes": 10,
               "share": 0.2,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -1099,25 +1074,11 @@
         "hints": [],
         "histogram": {
           "counts": [
-            10,
-            5,
-            0,
-            2,
-            0,
-            1,
-            0,
-            1
+            10
           ],
           "edges": [
             0,
-            1.049,
-            1.101,
-            1.155,
-            1.212,
-            1.271,
-            1.334,
-            1.399,
-            1.468
+            1.049
           ]
         },
         "nonSuccessCount": 0,
@@ -1129,72 +1090,63 @@
             0.8,
             0.8,
             0.8,
-            0.8,
-            0.8,
-            0.8,
-            0.8,
-            1.1,
-            1.1,
-            1.1,
-            1.1,
-            1.1,
-            1.2,
-            1.2,
-            1.3,
-            1.4
+            0.9,
+            0.9,
+            0.9,
+            0.9
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 1.4,
-            "startedAt": "2026-11-27T03:37:35.159Z",
+            "duration": 0.9,
+            "startedAt": "2026-11-27T12:47:56.982Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 5,
-              "title": "the shop loads"
+              "repeatEachIndex": 0,
+              "title": "prices come from the API"
             }
           },
           {
-            "duration": 1.3,
-            "startedAt": "2026-11-27T03:37:33.280Z",
+            "duration": 0.9,
+            "startedAt": "2026-11-27T12:47:59.294Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 4,
-              "title": "the shop loads"
+              "repeatEachIndex": 1,
+              "title": "prices come from the API"
             }
           },
           {
-            "duration": 1.2,
-            "startedAt": "2026-11-27T03:37:29.423Z",
+            "duration": 0.9,
+            "startedAt": "2026-11-27T12:48:10.761Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 2,
-              "title": "the shop loads"
+              "repeatEachIndex": 7,
+              "title": "prices come from the API"
             }
           }
         ],
         "stats": {
-          "avg": 1,
-          "max": 1.4,
+          "avg": 0.8,
+          "max": 0.9,
           "min": 0.8,
           "percentiles": {
             "p50": 0.8,
-            "p90": 1.2,
-            "p95": 1.3,
-            "p99": 1.4
+            "p90": 0.9,
+            "p95": 0.9,
+            "p99": 0.9
           }
         },
         "statuses": {
           "200": 20
         },
-        "successCount": 19,
+        "successCount": 10,
         "testCount": 2,
         "timeSources": {
           "browser": 20,
@@ -1224,14 +1176,18 @@
       },
       "GET /page": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            0.9
+            0.9,
+            0.8,
+            0.8,
+            0.8,
+            0.8
           ],
-          "excluded": true,
-          "max": 0.9,
-          "ratio": 1,
-          "reason": null,
+          "excluded": false,
+          "max": 2.2,
+          "ratio": 2.44,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 13,
@@ -1250,7 +1206,7 @@
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 101,
-              "n": 9,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
@@ -1298,14 +1254,14 @@
               "count": 10,
               "passes": 10,
               "share": 0.0833,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 10,
               "passes": 10,
               "share": 0.1,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -1317,16 +1273,49 @@
         "hints": [],
         "histogram": {
           "counts": [
-            9
+            9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
           ],
           "edges": [
             0,
-            1.049
+            1.049,
+            1.101,
+            1.155,
+            1.212,
+            1.271,
+            1.334,
+            1.399,
+            1.468,
+            1.54,
+            1.616,
+            1.695,
+            1.778,
+            1.866,
+            1.957,
+            2.054,
+            2.154,
+            2.26
           ]
         },
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
+            0.7,
             0.8,
             0.8,
             0.8,
@@ -1335,25 +1324,36 @@
             0.9,
             0.9,
             0.9,
-            0.9
+            2.2
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 0.9,
-            "startedAt": "2026-11-27T03:37:27.746Z",
+            "duration": 2.2,
+            "startedAt": "2026-11-27T12:48:12.790Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
               "project": "chromium",
-              "repeatEachIndex": 1,
+              "repeatEachIndex": 8,
               "title": "the cart loads"
             }
           },
           {
             "duration": 0.9,
-            "startedAt": "2026-11-27T03:37:35.360Z",
+            "startedAt": "2026-11-27T12:47:57.548Z",
+            "test": {
+              "file": "tests/shop.spec.ts",
+              "line": 13,
+              "project": "chromium",
+              "repeatEachIndex": 0,
+              "title": "the cart loads"
+            }
+          },
+          {
+            "duration": 0.9,
+            "startedAt": "2026-11-27T12:48:07.039Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 13,
@@ -1361,34 +1361,23 @@
               "repeatEachIndex": 5,
               "title": "the cart loads"
             }
-          },
-          {
-            "duration": 0.9,
-            "startedAt": "2026-11-27T03:37:37.280Z",
-            "test": {
-              "file": "tests/shop.spec.ts",
-              "line": 13,
-              "project": "chromium",
-              "repeatEachIndex": 6,
-              "title": "the cart loads"
-            }
           }
         ],
         "stats": {
-          "avg": 0.9,
-          "max": 0.9,
-          "min": 0.8,
+          "avg": 1,
+          "max": 2.2,
+          "min": 0.7,
           "percentiles": {
             "p50": 0.9,
-            "p90": 0.9,
-            "p95": 0.9,
-            "p99": 0.9
+            "p90": 1,
+            "p95": 1.6,
+            "p99": 2.1
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 10,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -1406,19 +1395,23 @@
         "ttfb": {
           "otherP50": 0.6,
           "p50": 0.2,
-          "p95": 0.3
+          "p95": 0.2
         }
       },
       "GET api/api/prices": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            449.1
+            449.8,
+            74.4,
+            55.8,
+            60.9,
+            69.1
           ],
-          "excluded": true,
-          "max": 449.1,
-          "ratio": 7.34,
-          "reason": null,
+          "excluded": false,
+          "max": 449.8,
+          "ratio": 6.92,
+          "reason": "too-few-samples",
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 8,
@@ -1426,22 +1419,22 @@
             "repeatEachIndex": 0,
             "title": "prices come from the API"
           },
-          "warmP50": 61.2
+          "warmP50": 65
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 61.2,
+              "actual": 65,
               "blocking": false,
               "hardLimitExceeded": false,
-              "limit": 160,
-              "n": 9,
+              "limit": 163,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.3825
+              "usage": 0.3988
             },
             {
               "actual": 0,
@@ -1470,10 +1463,10 @@
             "maxErrorRate": 0.05,
             "maxNonSuccessRate": 0.05,
             "maxWilson": 0.1,
-            "median": 160,
+            "median": 163,
             "minApdex": 0.9,
-            "p99": 222,
-            "percentile": 172,
+            "p99": 581,
+            "percentile": 528,
             "t": 500
           },
           "muted": null,
@@ -1485,14 +1478,14 @@
               "count": 10,
               "passes": 10,
               "share": 0.0833,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 10,
               "passes": 10,
               "share": 0.1,
-              "successCount": 9,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -1504,57 +1497,88 @@
         "hints": [],
         "histogram": {
           "counts": [
-            1,
-            1,
             2,
+            3,
+            0,
+            3,
             1,
             0,
             0,
-            2,
-            2
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
           ],
           "edges": [
             51.09,
-            53.6,
             56.23,
-            59,
             61.9,
-            64.94,
             68.13,
-            71.48,
-            74.99
+            74.99,
+            82.54,
+            90.85,
+            100,
+            110.1,
+            121.2,
+            133.4,
+            146.8,
+            161.6,
+            177.8,
+            195.7,
+            215.4,
+            237.1,
+            261,
+            287.3,
+            316.2,
+            348.1,
+            383.1,
+            421.7,
+            464.2
           ]
         },
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
             52,
-            55,
-            57.6,
-            57.7,
-            61.2,
-            69,
+            55.8,
+            58.1,
+            59,
+            60.9,
             69.1,
-            73.1,
-            74
+            70,
+            74.4,
+            75,
+            449.8
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 74,
-            "startedAt": "2026-11-27T03:37:27.615Z",
+            "duration": 449.8,
+            "startedAt": "2026-11-27T12:47:57.016Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 1,
+              "repeatEachIndex": 0,
               "title": "prices come from the API"
             }
           },
           {
-            "duration": 73.1,
-            "startedAt": "2026-11-27T03:37:42.931Z",
+            "duration": 75,
+            "startedAt": "2026-11-27T12:48:14.647Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 8,
@@ -1564,32 +1588,32 @@
             }
           },
           {
-            "duration": 69.1,
-            "startedAt": "2026-11-27T03:37:39.053Z",
+            "duration": 74.4,
+            "startedAt": "2026-11-27T12:47:59.308Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 7,
+              "repeatEachIndex": 1,
               "title": "prices come from the API"
             }
           }
         ],
         "stats": {
-          "avg": 63.2,
-          "max": 74,
+          "avg": 102.4,
+          "max": 449.8,
           "min": 52,
           "percentiles": {
-            "p50": 61.2,
-            "p90": 73.3,
-            "p95": 73.6,
-            "p99": 73.9
+            "p50": 65,
+            "p90": 112.5,
+            "p95": 281.1,
+            "p99": 416.1
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 10,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -1606,8 +1630,8 @@
         ],
         "ttfb": {
           "otherP50": 0.6,
-          "p50": 60.6,
-          "p95": 73
+          "p50": 64.5,
+          "p95": 280.4
         }
       }
     },
@@ -1644,7 +1668,7 @@
       "gateEnabled": true,
       "status": "failed"
     },
-    "finishedAt": "2026-11-27T03:37:43.540Z",
+    "finishedAt": "2026-11-27T12:48:15.264Z",
     "host": {
       "arch": "arm64",
       "ci": false,
@@ -1704,21 +1728,25 @@
       ],
       "workers": 1
     },
-    "runId": "2026-11-27T03-37-24-6751",
+    "runId": "2026-11-27T12-47-55-5aad",
     "schemaVersion": 5,
     "shards": null,
-    "startedAt": "2026-11-27T03:37:24.377Z",
+    "startedAt": "2026-11-27T12:47:56.034Z",
     "stepNormalization": "1ce40951042b97",
     "steps": {
       "open shop": {
         "cold": {
-          "count": 1,
+          "count": 10,
           "durations": [
-            40
+            18,
+            18,
+            19,
+            18,
+            17
           ],
           "excluded": true,
-          "max": 40,
-          "ratio": 2.22,
+          "max": 19,
+          "ratio": 0.56,
           "reason": null,
           "test": {
             "file": "tests/shop.spec.ts",
@@ -1727,22 +1755,22 @@
             "repeatEachIndex": 0,
             "title": "the shop loads"
           },
-          "warmP50": 18
+          "warmP50": 34
         },
         "count": 20,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 18,
+              "actual": 34,
               "blocking": false,
               "hardLimitExceeded": false,
-              "limit": 350,
-              "n": 19,
+              "limit": 347,
+              "n": 10,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0514
+              "usage": 0.098
             },
             {
               "actual": 0,
@@ -1760,10 +1788,10 @@
             "maxErrorRate": 0.05,
             "maxNonSuccessRate": null,
             "maxWilson": 0.1,
-            "median": 350,
+            "median": 347,
             "minApdex": 0.9,
-            "p99": 409,
-            "percentile": 359,
+            "p99": 399,
+            "percentile": 349,
             "t": 1000
           },
           "muted": null,
@@ -1775,14 +1803,14 @@
               "count": 20,
               "passes": 10,
               "share": 1,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "now": {
               "count": 20,
               "passes": 10,
               "share": 1,
-              "successCount": 19,
+              "successCount": 10,
               "workers": 1
             },
             "perPassRatio": 1,
@@ -1798,33 +1826,26 @@
             0,
             3,
             0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             2,
-            0,
-            0,
-            0,
-            0,
-            6,
-            2,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1,
-            1,
-            1,
-            0,
-            1
+            4
           ],
           "edges": [
-            11.55,
-            12.12,
             12.71,
             13.34,
             13.99,
@@ -1847,10 +1868,7 @@
             31.62,
             33.18,
             34.81,
-            36.52,
-            38.31,
-            40.19,
-            42.17
+            36.52
           ]
         },
         "location": {
@@ -1860,43 +1878,34 @@
         "nonSuccessCount": null,
         "samples": {
           "durations": [
-            12,
-            13,
-            13,
             13,
             14,
             14,
-            18,
-            18,
-            18,
-            18,
-            18,
-            18,
-            19,
-            19,
-            33,
+            14,
+            34,
             34,
             35,
-            37,
-            41
+            36,
+            36,
+            36
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 41,
-            "startedAt": "2026-11-27T03:37:42.817Z",
+            "duration": 36,
+            "startedAt": "2026-11-27T12:48:03.112Z",
             "test": {
               "file": "tests/shop.spec.ts",
-              "line": 3,
+              "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 9,
-              "title": "the shop loads"
+              "repeatEachIndex": 3,
+              "title": "prices come from the API"
             }
           },
           {
-            "duration": 37,
-            "startedAt": "2026-11-27T03:37:37.128Z",
+            "duration": 36,
+            "startedAt": "2026-11-27T12:48:08.812Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 8,
@@ -1906,33 +1915,33 @@
             }
           },
           {
-            "duration": 35,
-            "startedAt": "2026-11-27T03:37:31.423Z",
+            "duration": 36,
+            "startedAt": "2026-11-27T12:48:12.647Z",
             "test": {
               "file": "tests/shop.spec.ts",
               "line": 8,
               "project": "chromium",
-              "repeatEachIndex": 3,
+              "repeatEachIndex": 8,
               "title": "prices come from the API"
             }
           }
         ],
         "stats": {
-          "avg": 21.3,
-          "max": 41,
-          "min": 12,
+          "avg": 26.6,
+          "max": 36,
+          "min": 13,
           "percentiles": {
-            "p50": 18,
-            "p90": 35.4,
-            "p95": 37.4,
-            "p99": 40.3
+            "p50": 34,
+            "p90": 36,
+            "p95": 36,
+            "p99": 36
           }
         },
         "statuses": {
           "ok": 20
         },
         "stepErrorsFromFailedTests": 0,
-        "successCount": 19,
+        "successCount": 10,
         "testCount": 2,
         "timeSources": {
           "browser": 0,
@@ -1970,7 +1979,7 @@
           "file": "tests/shop.spec.ts",
           "keyCount": 3,
           "line": 13,
-          "maxRequestMs": 126.6,
+          "maxRequestMs": 126.7,
           "project": "chromium",
           "requestCount": 30,
           "title": "the cart loads",
@@ -1978,20 +1987,20 @@
             {
               "count": 10,
               "key": "GET /api/cart/items",
-              "totalMs": 853.2
+              "totalMs": 846.9
             },
             {
               "count": 10,
               "key": "GET /api/cart",
-              "totalMs": 822.8
+              "totalMs": 821.6
             },
             {
               "count": 10,
               "key": "GET /page",
-              "totalMs": 8.6
+              "totalMs": 9.7
             }
           ],
-          "totalMs": 1684.6,
+          "totalMs": 1678.2,
           "violatedKeyCount": 0,
           "violatedKeys": []
         },
@@ -2001,7 +2010,7 @@
           "file": "tests/shop.spec.ts",
           "keyCount": 4,
           "line": 8,
-          "maxRequestMs": 449.1,
+          "maxRequestMs": 449.8,
           "project": "chromium",
           "requestCount": 40,
           "title": "prices come from the API",
@@ -2009,20 +2018,20 @@
             {
               "count": 10,
               "key": "GET api/api/prices",
-              "totalMs": 1017.8
+              "totalMs": 1024.1
             },
             {
               "count": 10,
               "key": "GET /api/users/:id",
-              "totalMs": 19.8
+              "totalMs": 21.1
             },
             {
               "count": 10,
               "key": "GET /app",
-              "totalMs": 8
+              "totalMs": 8.4
             }
           ],
-          "totalMs": 1045.6,
+          "totalMs": 1053.6,
           "violatedKeyCount": 1,
           "violatedKeys": [
             "GET /api/products"
@@ -2034,7 +2043,7 @@
           "file": "tests/shop.spec.ts",
           "keyCount": 3,
           "line": 3,
-          "maxRequestMs": 2.5,
+          "maxRequestMs": 2.6,
           "project": "chromium",
           "requestCount": 30,
           "title": "the shop loads",
@@ -2042,12 +2051,12 @@
             {
               "count": 10,
               "key": "GET /api/users/:id",
-              "totalMs": 24.2
+              "totalMs": 22.2
             },
             {
               "count": 10,
               "key": "GET /app",
-              "totalMs": 11.8
+              "totalMs": 11.9
             },
             {
               "count": 10,
@@ -2055,7 +2064,7 @@
               "totalMs": 0
             }
           ],
-          "totalMs": 36,
+          "totalMs": 34.1,
           "violatedKeyCount": 1,
           "violatedKeys": [
             "GET /api/products"
@@ -2068,31 +2077,31 @@
           "requestCount": 4,
           "requests": [
             {
-              "duration": 0.8,
+              "duration": 0.9,
               "key": "GET /app",
-              "offset": 46,
+              "offset": 47,
               "status": "200"
             },
             {
-              "duration": 2.1,
+              "duration": 2.2,
               "key": "GET /api/users/:id",
-              "offset": 49,
+              "offset": 50,
               "status": "200"
             },
             {
               "duration": null,
               "key": "GET /api/products",
-              "offset": 49,
+              "offset": 50,
               "status": "401"
             },
             {
-              "duration": 449.1,
+              "duration": 449.8,
               "key": "GET api/api/prices",
               "offset": 81,
               "status": "200"
             }
           ],
-          "spanMs": 530.1,
+          "spanMs": 530.8,
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 8,
@@ -2100,32 +2109,32 @@
             "repeatEachIndex": 0,
             "title": "prices come from the API"
           },
-          "totalMs": 452
+          "totalMs": 452.9
         },
         {
           "omitted": 0,
           "requestCount": 3,
           "requests": [
             {
-              "duration": 0.8,
+              "duration": 2.2,
               "key": "GET /page",
-              "offset": 46,
+              "offset": 47,
               "status": "200"
             },
             {
-              "duration": 64.2,
+              "duration": 62.4,
               "key": "GET /api/cart/items",
-              "offset": 52,
+              "offset": 54,
               "status": "200"
             },
             {
-              "duration": 126.6,
+              "duration": 126.7,
               "key": "GET /api/cart",
-              "offset": 52,
+              "offset": 54,
               "status": "200"
             }
           ],
-          "spanMs": 178.6,
+          "spanMs": 180.7,
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 13,
@@ -2133,40 +2142,40 @@
             "repeatEachIndex": 8,
             "title": "the cart loads"
           },
-          "totalMs": 191.6
+          "totalMs": 191.3
         },
         {
           "omitted": 0,
           "requestCount": 3,
           "requests": [
             {
-              "duration": 1.4,
+              "duration": 1.2,
               "key": "GET /app",
-              "offset": 146,
+              "offset": 148,
               "status": "200"
             },
             {
-              "duration": 2.5,
+              "duration": 2.6,
               "key": "GET /api/users/:id",
-              "offset": 150,
+              "offset": 151,
               "status": "200"
             },
             {
               "duration": null,
               "key": "GET /api/products",
-              "offset": 150,
+              "offset": 151,
               "status": "401"
             }
           ],
-          "spanMs": 152.5,
+          "spanMs": 153.6,
           "test": {
             "file": "tests/shop.spec.ts",
             "line": 3,
             "project": "chromium",
-            "repeatEachIndex": 5,
+            "repeatEachIndex": 8,
             "title": "the shop loads"
           },
-          "totalMs": 3.9
+          "totalMs": 3.8
         }
       ]
     },
@@ -2242,9 +2251,9 @@
           "normalization": "12dbfe36924852",
           "playwrightVersion": "1.57.0",
           "sourcePasses": 10,
-          "sourceRunId": "2026-11-27T03-36-24-41ed",
-          "sourceRunStartedAt": "2026-11-27T03:36:24.964Z",
-          "sourceSampleCount": 113,
+          "sourceRunId": "2026-11-27T12-46-56-fe0e",
+          "sourceRunStartedAt": "2026-11-27T12:46:56.917Z",
+          "sourceSampleCount": 80,
           "tool": {
             "name": "playwright-performance-regression",
             "version": "1.0.1"
@@ -2314,9 +2323,9 @@
           "normalization": "1ce40951042b97",
           "playwrightVersion": "1.57.0",
           "sourcePasses": 10,
-          "sourceRunId": "2026-11-27T03-36-24-41ed",
-          "sourceRunStartedAt": "2026-11-27T03:36:24.964Z",
-          "sourceSampleCount": 19,
+          "sourceRunId": "2026-11-27T12-46-56-fe0e",
+          "sourceRunStartedAt": "2026-11-27T12:46:56.917Z",
+          "sourceSampleCount": 10,
           "tool": {
             "name": "playwright-performance-regression",
             "version": "1.0.1"
@@ -2336,8 +2345,8 @@
     "warnings": [
       {
         "code": "STATS_COLD_SLOW",
-        "hint": "Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
-        "message": "1 key is much slower on the first call (cold start): GET api/api/prices 449 ms vs warm p50 61 ms (×7.3)."
+        "hint": "The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
+        "message": "1 key is much slower on the first call (cold start): GET api/api/prices 450 ms vs warm p50 65 ms (×6.9)."
       },
       {
         "code": "THRESHOLDS_ENTRY_NOT_TIMED",

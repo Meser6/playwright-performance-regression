@@ -37,8 +37,8 @@ thresholds files at the same time, then derive thresholds once.
    format, also for entries whose limits it keeps. `1.0.x` refuses a version 3 thresholds file with
    `SCHEMA_VERSION_TOO_NEW`, so do not commit new files before every job runs `1.1.0`.
 2. **Cold samples are on by default** (`measure.coldSamples: 1`): the first sample of every key in
-   a run stays out of the evaluated statistics and the derived thresholds when the key has enough
-   samples ([Thresholds](thresholds.md#fast-failures-and-workload-changes)). Percentiles without a
+   each pass stays out of the evaluated statistics and the derived thresholds when enough warm
+   samples remain ([Thresholds](thresholds.md#fast-failures-and-workload-changes)). Percentiles without a
    slow first call are a bit lower, so the first thresholds run after the upgrade may lower some
    limits slightly; review the diff as usual. Thresholds files from `1.0.x` are compared without a
    `coldSamples` warning. To keep the `1.0.x` behaviour, set `measure: { coldSamples: 0 }`.
