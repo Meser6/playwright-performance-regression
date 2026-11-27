@@ -1,8 +1,10 @@
 name: Demo report
 
-# The demo HTML report on GitHub Pages (13-REQ-17): examples/with-setup measured against the demo
-# server of this repository with one endpoint slowed down, so the report shows a blocking
-# violation (scripts/build-demo-report.mjs). Runs after a stable release (release.yml) or by hand.
+# The demo HTML reports on GitHub Pages (13-REQ-17, 13-REQ-29): examples/with-setup measured
+# against the demo server of this repository, one thresholds run and two test runs in one job
+# (scripts/build-demo-report.mjs): slow-endpoint.html (a blocking time violation) and
+# fast-failure.html (fast 401s fail the nonSuccess rule), linked from index.html. Runs after a
+# stable release (release.yml) or by hand.
 # GitHub Pages needs a public repository (or a paid plan): while the repository is private the
 # report is built and kept as a workflow artifact, and the deployment is skipped.
 

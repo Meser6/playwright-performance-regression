@@ -1,0 +1,31 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+playwright-performance-regression · mode: test · 50 tests (50 passed, 0 failed)
+
+╭─ ⚠ Warnings (3) ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⚠ STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET api/api/prices 450 ms vs warm p50 62 ms  │
+│   (×7.3).                                                                                                            │
+│   Hint: Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples +       │
+│         checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or  │
+│         set measure.coldSamples to 0.                                                                                │
+│ ⚠ THRESHOLDS_ENTRY_NOT_TIMED: 1 endpoint key with thresholds was not timed because its responses were not            │
+│   successful: GET /api/products (20 × 401).                                                                          │
+│   Hint: Check the login and the test data of the tests that call these keys. The nonSuccess rule fails such a key    │
+│         when its entry has maxNonSuccessRate (written by a thresholds run of version 1.1.0 or later).                │
+│ ⚠ THRESHOLDS_WORKLOAD_SHIFT: 1 endpoint key gets a different share of the traffic than in the thresholds run: GET    │
+│   /api/cart 3.0 → 1.0 samples per pass (×0.33).                                                                      │
+│   Hint: A change of the tests or fixtures changes the number of samples and the percentiles; after an intended       │
+│         change, derive thresholds again with `PW_PERF_MODE=thresholds <your test command>`.                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+┌──────────────────────────────────────┬───────────┬───────┐
+│                                      │ Endpoints │ Steps │
+├──────────────────────────────────────┼───────────┼───────┤
+│ keys                                 │         7 │     1 │
+│ from file                            │         7 │     1 │
+│ checked by median only (few samples) │         6 │     1 │
+└──────────────────────────────────────┴───────────┴───────┘
+
+╭───────────────────────────────────────────────╮
+│ ✅  PASSED  no violations in 8 evaluated keys │
+╰───────────────────────────────────────────────╯
+Report: examples/with-setup/reports/pw-perf/report.html

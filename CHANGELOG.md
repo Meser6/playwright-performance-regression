@@ -57,6 +57,13 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   GitHub Actions, GitLab CI, Jenkins and Azure Pipelines are in `examples/ci/sharded/`; see
   [Sharded runs](docs/ci.md#sharded-runs). The start banner of a run estimated above two hours
   suggests `--shard`.
+- **Fast-failure example and demo.** [Thresholds](docs/thresholds.md#fast-failures-and-workload-changes)
+  walks through a real run of `examples/with-setup` in which an endpoint answers 401 in a few
+  milliseconds instead of 200 in 120 ms: what the time and error rules do, how the `nonSuccess`
+  rule fails it, a workload shift and a cold first call, with console excerpts and screenshots.
+  The demo on GitHub Pages has a landing page with two reports, `slow-endpoint.html` (formerly the
+  only report, at `index.html`) and `fast-failure.html`; the README links it.
+  [Upgrading](docs/upgrading.md#from-10x-to-110) has a section for 1.0.x → 1.1.0.
 
 ### Changed
 
@@ -66,6 +73,8 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
 - Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.
 - The run report gets `shards: null` when a report of version 4 is migrated.
+- README: GraphQL and tRPC are no longer listed as a limitation (`keys.operations`), and "How it
+  works" names fast failures.
 
 ### Removed
 

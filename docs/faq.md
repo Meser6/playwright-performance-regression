@@ -36,6 +36,14 @@ samples and the tests that made the requests. Then:
 Exit code 3 is different: the measurement itself did not work. The summary lists the tool errors;
 each code is explained in [Troubleshooting](troubleshooting.md).
 
+## My endpoint got faster but the app is broken
+
+Usually the endpoint now fails fast: a 401 or 500 in a few milliseconds instead of a 200 in
+120 ms. Failed responses are not timed, so the time rules see nothing to compare. Since 1.1.0 the
+`nonSuccess` rule fails such a key once its thresholds entry has `maxNonSuccessRate` (written by a
+thresholds run of 1.1.0 or later), and `THRESHOLDS_ENTRY_NOT_TIMED` warns about it. A real run,
+step by step: [Fast failures and workload changes](thresholds.md#fast-failures-and-workload-changes).
+
 ## Why do most keys have too few samples, or are evaluated by median only?
 
 Each check needs a minimum number of successful samples per key: 5 for the median and the error
