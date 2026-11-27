@@ -281,7 +281,7 @@ export function evaluate(
           cfg.checks.time.median.minSamples,
         );
         if (notTimed !== null) warnings.push(notTimed);
-        const shift = workloadShiftWarning(kind, perKey[kind]);
+        const shift = workloadShiftWarning(kind, perKey[kind], byKind[kind]);
         if (shift !== null) warnings.push(shift);
       }
     }

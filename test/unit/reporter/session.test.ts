@@ -1181,4 +1181,32 @@ describe('Next:, RUN_PROJECT_NO_REQUESTS and CONFIG_BASEURL_EMPTY (09-REQ-32, 09
       expect(warning?.message, baseURL).toBe('Measured project chromium has an empty use.baseURL.');
     }
   });
+
+  test('03-AC-23 the CONFIG_BASEURL_EMPTY hint uses the package manager of the project', async () => {
+    const cases: [Record<string, string>, string | null, string][] = [
+      [{}, 'yarn.lock', 'PW_PERF_MODE=test yarn e2e:qa'],
+      [
+        { npm_config_user_agent: 'pnpm/10.16.1 npm/? node/v24.2.0' },
+        null,
+        'PW_PERF_MODE=test pnpm run e2e:qa',
+      ],
+      [{}, null, 'PW_PERF_MODE=test npm run e2e:qa'],
+    ];
+    for (const [env, lockFile, command] of cases) {
+      const d = tempDir();
+      writeFileSync(join(d, 'package.json'), '{}');
+      if (lockFile !== null) writeFileSync(join(d, lockFile), '');
+      const s = session(fakeHost(d, { env }), registered({}, { mode: 'test' }));
+      s.begin(fakeConfig(d, { projects: [project('chromium', { use: { baseURL: '' } })] }), ROOT);
+      runTests(s, d, 5, PATHS, steady);
+      await s.end({ status: 'passed' });
+      const report = JSON.parse(
+        readFileSync(join(d, 'reports/pw-perf', 'report.json'), 'utf8'),
+      ) as { warnings: { code: string; hint: string }[] };
+      const warning = report.warnings.find((w) => w.code === 'CONFIG_BASEURL_EMPTY');
+      expect(warning?.hint, command).toContain(
+        `(e.g. ${command}, see docs/dynamic-environments.md)`,
+      );
+    }
+  });
 });

@@ -9,7 +9,13 @@ import { SCHEMA_VERSIONS } from '../../core/schema/index.ts';
 import { PACKAGE_NAME } from '../../core/types/index.ts';
 import type { CliIssue } from '../../core/types/index.ts';
 import { EXTEND_CALL, PERF_CONFIG_NAMES, SOURCE_FILE } from './detect.ts';
-import { importSpecifiers, resolveImport, tsconfigAliases, workspaceKey } from './imports.ts';
+import {
+  importSpecifiers,
+  resolveImport,
+  tsconfigAliases,
+  tsconfigAllowsTsExtensions,
+  workspaceKey,
+} from './imports.ts';
 import type { ProjectInfo } from './detect.ts';
 import { translator } from './messages.ts';
 import type { Translate, WizardLanguage } from './messages.ts';
@@ -80,9 +86,12 @@ export function perfConfigFile(info: ProjectInfo): { path: string; format: PerfC
 /** The package config file playwright.config refers to: the existing one, else the new one. */
 function perfConfigReference(info: ProjectInfo, answers: InitAnswers): PerfConfigRef {
   const existing = info.existing.perfConfig;
-  if (existing !== null) return perfConfigRef(existing, info.files.get(existing) ?? null);
+  const tsExtensions = tsconfigAllowsTsExtensions(info.files.get('tsconfig.json'));
+  if (existing !== null) {
+    return perfConfigRef(existing, info.files.get(existing) ?? null, tsExtensions);
+  }
   const file = perfConfigFile(info);
-  return perfConfigRef(file.path, renderPerfConfig(answers, file.format));
+  return perfConfigRef(file.path, renderPerfConfig(answers, file.format), tsExtensions);
 }
 
 function manual(message: string, hint: string): CliIssue {

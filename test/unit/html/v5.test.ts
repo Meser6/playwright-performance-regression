@@ -75,6 +75,18 @@ describe('key details of 1.1.0 (11-REQ-61, 11-REQ-62)', () => {
     );
   });
 
+  test('11-REQ-31 fast 401s rank under Highest failure rate; without them the 1.0.x name stays', () => {
+    const fast = page('fast-failure');
+    const ranking = fast.slice(fast.indexOf('Highest failure rate'));
+    expect(ranking).toContain('errors · non-success');
+    // GET /api/me answers only 401: not an error, but every response failed.
+    expect(ranking.slice(0, ranking.indexOf('</ol>'))).toContain('/api/me');
+    expect(fast).not.toContain('Highest error rate');
+    const cold = page('cold');
+    expect(cold).toContain('Highest error rate');
+    expect(cold).not.toContain('Highest failure rate');
+  });
+
   test('11-AC-45 a v4 report after migration renders as in 1.0.x', () => {
     const text = readFileSync(join(GOLDEN_DIR, 'run-report', 'v4', 'full-run.json'), 'utf8');
     const parsed = parseRunReport(text, 'v4.json');

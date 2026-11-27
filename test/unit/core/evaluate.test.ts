@@ -713,6 +713,13 @@ describe('thresholds files (09, chapter 4)', () => {
     expect(e.status).toBe('failed');
   });
 
+  test('09-AC-44 another normalization gives a hint with PW_PERF_PRUNE=1', () => {
+    const e = withGenerated({ ...generated, normalization: 'ffffffffffffff' });
+    expect(e.warnings[0]?.hint).toContain(
+      '`PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>` to drop the entries of the old keys',
+    );
+  });
+
   test('09-AC-13 a Playwright patch version difference gives no warning, minor does', () => {
     expect(codes(withGenerated({ ...generated, playwrightVersion: '1.57.2' }))).toEqual([]);
     const minor = withGenerated({ ...generated, playwrightVersion: '1.58.0' });

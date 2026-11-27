@@ -84,7 +84,7 @@ names (`pw-perf-thresholds.steps.json`). The message names the option and the va
 `null` (for example `https://undefined.example.com`, the result of an unset environment
 variable). The tests probably run against the wrong address. If `baseURL` comes from environment
 variables, run the tests through the script that sets them, e.g. `PW_PERF_MODE=test npm run
-e2e:qa`.
+e2e:qa` (`yarn e2e:qa`, `pnpm run e2e:qa`: the hint uses the package manager of the project).
 
 ### CONFIG_FILE_NOT_PASSED
 
@@ -690,7 +690,9 @@ source report): another browser, Playwright version (major.minor), machine or no
 rules, or another `measure.coldSamples` (files written before 1.1.0 do not record it and are not
 compared on it). Timings from another machine or browser are not comparable: derive thresholds on
 the same infrastructure that runs the gate, usually CI (see [thresholds.md](thresholds.md)). After a
-change of normalization or of `measure.coldSamples`, derive again so the keys and samples match.
+change of normalization or of `measure.coldSamples`, derive again so the keys and samples match;
+after a change of normalization (`keys.*` options such as `keys.operations`, or the `baseURL`
+origins) add `PW_PERF_PRUNE=1` to the thresholds run, so the entries of the old keys are removed.
 
 ### THRESHOLDS_ENTRY_NOT_TIMED
 
@@ -711,7 +713,9 @@ of the tests, fixtures or test data. Percentiles of fewer or more samples are no
 change of the result may come from the tests, not from the application. The message names up to
 three keys with the largest change (`4.0 → 0.8 samples per pass (×0.20)`); the console shows the
 samples as `now/base` in the violations table and the HTML report has a "Compared with the
-thresholds run" block. The warning does not change the result. After an intended change of the
+thresholds run" block. Retries of failed tests add samples too: when shifted keys have samples
+from failed tests, the hint says so first, and the shift usually goes away once the tests pass. The
+warning does not change the result. After an intended change of the
 tests, derive thresholds again with `PW_PERF_MODE=thresholds npm run e2e`; set
 `thresholds.workloadShift.factor` to `null` to turn the warning off.
 

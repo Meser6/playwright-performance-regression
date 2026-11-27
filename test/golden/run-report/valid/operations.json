@@ -420,7 +420,7 @@
       {
         "code": "THRESHOLDS_SOURCE_MISMATCH",
         "message": "Thresholds in pw-perf-thresholds.json come from a run with other conditions (thresholds / this run): normalization 1be5f2f3d77e9e / 0123456789abcd.",
-        "hint": "Another normalization changes the keys: derive thresholds again with `PW_PERF_MODE=thresholds <your test command>`."
+        "hint": "Another normalization (keys.* options or the baseURL origins) changes the keys: derive thresholds again with `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>` to drop the entries of the old keys, then review the diff."
       },
       {
         "code": "THRESHOLDS_UNSEEN_ENTRIES",

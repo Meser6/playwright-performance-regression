@@ -67,6 +67,22 @@ function stripJsonc(text: string): string {
   return out.replace(/,(\s*[}\]])/gu, '$1');
 }
 
+/**
+ * compilerOptions.allowImportingTsExtensions of a root tsconfig.json (04-REQ-46): then the
+ * playwright.config import of pw-perf.config.ts keeps its `.ts` extension. `extends` is not read.
+ */
+export function tsconfigAllowsTsExtensions(text: string | undefined): boolean {
+  if (text === undefined) return false;
+  try {
+    const json = JSON.parse(stripJsonc(text)) as {
+      compilerOptions?: { allowImportingTsExtensions?: unknown };
+    } | null;
+    return json?.compilerOptions?.allowImportingTsExtensions === true;
+  } catch {
+    return false;
+  }
+}
+
 /** The path aliases of a root tsconfig.json, relative to the project (empty when none). */
 export function tsconfigAliases(text: string | undefined): PathAlias[] {
   if (text === undefined) return [];

@@ -99,7 +99,7 @@ export function formatCheckSummary(
             ? ''
             : ` (${p.browserName})`;
       lines.push(
-        `  measured    ${p.name}${browser} · baseURL ${p.baseURL ?? '(not set)'} · ${plural(p.requests, 'request')} in ${plural(p.tests, 'test')}`,
+        `  measured    ${p.name}${browser} · baseURL ${p.baseURL === null ? '(not set)' : p.baseURL.trim() === '' ? '(empty)' : p.baseURL} · ${plural(p.requests, 'request')} in ${plural(p.tests, 'test')}`,
       );
     } else {
       lines.push(`  dependency  ${p.name} · runs once, not measured`);

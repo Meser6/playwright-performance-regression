@@ -12,11 +12,19 @@ export interface PerfConfigRef {
   require: string;
 }
 
-/** The reference to a package config file by its name and, for `.js`, its text (04-REQ-46). */
-export function perfConfigRef(file: string, text: string | null): PerfConfigRef {
+/**
+ * The reference to a package config file by its name and, for `.js`, its text (04-REQ-46). A
+ * `.ts` file is imported without extension, or with it when tsconfig.json allows importing `.ts`
+ * extensions (`tsExtensions`; tsc with module nodenext refuses the import without extension).
+ */
+export function perfConfigRef(
+  file: string,
+  text: string | null,
+  tsExtensions = false,
+): PerfConfigRef {
   if (/\.[cm]?ts$/u.test(file)) {
     const base = `./${file.replace(/\.[cm]?ts$/u, '')}`;
-    return { import: base, require: `require('${base}').default` };
+    return { import: tsExtensions ? `./${file}` : base, require: `require('${base}').default` };
   }
   const cjs =
     file.endsWith('.cjs') || (file.endsWith('.js') && /\bmodule\.exports\b/u.test(text ?? ''));

@@ -471,6 +471,54 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     expect(earlier.get('playwright.config.js')).toContain("require('./pw-perf.config').default)");
   });
 
+  test('04-AC-69 a tsconfig with allowImportingTsExtensions gets the import with the .ts extension', () => {
+    const tsConfig =
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});\n";
+    const cjsConfig =
+      "const { defineConfig } = require('@playwright/test');\nmodule.exports = defineConfig({});\n";
+    const esmConfig =
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});\n";
+    const allow = `{
+  // node type stripping
+  "compilerOptions": { "module": "nodenext", "allowImportingTsExtensions": true, "noEmit": true, },
+}
+`;
+    const plan = (entries: Record<string, string>): Map<string, string> =>
+      new Map(
+        planInitChanges(detectProject(files(entries)), ANSWERS).changes.map((c) => [
+          c.path,
+          c.after,
+        ]),
+      );
+    const withExt = plan({
+      'package.json': '{"type":"module"}',
+      'tsconfig.json': allow,
+      'playwright.config.ts': tsConfig,
+    });
+    expect(withExt.get('playwright.config.ts')).toContain(
+      "import perfConfig from './pw-perf.config.ts';",
+    );
+    const without = plan({
+      'package.json': '{}',
+      'tsconfig.json': '{ "compilerOptions": { "module": "nodenext" } }',
+      'playwright.config.ts': tsConfig,
+    });
+    expect(without.get('playwright.config.ts')).toContain(
+      "import perfConfig from './pw-perf.config';",
+    );
+    // JavaScript projects stay as they were (04-REQ-46).
+    const esm = plan({ 'package.json': '{"type":"module"}', 'playwright.config.js': esmConfig });
+    expect(esm.get('playwright.config.js')).toContain(
+      "import perfConfig from './pw-perf.config.js';",
+    );
+    const cjs = plan({ 'package.json': '{}', 'playwright.config.js': cjsConfig });
+    expect(cjs.get('playwright.config.js')).toContain("require('./pw-perf.config'))");
+    expect(perfConfigRef('pw-perf.config.ts', null, true)).toEqual({
+      import: './pw-perf.config.ts',
+      require: "require('./pw-perf.config').default",
+    });
+  });
+
   test('another package config format is never rewritten; the answers become a manual step', () => {
     const info = detectProject(
       files({
