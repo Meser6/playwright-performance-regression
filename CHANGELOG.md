@@ -85,6 +85,9 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
 - `THRESHOLDS_KEYS_ON_DEFAULTS` and the "On default thresholds" console table no longer list keys
   without successful samples (e.g. an endpoint a test calls on purpose for a 404): a thresholds
   run never writes an entry for them, so the advice to derive thresholds did not help.
+- A shard without tests (e.g. `--shard=5/5` with a `--grep` that leaves fewer tests than shards)
+  no longer reports `CONFIG_NO_MEASURED_PROJECT` and exits with code 0; it writes its empty shard
+  file as before.
 
 ## [1.0.1] - 2026-11-25
 

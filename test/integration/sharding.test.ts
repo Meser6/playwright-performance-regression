@@ -121,6 +121,9 @@ describe('17 sharded runs', () => {
         entries: unknown[];
       };
       expect(file.entries, run.output).toEqual([]);
+      // Playwright gives an empty shard no project suites: no CONFIG_NO_MEASURED_PROJECT.
+      expect(run.output).not.toContain('CONFIG_NO_MEASURED_PROJECT');
+      expect(run.outcome?.exitCode, run.output).toBe(0);
     },
     RUN_TIMEOUT,
   );

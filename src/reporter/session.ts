@@ -458,7 +458,8 @@ export class RunSession {
       const notPassed = configFileNotPassedWarning(io.listDirSync(this.configDir));
       if (notPassed !== null) this.warnings.push(notPassed);
     }
-    if (this.settings.registered && this.measured.size === 0) {
+    // A run without any project (an empty shard, 17-REQ-06) is not "only setup projects".
+    if (this.settings.registered && this.measured.size === 0 && inRun.size > 0) {
       this.toolErrors.push(noMeasuredProjectError(inRun));
     }
     this.beginWarnings = this.warnings.length;
