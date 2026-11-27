@@ -26,6 +26,10 @@
       "how": "Manual: the reserved name is checked on npm (npm view) before publishing 0.1.0."
     },
     {
+      "id": "18-AC-07",
+      "how": "Manual: checked on a separate GraphQL and tRPC sample project before 1.1.0 (operation keys, one slowed operation blocks alone, thresholds migration with PW_PERF_PRUNE=1, no request bodies in the run files, report or thresholds); the result is recorded in the specification repository."
+    },
+    {
       "id": "13-AC-14",
       "how": "Manual: repository settings (main protection, squash merge only, branch deletion) are reviewed after the repository is created."
     }
