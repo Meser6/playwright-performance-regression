@@ -37,7 +37,7 @@ const failedRequest = {
   ttfb: null,
 };
 const samples = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   collector: { name: 'playwright', version: '0.1.0', browserName: 'chromium' },
   requests: [requestSample, failedRequest],
   apiRequests: [],

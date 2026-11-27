@@ -65,6 +65,17 @@ const noTiming = {
   fromServiceWorker: constant(false),
 };
 
+/** Operation names of keys.operations (18-REQ-09); never the request body. */
+const operation = nullable(
+  arr(
+    str({
+      pattern: /^[A-Za-z0-9_.-]{1,100}$/u,
+      format: 'an operation name of letters, digits, "_", "." and "-" (at most 100)',
+    }),
+    { minItems: 1 },
+  ),
+);
+
 const requestSample = obj(
   {
     method: str({ pattern: /^[A-Z]+$/u }),
@@ -78,6 +89,7 @@ const requestSample = obj(
     ttfb: msOrNull,
     timeSource: enumOf(['browser', 'node']),
     fromServiceWorker: bool,
+    operation,
   },
   {
     required: [
@@ -117,6 +129,7 @@ const apiRequestSample = obj(
     startTime: epochMs,
     duration: msOrNull,
     source: enumOf(['request', 'context', 'tracked']),
+    operation,
   },
   {
     required: ['method', 'url', 'status', 'startTime', 'duration', 'source'],
@@ -137,7 +150,7 @@ const apiRequestSample = obj(
 
 export const sampleBatch = obj(
   {
-    schemaVersion: constant(3),
+    schemaVersion: constant(4),
     collector: obj(
       {
         name: str({ pattern: /^[a-z0-9-]+$/u }),

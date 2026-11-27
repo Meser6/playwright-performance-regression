@@ -710,7 +710,12 @@ export function addKeyedApiRequest(
   keyOf: (sample: KeySample) => KeyResult,
   sample: EnrichedApiRequestSample,
 ): KeyResult {
-  const result = keyOf({ method: sample.method, url: sample.url, resourceType: 'request' });
+  const result = keyOf({
+    method: sample.method,
+    url: sample.url,
+    resourceType: 'request',
+    operation: sample.operation ?? null,
+  });
   if (!result.ok) return result;
   const key = `${REQUEST_KEY_PREFIX}${result.key}`;
   const request: EnrichedRequestSample = {

@@ -33,11 +33,21 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   `Workload:` line, the HTML report a "Compared with the thresholds run" block, `junit.xml` a
   `workload:` line. The new warning `THRESHOLDS_WORKLOAD_SHIFT` names keys whose samples per pass
   changed by `thresholds.workloadShift.factor` (2 by default) or more.
+- **Keys per GraphQL operation and tRPC procedure.** `keys.operations` (empty by default) gives
+  endpoints that serve many operations under one URL a key per operation:
+  `{ type: 'graphql', match: '/graphql' }` turns `POST /graphql` into `POST /graphql#GetTickets`,
+  `POST /graphql#CreateOrder` and, for batches, `POST /graphql#GetTickets+GetUser`;
+  `{ type: 'trpc', match: /^\/api\/trpc\// }` gives `GET /api/trpc#post.byId`. The request body is
+  read only for `POST` requests matching a `graphql` entry (up to 64 KB, in the test worker) and
+  only the operation names are kept. `keys.keyBuilder` gets them as `operation`. A request whose
+  operation cannot be read keeps its old key and gives the warning `COLLECTOR_OPERATION_UNKNOWN`.
+  The HTML report suggests the option for keys that look like GraphQL or tRPC. See
+  [Operations](docs/configuration.md#operations) for migrating the thresholds files.
 
 ### Changed
 
-- **Run report version 5, thresholds file version 3.** Older reports and thresholds files are
-  migrated when read (a thresholds file gives `THRESHOLDS_FILE_OUTDATED` until the next thresholds
+- **Run report version 5, thresholds file version 3, sample batch version 4.** Older reports and
+  thresholds files are migrated when read (a thresholds file gives `THRESHOLDS_FILE_OUTDATED` until the next thresholds
   run rewrites it). The next thresholds run adds `maxNonSuccessRate` and `source` also to entries
   it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
 - Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.

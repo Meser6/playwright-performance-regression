@@ -62,6 +62,7 @@ export function keysOnDefaultsWarning(
   kind: Kind,
   keys: readonly string[],
   env: string | null,
+  operationKeys = false,
 ): Issue {
   const one = keys.length === 1;
   const named = keys.slice(0, MAX_KEYS_IN_MESSAGE).join(', ');
@@ -70,9 +71,17 @@ export function keysOnDefaultsWarning(
   return {
     code: 'THRESHOLDS_KEYS_ON_DEFAULTS',
     message: `${plural(keys.length, `${KIND_NOUN[kind]} key`)} ${one ? 'has' : 'have'} no entry in ${path} and ${one ? 'is' : 'are'} evaluated with default thresholds: ${list}.`,
-    hint: `New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}; locked entries are kept.`,
+    hint: operationKeys
+      ? OPERATION_KEYS_HINT
+      : `New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}; locked entries are kept.`,
   };
 }
+
+/**
+ * Hint of THRESHOLDS_UNSEEN_ENTRIES and THRESHOLDS_KEYS_ON_DEFAULTS for the api file when the
+ * normalization changed and the run has operation keys (18-REQ-12).
+ */
+export const OPERATION_KEYS_HINT = `keys.operations changed the endpoint keys (keys with #): derive thresholds again with \`${PRUNE_COMMAND}\`, review the diff and commit the files; locked entries are kept.`;
 
 /** major.minor of a version such as 1.57.2 (09-REQ-04). */
 export function majorMinor(version: string): string {
@@ -194,12 +203,29 @@ export function generatedWarnings(
 }
 
 /** THRESHOLDS_UNSEEN_ENTRIES (09-REQ-05). */
-export function unseenWarning(path: string, unseen: readonly string[]): Issue {
+export function unseenWarning(
+  path: string,
+  unseen: readonly string[],
+  operationKeys = false,
+): Issue {
   return {
     code: 'THRESHOLDS_UNSEEN_ENTRIES',
     message: `${plural(unseen.length, 'entry', 'entries')} in ${path} ${unseen.length === 1 ? 'was' : 'were'} not seen in this run.`,
-    hint: `Run the full suite, or remove stale entries with \`${PRUNE_COMMAND}\`.`,
+    hint: operationKeys
+      ? OPERATION_KEYS_HINT
+      : `Run the full suite, or remove stale entries with \`${PRUNE_COMMAND}\`.`,
   };
+}
+
+/** Whether the api keys of a run come from a changed keys.operations (18-REQ-12). */
+export function operationKeysChanged(
+  kind: Kind,
+  generated: Generated | null,
+  source: RunSource,
+  keys: readonly string[],
+): boolean {
+  if (kind !== 'api' || generated === null) return false;
+  return generated.normalization !== source.normalization && keys.some((k) => k.includes('#'));
 }
 
 /** THRESHOLDS_FILE_OUTDATED (02-REQ-12). */

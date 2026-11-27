@@ -1,5 +1,5 @@
 // Run reports of 1.1.0 built through the whole pipeline (aggregator → evaluate → buildRunReport):
-// the golden reports `cold`, `fast-failure` and `workload-shift` of 02-REQ-43, stored in
+// the golden reports `cold`, `fast-failure`, `workload-shift` and `operations` of 02-REQ-43, stored in
 // test/golden/run-report/valid/ and rendered by the HTML, console and junit golden tests.
 import { resolveConfig } from '../../../src/core/config/index.ts';
 import type { PerfConfigInput } from '../../../src/core/config/index.ts';
@@ -13,7 +13,12 @@ import { loadCases } from '../../contract/golden.ts';
 import { files, loaded, missing } from './evaluate-helpers.ts';
 import { generated } from './thresholds-helpers.ts';
 
-export const GOLDEN_REPORT_NAMES = ['cold', 'fast-failure', 'workload-shift'] as const;
+export const GOLDEN_REPORT_NAMES = [
+  'cold',
+  'fast-failure',
+  'workload-shift',
+  'operations',
+] as const;
 export type GoldenReportName = (typeof GOLDEN_REPORT_NAMES)[number];
 
 const ORIGIN = 'https://app.example';
@@ -56,7 +61,8 @@ function metaOf(r: Result): TestMeta {
 
 function urlOf(key: string): string {
   const [, path = '/'] = key.split(' ');
-  return `${ORIGIN}${path.replace(':id', '7')}`;
+  // The operation part (18-REQ-06) is not in the URL.
+  return `${ORIGIN}${path.replace(':id', '7').split('#', 1)[0] ?? ''}`;
 }
 
 /** Feeds the results to an aggregator in order, as the reporter does (08-REQ-41). */
@@ -241,6 +247,55 @@ const SCENARIOS: Record<GoldenReportName, Scenario> = {
             },
           },
           { ...generatedFor(source), sourcePasses: 10, sourceSampleCount: 80 },
+        ),
+      ),
+  },
+  // 18-REQ-06, 18-REQ-12: the first run after enabling keys.operations.
+  operations: {
+    name: 'operation keys: the first run after enabling keys.operations, with one slow operation (18-REQ-06, 18-REQ-12)',
+    config: {
+      keys: {
+        operations: [
+          { type: 'graphql', match: '/graphql' },
+          { type: 'trpc', match: '/api/trpc/' },
+        ],
+      },
+    },
+    passes: 5,
+    results: [
+      ...passesOf(5, 'tickets › opens the list', (pass) => [
+        ['POST /graphql#GetTickets', 200, around(90, pass)],
+        ['POST /graphql#GetTickets+GetUser', 200, around(140, pass)],
+        ['GET /api/trpc#a.get+b.list', 200, around(60, pass)],
+      ]),
+      ...passesOf(
+        5,
+        'orders › creates an order',
+        (pass) => [
+          ['POST /graphql#GetTickets', 200, around(95, pass + 2)],
+          ['POST /graphql#CreateOrder', 200, around(2600, pass)],
+        ],
+        'tests/orders.spec.ts',
+        8,
+      ),
+    ],
+    // The file of 1.0.x: one key for every GraphQL call, derived with another fingerprint.
+    thresholds: (source) =>
+      files(
+        loaded(
+          'api',
+          {
+            'POST /graphql': {
+              t: 500,
+              median: 240,
+              percentile: 1400,
+              p99: 2800,
+              minApdex: 0.7,
+              maxWilson: 0.3,
+              maxErrorRate: 0.05,
+            },
+          },
+          { ...generatedFor(source), normalization: '1be5f2f3d77e9e' },
         ),
       ),
   },

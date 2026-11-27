@@ -4,6 +4,8 @@ import { hashHex } from '../random/index.ts';
 import type { Issue, RawRequestSample } from '../types/index.ts';
 import { MAX_KEY_LENGTH } from './constants.ts';
 import { compileHostPatterns, isHostPattern, matchingPattern } from './host-patterns.ts';
+import { matchOperationEntry } from '../config/index.ts';
+import { operationKeyPart } from './operations.ts';
 import { compileIdMatcher } from './patterns.ts';
 import type { IdMatcher } from './patterns.ts';
 
@@ -21,7 +23,10 @@ export type KeyResult =
   | { ok: true; key: string; origin: string | null; label: string | null; issues: NormalizeIssue[] }
   | { ok: false; issues: NormalizeIssue[] };
 
-export type KeySample = Pick<RawRequestSample, 'method' | 'url' | 'resourceType'>;
+export type KeySample = Pick<RawRequestSample, 'method' | 'url' | 'resourceType'> & {
+  /** Operation names of keys.operations (18-REQ-09); absent or null: none. */
+  operation?: readonly string[] | null | undefined;
+};
 
 const HINT_EXTEND = 'Use keys.extraIdPatterns or keys.keyBuilder for ids in other formats.';
 
@@ -170,11 +175,20 @@ export function createKeyBuilder(
     const url = parseHttpUrl(sample.url);
     const issues: NormalizeIssue[] = [];
     let key: string | undefined;
+    const operation =
+      sample.operation === undefined || sample.operation === null || sample.operation.length === 0
+        ? undefined
+        : sample.operation;
 
     if (keyBuilder !== undefined) {
       let built: unknown;
       try {
-        built = keyBuilder({ method, url: sample.url, resourceType: sample.resourceType });
+        built = keyBuilder({
+          method,
+          url: sample.url,
+          resourceType: sample.resourceType,
+          operation: operation ?? null,
+        });
       } catch (error) {
         issues.push({
           code: 'NORMALIZE_KEY_BUILDER_THREW',
@@ -205,8 +219,15 @@ export function createKeyBuilder(
         return { ok: false, issues };
       }
       const label = labelOf(url) ?? url.host;
-      const query = cfg.query === 'names' ? normalizeQuery(url.searchParams, cfg, matchId) : '';
-      key = `${method} ${label}${normalizePath(url.pathname, matchId)}${query === '' ? '' : `?${query}`}`;
+      if (operation === undefined) {
+        const query = cfg.query === 'names' ? normalizeQuery(url.searchParams, cfg, matchId) : '';
+        key = `${method} ${label}${normalizePath(url.pathname, matchId)}${query === '' ? '' : `?${query}`}`;
+      } else {
+        // 18-REQ-06: the operation part replaces the query; a tRPC key keeps only the prefix.
+        const found = matchOperationEntry(cfg.operations, url.pathname);
+        const path = found?.entry.type === 'trpc' ? url.pathname.slice(0, found.end) : url.pathname;
+        key = `${method} ${label}${normalizePath(path, matchId)}#${operationKeyPart(operation)}`;
+      }
     }
 
     const truncated = truncateKey(key);

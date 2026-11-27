@@ -2,7 +2,7 @@
 // (11-REQ-09) and its details block, a <details> under the row that the script shows in the key
 // dialog (11-REQ-37).
 import { overText } from '../core/format/violation.ts';
-import { COLD_WARN_RATIO } from '../core/types/index.ts';
+import { COLD_WARN_RATIO, REQUEST_KEY_PREFIX } from '../core/types/index.ts';
 import type { Check, KeyEvaluation, RunReport } from '../core/types/index.ts';
 import { percentileBar } from './bar.ts';
 import { histogramSvg, ttfbSplitSvg } from './charts.ts';
@@ -526,15 +526,48 @@ function workloadPart(kind: LinkKind, agg: HtmlAggregate): SafeHtml | null {
   );
 }
 
+/** Samples from which a GraphQL or tRPC look-alike key gets the keys.operations hint (18-REQ-13). */
+export const OPERATIONS_HINT_MIN_SAMPLES = 20;
+
+/**
+ * The keys.operations hint (18-REQ-13): a POST key whose path ends with /graphql or has a trpc
+ * segment, with enough samples, while keys.operations is empty. Null otherwise.
+ */
+export function operationsHint(
+  ctx: Pick<Ctx, 'report'>,
+  kind: LinkKind,
+  key: string,
+  count: number,
+): string | null {
+  if (kind !== 'api' || count < OPERATIONS_HINT_MIN_SAMPLES) return null;
+  const operations = ctx.report.config.keys?.operations;
+  if (operations !== undefined && operations.length > 0) return null;
+  const plain = key.startsWith(REQUEST_KEY_PREFIX) ? key.slice(REQUEST_KEY_PREFIX.length) : key;
+  if (!plain.startsWith('POST ')) return null;
+  const slash = plain.indexOf('/');
+  if (slash < 0) return null;
+  const path = plain.slice(slash).split(/[?#]/u, 1)[0] ?? '';
+  const name = path.endsWith('/graphql')
+    ? 'GraphQL'
+    : path.split('/').includes('trpc')
+      ? 'tRPC'
+      : null;
+  if (name === null) return null;
+  return `This looks like ${name}: one key mixes all operations. Set keys.operations to get a key per operation (docs/configuration.md#operations).`;
+}
+
 /** Content of the details block of a key (11-REQ-60). */
 export function keyDetails(ctx: Ctx, kind: LinkKind, key: string, agg: HtmlAggregate): SafeHtml {
   const hints = ctx.migrated ? [] : agg.hints;
+  const texts = hints.map((h) => hintText(h, ctx.level, agg.evaluation.muted, kind));
+  const operations = operationsHint(ctx, kind, key, agg.count);
+  if (operations !== null) texts.push(operations);
   return join(
     html`<div class="kd">`,
     keyHeader(ctx, kind, key, agg),
-    hints.length === 0
+    texts.length === 0
       ? null
-      : html`<ul class="hints">${hints.map((h) => html`<li>${icon('bulb')}${hintText(h, ctx.level, agg.evaluation.muted, kind)}</li>`)}</ul>`,
+      : html`<ul class="hints">${texts.map((t) => html`<li>${icon('bulb')}${t}</li>`)}</ul>`,
     statsGrid(ctx, kind, agg),
     // 1.1.0 (11-REQ-61): after the stats grid, before the histogram.
     coldPart(agg),

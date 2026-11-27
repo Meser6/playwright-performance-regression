@@ -17,6 +17,7 @@ import {
   generatedWarnings,
   emptyFileWarning,
   keysOnDefaultsWarning,
+  operationKeysChanged,
   missingFileWarning,
   outdatedWarning,
   plural,
@@ -240,11 +241,17 @@ export function evaluate(
           ),
         );
       }
+      const operationKeys = operationKeysChanged(
+        kind,
+        file.file.generated,
+        sourceForKind(opts.source, kind),
+        Object.keys(byKind[kind]),
+      );
       // A key is seen when it has an aggregate, even with n = 0 (09-REQ-05).
       unseen = Object.keys(file.file.entries)
         .filter((key) => !Object.hasOwn(byKind[kind], key))
         .sort(compareText);
-      if (unseen.length > 0) warnings.push(unseenWarning(file.path, unseen));
+      if (unseen.length > 0) warnings.push(unseenWarning(file.path, unseen, operationKeys));
       // Evaluated keys without an entry in a file with entries (09-REQ-36): only in test mode;
       // a thresholds run adds the entries itself, an empty file has THRESHOLDS_FILE_EMPTY.
       if (opts.mode === 'test' && Object.keys(file.file.entries).length > 0) {
@@ -253,7 +260,9 @@ export function evaluate(
           .map(([key]) => key)
           .sort(compareText);
         if (onDefaults.length > 0) {
-          warnings.push(keysOnDefaultsWarning(file.path, kind, onDefaults, opts.env));
+          warnings.push(
+            keysOnDefaultsWarning(file.path, kind, onDefaults, opts.env, operationKeys),
+          );
         }
       }
       // 1.1.0: entries not timed (09-REQ-39) and workload shifts (09-REQ-41), test mode only.

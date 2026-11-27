@@ -219,6 +219,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: [],
   },
   {
+    path: 'keys.operations',
+    description:
+      'Endpoints that get a key per operation, such as POST /graphql#GetTickets instead of one POST /graphql for every GraphQL call.',
+    leaf: true,
+    default: [],
+  },
+  {
     path: 'keys.keyBuilder',
     description: 'Builds the endpoint key of a request yourself.',
     leaf: true,

@@ -1,0 +1,1236 @@
+{
+  "name": "operation keys: the first run after enabling keys.operations, with one slow operation (18-REQ-06, 18-REQ-12)",
+  "input": {
+    "schemaVersion": 5,
+    "tool": {
+      "name": "playwright-performance-regression",
+      "version": "0.1.0"
+    },
+    "runId": "run-1",
+    "mode": "test",
+    "startedAt": "2026-11-18T10:00:00.000Z",
+    "finishedAt": "2026-11-18T10:05:00.000Z",
+    "env": null,
+    "configDir": "/home/user/project",
+    "config": {
+      "run": {
+        "env": null,
+        "passes": {
+          "test": 5,
+          "thresholds": 10
+        },
+        "grep": null,
+        "keepReporters": [],
+        "overrideSlowMo": false
+      },
+      "measure": {
+        "api": true,
+        "resourceTypes": [
+          "document",
+          "xhr",
+          "fetch"
+        ],
+        "ignoreExtensions": [
+          ".js",
+          ".mjs",
+          ".css",
+          ".map",
+          ".html",
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".gif",
+          ".svg",
+          ".webp",
+          ".avif",
+          ".ico",
+          ".woff",
+          ".woff2",
+          ".ttf",
+          ".otf",
+          ".eot"
+        ],
+        "include": [],
+        "exclude": [
+          "/socket.io/",
+          "/sockjs/",
+          "/sockjs-node/",
+          "/signalr/",
+          "/_blazor/"
+        ],
+        "excludeKnownThirdParty": true,
+        "successStatuses": [
+          "2xx",
+          "3xx"
+        ],
+        "coldSamples": 1,
+        "steps": {
+          "enabled": true,
+          "include": [],
+          "exclude": [],
+          "maxDepth": 3,
+          "categories": [
+            "test.step"
+          ],
+          "groupBy": "step",
+          "normalizeTitles": true,
+          "redactQuotedValues": false
+        },
+        "pendingTimeoutMs": 2000
+      },
+      "keys": {
+        "origins": {},
+        "idPatterns": {
+          "number": true,
+          "uuid": true,
+          "hex": true,
+          "token": true,
+          "mixed": true,
+          "prefixed": true,
+          "email": true
+        },
+        "extraIdPatterns": [],
+        "query": "names",
+        "keepQueryValues": [],
+        "dropQueryParams": [],
+        "operations": [
+          {
+            "type": "graphql",
+            "match": "/graphql"
+          },
+          {
+            "type": "trpc",
+            "match": "/api/trpc/"
+          }
+        ]
+      },
+      "checks": {
+        "time": {
+          "median": {
+            "enabled": true,
+            "minSamples": 5,
+            "margin": {
+              "relative": 0.4,
+              "minMs": 100,
+              "smallSampleRelative": 0.8
+            },
+            "limit": {
+              "api": 2000,
+              "step": 10000
+            }
+          },
+          "percentile": {
+            "enabled": true,
+            "minSamples": 20,
+            "level": "p95",
+            "limit": {
+              "api": 2000,
+              "step": 15000
+            },
+            "margin": {
+              "relative": 0.4,
+              "minMs": 100,
+              "smallSampleRelative": 0.8
+            }
+          },
+          "p99": {
+            "enabled": true,
+            "minSamples": 100,
+            "margin": {
+              "relative": 0.2,
+              "minGapMs": 50,
+              "minGapRelative": 0.1
+            },
+            "limit": {
+              "api": 4000,
+              "step": 30000
+            }
+          }
+        },
+        "slowShare": {
+          "t": {
+            "api": {
+              "min": 500,
+              "max": 2000,
+              "medianFactor": 2
+            },
+            "step": {
+              "min": 1000,
+              "max": 10000,
+              "medianFactor": 2
+            }
+          },
+          "apdex": {
+            "enabled": true,
+            "minSamples": 20,
+            "margin": {
+              "absolute": 0.05,
+              "smallSampleAbsolute": 0.1
+            },
+            "limit": {
+              "api": 0.85,
+              "step": 0.85
+            }
+          },
+          "wilson": {
+            "enabled": true,
+            "minSamples": 20,
+            "margin": {
+              "factor": 1.5,
+              "add": 0.02,
+              "min": 0.03,
+              "max": 0.15,
+              "smallSampleMin": 0.1
+            },
+            "limit": {
+              "api": 0.05,
+              "step": 0.05
+            }
+          }
+        },
+        "errors": {
+          "enabled": true,
+          "minSamples": 5,
+          "statuses": [
+            "5xx",
+            "FAILED",
+            "PENDING"
+          ],
+          "limit": {
+            "api": 0.05,
+            "step": 0.05
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
+        },
+        "nonSuccess": {
+          "enabled": true,
+          "minSamples": 5,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "factor": 1.5,
+            "add": 0.02,
+            "min": 0.05
+          }
+        }
+      },
+      "gate": {
+        "tolerance": 0,
+        "hardLimitFactor": 2,
+        "defaultThresholds": "block",
+        "maxFailedTestShare": 0.1
+      },
+      "thresholds": {
+        "preset": "normal",
+        "dir": ".",
+        "filePrefix": "pw-perf-thresholds",
+        "update": "all",
+        "smallSampleN": 20,
+        "hysteresis": {
+          "relative": 0.1,
+          "ratio": 0.01
+        },
+        "loosenWarnRelative": 0.5,
+        "workloadShift": {
+          "factor": 2
+        }
+      },
+      "report": {
+        "dir": "reports/pw-perf",
+        "html": true,
+        "junit": true,
+        "rawUrls": false
+      },
+      "advanced": {
+        "maxSamplesPerKey": 5000,
+        "seed": 1
+      }
+    },
+    "normalization": "0123456789abcd",
+    "stepNormalization": null,
+    "ci": {
+      "branch": "main",
+      "buildUrl": "https://github.com/o/r/actions/runs/1",
+      "commit": "abc123",
+      "provider": "github"
+    },
+    "host": {
+      "arch": "x64",
+      "ci": true,
+      "cpuCount": 4,
+      "cpuModel": "AMD EPYC 7763 64-Core Processor",
+      "platform": "linux",
+      "nodeVersion": "v22.18.0"
+    },
+    "playwright": {
+      "version": "1.57.0"
+    },
+    "passes": {
+      "planned": 5,
+      "completed": 5,
+      "failed": []
+    },
+    "runConditions": {
+      "workers": 1,
+      "projects": [
+        {
+          "name": "chromium",
+          "role": "measured",
+          "browserName": "chromium",
+          "repeatEach": 1,
+          "retries": 0
+        }
+      ],
+      "overriddenSettings": []
+    },
+    "tests": {
+      "status": "passed",
+      "expected": 10,
+      "unexpected": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "evaluation": {
+      "status": "failed",
+      "gateEnabled": true,
+      "counts": {
+        "api": {
+          "keys": 4,
+          "fromFile": 0,
+          "fromDefaults": 4,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "fileEntriesNotEvaluated": 0,
+          "medianOnly": 4,
+          "unseenThresholdEntries": 1,
+          "violations": 1,
+          "blockingViolations": 1,
+          "muted": 0
+        },
+        "step": {
+          "keys": 0,
+          "fromFile": 0,
+          "fromDefaults": 0,
+          "notEvaluated": 0,
+          "tooFewSamples": 0,
+          "fileEntriesNotEvaluated": 0,
+          "medianOnly": 0,
+          "unseenThresholdEntries": 0,
+          "violations": 0,
+          "blockingViolations": 0,
+          "muted": 0
+        }
+      }
+    },
+    "thresholdFiles": [
+      {
+        "kind": "api",
+        "path": "pw-perf-thresholds.json",
+        "status": "loaded",
+        "generated": {
+          "tool": {
+            "name": "playwright-performance-regression",
+            "version": "0.1.0"
+          },
+          "env": null,
+          "sourceRunId": "run-0",
+          "sourceRunStartedAt": "2026-11-17T10:00:00.000Z",
+          "sourceSampleCount": 100,
+          "evaluatedPercentile": "p95",
+          "derivation": {
+            "t": {
+              "min": 500,
+              "max": 2000,
+              "medianFactor": 2
+            },
+            "smallSampleN": 20,
+            "margins": {
+              "median": {
+                "relative": 0.4,
+                "minMs": 100,
+                "smallSampleRelative": 0.8
+              },
+              "percentile": {
+                "relative": 0.4,
+                "minMs": 100,
+                "smallSampleRelative": 0.8
+              },
+              "p99": {
+                "relative": 0.2,
+                "minGapMs": 50,
+                "minGapRelative": 0.1
+              },
+              "apdex": {
+                "absolute": 0.05,
+                "smallSampleAbsolute": 0.1
+              },
+              "wilson": {
+                "factor": 1.5,
+                "add": 0.02,
+                "min": 0.03,
+                "max": 0.15,
+                "smallSampleMin": 0.1
+              },
+              "errors": {
+                "factor": 1.5,
+                "add": 0.02,
+                "min": 0.05
+              },
+              "nonSuccess": {
+                "factor": 1.5,
+                "add": 0.02,
+                "min": 0.05
+              }
+            }
+          },
+          "browsers": [
+            "chromium"
+          ],
+          "playwrightVersion": "1.57.0",
+          "host": {
+            "arch": "x64",
+            "ci": true,
+            "cpuCount": 4,
+            "cpuModel": "AMD EPYC 7763 64-Core Processor",
+            "platform": "linux"
+          },
+          "normalization": "1be5f2f3d77e9e",
+          "coldSamples": 1,
+          "sourcePasses": 10
+        },
+        "unseenKeys": [
+          "POST /graphql"
+        ]
+      },
+      {
+        "kind": "step",
+        "path": "pw-perf-thresholds.steps.json",
+        "status": "missing",
+        "generated": null,
+        "unseenKeys": []
+      }
+    ],
+    "warnings": [
+      {
+        "code": "THRESHOLDS_SOURCE_MISMATCH",
+        "message": "Thresholds in pw-perf-thresholds.json come from a run with other conditions (thresholds / this run): normalization 1be5f2f3d77e9e / 0123456789abcd.",
+        "hint": "Another normalization changes the keys: derive thresholds again with `PW_PERF_MODE=thresholds <your test command>`."
+      },
+      {
+        "code": "THRESHOLDS_UNSEEN_ENTRIES",
+        "message": "1 entry in pw-perf-thresholds.json was not seen in this run.",
+        "hint": "keys.operations changed the endpoint keys (keys with #): derive thresholds again with `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>`, review the diff and commit the files; locked entries are kept."
+      },
+      {
+        "code": "THRESHOLDS_KEYS_ON_DEFAULTS",
+        "message": "4 endpoint keys have no entry in pw-perf-thresholds.json and are evaluated with default thresholds: GET /api/trpc#a.get+b.list, POST /graphql#CreateOrder, POST /graphql#GetTickets and 1 other key.",
+        "hint": "keys.operations changed the endpoint keys (keys with #): derive thresholds again with `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>`, review the diff and commit the files; locked entries are kept."
+      }
+    ],
+    "toolErrors": [],
+    "origins": [
+      {
+        "origin": "https://app.example",
+        "label": "",
+        "requestCount": 25
+      }
+    ],
+    "endpoints": {
+      "GET /api/trpc#a.get+b.list": {
+        "count": 5,
+        "successCount": 5,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 1,
+        "statuses": {
+          "200": 5
+        },
+        "timeSources": {
+          "browser": 5,
+          "node": 0
+        },
+        "stats": {
+          "min": 55,
+          "avg": 60.2,
+          "max": 65,
+          "percentiles": {
+            "p50": 61,
+            "p90": 63.8,
+            "p95": 64.4,
+            "p99": 64.9
+          }
+        },
+        "ttfb": {
+          "p50": 36.6,
+          "p95": 38.6,
+          "otherP50": 24.4
+        },
+        "slowest": [
+          {
+            "duration": 65,
+            "startedAt": "2026-11-26T10:03:02.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 3
+            }
+          },
+          {
+            "duration": 62,
+            "startedAt": "2026-11-26T10:01:02.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 61,
+            "startedAt": "2026-11-26T10:04:02.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 4
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "sampleCount": 5
+          }
+        ],
+        "samples": {
+          "durations": [
+            55,
+            58,
+            61,
+            62,
+            65
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            53.6,
+            56.23,
+            59,
+            61.9,
+            64.94,
+            68.13
+          ],
+          "counts": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "cold": {
+          "count": 1,
+          "excluded": false,
+          "reason": "too-few-samples",
+          "durations": [
+            55
+          ],
+          "max": 55,
+          "warmP50": 61.5,
+          "ratio": 0.89,
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 5,
+              "actual": 61,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.0305
+            },
+            {
+              "rule": "errors",
+              "n": 5,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      },
+      "POST /graphql#CreateOrder": {
+        "count": 5,
+        "successCount": 5,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 1,
+        "statuses": {
+          "200": 5
+        },
+        "timeSources": {
+          "browser": 5,
+          "node": 0
+        },
+        "stats": {
+          "min": 2595,
+          "avg": 2600.2,
+          "max": 2605,
+          "percentiles": {
+            "p50": 2601,
+            "p90": 2603.8,
+            "p95": 2604.4,
+            "p99": 2604.9
+          }
+        },
+        "ttfb": {
+          "p50": 1560.6,
+          "p95": 1562.6,
+          "otherP50": 1040.4
+        },
+        "slowest": [
+          {
+            "duration": 2605,
+            "startedAt": "2026-11-26T10:03:01.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 3
+            }
+          },
+          {
+            "duration": 2602,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 2601,
+            "startedAt": "2026-11-26T10:04:01.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 4
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "orders › creates an order",
+            "project": "chromium",
+            "file": "tests/orders.spec.ts",
+            "line": 8,
+            "sampleCount": 5
+          }
+        ],
+        "samples": {
+          "durations": [
+            2595,
+            2598,
+            2601,
+            2602,
+            2605
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            2488,
+            2610
+          ],
+          "counts": [
+            5
+          ]
+        },
+        "cold": {
+          "count": 1,
+          "excluded": false,
+          "reason": "too-few-samples",
+          "durations": [
+            2595
+          ],
+          "max": 2595,
+          "warmP50": 2601.5,
+          "ratio": 1,
+          "test": {
+            "title": "orders › creates an order",
+            "project": "chromium",
+            "file": "tests/orders.spec.ts",
+            "line": 8,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "fail",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 5,
+              "actual": 2601,
+              "observed": null,
+              "limit": 2000,
+              "passed": false,
+              "hardLimitExceeded": false,
+              "blocking": true,
+              "usage": 1.3005
+            },
+            {
+              "rule": "errors",
+              "n": 5,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": [
+          {
+            "code": "HINT_SLOWDOWN",
+            "params": {
+              "usage": 1.3005
+            }
+          },
+          {
+            "code": "HINT_MEDIAN_ONLY",
+            "params": {
+              "n": 5
+            }
+          }
+        ]
+      },
+      "POST /graphql#GetTickets": {
+        "count": 10,
+        "successCount": 9,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 2,
+        "statuses": {
+          "200": 10
+        },
+        "timeSources": {
+          "browser": 10,
+          "node": 0
+        },
+        "stats": {
+          "min": 88,
+          "avg": 94,
+          "max": 100,
+          "percentiles": {
+            "p50": 93,
+            "p90": 99.2,
+            "p95": 99.6,
+            "p99": 99.9
+          }
+        },
+        "ttfb": {
+          "p50": 55.8,
+          "p95": 59.8,
+          "otherP50": 37.2
+        },
+        "slowest": [
+          {
+            "duration": 100,
+            "startedAt": "2026-11-26T10:01:00.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 99,
+            "startedAt": "2026-11-26T10:04:00.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 4
+            }
+          },
+          {
+            "duration": 96,
+            "startedAt": "2026-11-26T10:02:00.000Z",
+            "test": {
+              "title": "orders › creates an order",
+              "project": "chromium",
+              "file": "tests/orders.spec.ts",
+              "line": 8,
+              "repeatEachIndex": 2
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "sampleCount": 5
+          },
+          {
+            "title": "orders › creates an order",
+            "project": "chromium",
+            "file": "tests/orders.spec.ts",
+            "line": 8,
+            "sampleCount": 5
+          }
+        ],
+        "samples": {
+          "durations": [
+            88,
+            91,
+            92,
+            92,
+            93,
+            95,
+            96,
+            99,
+            100
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            86.6,
+            90.85,
+            95.32,
+            100,
+            104.9
+          ],
+          "counts": [
+            1,
+            5,
+            2,
+            1
+          ]
+        },
+        "cold": {
+          "count": 1,
+          "excluded": true,
+          "reason": null,
+          "durations": [
+            85
+          ],
+          "max": 85,
+          "warmP50": 93,
+          "ratio": 0.91,
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 9,
+              "actual": 93,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.0465
+            },
+            {
+              "rule": "errors",
+              "n": 10,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      },
+      "POST /graphql#GetTickets+GetUser": {
+        "count": 5,
+        "successCount": 5,
+        "errorCount": 0,
+        "fromFailedTests": 0,
+        "testCount": 1,
+        "statuses": {
+          "200": 5
+        },
+        "timeSources": {
+          "browser": 5,
+          "node": 0
+        },
+        "stats": {
+          "min": 135,
+          "avg": 140.2,
+          "max": 145,
+          "percentiles": {
+            "p50": 141,
+            "p90": 143.8,
+            "p95": 144.4,
+            "p99": 144.9
+          }
+        },
+        "ttfb": {
+          "p50": 84.6,
+          "p95": 86.6,
+          "otherP50": 56.4
+        },
+        "slowest": [
+          {
+            "duration": 145,
+            "startedAt": "2026-11-26T10:03:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 3
+            }
+          },
+          {
+            "duration": 142,
+            "startedAt": "2026-11-26T10:01:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 141,
+            "startedAt": "2026-11-26T10:04:01.000Z",
+            "test": {
+              "title": "tickets › opens the list",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 4
+            }
+          }
+        ],
+        "topTests": [
+          {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "sampleCount": 5
+          }
+        ],
+        "samples": {
+          "durations": [
+            135,
+            138,
+            141,
+            142,
+            145
+          ],
+          "sampled": false
+        },
+        "histogram": {
+          "edges": [
+            133.4,
+            139.9,
+            146.8
+          ],
+          "counts": [
+            2,
+            3
+          ]
+        },
+        "cold": {
+          "count": 1,
+          "excluded": false,
+          "reason": "too-few-samples",
+          "durations": [
+            135
+          ],
+          "max": 135,
+          "warmP50": 141.5,
+          "ratio": 0.95,
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "repeatEachIndex": 0
+          }
+        },
+        "nonSuccessCount": 0,
+        "failedTimings": [],
+        "evaluation": {
+          "result": "pass",
+          "reason": null,
+          "thresholdSource": "default",
+          "limits": {
+            "t": null,
+            "median": 2000,
+            "percentile": 2000,
+            "p99": 4000,
+            "minApdex": null,
+            "maxWilson": null,
+            "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null
+          },
+          "checks": [
+            {
+              "rule": "median",
+              "n": 5,
+              "actual": 141,
+              "observed": null,
+              "limit": 2000,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0.0705
+            },
+            {
+              "rule": "errors",
+              "n": 5,
+              "actual": 0,
+              "observed": 0,
+              "limit": 0.05,
+              "passed": true,
+              "hardLimitExceeded": false,
+              "blocking": false,
+              "usage": 0
+            }
+          ],
+          "muted": null,
+          "workload": null
+        },
+        "hints": []
+      }
+    },
+    "steps": {},
+    "testBreakdown": {
+      "tests": [
+        {
+          "title": "orders › creates an order",
+          "project": "chromium",
+          "file": "tests/orders.spec.ts",
+          "line": 8,
+          "executions": 5,
+          "requestCount": 10,
+          "errorCount": 0,
+          "totalMs": 13481,
+          "maxRequestMs": 2605,
+          "keyCount": 2,
+          "topKeys": [
+            {
+              "key": "POST /graphql#CreateOrder",
+              "count": 5,
+              "totalMs": 13001
+            },
+            {
+              "key": "POST /graphql#GetTickets",
+              "count": 5,
+              "totalMs": 480
+            }
+          ],
+          "violatedKeys": [
+            "POST /graphql#CreateOrder"
+          ],
+          "violatedKeyCount": 1
+        },
+        {
+          "title": "tickets › opens the list",
+          "project": "chromium",
+          "file": "tests/app.spec.ts",
+          "line": 12,
+          "executions": 5,
+          "requestCount": 15,
+          "errorCount": 0,
+          "totalMs": 1453,
+          "maxRequestMs": 145,
+          "keyCount": 3,
+          "topKeys": [
+            {
+              "key": "POST /graphql#GetTickets+GetUser",
+              "count": 5,
+              "totalMs": 701
+            },
+            {
+              "key": "POST /graphql#GetTickets",
+              "count": 5,
+              "totalMs": 451
+            },
+            {
+              "key": "GET /api/trpc#a.get+b.list",
+              "count": 5,
+              "totalMs": 301
+            }
+          ],
+          "violatedKeys": [],
+          "violatedKeyCount": 0
+        }
+      ],
+      "omitted": 0,
+      "waterfalls": [
+        {
+          "test": {
+            "title": "orders › creates an order",
+            "project": "chromium",
+            "file": "tests/orders.spec.ts",
+            "line": 8,
+            "repeatEachIndex": 1
+          },
+          "totalMs": 2702,
+          "requestCount": 2,
+          "spanMs": 3602,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 100,
+              "key": "POST /graphql#GetTickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 2602,
+              "key": "POST /graphql#CreateOrder",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        },
+        {
+          "test": {
+            "title": "tickets › opens the list",
+            "project": "chromium",
+            "file": "tests/app.spec.ts",
+            "line": 12,
+            "repeatEachIndex": 3
+          },
+          "totalMs": 305,
+          "requestCount": 3,
+          "spanMs": 2065,
+          "requests": [
+            {
+              "offset": 0,
+              "duration": 95,
+              "key": "POST /graphql#GetTickets",
+              "status": "200"
+            },
+            {
+              "offset": 1000,
+              "duration": 145,
+              "key": "POST /graphql#GetTickets+GetUser",
+              "status": "200"
+            },
+            {
+              "offset": 2000,
+              "duration": 65,
+              "key": "GET /api/trpc#a.get+b.list",
+              "status": "200"
+            }
+          ],
+          "omitted": 0
+        }
+      ]
+    }
+  },
+  "expected": {
+    "ok": true
+  }
+}

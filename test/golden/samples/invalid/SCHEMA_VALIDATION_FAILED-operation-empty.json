@@ -1,0 +1,88 @@
+{
+  "expected": {
+    "code": "SCHEMA_VALIDATION_FAILED"
+  },
+  "input": {
+    "apiRequests": [
+      {
+        "duration": 20.5,
+        "method": "POST",
+        "operation": [
+          "X"
+        ],
+        "source": "request",
+        "startTime": 1763460000100,
+        "status": 200,
+        "url": "https://app.example/graphql"
+      },
+      {
+        "duration": 5,
+        "method": "GET",
+        "operation": null,
+        "source": "request",
+        "startTime": 1763460000200,
+        "status": 200,
+        "url": "https://app.example/api/health"
+      }
+    ],
+    "collector": {
+      "browserName": "chromium",
+      "name": "playwright-js",
+      "version": "1.1.0"
+    },
+    "diagnostics": [
+      {
+        "code": "COLLECTOR_OPERATION_UNKNOWN",
+        "count": 2,
+        "hint": "Send operationName.",
+        "message": "A request has no readable operation name."
+      }
+    ],
+    "requests": [
+      {
+        "duration": 120.4,
+        "fromServiceWorker": false,
+        "method": "POST",
+        "operation": [],
+        "requestStart": 1.2,
+        "resourceType": "fetch",
+        "startTime": 1763460000123,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 100.1,
+        "url": "https://app.example/graphql"
+      },
+      {
+        "duration": null,
+        "failureText": "net::ERR_ABORTED",
+        "fromServiceWorker": false,
+        "method": "GET",
+        "operation": [
+          "b.list",
+          "a.get"
+        ],
+        "requestStart": null,
+        "resourceType": "fetch",
+        "startTime": 1763460000200,
+        "status": "FAILED",
+        "timeSource": "browser",
+        "ttfb": null,
+        "url": "https://app.example/api/trpc/b.list,a.get?batch=1"
+      },
+      {
+        "duration": 30,
+        "fromServiceWorker": false,
+        "method": "GET",
+        "requestStart": 1,
+        "resourceType": "fetch",
+        "startTime": 1763460000300,
+        "status": 200,
+        "timeSource": "browser",
+        "ttfb": 20,
+        "url": "https://app.example/api/items"
+      }
+    ],
+    "schemaVersion": 4
+  },
+  "name": "operation must be null or at least one name (18-REQ-09)"
+}

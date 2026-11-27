@@ -410,7 +410,7 @@ describe('reporter session in test mode', () => {
     s.testBegin();
     s.testEnd(
       fakeTest(dir, { title: 'broken' }),
-      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 4 as 3 }))]),
+      result([JSON.stringify(batch([request('/api/b', 1)], { schemaVersion: 5 as 4 }))]),
     );
     await s.end({ status: 'passed' });
     const report = readReport();

@@ -63,7 +63,19 @@ export function issue(
   return { code, path, message: `${path === '' ? 'config' : path}: ${message}`, hint };
 }
 
+/** True for keys.operations[i].match (18-REQ-01). */
+function isOperationMatch(segments: readonly Segment[]): boolean {
+  return (
+    segments.length === 4 &&
+    segments[0] === 'keys' &&
+    segments[1] === 'operations' &&
+    typeof segments[2] === 'number' &&
+    segments[3] === 'match'
+  );
+}
+
 function isPatternItem(segments: readonly Segment[]): boolean {
+  if (isOperationMatch(segments)) return true;
   return (
     typeof segments.at(-1) === 'number' &&
     PATTERN_LISTS.some(
@@ -77,6 +89,9 @@ function isPatternItem(segments: readonly Segment[]): boolean {
 function knownOptions(parent: readonly Segment[]): string[] {
   if (isPatternItem(parent)) return ['regex', 'flags'];
   if (parent[0] === 'keys' && parent[1] === 'origins') return [];
+  if (parent.length === 3 && parent[0] === 'keys' && parent[1] === 'operations') {
+    return ['type', 'match'];
+  }
   if (parent.length === 2 && parent[0] === 'measure' && parent[1] === 'steps') {
     return [...STEP_OPTION_NAMES];
   }
@@ -198,26 +213,38 @@ export function schemaIssues(document: unknown): ConfigIssue[] {
 /** CONFIG_INVALID_REGEX for every { regex, flags } pattern that does not compile. */
 export function regexIssues(document: unknown): ConfigIssue[] {
   const issues: ConfigIssue[] = [];
-  for (const path of PATTERN_LISTS) {
-    const list = valueAt(document, path);
-    if (!Array.isArray(list)) continue;
-    list.forEach((item: unknown, index) => {
-      if (!isRecord(item) || typeof item.regex !== 'string') return;
-      const flags = typeof item.flags === 'string' ? item.flags : '';
-      try {
-        new RegExp(item.regex, flags);
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        issues.push(
-          issue(
-            'CONFIG_INVALID_REGEX',
-            [...path, index],
-            `regular expression does not compile (${reason})`,
-            'Fix the expression; it uses JavaScript RegExp syntax, e.g. { "regex": "^/api/v[0-9]+/", "flags": "i" }.',
-          ),
-        );
-      }
-    });
+  // keys.operations[i].match (18-REQ-01) is checked like the items of the pattern lists.
+  const operations = valueAt(document, ['keys', 'operations']);
+  const patterns: [Segment[], unknown][] = [
+    ...PATTERN_LISTS.flatMap((path): [Segment[], unknown][] => {
+      const list = valueAt(document, path);
+      return Array.isArray(list)
+        ? list.map((item: unknown, index): [Segment[], unknown] => [[...path, index], item])
+        : [];
+    }),
+    ...(Array.isArray(operations)
+      ? operations.map((entry: unknown, index): [Segment[], unknown] => [
+          ['keys', 'operations', index, 'match'],
+          isRecord(entry) ? entry.match : undefined,
+        ])
+      : []),
+  ];
+  for (const [segments, item] of patterns) {
+    if (!isRecord(item) || typeof item.regex !== 'string') continue;
+    const flags = typeof item.flags === 'string' ? item.flags : '';
+    try {
+      new RegExp(item.regex, flags);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      issues.push(
+        issue(
+          'CONFIG_INVALID_REGEX',
+          segments,
+          `regular expression does not compile (${reason})`,
+          'Fix the expression; it uses JavaScript RegExp syntax, e.g. { "regex": "^/api/v[0-9]+/", "flags": "i" }.',
+        ),
+      );
+    }
   }
   // run.grep is the source of a RegExp (03-REQ-25).
   const grep = valueAt(document, ['run', 'grep']);

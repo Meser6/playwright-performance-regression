@@ -23,7 +23,8 @@
             "regex": "^[A-Z]{2}-\\d+$"
           }
         ],
-        "keyBuilder": "[function]"
+        "keyBuilder": "[function]",
+        "operations": []
       },
       "measure": {
         "coldSamples": 0
@@ -151,7 +152,8 @@
             "regex": "^[A-Z]{2}-\\d+$"
           }
         ],
-        "keyBuilder": "[function]"
+        "keyBuilder": "[function]",
+        "operations": []
       },
       "measure": {
         "coldSamples": 0

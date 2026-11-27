@@ -3,6 +3,7 @@ import { createDiagnostics } from '../../../src/collector/diagnostics.ts';
 import { RequestTracker } from '../../../src/collector/request-tracker.ts';
 import type { SampleSink } from '../../../src/collector/request-tracker.ts';
 import { perfDefaults } from '../../../src/core/config/index.ts';
+import type { ResolvedConfig } from '../../../src/core/config/index.ts';
 import { CONTEXT_CLOSED_FAILURE_TEXT } from '../../../src/core/types/index.ts';
 import type { RawRequestSample } from '../../../src/core/types/index.ts';
 import { FakeContext, FakeRequest, FakeResponse, finish, timing } from './fakes.ts';
@@ -10,14 +11,19 @@ import { FakeContext, FakeRequest, FakeResponse, finish, timing } from './fakes.
 const API = 'http://app.test/api/orders';
 
 let nodeClock = 0;
-function setup(context = new FakeContext()) {
+function setup(context = new FakeContext(), operations: ResolvedConfig['keys']['operations'] = []) {
   const diag = createDiagnostics();
   const finished: RawRequestSample[] = [];
   const pending: RawRequestSample[] = [];
   const sink: SampleSink = { finished: (s) => finished.push(s), pending: (s) => pending.push(s) };
   const tracker = new RequestTracker(
     context.asContext(),
-    { measure: perfDefaults.measure, now: () => nodeClock, wallNow: () => 1_763_460_009_999 },
+    {
+      measure: perfDefaults.measure,
+      operations,
+      now: () => nodeClock,
+      wallNow: () => 1_763_460_009_999,
+    },
     diag,
     sink,
   );
@@ -332,5 +338,101 @@ describe('RequestTracker', () => {
     await tracker.drain(0);
     expect(context.listenerCount()).toBe(0);
     expect(page.listenerCount()).toBe(0);
+  });
+});
+
+describe('RequestTracker with keys.operations (05-REQ-40, 18-REQ-07)', () => {
+  const GRAPHQL = 'http://app.test/graphql';
+  const operations: ResolvedConfig['keys']['operations'] = [
+    { type: 'graphql', match: '/graphql' },
+    { type: 'trpc', match: /^\/trpc\//u },
+  ];
+
+  test('reads the body of a matching POST once at the request event and keeps only the names', async () => {
+    const { context, tracker, finished } = setup(new FakeContext(), operations);
+    const body = '{"operationName":"GetTickets","variables":{"secret":"s3cr3t"}}';
+    const request = new FakeRequest(GRAPHQL, { method: 'POST', postData: body });
+    context.emit('request', request);
+    expect(request.postDataReads).toBe(1);
+    finish(context, request);
+    await tracker.drain(0);
+    expect(request.postDataReads).toBe(1);
+    expect(finished[0]?.operation).toEqual(['GetTickets']);
+    expect(JSON.stringify(finished)).not.toContain('s3cr3t');
+  });
+
+  test('18-AC-04 failed and pending samples carry the names; the body is in no sample', async () => {
+    const { context, tracker, finished, pending } = setup(new FakeContext(), operations);
+    const failed = new FakeRequest(GRAPHQL, {
+      method: 'POST',
+      postData: '{"query":"mutation Pay { pay(card: \\"4111-marker\\") }"}',
+    });
+    const open = new FakeRequest(`${GRAPHQL}?query=query%20Poll%20%7B%20a%20%7D`);
+    context.emit('request', failed);
+    context.emit('request', open);
+    failed.failureValue = { errorText: 'net::ERR_FAILED' };
+    context.emit('requestfailed', failed);
+    await tracker.drain(0);
+    expect(finished[0]).toMatchObject({ status: 'FAILED', operation: ['Pay'] });
+    expect(pending[0]).toMatchObject({ status: 'PENDING', operation: ['Poll'] });
+    expect(open.postDataReads).toBe(0);
+    expect(JSON.stringify([...finished, ...pending])).not.toContain('4111-marker');
+  });
+
+  test('requests that match no entry and tRPC requests are not read', async () => {
+    const { context, tracker, finished } = setup(new FakeContext(), operations);
+    const other = new FakeRequest(API, { method: 'POST', postData: '{"operationName":"X"}' });
+    const trpc = new FakeRequest('http://app.test/trpc/b.list,a.get?batch=1', {
+      method: 'POST',
+      postData: '{"0":{"json":1}}',
+    });
+    context.emit('request', other);
+    context.emit('request', trpc);
+    finish(context, other);
+    finish(context, trpc);
+    await tracker.drain(0);
+    expect(other.postDataReads + trpc.postDataReads).toBe(0);
+    expect(finished.map((s) => s.operation)).toEqual([null, ['b.list', 'a.get']]);
+  });
+
+  test('18-REQ-08 a matching request without a name gets null and a collapsed diagnostic', async () => {
+    const { context, tracker, finished, diag } = setup(new FakeContext(), operations);
+    for (const postData of ['not json', '{"variables":{}}']) {
+      const request = new FakeRequest(GRAPHQL, { method: 'POST', postData });
+      context.emit('request', request);
+      finish(context, request);
+    }
+    await tracker.drain(0);
+    expect(finished.map((s) => s.operation)).toEqual([null, null]);
+    const issues = diag.list();
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ code: 'COLLECTOR_OPERATION_UNKNOWN', count: 2 });
+    expect(issues[0]?.message).toContain(
+      'POST request matching the keys.operations entry "/graphql"',
+    );
+    expect(issues[0]?.message).not.toContain('app.test');
+  });
+
+  test('a throwing postData() is caught (P-08)', async () => {
+    const { context, tracker, finished, diag } = setup(new FakeContext(), operations);
+    const request = new FakeRequest(GRAPHQL, { method: 'POST' });
+    request.postData = () => {
+      throw new Error('gone');
+    };
+    context.emit('request', request);
+    finish(context, request);
+    await tracker.drain(0);
+    expect(finished[0]?.operation).toBeNull();
+    expect(diag.list()[0]).toMatchObject({ code: 'COLLECTOR_OPERATION_UNKNOWN' });
+  });
+
+  test('without keys.operations no body is read and samples have no operation field', async () => {
+    const { context, tracker, finished } = setup();
+    const request = new FakeRequest(GRAPHQL, { method: 'POST', postData: '{"operationName":"X"}' });
+    context.emit('request', request);
+    finish(context, request);
+    await tracker.drain(0);
+    expect(request.postDataReads).toBe(0);
+    expect(Object.hasOwn(finished[0] ?? {}, 'operation')).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 {
-  "name": "schemaVersion 4 (02-AC-13)",
+  "name": "schemaVersion 5 (02-AC-13)",
   "input": {
     "apiRequests": [],
     "collector": {
@@ -47,7 +47,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 4
+    "schemaVersion": 5
   },
   "expected": {
     "code": "SCHEMA_VERSION_MISMATCH"

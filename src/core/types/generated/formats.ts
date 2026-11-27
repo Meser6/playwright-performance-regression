@@ -49,6 +49,10 @@ export type RequestSample = {
    * True when Response.fromServiceWorker() reported that a service worker produced the response; such samples are excluded from time statistics (05-REQ-05). False for FAILED and PENDING.
    */
   fromServiceWorker: boolean;
+  /**
+   * Operation names read by keys.operations (18-REQ-09), in request order; null when the request matched no entry or no name could be read. Written only when keys.operations is not empty; a missing field means null. Never the request body (P-07).
+   */
+  operation?: [string, ...string[]] | null;
 };
 /**
  * One call of an APIRequestContext method, timed with the worker's clock (15-REQ-05).
@@ -82,6 +86,10 @@ export type ApiRequestSample = {
    * request: the request fixture; context: page.request or context.request; tracked: a context passed to trackRequestContext(). Informational: all give keys with the same prefix (15-REQ-05).
    */
   source: 'request' | 'context' | 'tracked';
+  /**
+   * Operation names read by keys.operations (18-REQ-09), in request order; null when the request matched no entry or no name could be read. Written only when keys.operations is not empty; a missing field means null. Never the request body (P-07).
+   */
+  operation?: [string, ...string[]] | null;
 };
 /**
  * Limits for one key. A complete entry has all seven limit fields; the generator always writes complete entries. t, minApdex and maxWilson may be null: the apdex and wilson rules do not apply to this key (10-REQ-06). Hand-written entries may omit fields (02-REQ-21): missing median, percentile, p99 and maxErrorRate come from checks.<group>.<rule>.limit of the current config; without t the apdex and wilson rules are off; with t, a missing minApdex or maxWilson comes from checks.slowShare.apdex.limit / wilson.limit. An entry may contain only muting (gate, note, until) without any limit (02-REQ-29). An entry with a missing field is never overwritten by the generator (10-REQ-08).
@@ -423,6 +431,24 @@ export interface PackageConfig {
      * Query parameter names always removed from the key (e.g. cache busters with fixed names).
      */
     dropQueryParams?: string[];
+    /**
+     * Endpoints that get a key per operation (18): GraphQL ('graphql': operationName or the first named operation, batches by the sorted names) and tRPC ('trpc': procedure names from the path), e.g. [{"type": "graphql", "match": "/graphql"}] gives 'POST /graphql#GetTickets'. match is tested against the URL path without the query; the first matching entry wins. The request body is read only for POST requests matching a graphql entry, up to 64 KB, in the worker, and never written anywhere.
+     */
+    operations?: {
+      /**
+       * Built-in operation extractor.
+       */
+      type: 'graphql' | 'trpc';
+      /**
+       * A string matches as a case-sensitive substring of the full URL; {regex, flags} is a JavaScript regular expression.
+       */
+      match:
+        | string
+        | {
+            regex: string;
+            flags?: string;
+          };
+    }[];
     /**
      * Snapshot only: "[function]" when a custom keyBuilder function was configured (TypeScript/JavaScript config).
      */
@@ -896,7 +922,7 @@ export interface PackageConfig {
  * Raw samples collected during one test execution, attached to the test result as the 'pw-perf-samples' attachment (ADR-0003). In perf mode every test in a measured project gets this attachment, even when it is empty (05-REQ-15). Written by the collector, read by the reporter. Test metadata is not included; the reporter adds it from TestCase/TestResult.
  */
 export interface SampleBatch {
-  schemaVersion: 3;
+  schemaVersion: 4;
   /**
    * Collector that produced the batch.
    */

@@ -274,6 +274,17 @@ Exclude such URLs with `measure.exclude` (this also removes the wait at test end
 was measured for it. Pass the object returned by `playwright.request.newContext()`. The test result
 is not affected.
 
+### COLLECTOR_OPERATION_UNKNOWN
+
+**Warning.** A request matched an entry of [`keys.operations`](configuration.md#operations), but
+no operation name could be read, so its sample keeps the key without an operation (for example
+`POST /graphql`); the message gives the method, the pattern of the entry and how often it
+happened. Typical causes: a GraphQL body that is not JSON, has neither `operationName` nor a named
+operation and is not a persisted query, an `operationName` that is not a valid GraphQL name, a
+batch with one such operation, a body cut at 64 KB before `operationName`, or a tRPC path without
+procedure names. If the matched endpoint is not GraphQL or tRPC (for example a GraphiQL page),
+narrow the `match` of the entry. The test result is not affected.
+
 ## Endpoint keys
 
 ### NORMALIZE_KEY_BUILDER_THREW
