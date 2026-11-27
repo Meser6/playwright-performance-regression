@@ -66,6 +66,8 @@ export interface RunReportInput {
   stepNormalization: string | null;
   /** Passes of the run (02-REQ-37); one pass when left out. */
   passes?: RunReport['passes'];
+  /** Shards merged into the report (17-REQ-17); null or left out for a run without shards. */
+  shards?: RunReport['shards'];
   runConditions: RunReport['runConditions'];
   tests: RunReport['tests'];
   aggregates: RunReportAggregates;
@@ -148,6 +150,11 @@ function buildAggregate(
       durations: stats.samples.durations.map(roundMs).sort((a, b) => a - b),
       sampled: stats.samples.sampled,
     },
+    // Fields of 1.1.0 (08-REQ-43, 08-REQ-47), copied so the report owns its data.
+    cold: stats.cold === null ? null : structuredClone(stats.cold),
+    failedTimings: stats.failedTimings.map((f) => ({
+      ...f,
+    })) as RunReportAggregate['failedTimings'],
     evaluation,
     // Edges are constants of the scale, not rounded (08-REQ-34).
     histogram:
@@ -275,6 +282,8 @@ export function buildRunReport(input: RunReportInput): RunReport {
       input.passes === undefined
         ? { planned: 1, completed: 1, failed: [] }
         : { ...input.passes, failed: [...input.passes.failed].sort((a, b) => a - b) },
+    shards:
+      input.shards === undefined || input.shards === null ? null : structuredClone(input.shards),
     runConditions: structuredClone(input.runConditions),
     tests: { ...input.tests },
     evaluation: {

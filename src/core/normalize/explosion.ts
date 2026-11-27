@@ -8,7 +8,7 @@ interface ParsedKey {
   /** "<METHOD> <label>" */
   head: string;
   segments: string[];
-  /** "" or "?…" */
+  /** "", "?…" or "#…" */
   query: string;
 }
 
@@ -21,7 +21,10 @@ function parseKey(key: string): ParsedKey | null {
   const head = key.slice(0, slash);
   if (head.slice(space + 1).includes('?')) return null;
   const rest = key.slice(slash + 1);
-  const mark = rest.indexOf('?');
+  // The operation part (#…, 18-REQ-06) groups like the query: '#' in a segment is escaped.
+  const hash = rest.indexOf('#');
+  const question = rest.indexOf('?');
+  const mark = hash >= 0 && (question < 0 || hash < question) ? hash : question;
   const path = mark < 0 ? rest : rest.slice(0, mark);
   return {
     head,

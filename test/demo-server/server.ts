@@ -25,7 +25,11 @@
 //   GET /api/<anything else>        JSON after the delay configured for "<METHOD> <path>"
 // Control
 //   POST /__control {"delays": {"GET /api/orders": 300}, "noise": {"seed": 1, "sigma": 0.2}}
-//   sets delays per endpoint and the noise; {"noise": null} turns the noise off.
+//   sets delays per endpoint and the noise; {"noise": null} turns the noise off. Optional, each
+//   reset by every control call (13-REQ-29, the fast-failure demo):
+//     "statuses": {"GET /api/orders": 401}   status of "GET /api/<anything else>" answers
+//     "appSkip": ["/api/cart"]               calls the shop page /app leaves out
+//     "cold": {"GET /api/orders": 400}       extra delay of the first call of the endpoint
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -44,6 +48,18 @@ export interface DemoServer {
 interface State {
   delays: Map<string, number>;
   noise: ((medianMs: number) => number) | null;
+  statuses: Map<string, number>;
+  appSkip: string[];
+  /** Extra delay of the first call per endpoint; an entry is removed by that call. */
+  cold: Map<string, number>;
+}
+
+interface Control {
+  delays?: Record<string, number>;
+  noise?: NoiseOptions | null;
+  statuses?: Record<string, number>;
+  appSkip?: string[];
+  cold?: Record<string, number>;
 }
 
 const CORS = {
@@ -75,9 +91,11 @@ window.swReady = navigator.serviceWorker.register('/sw.js').then(() => navigator
   navigator.serviceWorker.controller ? true : new Promise((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true))));
 `;
 
-const APP_SCRIPT = `
+const APP_APIS = ['/api/products', '/api/cart', '/api/users/'];
+
+const appScript = (skip: string[]): string => `
 const user = 1000 + Math.floor(Math.random() * 9000);
-Promise.all(['/api/products', '/api/cart', '/api/users/' + user].map((u) => fetch(u).then((r) => r.json()))).then(() => {
+Promise.all(${JSON.stringify(APP_APIS.filter((u) => !skip.includes(u)))}.map((u) => fetch(u.endsWith('/') ? u + user : u).then((r) => r.json()))).then(() => {
   const p = document.createElement('p');
   p.id = 'status';
   p.textContent = 'ready';
@@ -127,7 +145,9 @@ function json(res: ServerResponse, status: number, body: unknown): void {
 
 function delayOf(state: State, key: string, fallback: number): number {
   const median = state.delays.get(key) ?? fallback;
-  return state.noise === null ? median : state.noise(median);
+  const cold = state.cold.get(key) ?? 0;
+  state.cold.delete(key);
+  return (state.noise === null ? median : state.noise(median)) + cold;
 }
 
 async function handle(state: State, req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -140,13 +160,13 @@ async function handle(state: State, req: IncomingMessage, res: ServerResponse): 
     return;
   }
   if (method === 'POST' && path === '/__control') {
-    const body = JSON.parse((await readBody(req)) || '{}') as {
-      delays?: Record<string, number>;
-      noise?: NoiseOptions | null;
-    };
+    const body = JSON.parse((await readBody(req)) || '{}') as Control;
     if (body.delays !== undefined) state.delays = new Map(Object.entries(body.delays));
     if (body.noise !== undefined)
       state.noise = body.noise === null ? null : createNoise(body.noise);
+    state.statuses = new Map(Object.entries(body.statuses ?? {}));
+    state.appSkip = body.appSkip ?? [];
+    state.cold = new Map(Object.entries(body.cold ?? {}));
     json(res, 200, { ok: true });
     return;
   }
@@ -157,7 +177,7 @@ async function handle(state: State, req: IncomingMessage, res: ServerResponse): 
   if (path === '/popup' || path === '/tab') {
     return html(page(path.slice(1), `fetch('/api${path}').then((r) => r.text());`));
   }
-  if (path === '/app') return html(page('shop', APP_SCRIPT));
+  if (path === '/app') return html(page('shop', appScript(state.appSkip)));
   if (path === '/sw-page') return html(page('service worker', SW_PAGE_SCRIPT));
   if (path === '/sw.js') {
     res.writeHead(200, { 'content-type': 'text/javascript' }).end(SERVICE_WORKER);
@@ -190,9 +210,17 @@ async function handle(state: State, req: IncomingMessage, res: ServerResponse): 
     return;
   }
   if (path === '/api/data.json') return json(res, 200, { data: [1, 2, 3] });
+  if (path === '/graphql' && method === 'POST') {
+    // GraphQL (18): the delay key is "POST /graphql#<operationName>", e.g. to slow one operation.
+    const body = JSON.parse((await readBody(req)) || '{}') as { operationName?: unknown };
+    const name = typeof body.operationName === 'string' ? body.operationName : 'anonymous';
+    await sleep(delayOf(state, `${method} ${path}#${name}`, 0));
+    return json(res, 200, { data: { name } });
+  }
   if (path.startsWith('/api/')) {
-    await sleep(delayOf(state, `${method} ${path}`, 0));
-    return json(res, 200, { path });
+    const key = `${method} ${path}`;
+    await sleep(delayOf(state, key, 0));
+    return json(res, state.statuses.get(key) ?? 200, { path });
   }
   res.writeHead(404).end();
 }
@@ -213,7 +241,13 @@ export interface DemoServerOptions {
 
 /** Starts both origins, on free ports unless given. */
 export async function startDemoServer(options: DemoServerOptions = {}): Promise<DemoServer> {
-  const state: State = { delays: new Map(), noise: null };
+  const state: State = {
+    delays: new Map(),
+    noise: null,
+    statuses: new Map(),
+    appSkip: [],
+    cold: new Map(),
+  };
   const servers = [0, 1].map(() =>
     createServer((req, res) => {
       handle(state, req, res).catch(() => {

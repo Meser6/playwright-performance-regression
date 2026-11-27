@@ -257,6 +257,7 @@ export function resolveConfig(
     const list = valueAt(merged, path) as JsonPattern[];
     list.splice(0, list.length, ...list.map(snapshotPattern));
   }
+  for (const entry of merged.keys.operations) entry.match = snapshotPattern(entry.match);
   if (keyBuilder.inSnapshot) merged.keys.keyBuilder = KEY_BUILDER_SNAPSHOT;
   const snapshot = merged;
 
@@ -278,6 +279,10 @@ export function resolveConfig(
       ...(clone(keys) as typeof keys),
       extraIdPatterns: snapshot.keys.extraIdPatterns.map(compilePattern),
       keyBuilder: keyBuilder.keyBuilder,
+      operations: snapshot.keys.operations.map((entry) => ({
+        type: entry.type,
+        match: compilePattern(entry.match),
+      })),
     },
   };
   return {

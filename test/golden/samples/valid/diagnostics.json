@@ -54,7 +54,7 @@
         "url": "https://app.example/api/notifications/poll"
       }
     ],
-    "schemaVersion": 3
+    "schemaVersion": 4
   },
   "expected": {
     "ok": true

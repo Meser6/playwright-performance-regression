@@ -7,6 +7,100 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Cold and warm samples.** The first timed sample of every key in each pass is cold
+  (`measure.coldSamples`, 1 by default, 0 turns it off): a slow first call after the application
+  or its container started no longer moves p95 on small sample counts. Each pass is a new
+  Playwright process, and a `webServer` starts the application again in every pass, so the counter
+  starts again in every pass (and every shard). Cold samples stay out of the evaluated statistics
+  only when at least `checks.time.median.minSamples` warm samples remain (5 by default), so a key
+  called once per pass is still evaluated by the median of all its samples. The report has a `cold` block per key, the HTML report a "Cold vs
+  warm" block and a "Slowest first calls" ranking, and the new warning `STATS_COLD_SLOW` names keys
+  whose first call is at least three times slower than their warm median.
+- **Fast failures: the `nonSuccess` rule.** An endpoint that starts answering 401, 403, 404 or 5xx
+  fast no longer passes silently because it has no successful samples to time. Thresholds runs
+  write `maxNonSuccessRate` (the share of responses outside `measure.successStatuses` in the
+  thresholds run, with the margin `checks.nonSuccess.margin`), and the rule compares the lower
+  bound of the current share with it. Keys without an entry are not checked unless you set
+  `checks.nonSuccess.limit.api`. Keys with an entry whose responses were not successful get the
+  warning `THRESHOLDS_ENTRY_NOT_TIMED`. The report counts these responses per key
+  (`nonSuccessCount`) and keeps their durations per status (`failedTimings`, shown under
+  "Unsuccessful responses"); they never enter the time statistics.
+- **Workload context.** Every new or replaced thresholds entry records the samples of its source
+  run (`source`), and the file records `generated.coldSamples` and `generated.sourcePasses`. Each
+  evaluated key gets `evaluation.workload` (samples, passes, workers and its share of the traffic,
+  then and now); the console shows the samples as `now/base` in the violations table with a
+  `Workload:` line, the HTML report a "Compared with the thresholds run" block, `junit.xml` a
+  `workload:` line. The new warning `THRESHOLDS_WORKLOAD_SHIFT` names keys whose samples per pass
+  changed by `thresholds.workloadShift.factor` (2 by default) or more.
+- **Keys per GraphQL operation and tRPC procedure.** `keys.operations` (empty by default) gives
+  endpoints that serve many operations under one URL a key per operation:
+  `{ type: 'graphql', match: '/graphql' }` turns `POST /graphql` into `POST /graphql#GetTickets`,
+  `POST /graphql#CreateOrder` and, for batches, `POST /graphql#GetTickets+GetUser`;
+  `{ type: 'trpc', match: /^\/api\/trpc\// }` gives `GET /api/trpc#post.byId`. The request body is
+  read only for `POST` requests matching a `graphql` entry (up to 64 KB, in the test worker) and
+  only the operation names are kept. `keys.keyBuilder` gets them as `operation`. A request whose
+  operation cannot be read keeps its old key and gives the warning `COLLECTOR_OPERATION_UNKNOWN`.
+  The HTML report suggests the option for keys that look like GraphQL or tRPC. See
+  [Operations](docs/configuration.md#operations) for migrating the thresholds files.
+- **Sharded runs.** A perf-mode run with Playwright's `--shard=i/n` no longer stops with
+  `RUN_SHARDED`: each shard measures its tests in all passes and writes
+  `reports/pw-perf/shard-<i>-of-<n>.json` without evaluating, and `PW_PERF_MODE=merge npx pw-perf`
+  in a merge job (no browsers needed) evaluates all shards as one run, with one report,
+  `junit.xml`, `outcome.json` and, in a thresholds run, one complete set of thresholds files.
+  Cold samples are counted per shard and pass. The run report has a `shards` field (`null` without shards),
+  the console and the HTML report say `merged from 4 shards` and list the shards. A check with
+  `--shard` checks the tests of that shard. New codes: `SHARD_WRITE_FAILED`, `MERGE_NO_SHARD_FILES`,
+  `MERGE_SHARD_INVALID`, `MERGE_SHARD_MISMATCH`, `MERGE_SHARD_DUPLICATE`, `MERGE_SHARD_MISSING`,
+  `MERGE_WRONG_DIRECTORY`, `MERGE_SHARDS_DIFFERENT_COMMIT`, `MERGE_SHARDS_DIFFERENT_HOSTS`,
+  `MERGE_ENV_IGNORED` and `MERGE_INTERNAL_ERROR`. Recipes with a shard matrix and a merge job for
+  GitHub Actions, GitLab CI, Jenkins and Azure Pipelines are in `examples/ci/sharded/`; see
+  [Sharded runs](docs/ci.md#sharded-runs). The start banner of a run estimated above two hours
+  suggests `--shard`.
+- **Fast-failure example and demo.** [Thresholds](docs/thresholds.md#fast-failures-and-workload-changes)
+  walks through a real run of `examples/with-setup` in which an endpoint answers 401 in a few
+  milliseconds instead of 200 in 120 ms: what the time and error rules do, how the `nonSuccess`
+  rule fails it, a workload shift and a cold first call, with console excerpts and screenshots.
+  The demo on GitHub Pages has a landing page with two reports, `slow-endpoint.html` (formerly the
+  only report, at `index.html`) and `fast-failure.html`; the README links it.
+  [Upgrading](docs/upgrading.md#from-10x-to-110) has a section for 1.0.x → 1.1.0.
+
+### Changed
+
+- **Run report version 5, thresholds file version 3, sample batch version 4.** Older reports and
+  thresholds files are migrated when read (a thresholds file gives `THRESHOLDS_FILE_OUTDATED` until the next thresholds
+  run rewrites it). The next thresholds run adds `maxNonSuccessRate` and `source` also to entries
+  it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
+- Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.
+- The run report gets `shards: null` when a report of version 4 is migrated.
+- README: GraphQL and tRPC are no longer listed as a limitation (`keys.operations`), and "How it
+  works" names fast failures.
+
+### Removed
+
+- `RUN_SHARDED`: sharded perf-mode runs are supported (see "Sharded runs" above).
+
+### Fixed
+
+- `Next:` after a run failed only by the `nonSuccess` or `errors` rule talks about the new response
+  statuses instead of a slowdown; after a shard merge it points to the thresholds run of the shard
+  jobs instead of `npx playwright test`.
+- `THRESHOLDS_WORKLOAD_SHIFT` says when shifted keys have samples from retries of failed tests;
+  `THRESHOLDS_SOURCE_MISMATCH` after a change of normalization suggests `PW_PERF_PRUNE=1`.
+- The HTML ranking of errors becomes "Highest failure rate" when keys have unsuccessful responses
+  that are not errors (e.g. fast 401s), instead of "No errors in this run".
+- The wizard imports `./pw-perf.config.ts` with its extension when `tsconfig.json` has
+  `allowImportingTsExtensions` (`tsc` with `module: "nodenext"` refused the import without it).
+- `check` shows an empty `baseURL` as `(empty)`; the `CONFIG_BASEURL_EMPTY` hint uses the package
+  manager of the project.
+- `THRESHOLDS_KEYS_ON_DEFAULTS` and the "On default thresholds" console table no longer list keys
+  without successful samples (e.g. an endpoint a test calls on purpose for a 404): a thresholds
+  run never writes an entry for them, so the advice to derive thresholds did not help.
+- A shard without tests (e.g. `--shard=5/5` with a `--grep` that leaves fewer tests than shards)
+  no longer reports `CONFIG_NO_MEASURED_PROJECT` and exits with code 0; it writes its empty shard
+  file as before.
+
 ## [1.0.1] - 2026-11-25
 
 A hotfix release.

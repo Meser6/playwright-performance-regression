@@ -401,6 +401,7 @@ describe('validation and error catalog (03-REQ-09 – 03-REQ-12)', () => {
       'checks.time.median.minSamples: must be <= checks.slowShare.apdex.minSamples (20), got 30',
       'checks.time.median.minSamples: must be <= checks.slowShare.wilson.minSamples (20), got 30',
       'checks.time.median.minSamples: must be <= checks.errors.minSamples (5), got 30',
+      'checks.time.median.minSamples: must be <= checks.nonSuccess.minSamples (5), got 30',
     ]);
     expect(issues({ checks: { errors: { minSamples: 2 } } })[0]?.path).toBe(
       'checks.errors.minSamples',

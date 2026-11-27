@@ -249,7 +249,8 @@
             "minApdex": 0.85,
             "p99": 2100,
             "percentile": 1400,
-            "t": 500
+            "t": 500,
+            "maxNonSuccessRate": null
           },
           "muted": {
             "expired": false,
@@ -258,7 +259,8 @@
           },
           "reason": null,
           "result": "pass",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
         "fromFailedTests": 0,
         "samples": {
@@ -365,7 +367,10 @@
             1
           ]
         },
-        "hints": []
+        "hints": [],
+        "cold": null,
+        "nonSuccessCount": 0,
+        "failedTimings": []
       }
     },
     "steps": {},
@@ -429,6 +434,7 @@
       "completed": 1,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "overriddenSettings": [],
       "projects": [
@@ -443,7 +449,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [
       {

@@ -29,6 +29,8 @@ export interface AggregateSpec {
   durations?: [number, number][];
   errors?: number;
   other?: number;
+  /** Status label of the `other` samples; 404 by default. */
+  otherStatus?: string;
 }
 
 /** Expands a compact aggregate into AggregateStats as the aggregator (08) builds it. */
@@ -41,7 +43,7 @@ export function aggregate(spec: AggregateSpec, level = 'p95'): AggregateStats {
   const n = durations.length;
   const statuses: Record<string, number> = {};
   if (n > 0) statuses['200'] = n;
-  if (other > 0) statuses['404'] = other;
+  if (other > 0) statuses[spec.otherStatus ?? '404'] = other;
   if (errors > 0) statuses['500'] = errors;
   return {
     count: n + errors + other,
@@ -70,6 +72,10 @@ export function aggregate(spec: AggregateSpec, level = 'p95'): AggregateStats {
     topTests: [],
     samples: { durations, sampled: false },
     histogram: (n === 0 ? null : histogram(durations)) as AggregateStats['histogram'],
+    cold: null,
+    // 404 and 500 are outside the default successStatuses (08-REQ-46).
+    nonSuccessCount: other + errors,
+    failedTimings: [],
   };
 }
 
@@ -106,7 +112,7 @@ export function thresholdsFile(
   entries: Record<string, ThresholdsEntry>,
   generated: ThresholdsFile['generated'] = null,
 ): ThresholdsFile {
-  return { schemaVersion: 2, kind, generated, entries };
+  return { schemaVersion: 3, kind, generated, entries };
 }
 
 export function loaded(

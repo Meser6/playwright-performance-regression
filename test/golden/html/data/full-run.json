@@ -30,6 +30,18 @@
             "PENDING"
           ]
         },
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        },
         "slowShare": {
           "apdex": {
             "enabled": true,
@@ -132,10 +144,12 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },
       "measure": {
+        "coldSamples": 0,
         "exclude": [
           "/socket.io/"
         ],
@@ -208,12 +222,16 @@
         "loosenWarnRelative": 0.5,
         "preset": "normal",
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
     "endpoints": {
       "GET /api/tickets/:id": {
+        "cold": null,
         "count": 12,
         "errorCount": 1,
         "evaluation": {
@@ -243,6 +261,7 @@
           ],
           "limits": {
             "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null,
             "maxWilson": 0.05,
             "median": 900,
             "minApdex": 0.85,
@@ -257,8 +276,10 @@
           },
           "reason": null,
           "result": "pass",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
+        "failedTimings": [],
         "fromFailedTests": 0,
         "hints": [],
         "histogram": {
@@ -292,6 +313,7 @@
             261
           ]
         },
+        "nonSuccessCount": 1,
         "samples": {
           "retained": 10,
           "sampled": false
@@ -358,6 +380,7 @@
         }
       },
       "POST /api/orders": {
+        "cold": null,
         "count": 5,
         "errorCount": 5,
         "evaluation": {
@@ -376,6 +399,7 @@
           ],
           "limits": {
             "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null,
             "maxWilson": null,
             "median": 900,
             "minApdex": null,
@@ -386,8 +410,10 @@
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "default"
+          "thresholdSource": "default",
+          "workload": null
         },
+        "failedTimings": [],
         "fromFailedTests": 5,
         "hints": [
           {
@@ -408,6 +434,7 @@
           }
         ],
         "histogram": null,
+        "nonSuccessCount": 0,
         "samples": {
           "retained": 0,
           "sampled": false
@@ -508,7 +535,8 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
+    "shards": null,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},
@@ -705,6 +733,18 @@
             "PENDING"
           ]
         },
+        "nonSuccess": {
+          "enabled": true,
+          "limit": {
+            "api": null
+          },
+          "margin": {
+            "add": 0.02,
+            "factor": 1.5,
+            "min": 0.05
+          },
+          "minSamples": 5
+        },
         "slowShare": {
           "apdex": {
             "enabled": true,
@@ -807,10 +847,12 @@
           "uuid": true
         },
         "keepQueryValues": [],
+        "operations": [],
         "origins": {},
         "query": "names"
       },
       "measure": {
+        "coldSamples": 0,
         "exclude": [
           "/socket.io/"
         ],
@@ -883,12 +925,16 @@
         "loosenWarnRelative": 0.5,
         "preset": "normal",
         "smallSampleN": 20,
-        "update": "all"
+        "update": "all",
+        "workloadShift": {
+          "factor": 2
+        }
       }
     },
     "configDir": "/home/user/project",
     "endpoints": {
       "GET /api/tickets/:id": {
+        "cold": null,
         "count": 12,
         "errorCount": 1,
         "evaluation": {
@@ -918,6 +964,7 @@
           ],
           "limits": {
             "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null,
             "maxWilson": 0.05,
             "median": 900,
             "minApdex": 0.85,
@@ -932,8 +979,10 @@
           },
           "reason": null,
           "result": "pass",
-          "thresholdSource": "file"
+          "thresholdSource": "file",
+          "workload": null
         },
+        "failedTimings": [],
         "fromFailedTests": 0,
         "hints": [],
         "histogram": {
@@ -967,6 +1016,7 @@
             261
           ]
         },
+        "nonSuccessCount": 1,
         "samples": {
           "durations": [
             150.1,
@@ -1044,6 +1094,7 @@
         }
       },
       "POST /api/orders": {
+        "cold": null,
         "count": 5,
         "errorCount": 5,
         "evaluation": {
@@ -1062,6 +1113,7 @@
           ],
           "limits": {
             "maxErrorRate": 0.05,
+            "maxNonSuccessRate": null,
             "maxWilson": null,
             "median": 900,
             "minApdex": null,
@@ -1072,8 +1124,10 @@
           "muted": null,
           "reason": null,
           "result": "fail",
-          "thresholdSource": "default"
+          "thresholdSource": "default",
+          "workload": null
         },
+        "failedTimings": [],
         "fromFailedTests": 5,
         "hints": [
           {
@@ -1094,6 +1148,7 @@
           }
         ],
         "histogram": null,
+        "nonSuccessCount": 0,
         "samples": {
           "durations": [],
           "sampled": false
@@ -1194,7 +1249,8 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
+    "shards": null,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "stepNormalization": null,
     "steps": {},

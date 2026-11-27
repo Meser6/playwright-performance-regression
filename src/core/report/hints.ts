@@ -68,6 +68,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ];
 
 /** Code unit order, never localeCompare (02-REQ-04). */

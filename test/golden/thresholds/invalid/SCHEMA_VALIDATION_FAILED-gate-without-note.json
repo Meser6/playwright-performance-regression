@@ -73,7 +73,7 @@
       }
     },
     "kind": "api",
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

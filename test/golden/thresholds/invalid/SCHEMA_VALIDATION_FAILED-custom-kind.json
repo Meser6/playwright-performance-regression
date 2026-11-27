@@ -8,7 +8,7 @@
     },
     "generated": null,
     "kind": "custom",
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "expected": {
     "code": "SCHEMA_VALIDATION_FAILED",

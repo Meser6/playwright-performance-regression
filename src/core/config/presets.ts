@@ -72,6 +72,8 @@ export function presetLayer(preset: MarginPreset): Record<string, unknown> {
         wilson: { margin: { factor: v.factor } },
       },
       errors: { margin: { factor: v.factor } },
+      // The nonSuccess margin follows the errors margin (03-REQ-30).
+      nonSuccess: { margin: { factor: v.factor } },
     },
   };
 }

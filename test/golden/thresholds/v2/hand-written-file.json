@@ -1,0 +1,14 @@
+{
+  "entries": {
+    "GET /api/a": {
+      "percentile": 900,
+      "t": 400
+    },
+    "GET /api/b": {
+      "percentile": 900
+    }
+  },
+  "generated": null,
+  "kind": "api",
+  "schemaVersion": 2
+}

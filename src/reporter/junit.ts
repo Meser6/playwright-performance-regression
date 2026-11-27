@@ -1,4 +1,4 @@
-// Writing junit.xml (16): one function for the reporter of pass 1 and, later, the shard merge
+// Writing junit.xml (16): one function for the reporter of pass 1 and the shard merge
 // (16-REQ-04): build the XML from the run report, write it atomically, map failures to the
 // REPORT_JUNIT_WRITE_FAILED tool error (16-REQ-16).
 import { JUNIT_FILE, buildJunitXml } from '../core/report/index.ts';

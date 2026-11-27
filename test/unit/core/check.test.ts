@@ -216,7 +216,7 @@ describe('04-AC-35 estimate and output', () => {
     );
   });
 
-  test('a measured project with 1 test and 1 request uses the singular', () => {
+  test('04-AC-70 a measured project with 1 test and 1 request uses the singular; an empty baseURL is (empty)', () => {
     const one: CheckSummary = {
       packageName: 'pw-perf',
       ran: 1,
@@ -247,6 +247,12 @@ describe('04-AC-35 estimate and output', () => {
     };
     const text = formatCheckSummary(one, { width: 120, color: false });
     expect(text).toContain('  measured    desktop · baseURL (not set) · 1 request in 1 test\n');
+    // 04-AC-70: an empty baseURL is shown as (empty).
+    const empty = formatCheckSummary(
+      { ...one, projects: one.projects.map((p) => ({ ...p, baseURL: '' })) },
+      { width: 120, color: false },
+    );
+    expect(empty).toContain('  measured    desktop · baseURL (empty) · 1 request in 1 test\n');
     expect(text).toContain('1 request · 1 api key · 0 step keys · 0 origins');
     expect(text).toContain('1 of 1 test run (1 passed)');
   });

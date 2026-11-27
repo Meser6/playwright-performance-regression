@@ -1,4 +1,5 @@
 // Verdict card, KPI strip and the Overview tab (11, chapters 6.2, 6.3 and 8a).
+import { COLD_WARN_RATIO } from '../core/types/index.ts';
 import type { RunReport } from '../core/types/index.ts';
 import {
   DASH,
@@ -32,9 +33,11 @@ import { hintText, ruleLabel } from './hints.ts';
 import { icon } from './icons.ts';
 import type { IconName } from './icons.ts';
 import {
+  DEFAULT_ERROR_STATUSES,
   LIST_KEY_MAX,
   NEAR_LIMIT,
   checkValue,
+  isErrorStatus,
   kindToken,
   mutedPill,
   pill,
@@ -479,7 +482,21 @@ function rankings(ctx: Ctx): Ranking[] {
   };
   const errorTone = (e: Entry): string =>
     e.agg.evaluation.result === 'fail' ? 'bad' : e.agg.errorCount > 0 ? 'warn' : '';
-  const errorShare = (e: Entry): number => e.agg.errorCount / e.agg.count;
+  // 1.1.0: unsuccessful samples, i.e. statuses outside successStatuses (nonSuccessCount) and errors
+  // without an HTTP status (FAILED, PENDING, …), at least errorCount (11-REQ-31, F3 decision 9).
+  const errorStatuses = ctx.report.config.checks?.errors?.statuses ?? DEFAULT_ERROR_STATUSES;
+  const failed = (e: Entry): number => {
+    if (e.agg.nonSuccessCount === null) return e.agg.errorCount;
+    let withoutStatus = 0;
+    for (const [label, n] of Object.entries(e.agg.statuses)) {
+      if (!/^\d{3}$/u.test(label) && isErrorStatus(label, errorStatuses)) withoutStatus += n;
+    }
+    return Math.max(e.agg.errorCount, e.agg.nonSuccessCount + withoutStatus);
+  };
+  const failedShare = (e: Entry): number => failed(e) / e.agg.count;
+  const failedTone = (e: Entry): string =>
+    e.agg.evaluation.result === 'fail' ? 'bad' : failed(e) > 0 ? 'warn' : '';
+  const beyondErrors = all.some((e) => failed(e) > e.agg.errorCount);
   const list: Ranking[] = [
     {
       id: 'slowest',
@@ -505,16 +522,18 @@ function rankings(ctx: Ctx): Ranking[] {
     },
     {
       id: 'errors',
-      title: 'Highest error rate',
-      note: 'errors',
+      // The 1.0.x name while no key fails beyond its errors (also a report migrated from v4).
+      ...(beyondErrors
+        ? {
+            title: 'Highest failure rate',
+            note: 'errors · non-success',
+          }
+        : { title: 'Highest error rate', note: 'errors' }),
       empty: 'No errors in this run',
-      entries: all
-        .filter((e) => e.agg.errorCount > 0)
-        .sort(order((e) => [errorShare(e), e.agg.errorCount])),
-      size: errorShare,
-      tone: errorTone,
-      value: (e) =>
-        html`<b>${formatPercent(errorShare(e))}</b> · ${e.agg.errorCount} of ${e.agg.count}`,
+      entries: all.filter((e) => failed(e) > 0).sort(order((e) => [failedShare(e), failed(e)])),
+      size: failedShare,
+      tone: failedTone,
+      value: (e) => html`<b>${formatPercent(failedShare(e))}</b> · ${failed(e)} of ${e.agg.count}`,
     },
   ];
   if (!ctx.migrated) {
@@ -533,6 +552,22 @@ function rankings(ctx: Ctx): Ranking[] {
         const top = topCheck(e.agg.evaluation.checks);
         return html`${ruleLabel(top?.rule ?? '', level)} <b>${String(usagePercent(top?.usage ?? 0))}%</b>`;
       },
+    });
+  }
+  // Slowest first calls (11-REQ-62): only when a key is much slower on its first call.
+  const coldRatio = (e: Entry): number => e.agg.cold?.ratio ?? 0;
+  const cold = all.filter((e) => coldRatio(e) >= COLD_WARN_RATIO);
+  if (cold.length > 0) {
+    list.push({
+      id: 'cold',
+      title: 'Slowest first calls',
+      note: 'first call · warm p50',
+      empty: 'No slow first calls in this run',
+      entries: cold.sort(order((e) => [coldRatio(e)])),
+      size: coldRatio,
+      tone: () => 'warn',
+      value: (e) =>
+        html`<b>×${coldRatio(e).toFixed(1)}</b> · ${formatMs(e.agg.cold?.max ?? 0)} vs ${formatMs(e.agg.cold?.warmP50 ?? 0)}`,
     });
   }
   return list;

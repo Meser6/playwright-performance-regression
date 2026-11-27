@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pw-perf" tests="4" failures="0" errors="0" time="300.000">
+  <testsuite name="pw-perf run" tests="1" failures="0" errors="0" skipped="0" time="0" timestamp="2026-11-18T10:00:00.000Z">
+    <properties>
+      <property name="pw-perf.runId" value="run-1"/>
+      <property name="pw-perf.mode" value="test"/>
+      <property name="pw-perf.env" value=""/>
+      <property name="pw-perf.toolVersion" value="0.1.0"/>
+      <property name="pw-perf.evaluation" value="passed"/>
+      <property name="pw-perf.exitCode" value="0"/>
+      <property name="pw-perf.passes" value="3/3"/>
+      <property name="pw-perf.shards" value="2"/>
+      <property name="pw-perf.commit" value="abc123"/>
+      <property name="pw-perf.branch" value="main"/>
+      <property name="pw-perf.buildUrl" value="https://github.com/o/r/actions/runs/1"/>
+    </properties>
+    <testcase classname="pw-perf.run" name="measurement run" time="0">
+      <system-out>Mode: test
+Tests: 12 passed, 0 failed, 0 flaky, 0 skipped; passes 3/3
+Evaluation: passed (exit code 0)
+Warnings: 2
+STATS_COLD_SLOW: 1 key is much slower on the first call (cold start): GET /api/tickets 1,400 ms vs warm p50 125 ms (×11.2).
+THRESHOLDS_FILE_MISSING: Thresholds file pw-perf-thresholds.json not found; endpoint keys are evaluated with default thresholds.</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="pw-perf endpoints" tests="3" failures="0" errors="0" skipped="0" time="0.361" timestamp="2026-11-18T10:00:00.000Z">
+    <testcase classname="pw-perf.endpoints" name="GET /api/shard1" time="0.108"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/shard2" time="0.128"/>
+    <testcase classname="pw-perf.endpoints" name="GET /api/tickets" time="0.125">
+      <system-out>cold start: slowest of 6 first calls 1400 ms, warm p50 125 ms</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -10,7 +10,7 @@ import type { Ctx } from './context.ts';
 import { embeddedJson } from './data.ts';
 import { html, trustedHtml } from './escape.ts';
 import type { HtmlValue, SafeHtml } from './escape.ts';
-import { formatDate } from './format.ts';
+import { formatDate, plural } from './format.ts';
 import { SCRIPT, SCRIPT_SHA256, STYLES, STYLES_SHA256 } from './generated/assets.ts';
 import { FAVICON_URI, icon, iconSprite, logo } from './icons.ts';
 import { keyTable } from './keys.ts';
@@ -45,6 +45,16 @@ function chip(name: Parameters<typeof icon>[0], content: HtmlValue): SafeHtml {
   return html`<span class="chip">${icon(name)}${content}</span>`;
 }
 
+/** "merged from 4 shards", or "3 of 4 shards" in the warning color (17-REQ-21); null without shards. */
+function shardsChip(report: RunReport): SafeHtml | null {
+  const shards = report.shards;
+  if (shards === null) return null;
+  if (shards.missing.length === 0) {
+    return chip('env', html`merged from <b>${plural(shards.total, 'shard')}</b>`);
+  }
+  return html`<span class="chip warn">${icon('warn')}<b>${String(shards.list.length)} of ${plural(shards.total, 'shard')}</b></span>`;
+}
+
 /** The app bar (11-REQ-49). */
 function header(report: RunReport): SafeHtml {
   const ci = report.ci;
@@ -58,6 +68,7 @@ function header(report: RunReport): SafeHtml {
     html`<div class="meta" role="group" aria-label="Run details" tabindex="0">`,
     report.env === null ? null : chip('env', html`env <b>${report.env}</b>`),
     chip('play', html`mode <b>${report.mode}</b>`),
+    shardsChip(report),
     chip('clock', html`<b>${formatDate(report.startedAt).slice(0, -4)}</b> UTC`),
     ci === null || (ci.branch === null && ci.commit === null)
       ? null

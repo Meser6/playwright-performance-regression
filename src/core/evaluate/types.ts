@@ -38,6 +38,8 @@ export interface RunSource {
   normalization: string;
   /** Step normalization fingerprint (06-REQ-25); null when measure.steps is off. */
   stepNormalization: string | null;
+  /** measure.coldSamples of the run (08-REQ-41); undefined: not compared. */
+  coldSamples?: number;
 }
 
 /** The source as seen by the thresholds file of one kind: its own fingerprint (09-REQ-31). */
@@ -54,6 +56,10 @@ export interface EvaluateOptions {
   source: RunSource;
   /** Run start (RunReport.startedAt, ISO UTC); reference date for muting (09-REQ-26). */
   startedAt: string;
+  /** Completed passes of the run, for the workload comparison (09-REQ-40); default 1. */
+  passes?: number;
+  /** Effective workers of the run (09-REQ-40); default 1. */
+  workers?: number;
 }
 
 export type EvaluationStatus = RunReport['evaluation']['status'];

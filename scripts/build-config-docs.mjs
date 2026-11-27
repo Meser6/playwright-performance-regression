@@ -164,9 +164,14 @@ function typeOf(raw, schema) {
 /** Options whose generated text needs more than the schema gives. */
 export const NOTES = {
   'keys.keyBuilder': {
-    type: 'function `({ method, url, resourceType }) => string | undefined` (TypeScript or JavaScript config only)',
+    type: 'function `({ method, url, resourceType, operation }) => string | undefined` (TypeScript or JavaScript config only)',
     description:
-      'Builds the endpoint key of a request yourself. Return a string to use it as the key, or `undefined` to fall back to the built-in rules. For calls of the `request` fixture, `page.request` and `context.request` it gets `resourceType: "request"`, and the key gets the prefix `request ` after it. Not allowed in a JSON config file; the run report records it as `"[function]"`.',
+      'Builds the endpoint key of a request yourself. Return a string to use it as the key, or `undefined` to fall back to the built-in rules. For calls of the `request` fixture, `page.request` and `context.request` it gets `resourceType: "request"`, and the key gets the prefix `request ` after it. `operation` holds the operation names read by [`keys.operations`](#keysoperations), or `null`; the request body is never passed. Not allowed in a JSON config file; the run report records it as `"[function]"`.',
+  },
+  'keys.operations': {
+    type: 'array of `{ type: "graphql" | "trpc", match: URL pattern }`',
+    description:
+      'Endpoints that get a key per operation, such as `POST /graphql#GetTickets` instead of one `POST /graphql` for every GraphQL call. `match` is tested against the URL path without the query; the first matching entry wins. See [Operations](#operations).',
   },
   'keys.idPatterns.number': { description: 'Path segments made only of digits.' },
   'keys.idPatterns.uuid': { description: 'UUIDs in any letter case.' },
@@ -284,6 +289,60 @@ keys: {
 In a JSON config: \`"extraIdPatterns": [{ "regex": "^ord\\\\.[0-9]+$" }, "demo-tenant"]\`.
 `;
 
+const OPERATIONS = `## Operations
+
+GraphQL and tRPC send every call to one URL, so by default all of them share one key, such as
+\`POST /graphql\`: a fast and a slow operation mix in one distribution, and a regression of one
+operation hides in the median. \`keys.operations\` gives such endpoints a key per operation:
+
+\`\`\`ts
+keys: {
+  operations: [
+    { type: 'graphql', match: '/graphql' }, // Apollo, urql, Relay; Hasury: '/v1/graphql'
+    { type: 'trpc', match: /^\\/api\\/trpc\\// }, // Next.js with tRPC
+  ],
+}
+\`\`\`
+
+In a JSON config: \`"operations": [{ "type": "trpc", "match": { "regex": "^/api/trpc/" } }]\`.
+\`match\` is a [URL pattern](#url-patterns) tested against the path without the query (a string is
+a substring of the path); the first matching entry wins.
+
+| Request | Key |
+|---|---|
+| \`POST /graphql\` with \`operationName: "GetTickets"\` (or \`query GetTickets { … }\`) | \`POST /graphql#GetTickets\` |
+| \`GET /graphql?query=…&operationName=GetTickets\` | \`GET /graphql#GetTickets\` |
+| a batch of \`GetUser\` and \`GetTickets\` (Apollo \`BatchHttpLink\`) | \`POST /graphql#GetTickets+GetUser\` |
+| a batch of more than 10 operations | the first 10 sorted names, then \`+…(N)\` with the number of names |
+| a query without a name (\`{ tickets { id } }\`) | \`POST /graphql#anonymous\` |
+| an automatic persisted query without \`operationName\` | \`POST /graphql#persisted\` |
+| \`GET /api/trpc/post.byId?input=…\` | \`GET /api/trpc#post.byId\` |
+| \`GET /api/trpc/user.me,post.list?batch=1\` | \`GET /api/trpc#post.list+user.me\` |
+| no name can be read | \`POST /graphql\`, as without the option (\`COLLECTOR_OPERATION_UNKNOWN\`) |
+
+- **GraphQL** names come from \`operationName\`, else from the first named operation of
+  \`query\`; uploads (\`multipart/form-data\`) from the \`operations\` field. Names must follow the
+  GraphQL name rules (at most 100 characters).
+- **tRPC** names are the procedure names in the path, comma-separated in a batch; the request
+  body is never read for tRPC.
+- **Batches** are timed as one request: the key of a batch is the time of the whole request, not
+  of a single operation. Names are sorted, so the same batch in another order gets the same key.
+- A key with an operation has no query part.
+- **Privacy:** the request body is read only for \`POST\` requests matching a \`graphql\` entry (and
+  the \`data\` or \`multipart\` option of \`request.post()\` calls), up to 64 KB, in the test
+  worker. Only the operation names are kept; the body is never written to the sample batch, the
+  report or the thresholds files.
+- **Thresholds:** enabling or changing \`keys.operations\` changes the keys and the normalization
+  fingerprint (\`THRESHOLDS_SOURCE_MISMATCH\`). The old \`POST /graphql\` entry is no longer seen
+  (\`THRESHOLDS_UNSEEN_ENTRIES\`) and the operation keys get the default thresholds
+  (\`THRESHOLDS_KEYS_ON_DEFAULTS\`) until you derive thresholds again: run
+  \`PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>\`, review the diff and commit the
+  files.
+- **\`keys.keyBuilder\`** still comes first: it gets the names as \`operation\`; when it returns
+  \`undefined\`, the built-in key with the operation part is used.
+- GraphQL subscriptions over WebSocket are not measured.
+`;
+
 /** @returns {Promise<string>} */
 export async function generate() {
   const schema = readSchema('config.schema.json');
@@ -318,7 +377,7 @@ export async function generate() {
       lines.push(`Options: ${children.join(', ')}.`, '');
     }
   }
-  lines.push(URL_PATTERNS);
+  lines.push(URL_PATTERNS, OPERATIONS);
   const options_ = (await prettier.resolveConfig(outFile)) ?? {};
   return prettier.format(lines.join('\n'), { ...options_, filepath: outFile });
 }

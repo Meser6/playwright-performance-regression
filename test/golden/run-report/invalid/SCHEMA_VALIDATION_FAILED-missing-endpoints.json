@@ -225,6 +225,7 @@
       "completed": 1,
       "failed": []
     },
+    "shards": null,
     "runConditions": {
       "overriddenSettings": [],
       "projects": [
@@ -239,7 +240,7 @@
       "workers": 1
     },
     "runId": "run-1",
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "startedAt": "2026-11-18T10:00:00.000Z",
     "thresholdFiles": [],
     "toolErrors": [],

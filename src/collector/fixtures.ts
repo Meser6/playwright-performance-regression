@@ -62,8 +62,10 @@ function openBuffer(
   ) {
     return { collector: null, api: PASSIVE_API };
   }
+  const config = state?.config ?? perfDefaults;
   const collector = new TestCollector({
-    measure: (state?.config ?? perfDefaults).measure,
+    measure: config.measure,
+    operations: config.keys.operations,
     version,
     browserName,
     testTimeout: () => testInfo.timeout,

@@ -117,6 +117,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     default: ['2xx', '3xx'],
   },
   {
+    path: 'measure.coldSamples',
+    description:
+      'The first N timed samples of every key in each pass are cold (first call after the start of the application, which webServer starts again in every pass): they stay out of the evaluated time statistics when at least checks.time.median.minSamples warm samples are left.',
+    leaf: true,
+    default: 1,
+  },
+  {
     path: 'measure.steps',
     description: "Durations of test.step steps as keys of kind 'step'.",
     leaf: true,
@@ -208,6 +215,13 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     path: 'keys.dropQueryParams',
     description:
       'Query parameter names always removed from the key (e.g. cache busters with fixed names).',
+    leaf: true,
+    default: [],
+  },
+  {
+    path: 'keys.operations',
+    description:
+      'Endpoints that get a key per operation, such as POST /graphql#GetTickets instead of one POST /graphql for every GraphQL call.',
     leaf: true,
     default: [],
   },
@@ -625,6 +639,54 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
     leaf: true,
     default: 0.05,
   },
+  {
+    path: 'checks.nonSuccess',
+    description:
+      'Share of responses outside measure.successStatuses (e.g. fast 401s) must not exceed the limit; lower Wilson bound compared.',
+    leaf: false,
+  },
+  { path: 'checks.nonSuccess.enabled', description: 'Run this rule.', leaf: true, default: true },
+  {
+    path: 'checks.nonSuccess.minSamples',
+    description: 'Minimum samples for the rule to run.',
+    leaf: true,
+    default: 5,
+  },
+  {
+    path: 'checks.nonSuccess.limit',
+    description: 'Limit for keys without an entry in the thresholds file.',
+    leaf: false,
+  },
+  {
+    path: 'checks.nonSuccess.limit.api',
+    description:
+      'Endpoint keys: maximum share of responses outside measure.successStatuses, or null.',
+    leaf: true,
+    default: null,
+  },
+  {
+    path: 'checks.nonSuccess.margin',
+    description: 'Headroom added to the source run value when deriving this limit.',
+    leaf: false,
+  },
+  {
+    path: 'checks.nonSuccess.margin.factor',
+    description: 'Multiplier of the source non-success rate.',
+    leaf: true,
+    default: 1.5,
+  },
+  {
+    path: 'checks.nonSuccess.margin.add',
+    description: 'Added after multiplying.',
+    leaf: true,
+    default: 0.02,
+  },
+  {
+    path: 'checks.nonSuccess.margin.min',
+    description: 'Minimum derived limit.',
+    leaf: true,
+    default: 0.05,
+  },
   { path: 'gate', description: 'Gate policy: when violations fail the run.', leaf: false },
   {
     path: 'gate.tolerance',
@@ -711,6 +773,19 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
       'Warn (THRESHOLDS_LOOSENED_MUCH) when a derived time limit grows by more than this share.',
     leaf: true,
     default: 0.5,
+  },
+  {
+    path: 'thresholds.workloadShift',
+    description:
+      'Warning THRESHOLDS_WORKLOAD_SHIFT when a key gets a different number of samples per pass than in the thresholds run.',
+    leaf: false,
+  },
+  {
+    path: 'thresholds.workloadShift.factor',
+    description:
+      'Warn when samples per pass change by this factor or more in either direction; null turns the warning off.',
+    leaf: true,
+    default: 2,
   },
   { path: 'report', description: 'Run outputs.', leaf: false },
   {

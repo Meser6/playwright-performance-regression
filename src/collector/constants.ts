@@ -49,3 +49,6 @@ export const SAMPLE_LIMIT_PER_TEST = 20_000;
 
 /** collector.name in the sample batch (05-REQ-15). */
 export const COLLECTOR_NAME = 'playwright-js';
+
+/** Request body characters read for operation names; the rest is cut off (18-REQ-07, P-13). */
+export const OPERATION_BODY_LIMIT = 65_536;

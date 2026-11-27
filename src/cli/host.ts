@@ -86,4 +86,6 @@ export interface CliHost {
   removeDir(path: string): Promise<void>;
   /** Terminal questions on stdin and stdout (init). */
   createPrompt(): Prompt;
+  /** The shard merge of PW_PERF_MODE=merge in the working directory; returns the exit code (17-REQ-12). */
+  runMerge(): Promise<number>;
 }

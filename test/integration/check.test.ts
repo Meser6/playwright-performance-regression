@@ -92,14 +92,17 @@ describe('check', () => {
   );
 
   test(
-    '04-AC-37 --shard is RUN_SHARDED with exit code 1 of Playwright',
+    '04-AC-37 17-AC-08 --shard checks the tests of the shard with exit code 0, no shard file',
     async () => {
       const run = await harness.run(shared, {
         env: { PW_PERF_MODE: 'check' },
         args: ['--shard', '1/2'],
       });
-      expect(run.status, run.output).toBe(1);
-      expect(run.output).toContain('RUN_SHARDED');
+      expect(run.status, run.output).toBe(0);
+      expect(run.output).toContain('pw-perf · check · shard 1/2');
+      expect(run.output).toContain('only the tests of this shard were checked');
+      expect(run.output).not.toContain('RUN_SHARDED');
+      expect(existsSync(join(shared, 'reports/pw-perf', 'shard-1-of-2.json'))).toBe(false);
     },
     RUN_TIMEOUT,
   );

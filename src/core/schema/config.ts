@@ -81,6 +81,12 @@ const checks = obj({
     limit: limitByKind(ratio),
     margin: errorsMargin,
   }),
+  nonSuccess: obj({
+    enabled,
+    minSamples,
+    limit: obj({ api: nullable(ratio) }),
+    margin: errorsMargin,
+  }),
 });
 
 const uniqueStrings = (minLength?: number): Schema =>
@@ -134,6 +140,7 @@ export const packageConfig = obj({
         minItems: 1,
       },
     ),
+    coldSamples: int({ minimum: 0, maximum: 5 }),
     steps: oneOf(
       bool,
       obj({
@@ -180,6 +187,12 @@ export const packageConfig = obj({
     keepQueryValues: uniqueStrings(1),
     dropQueryParams: uniqueStrings(1),
     keyBuilder: constant('[function]'),
+    operations: arr(
+      obj(
+        { type: enumOf(['graphql', 'trpc']), match: urlPattern },
+        { required: ['type', 'match'] },
+      ),
+    ),
   }),
   checks,
   gate: obj({
@@ -205,6 +218,7 @@ export const packageConfig = obj({
     smallSampleN: int({ minimum: 1 }),
     hysteresis: obj({ relative: unit, ratio: num({ minimum: 0, maximum: 0.01 }) }),
     loosenWarnRelative: num({ minimum: 0, maximum: 100 }),
+    workloadShift: obj({ factor: nullable(num({ exclusiveMinimum: 1, maximum: 100 })) }),
   }),
   report: obj({ dir: str({ minLength: 1 }), html: bool, junit: bool, rawUrls: bool }),
   advanced: obj({
@@ -228,6 +242,7 @@ export const derivationSettings = obj(
         apdex: apdexMargin,
         wilson: wilsonMargin,
         errors: errorsMargin,
+        nonSuccess: errorsMargin,
       },
       { required: ['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors'] },
     ),

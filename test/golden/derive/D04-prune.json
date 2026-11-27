@@ -111,7 +111,7 @@
       {
         "kind": "api",
         "content": {
-          "schemaVersion": 2,
+          "schemaVersion": 3,
           "kind": "api",
           "generated": {
             "tool": {"name":"playwright-performance-regression","version":"0.1.0"},
@@ -129,16 +129,29 @@
                 "p99": {"relative":0.2,"minGapMs":50,"minGapRelative":0.1},
                 "apdex": {"absolute":0.05,"smallSampleAbsolute":0.1},
                 "wilson": {"factor":1.5,"add":0.02,"min":0.03,"max":0.15,"smallSampleMin":0.1},
-                "errors": {"factor":1.5,"add":0.02,"min":0.05}
+                "errors": {"factor":1.5,"add":0.02,"min":0.05},
+                "nonSuccess": {"factor":1.5,"add":0.02,"min":0.05}
               }
             },
             "browsers": ["chromium"],
             "playwrightVersion": "1.57.0",
             "host": {"platform":"linux","arch":"x64","ci":true,"cpuCount":4,"cpuModel":"AMD EPYC 7763"},
-            "normalization": "0a3f9c21d47b6e"
+            "normalization": "0a3f9c21d47b6e",
+            "coldSamples": 1,
+            "sourcePasses": 10
           },
           "entries": {
-            "GET /api/close": {"t":500,"median":230,"percentile":350,"p99":500,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/close": {
+              "t": 500,
+              "median": 230,
+              "percentile": 350,
+              "p99": 500,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
             "GET /api/incomplete": {"percentile":3000,"note":"Hand-set budget"},
             "GET /api/locked": {
               "t": 500,
@@ -151,9 +164,39 @@
               "locked": true,
               "note": "Hand-tuned after incident 42"
             },
-            "GET /api/loosened": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
-            "GET /api/loosened-much": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
-            "GET /api/mixed": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/loosened": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
+            "GET /api/loosened-much": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
+            "GET /api/mixed": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
             "GET /api/muted-active": {
               "t": 500,
               "median": 200,
@@ -164,7 +207,9 @@
               "maxErrorRate": 0.05,
               "gate": "warn",
               "note": "Known slow, ticket #8",
-              "until": "2026-12-01"
+              "until": "2026-12-01",
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
             },
             "GET /api/muted-expired": {
               "t": 500,
@@ -174,14 +219,36 @@
               "minApdex": 0.947,
               "maxWilson": 0.03,
               "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907},
               "note": "Known slow, ticket #7",
               "gate": "warn",
               "until": "2026-11-15"
             },
             "GET /api/muted-only": {"gate":"warn","note":"Backend migration","until":"2026-12-31"},
-            "GET /api/new": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/new": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
             "GET /api/small-n": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
-            "GET /api/tightened": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05},
+            "GET /api/tightened": {
+              "t": 500,
+              "median": 220,
+              "percentile": 364,
+              "p99": 492,
+              "minApdex": 0.947,
+              "maxWilson": 0.03,
+              "maxErrorRate": 0.05,
+              "maxNonSuccessRate": 0.05,
+              "source": {"count":200,"successCount":200,"passes":10,"share":0.0907}
+            },
             "GET /api/unseen-locked": {"t":500,"median":220,"percentile":364,"p99":492,"minApdex":0.947,"maxWilson":0.03,"maxErrorRate":0.05,"locked":true}
           }
         },

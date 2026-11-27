@@ -1,0 +1,97 @@
+# Sharded performance runs with playwright-performance-regression (pw-perf). Register as its own
+# pipeline instead of the basic recipe when one agent takes too long (docs/ci.md, "Sharded runs").
+# The shard job measures its part of the tests in all passes and publishes its shard file; the
+# merge job (no browsers) evaluates all shards as one run. Derive the thresholds with the same
+# number of shards and agent type as the measurement. Exit code of the merge: 2 (performance
+# regression) ends the job as "succeeded with issues", 3 (tool or config error, e.g. a missing
+# shard) fails it.
+trigger: none
+pr: none
+
+parameters:
+  - name: mode
+    displayName: 'test: measurement run, thresholds: derive the thresholds files'
+    type: string
+    default: test
+    values: [test, thresholds]
+
+schedules:
+  - cron: '0 3 * * 1'
+    displayName: Weekly measurement run
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: shard
+    timeoutInMinutes: 120
+    strategy:
+      parallel: 4 # the number of shards
+    variables:
+      PW_PERF_MODE: ${{ parameters.mode }}
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.x'
+      - script: npm ci
+        displayName: Install dependencies
+      - script: npx playwright install --with-deps chromium
+        displayName: Install Chromium
+      - bash: |
+          rm -f reports/pw-perf/outcome.json
+          npm run e2e -- --shard=$(System.JobPositionInPhase)/$(System.TotalJobsInPhase) || true
+          exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
+        displayName: Shard $(System.JobPositionInPhase)/$(System.TotalJobsInPhase)
+      - bash: |
+          mkdir -p $(Build.ArtifactStagingDirectory)/shard
+          cp reports/pw-perf/shard-*.json $(Build.ArtifactStagingDirectory)/shard/ || true
+        condition: always()
+        displayName: Collect the shard file
+      - publish: $(Build.ArtifactStagingDirectory)/shard
+        artifact: pw-perf-shard-$(System.JobPositionInPhase)
+        condition: always()
+        displayName: Publish the shard file
+
+  - job: merge
+    dependsOn: shard
+    condition: succeededOrFailed()
+    timeoutInMinutes: 15
+    variables:
+      PW_PERF_MODE: merge
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.x'
+      - script: npm ci
+        displayName: Install dependencies
+      - download: current
+        patterns: 'pw-perf-shard-*/*.json'
+        displayName: Download the shard files
+      - bash: |
+          mkdir -p reports/pw-perf
+          cp $(Pipeline.Workspace)/pw-perf-shard-*/shard-*.json reports/pw-perf/ || true
+          npx pw-perf
+          code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "##vso[task.complete result=SucceededWithIssues;]Performance regression (exit code 2)"
+            exit 0
+          fi
+          exit $code
+        displayName: Merge and evaluate
+      - task: PublishTestResults@2
+        condition: and(always(), eq('${{ parameters.mode }}', 'test'))
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: reports/pw-perf/junit.xml
+          testRunTitle: pw-perf
+          failTaskOnFailedTests: false
+          failTaskOnMissingResultsFile: false
+        displayName: Publish the test results
+      - publish: reports/pw-perf
+        artifact: pw-perf-report
+        condition: always()
+        displayName: Publish the report (and the thresholds files in mode thresholds)

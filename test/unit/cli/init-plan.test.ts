@@ -370,7 +370,7 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     ]);
     expect(
       CONFIG_OPTIONS.filter((o) => /^checks\.[^.]+$/u.test(o.path)).map((o) => o.path),
-    ).toEqual(['checks.time', 'checks.slowShare', 'checks.errors']);
+    ).toEqual(['checks.time', 'checks.slowShare', 'checks.errors', 'checks.nonSuccess']);
     for (const line of lines) expect(line.length, line).toBeLessThanOrEqual(100);
   });
 
@@ -469,6 +469,54 @@ describe('planInitChanges golden diffs (test/golden/init)', () => {
     });
     expect([...earlier.keys()]).not.toContain('pw-perf.config.js');
     expect(earlier.get('playwright.config.js')).toContain("require('./pw-perf.config').default)");
+  });
+
+  test('04-AC-69 a tsconfig with allowImportingTsExtensions gets the import with the .ts extension', () => {
+    const tsConfig =
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});\n";
+    const cjsConfig =
+      "const { defineConfig } = require('@playwright/test');\nmodule.exports = defineConfig({});\n";
+    const esmConfig =
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});\n";
+    const allow = `{
+  // node type stripping
+  "compilerOptions": { "module": "nodenext", "allowImportingTsExtensions": true, "noEmit": true, },
+}
+`;
+    const plan = (entries: Record<string, string>): Map<string, string> =>
+      new Map(
+        planInitChanges(detectProject(files(entries)), ANSWERS).changes.map((c) => [
+          c.path,
+          c.after,
+        ]),
+      );
+    const withExt = plan({
+      'package.json': '{"type":"module"}',
+      'tsconfig.json': allow,
+      'playwright.config.ts': tsConfig,
+    });
+    expect(withExt.get('playwright.config.ts')).toContain(
+      "import perfConfig from './pw-perf.config.ts';",
+    );
+    const without = plan({
+      'package.json': '{}',
+      'tsconfig.json': '{ "compilerOptions": { "module": "nodenext" } }',
+      'playwright.config.ts': tsConfig,
+    });
+    expect(without.get('playwright.config.ts')).toContain(
+      "import perfConfig from './pw-perf.config';",
+    );
+    // JavaScript projects stay as they were (04-REQ-46).
+    const esm = plan({ 'package.json': '{"type":"module"}', 'playwright.config.js': esmConfig });
+    expect(esm.get('playwright.config.js')).toContain(
+      "import perfConfig from './pw-perf.config.js';",
+    );
+    const cjs = plan({ 'package.json': '{}', 'playwright.config.js': cjsConfig });
+    expect(cjs.get('playwright.config.js')).toContain("require('./pw-perf.config'))");
+    expect(perfConfigRef('pw-perf.config.ts', null, true)).toEqual({
+      import: './pw-perf.config.ts',
+      require: "require('./pw-perf.config').default",
+    });
   });
 
   test('another package config format is never rewritten; the answers become a manual step', () => {
@@ -882,7 +930,7 @@ describe('recognized layouts (04-REQ-39)', () => {
       'tests/a.spec.ts': "import { test } from '@playwright/test';\ntest('a', () => {});\n",
     };
     const expected = (kind: string): string =>
-      `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 2\n}\n`;
+      `{\n  "entries": {},\n  "generated": null,\n  "kind": "${kind}",\n  "schemaVersion": 3\n}\n`;
     for (const measure of ['all', 'api', 'steps'] as const) {
       const plan = planInitChanges(detectProject(files(project)), { ...ANSWERS, measure });
       const created = plan.changes.filter((c) => c.path.startsWith('pw-perf-thresholds'));
@@ -897,7 +945,7 @@ describe('recognized layouts (04-REQ-39)', () => {
         expect(change.after).toBe(expected(kind));
         const parsed = parseThresholdsFile(change.after, change.path, kind);
         expect(parsed.ok && parsed.value).toEqual({
-          file: { schemaVersion: 2, kind, generated: null, entries: {} },
+          file: { schemaVersion: 3, kind, generated: null, entries: {} },
           migratedFrom: null,
         });
       }

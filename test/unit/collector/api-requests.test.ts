@@ -273,3 +273,45 @@ describe('TestCollector: API calls (15-REQ-05 – 15-REQ-09)', () => {
     expect(c.batch().apiRequests).toEqual([]);
   });
 });
+
+describe('TestCollector: operation names of API calls (15-REQ-20)', () => {
+  const operations = [
+    { type: 'graphql' as const, match: '/graphql' },
+    { type: 'trpc' as const, match: '/api/trpc/' },
+  ];
+
+  test('18-AC-06 request.post with data gives the names; the data is in no sample', async () => {
+    const c = collector({ operations });
+    const api = new FakeApi();
+    c.wrapRequest(api, 'request');
+    await api.post('/graphql', {
+      data: { operationName: 'X', query: 'query X { a }', variables: { card: 'marker-4111' } },
+    });
+    await api.get('/graphql', { params: { query: 'query Y { a }' } });
+    await api.get('/api/trpc/b.list,a.get?batch=1');
+    await api.get('/api/other');
+    await api.post('/graphql', { data: { variables: {} } });
+    await c.drain();
+    const batch = c.batch();
+    expect(batch.apiRequests.map((s) => s.operation)).toEqual([
+      ['X'],
+      ['Y'],
+      ['b.list', 'a.get'],
+      null,
+      null,
+    ]);
+    expect(batch.diagnostics.map((d) => d.code)).toEqual(['COLLECTOR_OPERATION_UNKNOWN']);
+    expect(JSON.stringify(batch)).not.toContain('marker-4111');
+    expect(validateBatch(batch), JSON.stringify(validateBatch.errors)).toBe(true);
+    expect(parseSampleBatch(JSON.stringify(batch), 't').ok).toBe(true);
+  });
+
+  test('without keys.operations API samples have no operation field', async () => {
+    const c = collector();
+    const api = new FakeApi();
+    c.wrapRequest(api, 'request');
+    await api.post('/graphql', { data: { operationName: 'X' } });
+    await c.drain();
+    expect(Object.hasOwn(c.batch().apiRequests[0] ?? {}, 'operation')).toBe(false);
+  });
+});

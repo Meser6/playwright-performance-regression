@@ -62,6 +62,7 @@ export function keysOnDefaultsWarning(
   kind: Kind,
   keys: readonly string[],
   env: string | null,
+  operationKeys = false,
 ): Issue {
   const one = keys.length === 1;
   const named = keys.slice(0, MAX_KEYS_IN_MESSAGE).join(', ');
@@ -70,9 +71,17 @@ export function keysOnDefaultsWarning(
   return {
     code: 'THRESHOLDS_KEYS_ON_DEFAULTS',
     message: `${plural(keys.length, `${KIND_NOUN[kind]} key`)} ${one ? 'has' : 'have'} no entry in ${path} and ${one ? 'is' : 'are'} evaluated with default thresholds: ${list}.`,
-    hint: `New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}; locked entries are kept.`,
+    hint: operationKeys
+      ? OPERATION_KEYS_HINT
+      : `New endpoints or steps, or keys renamed by a code or normalization change, get the default thresholds. Add entries with \`${THRESHOLDS_COMMAND}\`${env === null ? '' : ` (environment "${env}")`}; locked entries are kept.`,
   };
 }
+
+/**
+ * Hint of THRESHOLDS_UNSEEN_ENTRIES and THRESHOLDS_KEYS_ON_DEFAULTS for the api file when the
+ * normalization changed and the run has operation keys (18-REQ-12).
+ */
+export const OPERATION_KEYS_HINT = `keys.operations changed the endpoint keys (keys with #): derive thresholds again with \`${PRUNE_COMMAND}\`, review the diff and commit the files; locked entries are kept.`;
 
 /** major.minor of a version such as 1.57.2 (09-REQ-04). */
 export function majorMinor(version: string): string {
@@ -98,12 +107,15 @@ export interface SourceDifferences {
   timing: boolean;
   /** The normalization differs: the keys are not comparable. */
   keys: boolean;
+  /** measure.coldSamples differs: other samples are timed (08-REQ-41). */
+  cold: boolean;
 }
 
 export function sourceDifferences(generated: Generated, source: RunSource): SourceDifferences {
   const diffs: string[] = [];
   let timing = false;
   let keys = false;
+  let cold = false;
   if (!sameList(generated.browsers, source.browsers)) {
     diffs.push(`browsers ${listText(generated.browsers)} / ${listText(source.browsers)}`);
     timing = true;
@@ -125,8 +137,20 @@ export function sourceDifferences(generated: Generated, source: RunSource): Sour
     diffs.push(`normalization ${generated.normalization} / ${source.normalization}`);
     keys = true;
   }
-  return { diffs, timing, keys };
+  // A file written by 1.0.x has no coldSamples: the field is not compared (09-REQ-04).
+  if (
+    generated.coldSamples !== undefined &&
+    source.coldSamples !== undefined &&
+    generated.coldSamples !== source.coldSamples
+  ) {
+    diffs.push(`coldSamples ${generated.coldSamples} / ${source.coldSamples}`);
+    cold = true;
+  }
+  return { diffs, timing, keys, cold };
 }
+
+/** Hint of THRESHOLDS_SOURCE_MISMATCH for a different measure.coldSamples (09-REQ-04). */
+export const COLD_SAMPLES_HINT = `Another measure.coldSamples changes which samples are timed: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`;
 
 /** Warnings about the `generated` block of a loaded file (09-REQ-04). */
 export function generatedWarnings(
@@ -155,7 +179,7 @@ export function generatedWarnings(
   }
 
   // One warning per file with every differing field (09-REQ-04, 09-D-13).
-  const { diffs, timing, keys } = sourceDifferences(generated, source);
+  const { diffs, timing, keys, cold } = sourceDifferences(generated, source);
   if (diffs.length > 0) {
     const hints: string[] = [];
     if (timing) {
@@ -165,9 +189,10 @@ export function generatedWarnings(
     }
     if (keys) {
       hints.push(
-        `Another normalization changes the keys: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
+        'Another normalization (keys.* options or the baseURL origins) changes the keys: derive thresholds again with `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>` to drop the entries of the old keys, then review the diff.',
       );
     }
+    if (cold) hints.push(COLD_SAMPLES_HINT);
     issues.push({
       code: 'THRESHOLDS_SOURCE_MISMATCH',
       message: `Thresholds in ${path} come from a run with other conditions (thresholds / this run): ${diffs.join('; ')}.`,
@@ -178,12 +203,29 @@ export function generatedWarnings(
 }
 
 /** THRESHOLDS_UNSEEN_ENTRIES (09-REQ-05). */
-export function unseenWarning(path: string, unseen: readonly string[]): Issue {
+export function unseenWarning(
+  path: string,
+  unseen: readonly string[],
+  operationKeys = false,
+): Issue {
   return {
     code: 'THRESHOLDS_UNSEEN_ENTRIES',
     message: `${plural(unseen.length, 'entry', 'entries')} in ${path} ${unseen.length === 1 ? 'was' : 'were'} not seen in this run.`,
-    hint: `Run the full suite, or remove stale entries with \`${PRUNE_COMMAND}\`.`,
+    hint: operationKeys
+      ? OPERATION_KEYS_HINT
+      : `Run the full suite, or remove stale entries with \`${PRUNE_COMMAND}\`.`,
   };
+}
+
+/** Whether the api keys of a run come from a changed keys.operations (18-REQ-12). */
+export function operationKeysChanged(
+  kind: Kind,
+  generated: Generated | null,
+  source: RunSource,
+  keys: readonly string[],
+): boolean {
+  if (kind !== 'api' || generated === null) return false;
+  return generated.normalization !== source.normalization && keys.some((k) => k.includes('#'));
 }
 
 /** THRESHOLDS_FILE_OUTDATED (02-REQ-12). */

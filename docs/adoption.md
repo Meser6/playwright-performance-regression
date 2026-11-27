@@ -40,6 +40,10 @@ import perfConfig from './pw-perf.config';
 export default withPerf(defineConfig({/* unchanged */}), perfConfig);
 ```
 
+With `"allowImportingTsExtensions": true` in `tsconfig.json` (TypeScript run by Node without a
+build, `module: "nodenext"`), the wizard writes the import with its extension,
+`import perfConfig from './pw-perf.config.ts'`, which `tsc` then accepts.
+
 ```ts
 // fixtures.ts
 import { test as base } from '@playwright/test';
@@ -141,18 +145,23 @@ The number of samples per endpoint decides which checks run. For each endpoint k
 samples = calls per test × tests that call it × repetitions
 ```
 
-| Check             | Minimum successful samples (default)              |
-| ----------------- | ------------------------------------------------- |
-| median            | 5                                                 |
-| error rate        | 5                                                 |
-| percentile (p95)  | 20                                                |
-| apdex, slow share | 20 (and an entry with `t` in the thresholds file) |
-| p99               | 100                                               |
+| Check             | Minimum successful samples (default)               |
+| ----------------- | -------------------------------------------------- |
+| median            | 5                                                  |
+| error rate        | 5                                                  |
+| non-success share | 5 (all samples; an entry with `maxNonSuccessRate`) |
+| percentile (p95)  | 20                                                 |
+| apdex, slow share | 20 (and an entry with `t` in the thresholds file)  |
+| p99               | 100                                                |
 
 Example: an endpoint called once by 2 tests with the default 5 passes has 10 samples, so the
 median and error-rate checks run and the p95 check is skipped. With 2 tests and
 `PW_PERF_PASSES=10` it reaches 20 samples and p95 is checked too. A key below a check's minimum is reported as "median
 only" or "not evaluated" instead of failing; see [FAQ](faq.md#why-do-most-keys-have-too-few-samples-or-are-evaluated-by-median-only).
+Since 1.1.0 the first sample of each key in each pass is cold (`measure.coldSamples: 1`): the
+cold samples are left out of the evaluated statistics when at least 5 warm samples remain, so a key
+called once per pass keeps all its samples, and a key called twice per pass is evaluated on the
+second calls ([Cold samples](thresholds.md#5-cold-samples-the-first-call-is-set-apart)).
 
 Rough run time: `passes × (measured tests × average test time + setup)`: the setup projects and
 the steps of your test script run once per pass. With 20 tests of 6 s and 5 passes that is about

@@ -13,6 +13,7 @@ const SHARE_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ]);
 
 /**

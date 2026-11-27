@@ -104,7 +104,8 @@ describe('html golden files', () => {
       };
       expect(golden.input, `${name}: input equals the run report case`).toEqual(source.input);
       expect(data, name).toEqual(golden.expected);
-      expect(JSON.stringify(data)).not.toContain('"durations"');
+      // samples.durations is dropped; cold.durations (08-REQ-43) stays.
+      expect(JSON.stringify(data)).not.toMatch(/"samples":\{"durations"/u);
       expect(data).toEqual(withoutDurations(source.input));
     }
   });

@@ -65,6 +65,17 @@ const noTiming = {
   fromServiceWorker: constant(false),
 };
 
+/** Operation names of keys.operations (18-REQ-09); never the request body. */
+const operation = nullable(
+  arr(
+    str({
+      pattern: /^[A-Za-z0-9_.-]{1,100}$/u,
+      format: 'an operation name of letters, digits, "_", "." and "-" (at most 100)',
+    }),
+    { minItems: 1 },
+  ),
+);
+
 const requestSample = obj(
   {
     method: str({ pattern: /^[A-Z]+$/u }),
@@ -78,6 +89,7 @@ const requestSample = obj(
     ttfb: msOrNull,
     timeSource: enumOf(['browser', 'node']),
     fromServiceWorker: bool,
+    operation,
   },
   {
     required: [
@@ -117,6 +129,7 @@ const apiRequestSample = obj(
     startTime: epochMs,
     duration: msOrNull,
     source: enumOf(['request', 'context', 'tracked']),
+    operation,
   },
   {
     required: ['method', 'url', 'status', 'startTime', 'duration', 'source'],
@@ -137,7 +150,7 @@ const apiRequestSample = obj(
 
 export const sampleBatch = obj(
   {
-    schemaVersion: constant(3),
+    schemaVersion: constant(4),
     collector: obj(
       {
         name: str({ pattern: /^[a-z0-9-]+$/u }),
@@ -156,6 +169,8 @@ export const sampleBatch = obj(
 // ---- thresholds.schema.json -----------------------------------------------------------------
 
 const LIMIT_FIELDS = ['t', 'median', 'percentile', 'p99', 'minApdex', 'maxWilson', 'maxErrorRate'];
+/** Limit fields of an entry, with the optional maxNonSuccessRate of 1.1.0 (10-REQ-25). */
+const ENTRY_LIMIT_FIELDS = [...LIMIT_FIELDS, 'maxNonSuccessRate'];
 
 const thresholdsEntry = obj(
   {
@@ -166,6 +181,11 @@ const thresholdsEntry = obj(
     minApdex: nullable(ratio),
     maxWilson: nullable(ratio),
     maxErrorRate: ratio,
+    maxNonSuccessRate: ratio,
+    source: obj(
+      { count, successCount: count, passes: int({ minimum: 1 }), share: ratio },
+      { required: ['count', 'successCount', 'passes', 'share'] },
+    ),
     locked: constant(true),
     note: str({ minLength: 1, maxLength: 500 }),
     gate: constant('warn'),
@@ -173,7 +193,7 @@ const thresholdsEntry = obj(
   },
   {
     refine(value, pointer, sink) {
-      if (![...LIMIT_FIELDS, 'gate'].some((name) => Object.hasOwn(value, name))) {
+      if (![...ENTRY_LIMIT_FIELDS, 'gate'].some((name) => Object.hasOwn(value, name))) {
         sink.add(pointer, 'must have at least one limit or gate');
       }
       if (Object.hasOwn(value, 'gate')) {
@@ -203,6 +223,8 @@ const thresholdsGenerated = obj(
     playwrightVersion: nonEmpty,
     host: hostFingerprint,
     normalization: fingerprint,
+    coldSamples: int({ minimum: 0, maximum: 5 }),
+    sourcePasses: int({ minimum: 1 }),
   },
   {
     required: [
@@ -223,7 +245,7 @@ const thresholdsGenerated = obj(
 
 export const thresholdsFile = obj(
   {
-    schemaVersion: constant(2),
+    schemaVersion: constant(3),
     kind,
     generated: oneOf(thresholdsGenerated, nul),
     entries: record(key, thresholdsEntry),
@@ -305,7 +327,7 @@ const stats = obj(
 
 const check = obj(
   {
-    rule: enumOf(['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors']),
+    rule: enumOf(['median', 'percentile', 'p99', 'apdex', 'wilson', 'errors', 'nonSuccess']),
     n: int({ minimum: 1 }),
     actual: num({ minimum: 0 }),
     observed: oneOf(num({ minimum: 0, maximum: 1 }), nul),
@@ -330,6 +352,28 @@ const check = obj(
   },
 );
 
+const workloadSide = obj(
+  {
+    count,
+    successCount: count,
+    passes: int({ minimum: 1 }),
+    workers: int({ minimum: 1 }),
+    share: ratio,
+  },
+  { required: ['count', 'successCount', 'passes', 'workers', 'share'] },
+);
+
+/** 09-REQ-40. */
+const workload = obj(
+  {
+    base: workloadSide,
+    now: workloadSide,
+    perPassRatio: nullable(num({ minimum: 0 })),
+    shifted: bool,
+  },
+  { required: ['base', 'now', 'perPassRatio', 'shifted'] },
+);
+
 const keyEvaluation = obj(
   {
     result: enumOf(['pass', 'fail', 'not-evaluated']),
@@ -344,8 +388,9 @@ const keyEvaluation = obj(
         minApdex: nullable(ratio),
         maxWilson: nullable(ratio),
         maxErrorRate: ratio,
+        maxNonSuccessRate: nullable(ratio),
       },
-      { required: LIMIT_FIELDS },
+      { required: ENTRY_LIMIT_FIELDS },
     ),
     checks: arr(check),
     muted: oneOf(
@@ -355,8 +400,9 @@ const keyEvaluation = obj(
       ),
       nul,
     ),
+    workload: oneOf(workload, nul),
   },
-  { required: ['result', 'reason', 'thresholdSource', 'limits', 'checks', 'muted'] },
+  { required: ['result', 'reason', 'thresholdSource', 'limits', 'checks', 'muted', 'workload'] },
 );
 
 /** Hint codes of 11-REQ-34, in rule priority order. */
@@ -490,6 +536,27 @@ const testBreakdown = oneOf(
   nul,
 );
 
+/** 08-REQ-43. */
+const cold = obj(
+  {
+    count: int({ minimum: 1 }),
+    excluded: bool,
+    reason: oneOf(constant('too-few-samples'), nul),
+    durations: arr(ms, { minItems: 1, maxItems: 5 }),
+    max: ms,
+    warmP50: msOrNull,
+    ratio: nullable(num({ minimum: 0 })),
+    test: testRef,
+  },
+  { required: ['count', 'excluded', 'reason', 'durations', 'max', 'warmP50', 'ratio', 'test'] },
+);
+
+/** 08-REQ-47. */
+const failedTiming = obj(
+  { status: int({ minimum: 100, maximum: 599 }), count: int({ minimum: 1 }), p50: ms, p95: ms },
+  { required: ['status', 'count', 'p50', 'p95'] },
+);
+
 const aggregateProps = {
   count,
   successCount: count,
@@ -524,6 +591,9 @@ const aggregateProps = {
   evaluation: keyEvaluation,
   histogram,
   hints: arr(hint, { maxItems: 3 }),
+  cold: oneOf(cold, nul),
+  nonSuccessCount: oneOf(count, nul),
+  failedTimings: arr(failedTiming, { maxItems: 5 }),
 };
 const aggregateRequired = [
   'count',
@@ -541,6 +611,9 @@ const aggregateRequired = [
   'evaluation',
   'histogram',
   'hints',
+  'cold',
+  'nonSuccessCount',
+  'failedTimings',
 ];
 
 const aggregate = obj(aggregateProps, { required: aggregateRequired });
@@ -558,9 +631,41 @@ const stepAggregate = obj(
   { required: [...aggregateRequired, 'location', 'stepErrorsFromFailedTests'] },
 );
 
+const hostInfo = obj(
+  {
+    platform: str(),
+    arch: str(),
+    nodeVersion: str(),
+    ci: bool,
+    cpuCount: int({ minimum: 1 }),
+    cpuModel: str(),
+  },
+  { required: ['platform', 'arch', 'nodeVersion', 'ci', 'cpuCount', 'cpuModel'] },
+);
+
+const passesInfo = obj(
+  {
+    planned: int({ minimum: 1 }),
+    completed: int({ minimum: 1 }),
+    failed: arr(int({ minimum: 2 })),
+  },
+  { required: ['planned', 'completed', 'failed'] },
+);
+
+const testsInfo = obj(
+  {
+    status: testsStatus,
+    expected: count,
+    unexpected: count,
+    flaky: count,
+    skipped: count,
+  },
+  { required: ['status', 'expected', 'unexpected', 'flaky', 'skipped'] },
+);
+
 export const runReport = obj(
   {
-    schemaVersion: constant(4),
+    schemaVersion: constant(5),
     tool,
     runId,
     mode,
@@ -588,25 +693,49 @@ export const runReport = obj(
       ),
       nul,
     ),
-    host: obj(
-      {
-        platform: str(),
-        arch: str(),
-        nodeVersion: str(),
-        ci: bool,
-        cpuCount: int({ minimum: 1 }),
-        cpuModel: str(),
-      },
-      { required: ['platform', 'arch', 'nodeVersion', 'ci', 'cpuCount', 'cpuModel'] },
-    ),
+    host: hostInfo,
     playwright: obj({ version: str() }, { required: ['version'] }),
-    passes: obj(
-      {
-        planned: int({ minimum: 1 }),
-        completed: int({ minimum: 1 }),
-        failed: arr(int({ minimum: 2 })),
-      },
-      { required: ['planned', 'completed', 'failed'] },
+    passes: passesInfo,
+    // 17-REQ-17: null without shards, the merged shards after PW_PERF_MODE=merge.
+    shards: oneOf(
+      obj(
+        {
+          total: int({ minimum: 1 }),
+          missing: arr(int({ minimum: 1 })),
+          list: arr(
+            obj(
+              {
+                index: int({ minimum: 1 }),
+                runId,
+                startedAt: timestamp,
+                finishedAt: timestamp,
+                status: testsStatus,
+                passes: passesInfo,
+                tests: testsInfo,
+                samples: count,
+                host: hostInfo,
+                buildUrl: nonEmptyOrNull,
+              },
+              {
+                required: [
+                  'index',
+                  'runId',
+                  'startedAt',
+                  'finishedAt',
+                  'status',
+                  'passes',
+                  'tests',
+                  'samples',
+                  'host',
+                  'buildUrl',
+                ],
+              },
+            ),
+          ),
+        },
+        { required: ['total', 'missing', 'list'] },
+      ),
+      nul,
     ),
     runConditions: obj(
       {
@@ -628,16 +757,7 @@ export const runReport = obj(
       },
       { required: ['workers', 'projects', 'overriddenSettings'] },
     ),
-    tests: obj(
-      {
-        status: testsStatus,
-        expected: count,
-        unexpected: count,
-        flaky: count,
-        skipped: count,
-      },
-      { required: ['status', 'expected', 'unexpected', 'flaky', 'skipped'] },
-    ),
+    tests: testsInfo,
     evaluation: obj(
       {
         status: evaluationStatus,
@@ -679,6 +799,7 @@ export const runReport = obj(
       'host',
       'playwright',
       'passes',
+      'shards',
       'runConditions',
       'tests',
       'evaluation',

@@ -3,6 +3,7 @@
 import { DEFAULT_CONFIG } from '../config/index.ts';
 import { buildOutcome } from '../evaluate/outcome.ts';
 import { exceedance, formatActual, formatLimit, formatMs, overText } from '../format/violation.ts';
+import { compileStatusMatcher } from '../stats/classification.ts';
 import type { Aggregate, Check, Issue, KeyEvaluation, Kind, RunReport } from '../types/index.ts';
 
 /** File name in report.dir (16-REQ-01, 16-D-02). */
@@ -21,6 +22,7 @@ const RULE_ORDER: readonly Check['rule'][] = [
   'apdex',
   'wilson',
   'errors',
+  'nonSuccess',
 ];
 
 const SUITES: readonly { kind: Kind; name: string; classname: string }[] = [
@@ -150,14 +152,28 @@ interface Ctx {
   report: RunReport;
   level: string;
   details: string;
+  /** measure.successStatuses of the report's config (08-REQ-01). */
+  isSuccess: (label: string) => boolean;
 }
 
+/** Statuses named in a nonSuccess failure line (16-REQ-21). */
+const NON_SUCCESS_STATUSES = 3;
+
 /** One line for a failed check, as in the console violation table (16-REQ-09). */
-function checkLine(check: Check, evaluation: KeyEvaluation, ctx: Ctx): string {
+function checkLine(
+  check: Check,
+  evaluation: KeyEvaluation,
+  ctx: Ctx,
+  aggregate?: Aggregate,
+): string {
   const rule = check.rule === 'percentile' ? ctx.level : check.rule;
   const sign = check.rule === 'apdex' ? '<' : '>';
   const source = evaluation.thresholdSource === 'file' ? 'thresholds file' : 'default thresholds';
-  let line = `${rule} ${formatActual(check)} ${sign} limit ${formatLimit(check)} (${overText(check)}), ${String(check.n)} samples, ${source}`;
+  const statuses =
+    check.rule === 'nonSuccess' && aggregate !== undefined
+      ? nonSuccessStatuses(aggregate, ctx)
+      : '';
+  let line = `${rule} ${formatActual(check)} ${sign} limit ${formatLimit(check)} (${overText(check)}), ${String(check.n)} samples${statuses}, ${source}`;
   if (check.hardLimitExceeded) line += ', HARD limit';
   if (evaluation.muted?.expired === true) line += `, muting expired on ${evaluation.muted.until}`;
   return line;
@@ -167,11 +183,22 @@ function share(value: number): string {
   return value.toFixed(3);
 }
 
+/** Statuses outside successStatuses counted by the nonSuccess check: ": 20 × 401" (16-REQ-21). */
+function nonSuccessStatuses(aggregate: Aggregate, ctx: Ctx): string {
+  const labels = Object.entries(aggregate.statuses)
+    .filter(([label]) => /^[1-5][0-9]{2}$/u.test(label) && !ctx.isSuccess(label))
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .slice(0, NON_SUCCESS_STATUSES)
+    .map(([label, n]) => `${String(n)} × ${label}`);
+  return labels.length === 0 ? '' : `: ${labels.join(', ')}`;
+}
+
 /** Body of a failure (and of the not-blocking system-out, 16-REQ-09). */
 function violationBody(key: string, aggregate: Aggregate, checks: Check[], ctx: Ctx): string[] {
   const evaluation = aggregate.evaluation;
   const lines = checks.map(
-    (c) => `${checkLine(c, evaluation, ctx)} (${c.blocking ? 'blocking' : 'not blocking'})`,
+    (c) =>
+      `${checkLine(c, evaluation, ctx, aggregate)} (${c.blocking ? 'blocking' : 'not blocking'})`,
   );
   const l = evaluation.limits;
   let limits = `Limits: median ${formatMs(l.median)}, ${ctx.level} ${formatMs(l.percentile)}, p99 ${formatMs(l.p99)}, errors <= ${share(l.maxErrorRate)}`;
@@ -180,6 +207,7 @@ function violationBody(key: string, aggregate: Aggregate, checks: Check[], ctx: 
     if (l.minApdex !== null) limits += `, apdex >= ${share(l.minApdex)}`;
     if (l.maxWilson !== null) limits += `, wilson <= ${share(l.maxWilson)}`;
   }
+  if (l.maxNonSuccessRate !== null) limits += `, nonSuccess <= ${share(l.maxNonSuccessRate)}`;
   lines.push(limits);
   lines.push(`Samples: ${String(aggregate.count)}, errors ${String(aggregate.errorCount)}`);
   const slowest = aggregate.slowest[0];
@@ -275,6 +303,29 @@ function levelOf(report: RunReport): string {
   );
 }
 
+/**
+ * system-out lines of 1.1.0 (16-REQ-21): `workload: 40 → 12 samples (per pass 4.0 → 2.4)` for a
+ * key with evaluation.workload and `cold start: first call 1840 ms, warm p50 120 ms` for a key
+ * whose cold samples were left out of the statistics.
+ */
+function contextLines(aggregate: Aggregate): string[] {
+  const lines: string[] = [];
+  const workload = aggregate.evaluation.workload;
+  if (workload !== null) {
+    const perPass = (side: typeof workload.base): string => (side.count / side.passes).toFixed(1);
+    lines.push(
+      `workload: ${String(workload.base.count)} → ${String(workload.now.count)} samples (per pass ${perPass(workload.base)} → ${perPass(workload.now)})`,
+    );
+  }
+  const cold = aggregate.cold;
+  if (cold?.excluded === true && cold.warmP50 !== null) {
+    // Cold samples of several passes (08-REQ-41): the slowest of them (16-REQ-21).
+    const calls = cold.count === 1 ? 'first call' : `slowest of ${String(cold.count)} first calls`;
+    lines.push(`cold start: ${calls} ${formatMs(cold.max)}, warm p50 ${formatMs(cold.warmP50)}`);
+  }
+  return lines;
+}
+
 /** Test case of one key (16-REQ-05, 16-REQ-06, 16-REQ-07). */
 function keyCase(
   kind: Kind,
@@ -300,11 +351,12 @@ function keyCase(
     if (blocking !== undefined) {
       children.push({
         tag: 'failure',
-        attrs: { type: blocking.rule, message: checkLine(blocking, evaluation, ctx) },
+        attrs: { type: blocking.rule, message: checkLine(blocking, evaluation, ctx, aggregate) },
         text: body.join('\n'),
       });
     } else if (muted !== null && isMuteActive(evaluation)) {
-      const exceeded = first === undefined ? '' : `; ${checkLine(first, evaluation, ctx)}`;
+      const exceeded =
+        first === undefined ? '' : `; ${checkLine(first, evaluation, ctx, aggregate)}`;
       children.push({
         tag: 'skipped',
         attrs: { message: `muted until ${muted.until}: ${muted.note}${exceeded}` },
@@ -316,6 +368,13 @@ function keyCase(
     }
   } else if (muted !== null && isMuteActive(evaluation)) {
     children.push({ tag: 'system-out', text: `muted until ${muted.until}: ${muted.note}` });
+  }
+  // Workload and cold start of the key (16-REQ-21), appended to its system-out.
+  const context = contextLines(aggregate);
+  if (context.length > 0) {
+    const out = children.find((c) => c.tag === 'system-out');
+    if (out === undefined) children.push({ tag: 'system-out', text: context.join('\n') });
+    else out.text = [out.text ?? '', ...context].join('\n');
   }
   return {
     classname,
@@ -422,6 +481,9 @@ export function buildJunitXml(report: RunReport): string {
     report,
     level: levelOf(report),
     details: report.config.report?.html === false ? 'report.json' : 'report.html',
+    isSuccess: compileStatusMatcher(
+      report.config.measure?.successStatuses ?? DEFAULT_CONFIG.measure.successStatuses,
+    ),
   };
   const ci = report.ci;
   const suites: Suite[] = [
@@ -437,8 +499,8 @@ export function buildJunitXml(report: RunReport): string {
         ['pw-perf.evaluation', report.evaluation.status],
         ['pw-perf.exitCode', String(exitCode)],
         ['pw-perf.passes', `${String(report.passes.completed)}/${String(report.passes.planned)}`],
-        // Number of merged shards (17-REQ-17); 0 until a merge writes the report.
-        ['pw-perf.shards', '0'],
+        // Number of merged shards (16-REQ-13, 17-REQ-17); 0 without a merge.
+        ['pw-perf.shards', String(report.shards?.list.length ?? 0)],
         ['pw-perf.commit', ci?.commit ?? ''],
         ['pw-perf.branch', ci?.branch ?? ''],
         ['pw-perf.buildUrl', ci?.buildUrl ?? ''],

@@ -1,0 +1,57 @@
+# Sharded performance runs with playwright-performance-regression (pw-perf). Save as
+# .gitlab/perf.gitlab-ci.yml instead of the basic recipe when one runner takes too long
+# (docs/ci.md, "Sharded runs"). The perf-shard jobs measure their part of the tests in all passes
+# and keep reports/pw-perf/shard-*.json; perf-merge (no browsers) evaluates all shards as one run.
+# The mode comes from the pipeline variable PERF_MODE (test or thresholds), not from PW_PERF_MODE:
+# a variable given when the pipeline is started would also override PW_PERF_MODE: merge of the
+# merge job. Derive the thresholds with the same number of shards and runner type as the
+# measurement. Exit code of the merge: 2 (performance regression) is a soft failure, 3 (tool or
+# config error, e.g. a missing shard) fails the job.
+variables:
+  PERF_MODE: test
+
+perf-shard:
+  image: node:22
+  timeout: 2h
+  parallel: 4 # the number of shards
+  variables:
+    PW_PERF_MODE: $PERF_MODE
+  # Scheduled pipelines (create a weekly schedule) and pipelines started by hand with PERF_MODE.
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+  before_script:
+    - npm ci
+    - npx playwright install --with-deps chromium
+  script:
+    - rm -f reports/pw-perf/outcome.json
+    - npm run e2e -- --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL || true
+    - exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
+  artifacts:
+    when: always
+    paths:
+      - reports/pw-perf/shard-*.json
+    expire_in: 7 days
+
+perf-merge:
+  image: node:22
+  timeout: 15m
+  needs: [perf-shard]
+  variables:
+    PW_PERF_MODE: merge
+  # Also after a failed shard: the merge reports the missing shards.
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+      when: always
+  allow_failure:
+    exit_codes: 2
+  before_script:
+    - npm ci
+  script:
+    - npx pw-perf
+  artifacts:
+    when: always
+    paths:
+      - reports/pw-perf/
+    reports:
+      junit: reports/pw-perf/junit.xml
+    expire_in: 30 days

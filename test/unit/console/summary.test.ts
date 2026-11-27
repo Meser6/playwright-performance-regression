@@ -91,6 +91,18 @@ describe('09-AC-36 table of the keys on default thresholds (09-REQ-37)', () => {
     expect(dumb).toContain('| ✔ | api  | GET /api/new-00');
   });
 
+  test('no row for a key without successful samples (intentional 404s)', () => {
+    const r = withDefaults(2);
+    const missing = r.endpoints['GET /api/new-01'];
+    if (missing === undefined) throw new Error('no key');
+    missing.successCount = 0;
+    missing.nonSuccessCount = missing.count;
+    expect(rowsOf(formatSummary(r, { width: 120, color: false }))).toEqual([
+      '✅|api|GET /api/new-00|8|90 ms|90 ms|2000 / 2000 ms|pass',
+      '✅|api|GET /api/users/:id|8|90 ms|90 ms|2000 / 2000 ms|pass',
+    ]);
+  });
+
   test('no table in thresholds mode, with a missing file or a file without entries', () => {
     const title = 'On default thresholds';
     const thresholds = withDefaults(1);
@@ -360,5 +372,27 @@ describe('console summary golden files', () => {
     expect(truncateMiddle('GET /api/abcdefghij', 10)).toBe('GET /…ghij');
     expect(truncateMiddle('short', 10)).toBe('short');
     expect(Array.from(truncateMiddle('x'.repeat(100), 30))).toHaveLength(30);
+  });
+});
+
+describe('workload in the violations table (09-REQ-42)', () => {
+  test('09-AC-41 the n column shows now/base and a Workload line follows the table (golden workload-shift)', () => {
+    const text = formatSummary(report('workload-shift'), { width: 120, color: false });
+    expect(text).toMatch(/│ GET \/api\/tickets +│ median .*│ 8\/40 │ file/u);
+    expect(text).toContain(
+      '  Workload: 5 passes · 1 worker · 14 samples (thresholds run: 10 passes · 1 worker · 80 samples)',
+    );
+    expect(text).toBe(readFileSync(join(DIR, 'workload-shift.w120.txt'), 'utf8'));
+    // Without a source block the column shows n alone and there is no Workload line.
+    const plain = formatSummary(report('failed-run'), { width: 120, color: false });
+    expect(plain).not.toContain('Workload:');
+    expect(plain).not.toMatch(/│ +\d+\/\d+ │/u);
+  });
+
+  test('a shifted key has its n cell in yellow', () => {
+    const text = formatSummary(report('workload-shift'), { width: 120, color: true });
+    // GET /api/search is shifted (×0.30): its row is red (blocking), its n cell yellow.
+    const row = text.split('\n').find((l) => l.includes('/api/search')) ?? '';
+    expect(row).toContain('\u001b[33m');
   });
 });

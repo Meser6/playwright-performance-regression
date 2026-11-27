@@ -308,6 +308,17 @@ code,
   color: var(--fg-3);
 }
 
+.chip.warn,
+.chip.warn b,
+.chip.warn .i {
+  color: var(--warn);
+}
+
+.chip.warn {
+  border-color: var(--warn-mark);
+  background: var(--warn-soft);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1980,6 +1991,27 @@ td.tk2 > * {
 
 .stc .e {
   color: var(--bad);
+}
+
+/* 1.1.0 (11-REQ-61): cold vs warm, unsuccessful responses, workload. */
+.cw {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wv,
+.wv th {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.ev {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.ft td:nth-last-child(-n + 2) {
+  text-align: right;
 }
 
 .facts {
