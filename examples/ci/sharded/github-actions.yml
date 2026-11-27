@@ -1,0 +1,82 @@
+# Sharded performance runs with playwright-performance-regression (pw-perf). Save as
+# .github/workflows/perf.yml instead of the basic recipe when one machine takes too long
+# (docs/ci.md, "Sharded runs"). Every shard job measures its part of the tests in all passes and
+# uploads reports/pw-perf/shard-<i>-of-<n>.json; the merge job (no browsers) evaluates all shards
+# as one run and writes one report, junit.xml, outcome.json and, in mode thresholds, the
+# thresholds files (copied to reports/pw-perf/ for the artifact).
+# Derive the thresholds with the same number of shards and machine type as the measurement.
+# The exit code of the merge comes from reports/pw-perf/outcome.json: 0 ok, 2 performance
+# regression, 3 tool or config error (e.g. a missing shard).
+name: Performance
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'test: measurement run, thresholds: derive the thresholds files'
+        type: choice
+        options: [test, thresholds]
+        default: test
+
+jobs:
+  shard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4] # also change the 4 in --shard below
+    env:
+      PW_PERF_MODE: ${{ inputs.mode || 'test' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Shard ${{ matrix.shard }}/4
+        run: |
+          rm -f reports/pw-perf/outcome.json
+          npm run e2e -- --shard=${{ matrix.shard }}/4 || true
+          exit "$(node -p "require('./reports/pw-perf/outcome.json').exitCode" 2>/dev/null || echo 3)"
+      - name: Upload the shard file
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pw-perf-shard-${{ matrix.shard }}
+          path: reports/pw-perf/shard-*.json
+          retention-days: 7
+
+  merge:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PW_PERF_MODE: merge
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download the shard files
+        uses: actions/download-artifact@v7
+        with:
+          pattern: pw-perf-shard-*
+          path: reports/pw-perf
+          merge-multiple: true
+      - name: Merge and evaluate
+        run: npx pw-perf
+      - name: Upload the performance report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pw-perf-report
+          path: reports/pw-perf/
+          retention-days: 30
