@@ -246,9 +246,11 @@ export class Aggregator {
   }
 
   /**
-   * Starts a new input segment (17-REQ-15): the cold-sample counter of every key starts again
-   * from zero, as each shard machine starts its own application. Without it the whole input is
-   * one segment.
+   * Starts a new input segment (08-REQ-41, 17-REQ-15): the cold-sample counter of every key starts
+   * again from zero, as each pass (a new Playwright process, with webServer a new start of the
+   * application) and each shard machine starts the application again. The caller starts one
+   * before every pass after the first and before every shard; without it the whole input is one
+   * segment.
    */
   startSegment(): void {
     this.segment += 1;
@@ -494,8 +496,8 @@ export class Aggregator {
   }
 
   /**
-   * Decides on the cold samples of a key (08-REQ-42): with at least coldSamples + minSamples
-   * timed samples they stay out of the statistics, otherwise they are added to them. Returns the
+   * Decides on the cold samples of a key (08-REQ-42): when at least minSamples warm samples are
+   * left they stay out of the statistics, otherwise they are added to them. Returns the
    * cold block (08-REQ-43); warmP50 is the p50 of the warm samples alone.
    */
   private settleCold(state: KeyState, key: string): AggregateStats['cold'] {
@@ -503,10 +505,15 @@ export class Aggregator {
     const minSamples = this.opts.minSamples ?? 5;
     const excluded = state.timed >= state.cold.length + minSamples;
     // Computed like stats.percentiles.p50, so that both are equal when the cold samples are excluded.
-    const warm = state.sample.durations().map((t) => t / 10);
-    const warmP50 = warm.length === 0 ? null : roundMs(percentile(warm, 50) ?? 0);
+    const p50 = (): number | null => {
+      const all = state.sample.durations().map((t) => t / 10);
+      return all.length === 0 ? null : roundMs(percentile(all, 50) ?? 0);
+    };
+    let warmP50 = p50();
     if (!excluded) {
       for (const c of state.cold) this.addWarm(state, key, c.test, c.ordinal, c.time);
+      // Only cold samples (a key called once per pass): the p50 of all of them (08-REQ-43).
+      if (warmP50 === null) warmP50 = p50();
     }
     const durations = state.cold.slice(0, COLD_KEPT).map((c) => toTenths(c.time.duration) / 10);
     const max = Math.max(...state.cold.map((c) => toTenths(c.time.duration))) / 10;
@@ -673,7 +680,7 @@ export class Aggregator {
         message:
           `${plural(n, 'key')} ${n === 1 ? 'is' : 'are'} much slower on the first call (cold start): ` +
           `${top.join(', ')}${n > COLD_WARN_KEYS ? ', …' : ''}.`,
-        hint: 'Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.',
+        hint: 'The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.',
       });
     }
     return issues;

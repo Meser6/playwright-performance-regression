@@ -249,13 +249,17 @@
     "endpoints": {
       "GET /api/trpc#a.get+b.list": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            55
+            55,
+            62,
+            58,
+            65,
+            61
           ],
           "excluded": false,
-          "max": 55,
-          "ratio": 0.89,
+          "max": 65,
+          "ratio": 1.07,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -264,7 +268,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 61.5
+          "warmP50": 61
         },
         "count": 5,
         "errorCount": 0,
@@ -406,12 +410,16 @@
       },
       "POST /graphql#CreateOrder": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            2595
+            2595,
+            2602,
+            2598,
+            2605,
+            2601
           ],
           "excluded": false,
-          "max": 2595,
+          "max": 2605,
           "ratio": 1,
           "reason": "too-few-samples",
           "test": {
@@ -421,7 +429,7 @@
             "repeatEachIndex": 0,
             "title": "orders › creates an order"
           },
-          "warmP50": 2601.5
+          "warmP50": 2601
         },
         "count": 5,
         "errorCount": 0,
@@ -568,13 +576,17 @@
       },
       "POST /graphql#GetTickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            85
+            85,
+            92,
+            88,
+            95,
+            91
           ],
           "excluded": true,
-          "max": 85,
-          "ratio": 0.91,
+          "max": 95,
+          "ratio": 0.99,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -583,22 +595,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 93
+          "warmP50": 96
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 93,
+              "actual": 96,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0465
+              "usage": 0.048
             },
             {
               "actual": 0,
@@ -633,13 +645,11 @@
         "hints": [],
         "histogram": {
           "counts": [
-            1,
-            5,
+            2,
             2,
             1
           ],
           "edges": [
-            86.6,
             90.85,
             95.32,
             100,
@@ -648,7 +658,7 @@
         },
         "nonSuccessCount": 0,
         "samples": {
-          "retained": 9,
+          "retained": 5,
           "sampled": false
         },
         "slowest": [
@@ -687,20 +697,20 @@
           }
         ],
         "stats": {
-          "avg": 94,
+          "avg": 96,
           "max": 100,
-          "min": 88,
+          "min": 92,
           "percentiles": {
-            "p50": 93,
-            "p90": 99.2,
-            "p95": 99.6,
-            "p99": 99.9
+            "p50": 96,
+            "p90": 99.6,
+            "p95": 99.8,
+            "p99": 100
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 2,
         "timeSources": {
           "browser": 10,
@@ -723,20 +733,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 37.2,
-          "p50": 55.8,
-          "p95": 59.8
+          "otherP50": 38.4,
+          "p50": 57.6,
+          "p95": 59.9
         }
       },
       "POST /graphql#GetTickets+GetUser": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            135
+            135,
+            142,
+            138,
+            145,
+            141
           ],
           "excluded": false,
-          "max": 135,
-          "ratio": 0.95,
+          "max": 145,
+          "ratio": 1.03,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -745,7 +759,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 141.5
+          "warmP50": 141
         },
         "count": 5,
         "errorCount": 0,
@@ -1452,13 +1466,17 @@
     "endpoints": {
       "GET /api/trpc#a.get+b.list": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            55
+            55,
+            62,
+            58,
+            65,
+            61
           ],
           "excluded": false,
-          "max": 55,
-          "ratio": 0.89,
+          "max": 65,
+          "ratio": 1.07,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -1467,7 +1485,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 61.5
+          "warmP50": 61
         },
         "count": 5,
         "errorCount": 0,
@@ -1615,12 +1633,16 @@
       },
       "POST /graphql#CreateOrder": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            2595
+            2595,
+            2602,
+            2598,
+            2605,
+            2601
           ],
           "excluded": false,
-          "max": 2595,
+          "max": 2605,
           "ratio": 1,
           "reason": "too-few-samples",
           "test": {
@@ -1630,7 +1652,7 @@
             "repeatEachIndex": 0,
             "title": "orders › creates an order"
           },
-          "warmP50": 2601.5
+          "warmP50": 2601
         },
         "count": 5,
         "errorCount": 0,
@@ -1783,13 +1805,17 @@
       },
       "POST /graphql#GetTickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            85
+            85,
+            92,
+            88,
+            95,
+            91
           ],
           "excluded": true,
-          "max": 85,
-          "ratio": 0.91,
+          "max": 95,
+          "ratio": 0.99,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -1798,22 +1824,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 93
+          "warmP50": 96
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 93,
+              "actual": 96,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0465
+              "usage": 0.048
             },
             {
               "actual": 0,
@@ -1848,13 +1874,11 @@
         "hints": [],
         "histogram": {
           "counts": [
-            1,
-            5,
+            2,
             2,
             1
           ],
           "edges": [
-            86.6,
             90.85,
             95.32,
             100,
@@ -1864,12 +1888,8 @@
         "nonSuccessCount": 0,
         "samples": {
           "durations": [
-            88,
-            91,
-            92,
             92,
             93,
-            95,
             96,
             99,
             100
@@ -1912,20 +1932,20 @@
           }
         ],
         "stats": {
-          "avg": 94,
+          "avg": 96,
           "max": 100,
-          "min": 88,
+          "min": 92,
           "percentiles": {
-            "p50": 93,
-            "p90": 99.2,
-            "p95": 99.6,
-            "p99": 99.9
+            "p50": 96,
+            "p90": 99.6,
+            "p95": 99.8,
+            "p99": 100
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 2,
         "timeSources": {
           "browser": 10,
@@ -1948,20 +1968,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 37.2,
-          "p50": 55.8,
-          "p95": 59.8
+          "otherP50": 38.4,
+          "p50": 57.6,
+          "p95": 59.9
         }
       },
       "POST /graphql#GetTickets+GetUser": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            135
+            135,
+            142,
+            138,
+            145,
+            141
           ],
           "excluded": false,
-          "max": 135,
-          "ratio": 0.95,
+          "max": 145,
+          "ratio": 1.03,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -1970,7 +1994,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 141.5
+          "warmP50": 141
         },
         "count": 5,
         "errorCount": 0,

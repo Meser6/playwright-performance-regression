@@ -147,6 +147,64 @@ describe('cold samples (08-REQ-41 – 08-REQ-44)', () => {
     );
   });
 
+  test('08-AC-28 cold samples are counted in each pass: 2 calls per pass exclude, 1 call per pass keeps', () => {
+    const agg = new Aggregator(options());
+    const other = 'GET /api/users';
+    for (let pass = 0; pass < 5; pass++) {
+      // A new pass, as the reporter starts one before each later pass (08-REQ-41).
+      if (pass > 0) agg.startSegment();
+      const test = meta(pass);
+      agg.addRequest(KEY, sample(test, 0, 200, 900), 'https://app.example', '', 'chromium');
+      agg.addRequest(KEY, sample(test, 1, 200, 100 + pass), 'https://app.example', '', 'chromium');
+      agg.addRequest(
+        other,
+        sample(test, 2, 200, 300 + pass),
+        'https://app.example',
+        '',
+        'chromium',
+      );
+      agg.endResult(test);
+    }
+    const { endpoints } = agg.finalize();
+    const twice = endpoints[KEY];
+    expect(twice?.cold).toMatchObject({ count: 5, excluded: true, reason: null, max: 900 });
+    expect(twice?.cold?.durations).toEqual([900, 900, 900, 900, 900]);
+    expect(twice?.successCount).toBe(5);
+    expect(twice?.stats?.percentiles['p50']).toBeCloseTo(102, 0);
+    expect(twice?.count).toBe(10);
+    const once = endpoints[other];
+    expect(once?.cold).toMatchObject({ count: 5, excluded: false, reason: 'too-few-samples' });
+    // Only cold samples: warmP50 is the p50 of all of them (08-REQ-43).
+    expect(once?.cold?.warmP50).toBe(once?.stats?.percentiles['p50']);
+    expect(once?.successCount).toBe(5);
+    // Without the segments (one pass of 10 calls) only the very first call is cold.
+    expect(aggregate(TEN).endpoints[KEY]?.cold?.count).toBe(1);
+  });
+
+  test('more than 5 cold samples keep the first 5 durations and the largest of all as max', () => {
+    const agg = new Aggregator(options());
+    for (let pass = 0; pass < 8; pass++) {
+      if (pass > 0) agg.startSegment();
+      const test = meta(pass);
+      agg.addRequest(
+        KEY,
+        sample(test, 0, 200, 800 + pass * 10),
+        'https://app.example',
+        '',
+        'chromium',
+      );
+      for (let i = 1; i <= 2; i++) {
+        agg.addRequest(KEY, sample(test, i, 200, 100 + i), 'https://app.example', '', 'chromium');
+      }
+      agg.endResult(test);
+    }
+    const cold = agg.finalize().endpoints[KEY]?.cold;
+    expect(cold?.count).toBe(8);
+    expect(cold?.durations).toEqual([800, 810, 820, 830, 840]);
+    expect(cold?.max).toBe(870);
+    expect(cold?.excluded).toBe(true);
+  });
+
   test('step keys have cold samples too, and nonSuccessCount null and failedTimings []', () => {
     const agg = new Aggregator(options());
     for (let i = 0; i < 7; i++) {

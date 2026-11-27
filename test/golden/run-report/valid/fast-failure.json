@@ -423,7 +423,7 @@
     "endpoints": {
       "GET /api/cart": {
         "count": 20,
-        "successCount": 16,
+        "successCount": 7,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 1,
@@ -437,43 +437,21 @@
         },
         "stats": {
           "min": 113,
-          "avg": 119.4,
-          "max": 125,
+          "avg": 117.6,
+          "max": 123,
           "percentiles": {
-            "p50": 119.5,
-            "p90": 123.5,
-            "p95": 124.3,
-            "p99": 124.9
+            "p50": 118,
+            "p90": 121.8,
+            "p95": 122.4,
+            "p99": 122.9
           }
         },
         "ttfb": {
-          "p50": 71.7,
-          "p95": 74.6,
-          "otherP50": 47.8
+          "p50": 70.8,
+          "p95": 73.4,
+          "otherP50": 47.2
         },
         "slowest": [
-          {
-            "duration": 125,
-            "startedAt": "2026-11-26T10:03:02.000Z",
-            "test": {
-              "title": "account › shows the profile",
-              "project": "chromium",
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "repeatEachIndex": 3
-            }
-          },
-          {
-            "duration": 124,
-            "startedAt": "2026-11-26T10:06:02.000Z",
-            "test": {
-              "title": "account › shows the profile",
-              "project": "chromium",
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "repeatEachIndex": 6
-            }
-          },
           {
             "duration": 123,
             "startedAt": "2026-11-26T10:01:03.000Z",
@@ -483,6 +461,28 @@
               "file": "tests/app.spec.ts",
               "line": 12,
               "repeatEachIndex": 1
+            }
+          },
+          {
+            "duration": 121,
+            "startedAt": "2026-11-26T10:07:03.000Z",
+            "test": {
+              "title": "account › shows the profile",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 7
+            }
+          },
+          {
+            "duration": 119,
+            "startedAt": "2026-11-26T10:02:03.000Z",
+            "test": {
+              "title": "account › shows the profile",
+              "project": "chromium",
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "repeatEachIndex": 2
             }
           }
         ],
@@ -500,19 +500,10 @@
             113,
             114,
             115,
-            117,
-            117,
-            118,
             118,
             119,
-            120,
             121,
-            122,
-            122,
-            123,
-            123,
-            124,
-            125
+            123
           ],
           "sampled": false
         },
@@ -525,20 +516,24 @@
           ],
           "counts": [
             3,
-            7,
-            6
+            3,
+            1
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 10,
           "excluded": true,
           "reason": null,
           "durations": [
-            116
+            116,
+            122,
+            118,
+            125,
+            122
           ],
-          "max": 116,
-          "warmP50": 119.5,
-          "ratio": 0.97,
+          "max": 125,
+          "warmP50": 118,
+          "ratio": 1.06,
           "test": {
             "title": "account › shows the profile",
             "project": "chromium",
@@ -573,14 +568,14 @@
           "checks": [
             {
               "rule": "median",
-              "n": 16,
-              "actual": 119.5,
+              "n": 7,
+              "actual": 118,
               "observed": null,
               "limit": 220,
               "passed": true,
               "hardLimitExceeded": false,
               "blocking": false,
-              "usage": 0.5432
+              "usage": 0.5364
             },
             {
               "rule": "errors",
@@ -616,7 +611,7 @@
             },
             "now": {
               "count": 20,
-              "successCount": 16,
+              "successCount": 7,
               "passes": 10,
               "workers": 1,
               "share": 0.3333
@@ -729,7 +724,7 @@
       },
       "POST /api/orders": {
         "count": 20,
-        "successCount": 18,
+        "successCount": 9,
         "errorCount": 1,
         "fromFailedTests": 0,
         "testCount": 1,
@@ -743,52 +738,52 @@
         },
         "stats": {
           "min": 231,
-          "avg": 237.6,
-          "max": 244,
+          "avg": 235.4,
+          "max": 240,
           "percentiles": {
-            "p50": 237.5,
-            "p90": 242.3,
-            "p95": 243.2,
-            "p99": 243.8
+            "p50": 235,
+            "p90": 239.2,
+            "p95": 239.6,
+            "p99": 239.9
           }
         },
         "ttfb": {
-          "p50": 142.5,
-          "p95": 145.9,
-          "otherP50": 95
+          "p50": 141,
+          "p95": 143.8,
+          "otherP50": 94
         },
         "slowest": [
           {
-            "duration": 244,
-            "startedAt": "2026-11-26T10:06:04.000Z",
+            "duration": 240,
+            "startedAt": "2026-11-26T10:02:05.000Z",
             "test": {
               "title": "account › shows the profile",
               "project": "chromium",
               "file": "tests/app.spec.ts",
               "line": 12,
-              "repeatEachIndex": 6
+              "repeatEachIndex": 2
             }
           },
           {
-            "duration": 243,
-            "startedAt": "2026-11-26T10:09:04.000Z",
+            "duration": 239,
+            "startedAt": "2026-11-26T10:05:05.000Z",
             "test": {
               "title": "account › shows the profile",
               "project": "chromium",
               "file": "tests/app.spec.ts",
               "line": 12,
-              "repeatEachIndex": 9
+              "repeatEachIndex": 5
             }
           },
           {
-            "duration": 242,
-            "startedAt": "2026-11-26T10:01:04.000Z",
+            "duration": 238,
+            "startedAt": "2026-11-26T10:08:05.000Z",
             "test": {
               "title": "account › shows the profile",
               "project": "chromium",
               "file": "tests/app.spec.ts",
               "line": 12,
-              "repeatEachIndex": 1
+              "repeatEachIndex": 8
             }
           }
         ],
@@ -808,19 +803,10 @@
             233,
             234,
             235,
-            236,
-            236,
             237,
-            237,
-            238,
             238,
             239,
-            240,
-            240,
-            241,
-            242,
-            243,
-            244
+            240
           ],
           "sampled": false
         },
@@ -831,20 +817,24 @@
             248.8
           ],
           "counts": [
-            9,
-            9
+            6,
+            3
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 10,
           "excluded": true,
           "reason": null,
           "durations": [
-            235
+            235,
+            242,
+            238,
+            236,
+            241
           ],
-          "max": 235,
-          "warmP50": 237.5,
-          "ratio": 0.99,
+          "max": 244,
+          "warmP50": 235,
+          "ratio": 1.04,
           "test": {
             "title": "account › shows the profile",
             "project": "chromium",
@@ -879,14 +869,14 @@
           "checks": [
             {
               "rule": "median",
-              "n": 18,
-              "actual": 237.5,
+              "n": 9,
+              "actual": 235,
               "observed": null,
               "limit": 340,
               "passed": true,
               "hardLimitExceeded": false,
               "blocking": false,
-              "usage": 0.6985
+              "usage": 0.6912
             },
             {
               "rule": "errors",
@@ -922,7 +912,7 @@
             },
             "now": {
               "count": 20,
-              "successCount": 18,
+              "successCount": 9,
               "passes": 10,
               "workers": 1,
               "share": 0.3333

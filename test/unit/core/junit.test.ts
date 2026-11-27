@@ -555,7 +555,8 @@ describe('1.1.0 in junit.xml (16-REQ-21)', () => {
     const shift = buildJunitXml(inputOf('run-report', 'valid', 'workload-shift.json'));
     expect(shift).toContain('workload: 40 → 6 samples (per pass 4.0 → 1.2)');
     const cold = buildJunitXml(inputOf('run-report', 'valid', 'cold.json'));
-    expect(cold).toContain('cold start: first call 1840 ms, warm p50 121 ms');
+    // Cold samples of 5 passes (08-REQ-41): the slowest of them.
+    expect(cold).toContain('cold start: slowest of 5 first calls 1840 ms, warm p50 120 ms');
     // A cold sample kept in the statistics (too few samples) gives no line.
     expect(cold).not.toContain('first call 900 ms');
   });

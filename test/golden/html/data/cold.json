@@ -240,13 +240,17 @@
     "endpoints": {
       "GET /api/tickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            1840
+            1840,
+            1780,
+            1720,
+            1660,
+            1600
           ],
           "excluded": true,
           "max": 1840,
-          "ratio": 15.21,
+          "ratio": 15.33,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -255,22 +259,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 121
+          "warmP50": 120
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 121,
+              "actual": 120,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0605
+              "usage": 0.06
             },
             {
               "actual": 0,
@@ -305,8 +309,8 @@
         "hints": [],
         "histogram": {
           "counts": [
-            5,
-            4
+            3,
+            2
           ],
           "edges": [
             115.5,
@@ -316,21 +320,10 @@
         },
         "nonSuccessCount": 0,
         "samples": {
-          "retained": 9,
+          "retained": 5,
           "sampled": false
         },
         "slowest": [
-          {
-            "duration": 125,
-            "startedAt": "2026-11-26T10:03:00.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 3,
-              "title": "tickets › opens the list"
-            }
-          },
           {
             "duration": 124,
             "startedAt": "2026-11-26T10:01:01.000Z",
@@ -352,23 +345,34 @@
               "repeatEachIndex": 4,
               "title": "tickets › opens the list"
             }
+          },
+          {
+            "duration": 120,
+            "startedAt": "2026-11-26T10:02:01.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 2,
+              "title": "tickets › opens the list"
+            }
           }
         ],
         "stats": {
-          "avg": 120.7,
-          "max": 125,
+          "avg": 120,
+          "max": 124,
           "min": 116,
           "percentiles": {
-            "p50": 121,
-            "p90": 124.2,
-            "p95": 124.6,
-            "p99": 124.9
+            "p50": 120,
+            "p90": 123.6,
+            "p95": 123.8,
+            "p99": 124
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -384,20 +388,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 48.4,
-          "p50": 72.6,
-          "p95": 74.8
+          "otherP50": 48,
+          "p50": 72,
+          "p95": 74.3
         }
       },
       "GET /api/users": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            900
+            900,
+            102,
+            98,
+            105,
+            101
           ],
           "excluded": false,
           "max": 900,
-          "ratio": 8.87,
+          "ratio": 8.82,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -406,7 +414,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 101.5
+          "warmP50": 102
         },
         "count": 5,
         "errorCount": 0,
@@ -586,13 +594,17 @@
       },
       "POST /api/orders": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            125
+            125,
+            132,
+            128,
+            135,
+            131
           ],
           "excluded": true,
-          "max": 125,
-          "ratio": 0.97,
+          "max": 135,
+          "ratio": 1.07,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -601,22 +613,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 129
+          "warmP50": 126
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 129,
+              "actual": 126,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0645
+              "usage": 0.063
             },
             {
               "actual": 0,
@@ -652,25 +664,34 @@
         "histogram": {
           "counts": [
             3,
-            5,
-            1
+            2
           ],
           "edges": [
             121.2,
             127.1,
-            133.4,
-            139.9
+            133.4
           ]
         },
         "nonSuccessCount": 0,
         "samples": {
-          "retained": 9,
+          "retained": 5,
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 135,
-            "startedAt": "2026-11-26T10:03:03.000Z",
+            "duration": 130,
+            "startedAt": "2026-11-26T10:00:04.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 0,
+              "title": "tickets › opens the list"
+            }
+          },
+          {
+            "duration": 129,
+            "startedAt": "2026-11-26T10:03:04.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -680,8 +701,8 @@
             }
           },
           {
-            "duration": 132,
-            "startedAt": "2026-11-26T10:01:03.000Z",
+            "duration": 126,
+            "startedAt": "2026-11-26T10:01:04.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -689,34 +710,23 @@
               "repeatEachIndex": 1,
               "title": "tickets › opens the list"
             }
-          },
-          {
-            "duration": 131,
-            "startedAt": "2026-11-26T10:04:03.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 4,
-              "title": "tickets › opens the list"
-            }
           }
         ],
         "stats": {
-          "avg": 128.7,
-          "max": 135,
+          "avg": 126.4,
+          "max": 130,
           "min": 122,
           "percentiles": {
-            "p50": 129,
-            "p90": 132.6,
-            "p95": 133.8,
-            "p99": 134.8
+            "p50": 126,
+            "p90": 129.6,
+            "p95": 129.8,
+            "p99": 130
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -732,9 +742,9 @@
           }
         ],
         "ttfb": {
-          "otherP50": 51.6,
-          "p50": 77.4,
-          "p95": 80.3
+          "otherP50": 50.4,
+          "p50": 75.6,
+          "p95": 77.9
         }
       }
     },
@@ -833,7 +843,7 @@
             {
               "count": 10,
               "key": "GET /api/tickets",
-              "totalMs": 2926
+              "totalMs": 9200
             },
             {
               "count": 5,
@@ -846,7 +856,7 @@
               "totalMs": 1283
             }
           ],
-          "totalMs": 5515,
+          "totalMs": 11789,
           "violatedKeyCount": 0,
           "violatedKeys": []
         }
@@ -930,8 +940,8 @@
     "warnings": [
       {
         "code": "STATS_COLD_SLOW",
-        "hint": "Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
-        "message": "2 keys are much slower on the first call (cold start): GET /api/tickets 1,840 ms vs warm p50 121 ms (×15.2), GET /api/users 900 ms vs warm p50 102 ms (×8.9)."
+        "hint": "The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
+        "message": "2 keys are much slower on the first call (cold start): GET /api/tickets 1,840 ms vs warm p50 120 ms (×15.3), GET /api/users 900 ms vs warm p50 102 ms (×8.8)."
       },
       {
         "code": "THRESHOLDS_FILE_MISSING",
@@ -1181,13 +1191,17 @@
     "endpoints": {
       "GET /api/tickets": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            1840
+            1840,
+            1780,
+            1720,
+            1660,
+            1600
           ],
           "excluded": true,
           "max": 1840,
-          "ratio": 15.21,
+          "ratio": 15.33,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -1196,22 +1210,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 121
+          "warmP50": 120
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 121,
+              "actual": 120,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0605
+              "usage": 0.06
             },
             {
               "actual": 0,
@@ -1246,8 +1260,8 @@
         "hints": [],
         "histogram": {
           "counts": [
-            5,
-            4
+            3,
+            2
           ],
           "edges": [
             115.5,
@@ -1260,28 +1274,13 @@
           "durations": [
             116,
             117,
-            118,
             120,
-            121,
-            122,
             123,
-            124,
-            125
+            124
           ],
           "sampled": false
         },
         "slowest": [
-          {
-            "duration": 125,
-            "startedAt": "2026-11-26T10:03:00.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 3,
-              "title": "tickets › opens the list"
-            }
-          },
           {
             "duration": 124,
             "startedAt": "2026-11-26T10:01:01.000Z",
@@ -1303,23 +1302,34 @@
               "repeatEachIndex": 4,
               "title": "tickets › opens the list"
             }
+          },
+          {
+            "duration": 120,
+            "startedAt": "2026-11-26T10:02:01.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 2,
+              "title": "tickets › opens the list"
+            }
           }
         ],
         "stats": {
-          "avg": 120.7,
-          "max": 125,
+          "avg": 120,
+          "max": 124,
           "min": 116,
           "percentiles": {
-            "p50": 121,
-            "p90": 124.2,
-            "p95": 124.6,
-            "p99": 124.9
+            "p50": 120,
+            "p90": 123.6,
+            "p95": 123.8,
+            "p99": 124
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -1335,20 +1345,24 @@
           }
         ],
         "ttfb": {
-          "otherP50": 48.4,
-          "p50": 72.6,
-          "p95": 74.8
+          "otherP50": 48,
+          "p50": 72,
+          "p95": 74.3
         }
       },
       "GET /api/users": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            900
+            900,
+            102,
+            98,
+            105,
+            101
           ],
           "excluded": false,
           "max": 900,
-          "ratio": 8.87,
+          "ratio": 8.82,
           "reason": "too-few-samples",
           "test": {
             "file": "tests/app.spec.ts",
@@ -1357,7 +1371,7 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 101.5
+          "warmP50": 102
         },
         "count": 5,
         "errorCount": 0,
@@ -1543,13 +1557,17 @@
       },
       "POST /api/orders": {
         "cold": {
-          "count": 1,
+          "count": 5,
           "durations": [
-            125
+            125,
+            132,
+            128,
+            135,
+            131
           ],
           "excluded": true,
-          "max": 125,
-          "ratio": 0.97,
+          "max": 135,
+          "ratio": 1.07,
           "reason": null,
           "test": {
             "file": "tests/app.spec.ts",
@@ -1558,22 +1576,22 @@
             "repeatEachIndex": 0,
             "title": "tickets › opens the list"
           },
-          "warmP50": 129
+          "warmP50": 126
         },
         "count": 10,
         "errorCount": 0,
         "evaluation": {
           "checks": [
             {
-              "actual": 129,
+              "actual": 126,
               "blocking": false,
               "hardLimitExceeded": false,
               "limit": 2000,
-              "n": 9,
+              "n": 5,
               "observed": null,
               "passed": true,
               "rule": "median",
-              "usage": 0.0645
+              "usage": 0.063
             },
             {
               "actual": 0,
@@ -1609,14 +1627,12 @@
         "histogram": {
           "counts": [
             3,
-            5,
-            1
+            2
           ],
           "edges": [
             121.2,
             127.1,
-            133.4,
-            139.9
+            133.4
           ]
         },
         "nonSuccessCount": 0,
@@ -1625,19 +1641,26 @@
             122,
             125,
             126,
-            128,
             129,
-            130,
-            131,
-            132,
-            135
+            130
           ],
           "sampled": false
         },
         "slowest": [
           {
-            "duration": 135,
-            "startedAt": "2026-11-26T10:03:03.000Z",
+            "duration": 130,
+            "startedAt": "2026-11-26T10:00:04.000Z",
+            "test": {
+              "file": "tests/app.spec.ts",
+              "line": 12,
+              "project": "chromium",
+              "repeatEachIndex": 0,
+              "title": "tickets › opens the list"
+            }
+          },
+          {
+            "duration": 129,
+            "startedAt": "2026-11-26T10:03:04.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -1647,8 +1670,8 @@
             }
           },
           {
-            "duration": 132,
-            "startedAt": "2026-11-26T10:01:03.000Z",
+            "duration": 126,
+            "startedAt": "2026-11-26T10:01:04.000Z",
             "test": {
               "file": "tests/app.spec.ts",
               "line": 12,
@@ -1656,34 +1679,23 @@
               "repeatEachIndex": 1,
               "title": "tickets › opens the list"
             }
-          },
-          {
-            "duration": 131,
-            "startedAt": "2026-11-26T10:04:03.000Z",
-            "test": {
-              "file": "tests/app.spec.ts",
-              "line": 12,
-              "project": "chromium",
-              "repeatEachIndex": 4,
-              "title": "tickets › opens the list"
-            }
           }
         ],
         "stats": {
-          "avg": 128.7,
-          "max": 135,
+          "avg": 126.4,
+          "max": 130,
           "min": 122,
           "percentiles": {
-            "p50": 129,
-            "p90": 132.6,
-            "p95": 133.8,
-            "p99": 134.8
+            "p50": 126,
+            "p90": 129.6,
+            "p95": 129.8,
+            "p99": 130
           }
         },
         "statuses": {
           "200": 10
         },
-        "successCount": 9,
+        "successCount": 5,
         "testCount": 1,
         "timeSources": {
           "browser": 10,
@@ -1699,9 +1711,9 @@
           }
         ],
         "ttfb": {
-          "otherP50": 51.6,
-          "p50": 77.4,
-          "p95": 80.3
+          "otherP50": 50.4,
+          "p50": 75.6,
+          "p95": 77.9
         }
       }
     },
@@ -1800,7 +1812,7 @@
             {
               "count": 10,
               "key": "GET /api/tickets",
-              "totalMs": 2926
+              "totalMs": 9200
             },
             {
               "count": 5,
@@ -1813,7 +1825,7 @@
               "totalMs": 1283
             }
           ],
-          "totalMs": 5515,
+          "totalMs": 11789,
           "violatedKeyCount": 0,
           "violatedKeys": []
         }
@@ -1897,8 +1909,8 @@
     "warnings": [
       {
         "code": "STATS_COLD_SLOW",
-        "hint": "Cold samples stay out of the evaluated statistics when a key has enough samples (measure.coldSamples + checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
-        "message": "2 keys are much slower on the first call (cold start): GET /api/tickets 1,840 ms vs warm p50 121 ms (×15.2), GET /api/users 900 ms vs warm p50 102 ms (×8.9)."
+        "hint": "The first calls in each pass stay out of the evaluated statistics when a key has enough warm samples (checks.time.median.minSamples). To measure the first calls too, warm the application up before the tests or set measure.coldSamples to 0.",
+        "message": "2 keys are much slower on the first call (cold start): GET /api/tickets 1,840 ms vs warm p50 120 ms (×15.3), GET /api/users 900 ms vs warm p50 102 ms (×8.8)."
       },
       {
         "code": "THRESHOLDS_FILE_MISSING",
@@ -1907,6 +1919,6 @@
       }
     ]
   },
-  "name": "cold samples: a slow first call left out of the statistics, one kept with too few samples (08-REQ-41…44)"
+  "name": "cold samples: a slow first call in each pass left out of the statistics, one kept with too few warm samples (08-REQ-41…44)"
 }
 

@@ -378,9 +378,9 @@ describe('console summary golden files', () => {
 describe('workload in the violations table (09-REQ-42)', () => {
   test('09-AC-41 the n column shows now/base and a Workload line follows the table (golden workload-shift)', () => {
     const text = formatSummary(report('workload-shift'), { width: 120, color: false });
-    expect(text).toMatch(/│ GET \/api\/tickets +│ median .*│ 12\/40 │ file/u);
+    expect(text).toMatch(/│ GET \/api\/tickets +│ median .*│ 8\/40 │ file/u);
     expect(text).toContain(
-      '  Workload: 5 passes · 1 worker · 17 samples (thresholds run: 10 passes · 1 worker · 80 samples)',
+      '  Workload: 5 passes · 1 worker · 14 samples (thresholds run: 10 passes · 1 worker · 80 samples)',
     );
     expect(text).toBe(readFileSync(join(DIR, 'workload-shift.w120.txt'), 'utf8'));
     // Without a source block the column shows n alone and there is no Workload line.

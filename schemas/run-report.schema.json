@@ -495,7 +495,7 @@
           ]
         },
         "cold": {
-          "description": "Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
+          "description": "Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
           "oneOf": [{"$ref": "#/$defs/cold"}, {"type": "null"}]
         },
         "nonSuccessCount": {
@@ -744,7 +744,7 @@
           ]
         },
         "cold": {
-          "description": "Cold samples: the first measure.coldSamples timed samples of the key in the run (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
+          "description": "Cold samples: the first measure.coldSamples timed samples of the key in each pass (08-REQ-41, 08-REQ-43). Null when measure.coldSamples is 0 or the key has no timed samples.",
           "oneOf": [{"$ref": "#/$defs/cold"}, {"type": "null"}]
         },
         "nonSuccessCount": {
@@ -969,13 +969,13 @@
       "additionalProperties": false,
       "required": ["count", "excluded", "reason", "durations", "max", "warmP50", "ratio", "test"],
       "properties": {
-        "count": {"description": "Number of cold samples (at most measure.coldSamples per shard).", "type": "integer", "minimum": 1},
+        "count": {"description": "Number of cold samples (at most measure.coldSamples per pass and shard).", "type": "integer", "minimum": 1},
         "excluded": {
           "description": "True when the cold samples are left out of the time statistics and successCount (08-REQ-42).",
           "type": "boolean"
         },
         "reason": {
-          "description": "too-few-samples: the key has fewer than coldSamples + checks.time.median.minSamples timed samples, so the cold samples stay in the statistics.",
+          "description": "too-few-samples: without the cold samples the key would have fewer than checks.time.median.minSamples warm samples, so the cold samples stay in the statistics.",
           "oneOf": [{"const": "too-few-samples"}, {"type": "null"}]
         },
         "durations": {
@@ -987,7 +987,7 @@
         },
         "max": {"description": "Largest cold duration.", "$ref": "common.schema.json#/$defs/ms"},
         "warmP50": {
-          "description": "p50 of the warm samples, or null when there are none.",
+          "description": "p50 of the warm samples; when every sample is cold (excluded false), the p50 of all timed samples (08-REQ-43).",
           "oneOf": [{"$ref": "common.schema.json#/$defs/ms"}, {"type": "null"}]
         },
         "ratio": {

@@ -37,13 +37,16 @@ describe('key details of 1.1.0 (11-REQ-61, 11-REQ-62)', () => {
     const markup = page('cold');
     const tickets = details(markup, 'GET /api/tickets');
     expect(tickets).toContain('<h4>Cold vs warm');
-    expect(tickets).toContain('First call 1840 ms · warm p50 121 ms · <b class="wv">×15.2</b>');
+    expect(tickets).toContain('<span class="sub">first calls in each pass</span>');
+    expect(tickets).toContain(
+      'First 5 calls 1840 ms, 1780 ms, 1720 ms, 1660 ms, 1600 ms · max 1840 ms · warm p50 120 ms · <b class="wv">×15.3</b>',
+    );
     expect(tickets).toContain('Cold samples are not evaluated.');
     expect(details(markup, 'GET /api/users')).toContain(
-      'Too few samples to set the first call apart: it is included in the statistics.',
+      'Too few warm samples to set the first calls apart: they are included in the statistics.',
     );
     // A first call close to the warm median is not highlighted.
-    expect(details(markup, 'POST /api/orders')).toContain('· <b>×1.0</b>');
+    expect(details(markup, 'POST /api/orders')).toContain('· <b>×1.1</b>');
     expect(markup).toContain('<h4 id="rank-cold">Slowest first calls</h4>');
     expect(markup).toMatch(/data-rank="cold">.*\/api\/tickets.*\/api\/users/su);
   });

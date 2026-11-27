@@ -16,15 +16,15 @@ playwright-performance-regression · mode: test · 10 tests (10 passed, 0 failed
 │ checked by median only (few samples) │         2 │
 └──────────────────────────────────────┴───────────┘
 
-┌────┬──────┬────────────────────────────────┬────────┬────────┬────────┬──────┬───────┬──────┬──────┐
-│    │ kind │ key                            │ rule   │ actual │  limit │ over │     n │ src  │ flag │
-├────┼──────┼────────────────────────────────┼────────┼────────┼────────┼──────┼───────┼──────┼──────┤
-│ ❌ │ api  │ GET /api/tickets               │ median │ 311 ms │ 220 ms │ +41% │ 12/40 │ file │      │
-│ ❌ │ api  │ GET /api/search                │ median │ 422 ms │ 300 ms │ +41% │  5/40 │ file │      │
-└────┴──────┴────────────────────────────────┴────────┴────────┴────────┴──────┴───────┴──────┴──────┘
-  Workload: 5 passes · 1 worker · 17 samples (thresholds run: 10 passes · 1 worker · 80 samples)
-  slowest: GET /api/tickets — 315 ms in "tickets › opens the list" (tests/app.spec.ts:12)
+┌────┬──────┬────────────────────────────────┬────────┬────────┬────────┬──────┬──────┬──────┬──────┐
+│    │ kind │ key                            │ rule   │ actual │  limit │ over │    n │ src  │ flag │
+├────┼──────┼────────────────────────────────┼────────┼────────┼────────┼──────┼──────┼──────┼──────┤
+│ ❌ │ api  │ GET /api/search                │ median │ 422 ms │ 300 ms │ +41% │ 6/40 │ file │      │
+│ ❌ │ api  │ GET /api/tickets               │ median │ 309 ms │ 220 ms │ +40% │ 8/40 │ file │      │
+└────┴──────┴────────────────────────────────┴────────┴────────┴────────┴──────┴──────┴──────┴──────┘
+  Workload: 5 passes · 1 worker · 14 samples (thresholds run: 10 passes · 1 worker · 80 samples)
   slowest: GET /api/search — 425 ms in "search › finds a ticket" (tests/search.spec.ts:20)
+  slowest: GET /api/tickets — 312 ms in "tickets › opens the list" (tests/app.spec.ts:12)
 
 ╭────────────────────────────────────────────────────────────╮
 │ ❌  FAILED  2 blocking violations in 2 keys (tolerance: 0) │

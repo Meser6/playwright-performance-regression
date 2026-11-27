@@ -119,7 +119,7 @@ export const CONFIG_OPTIONS: readonly TemplateOption[] = [
   {
     path: 'measure.coldSamples',
     description:
-      'The first N timed samples of every key in the run are cold (first call after start-up): they stay out of the evaluated time statistics when the key has at least coldSamples + checks.time.median.minSamples timed samples.',
+      'The first N timed samples of every key in each pass are cold (first call after the start of the application, which webServer starts again in every pass): they stay out of the evaluated time statistics when at least checks.time.median.minSamples warm samples are left.',
     leaf: true,
     default: 1,
   },

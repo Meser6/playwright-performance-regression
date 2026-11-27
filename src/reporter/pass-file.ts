@@ -19,11 +19,12 @@ export function isPassFileName(name: string): boolean {
   return /^pass-[1-9][0-9]*\.json$/u.test(name);
 }
 
-/** One aggregator call, in call order. */
+/** One aggregator call, in call order; 'p' is the start of a pass (08-REQ-41, 17-REQ-10). */
 export type PassEntry =
   | ['r', string, EnrichedRequestSample, string | null, string | null, string | null]
   | ['s', EnrichedStepSample]
-  | ['e', TestMeta];
+  | ['e', TestMeta]
+  | ['p'];
 
 export type TestCounts = Omit<RunReport['tests'], 'status'>;
 
@@ -98,6 +99,11 @@ export class JournalAggregator extends Aggregator {
     super.endResult(meta);
     this.journal?.push(['e', meta]);
   }
+
+  override startSegment(): void {
+    super.startSegment();
+    this.journal?.push(['p']);
+  }
 }
 
 /** Replays the entries of a pass into the aggregator, in order (04-REQ-64). */
@@ -105,7 +111,8 @@ export function replayEntries(aggregator: Aggregator, entries: readonly PassEntr
   for (const entry of entries) {
     if (entry[0] === 'r') aggregator.addRequest(entry[1], entry[2], entry[3], entry[4], entry[5]);
     else if (entry[0] === 's') aggregator.addStep(entry[1]);
-    else aggregator.endResult(entry[1]);
+    else if (entry[0] === 'e') aggregator.endResult(entry[1]);
+    else aggregator.startSegment();
   }
 }
 

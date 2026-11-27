@@ -164,10 +164,14 @@ describe('passes of the first pass (04-REQ-64)', () => {
   });
 
   test('02-AC-20 three passes give the same aggregates as the same results in one process', async () => {
+    // Without cold samples: with them each pass has its own (08-REQ-41, 08-AC-28).
     const first = fakeHost(dir, { runPass: laterPasses() });
     const s = session(
       first,
-      registered({ run: { passes: { test: 3 } } }, { mode: 'test', runId: RUN_ID }),
+      registered(
+        { run: { passes: { test: 3 } }, measure: { coldSamples: 0 } },
+        { mode: 'test', runId: RUN_ID },
+      ),
     );
     s.begin(fakeConfig(dir), { allTests: () => [] });
     runPass(s, 1);
@@ -185,7 +189,10 @@ describe('passes of the first pass (04-REQ-64)', () => {
 
     // The same results in one process, with the repetition index of each pass (08-REQ-08).
     rmSync(join(dir, RESULTS), { recursive: true, force: true });
-    const single = session(fakeHost(dir), registered({}, { mode: 'test', runId: RUN_ID }));
+    const single = session(
+      fakeHost(dir),
+      registered({ measure: { coldSamples: 0 } }, { mode: 'test', runId: RUN_ID }),
+    );
     single.begin(fakeConfig(dir), { allTests: () => [] });
     for (const pass of [1, 2, 3]) runPass(single, pass, pass - 1);
     await single.end({ status: 'passed' });
@@ -193,6 +200,21 @@ describe('passes of the first pass (04-REQ-64)', () => {
     expect(merged.endpoints).toEqual(one.endpoints);
     expect(merged.testBreakdown).toEqual(one.testBreakdown);
     expect(merged.origins).toEqual(one.origins);
+  });
+
+  test('08-AC-28 each pass after the first starts a new segment of cold samples', async () => {
+    const first = fakeHost(dir, { runPass: laterPasses() });
+    const s = session(
+      first,
+      registered({ run: { passes: { test: 3 } } }, { mode: 'test', runId: RUN_ID }),
+    );
+    s.begin(fakeConfig(dir), { allTests: () => [] });
+    runPass(s, 1);
+    await s.end({ status: 'passed' });
+    const cold = readReport().endpoints['GET /api/items/:id']?.cold;
+    // The first call of each of the 3 passes is cold (08-REQ-41).
+    expect(cold?.count).toBe(3);
+    expect(cold?.excluded).toBe(true);
   });
 
   test('04-AC-43 a pass without a pass file is RUN_PASS_FAILED; the other passes are evaluated', async () => {

@@ -543,15 +543,19 @@
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 5,
           "excluded": false,
           "reason": "too-few-samples",
           "durations": [
-            55
+            55,
+            62,
+            58,
+            65,
+            61
           ],
-          "max": 55,
-          "warmP50": 61.5,
-          "ratio": 0.89,
+          "max": 65,
+          "warmP50": 61,
+          "ratio": 1.07,
           "test": {
             "title": "tickets › opens the list",
             "project": "chromium",
@@ -698,14 +702,18 @@
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 5,
           "excluded": false,
           "reason": "too-few-samples",
           "durations": [
-            2595
+            2595,
+            2602,
+            2598,
+            2605,
+            2601
           ],
-          "max": 2595,
-          "warmP50": 2601.5,
+          "max": 2605,
+          "warmP50": 2601,
           "ratio": 1,
           "test": {
             "title": "orders › creates an order",
@@ -775,7 +783,7 @@
       },
       "POST /graphql#GetTickets": {
         "count": 10,
-        "successCount": 9,
+        "successCount": 5,
         "errorCount": 0,
         "fromFailedTests": 0,
         "testCount": 2,
@@ -787,20 +795,20 @@
           "node": 0
         },
         "stats": {
-          "min": 88,
-          "avg": 94,
+          "min": 92,
+          "avg": 96,
           "max": 100,
           "percentiles": {
-            "p50": 93,
-            "p90": 99.2,
-            "p95": 99.6,
-            "p99": 99.9
+            "p50": 96,
+            "p90": 99.6,
+            "p95": 99.8,
+            "p99": 100
           }
         },
         "ttfb": {
-          "p50": 55.8,
-          "p95": 59.8,
-          "otherP50": 37.2
+          "p50": 57.6,
+          "p95": 59.9,
+          "otherP50": 38.4
         },
         "slowest": [
           {
@@ -855,12 +863,8 @@
         ],
         "samples": {
           "durations": [
-            88,
-            91,
-            92,
             92,
             93,
-            95,
             96,
             99,
             100
@@ -869,29 +873,31 @@
         },
         "histogram": {
           "edges": [
-            86.6,
             90.85,
             95.32,
             100,
             104.9
           ],
           "counts": [
-            1,
-            5,
+            2,
             2,
             1
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 5,
           "excluded": true,
           "reason": null,
           "durations": [
-            85
+            85,
+            92,
+            88,
+            95,
+            91
           ],
-          "max": 85,
-          "warmP50": 93,
-          "ratio": 0.91,
+          "max": 95,
+          "warmP50": 96,
+          "ratio": 0.99,
           "test": {
             "title": "tickets › opens the list",
             "project": "chromium",
@@ -919,14 +925,14 @@
           "checks": [
             {
               "rule": "median",
-              "n": 9,
-              "actual": 93,
+              "n": 5,
+              "actual": 96,
               "observed": null,
               "limit": 2000,
               "passed": true,
               "hardLimitExceeded": false,
               "blocking": false,
-              "usage": 0.0465
+              "usage": 0.048
             },
             {
               "rule": "errors",
@@ -1040,15 +1046,19 @@
           ]
         },
         "cold": {
-          "count": 1,
+          "count": 5,
           "excluded": false,
           "reason": "too-few-samples",
           "durations": [
-            135
+            135,
+            142,
+            138,
+            145,
+            141
           ],
-          "max": 135,
-          "warmP50": 141.5,
-          "ratio": 0.95,
+          "max": 145,
+          "warmP50": 141,
+          "ratio": 1.03,
           "test": {
             "title": "tickets › opens the list",
             "project": "chromium",

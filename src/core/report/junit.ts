@@ -319,7 +319,9 @@ function contextLines(aggregate: Aggregate): string[] {
   }
   const cold = aggregate.cold;
   if (cold?.excluded === true && cold.warmP50 !== null) {
-    lines.push(`cold start: first call ${formatMs(cold.max)}, warm p50 ${formatMs(cold.warmP50)}`);
+    // Cold samples of several passes (08-REQ-41): the slowest of them (16-REQ-21).
+    const calls = cold.count === 1 ? 'first call' : `slowest of ${String(cold.count)} first calls`;
+    lines.push(`cold start: ${calls} ${formatMs(cold.max)}, warm p50 ${formatMs(cold.warmP50)}`);
   }
   return lines;
 }

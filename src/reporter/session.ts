@@ -819,7 +819,7 @@ export class RunSession {
         status: shard.status,
         passes: { ...shard.passes, failed: [...shard.passes.failed] },
         tests: { status: shard.status, ...shard.tests },
-        samples: shard.entries.filter((e) => e[0] !== 'e').length,
+        samples: shard.entries.filter((e) => e[0] === 'r' || e[0] === 's').length,
         host: { ...shard.host },
         buildUrl: shard.ci?.buildUrl ?? null,
       })),
@@ -924,7 +924,7 @@ export class RunSession {
       );
       return undefined;
     }
-    const samples = file.entries.filter((e) => e[0] !== 'e').length;
+    const samples = file.entries.filter((e) => e[0] === 'r' || e[0] === 's').length;
     this.info(`${label} done: ${plural(this.testsStarted, 'test')}, ${plural(samples, 'sample')}.`);
     return undefined;
   }
@@ -1013,6 +1013,8 @@ export class RunSession {
         });
         continue;
       }
+      // Each pass starts the application again: its first calls are cold (08-REQ-41).
+      this.aggregator.startSegment();
       this.mergePass(parsed.value);
       status = worseStatus(status, parsed.value.status);
     }

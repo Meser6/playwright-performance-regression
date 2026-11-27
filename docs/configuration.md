@@ -310,7 +310,7 @@ HTTP statuses counted as successful samples: a class like '2xx' or an exact code
 
 ### `measure.coldSamples`
 
-The first N timed samples of every key in the run are cold (first call after start-up): they stay out of the evaluated time statistics when the key has at least coldSamples + checks.time.median.minSamples timed samples. 0 turns it off.
+The first N timed samples of every key in each pass are cold (first call after the start of the application, which webServer starts again in every pass): they stay out of the evaluated time statistics when at least checks.time.median.minSamples warm samples are left. 0 turns it off.
 
 - Type: integer (0 to 5)
 - Default: `1`
