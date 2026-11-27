@@ -253,10 +253,17 @@ export function evaluate(
         .sort(compareText);
       if (unseen.length > 0) warnings.push(unseenWarning(file.path, unseen, operationKeys));
       // Evaluated keys without an entry in a file with entries (09-REQ-36): only in test mode;
-      // a thresholds run adds the entries itself, an empty file has THRESHOLDS_FILE_EMPTY.
+      // a thresholds run adds the entries itself, an empty file has THRESHOLDS_FILE_EMPTY. Keys
+      // without successful samples are left out: a thresholds run never gives them an entry
+      // (10-REQ-02).
       if (opts.mode === 'test' && Object.keys(file.file.entries).length > 0) {
         const onDefaults = Object.entries(perKey[kind])
-          .filter(([, e]) => e.thresholdSource === 'default' && e.result !== 'not-evaluated')
+          .filter(
+            ([key, e]) =>
+              e.thresholdSource === 'default' &&
+              e.result !== 'not-evaluated' &&
+              (byKind[kind][key]?.successCount ?? 0) > 0,
+          )
           .map(([key]) => key)
           .sort(compareText);
         if (onDefaults.length > 0) {

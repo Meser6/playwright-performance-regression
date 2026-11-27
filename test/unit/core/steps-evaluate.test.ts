@@ -287,6 +287,27 @@ describe('09-AC-36 keys without an entry on default thresholds (09-REQ-36)', () 
     ]);
   });
 
+  test('a key without successful samples (intentional 404s) is not listed', () => {
+    const e = evaluate(
+      {
+        endpoints: aggregates({
+          'GET /api/entry': { durations: [[30, 100]] },
+          'GET /api/a': { durations: [[30, 100]] },
+          'request GET /api/missing': { other: 10 },
+        }).endpoints,
+      },
+      files(withEntry(), missing('step')),
+      STEPS_OFF,
+      options(),
+    );
+    // Evaluated by the errors rule on default thresholds, but a thresholds run gives it no entry.
+    expect(e.perKey.api['request GET /api/missing']?.thresholdSource).toBe('default');
+    expect(e.perKey.api['request GET /api/missing']?.result).toBe('pass');
+    expect(onDefaults(e).map((w) => w.message)).toEqual([
+      '1 endpoint key has no entry in pw-perf-thresholds.json and is evaluated with default thresholds: GET /api/a.',
+    ]);
+  });
+
   test('none in thresholds mode, with a missing file or with an empty file', () => {
     expect(onDefaults(run(withEntry(), 'thresholds'))).toEqual([]);
     expect(onDefaults(run(missing('api')))).toEqual([]);
