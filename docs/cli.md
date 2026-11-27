@@ -11,6 +11,8 @@ every setting of a run is a `PW_PERF_*` variable:
 | dry run (check)   | `PW_PERF_MODE=check npm run e2e`                     |
 | without a script  | `PW_PERF_MODE=test npx playwright test --grep @perf` |
 | environment label | `PW_PERF_MODE=test PW_PERF_ENV=qa npm run e2e:qa`    |
+| one shard of four | `PW_PERF_MODE=test npm run e2e -- --shard=1/4`       |
+| merge the shards  | `PW_PERF_MODE=merge npx pw-perf`                     |
 
 Run the command from the directory you always run your tests from. Everything the script does
 still happens: its variables, setup steps and Playwright flags. The variable reaches Playwright
@@ -23,7 +25,7 @@ To set the package up, run `npm init playwright-performance-regression` (see
 
 | Variable            | Meaning                                                                                                      |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `PW_PERF_MODE`      | `test`, `thresholds` or `check`; perf mode is off when it is unset or empty                                  |
+| `PW_PERF_MODE`      | `test`, `thresholds` or `check`; perf mode is off when it is unset or empty; `merge` only for `npx pw-perf`  |
 | `PW_PERF_ENV`       | environment label: the run uses `pw-perf-thresholds[.steps].<label>.json`; overrides `run.env` of the config |
 | `PW_PERF_PASSES`    | passes of the test command for this run (1 to 1000); overrides `run.passes.test` or `run.passes.thresholds`  |
 | `PW_PERF_PRUNE`     | `1` in a thresholds run: remove unlocked entries of keys that were not seen in this run                      |
@@ -119,11 +121,11 @@ exits with 0.
 
 ### Exit codes
 
-| `exitCode` | Meaning                                                                                                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0          | OK. Also with warnings, with tolerated violations, and with a few failed tests (they are reported as a warning).                                                                                  |
-| 2          | Performance regression: at least one blocking violation (`test` only).                                                                                                                            |
-| 3          | Tool or config error, or a result that cannot be trusted: an invalid variable or config, too many failed tests, an interrupted or timed-out run, a sharded run, a file that could not be written. |
+| `exitCode` | Meaning                                                                                                                                                                                             |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0          | OK. Also with warnings, with tolerated violations, and with a few failed tests (they are reported as a warning).                                                                                    |
+| 2          | Performance regression: at least one blocking violation (`test` only).                                                                                                                              |
+| 3          | Tool or config error, or a result that cannot be trusted: an invalid variable or config, too many failed tests, an interrupted or timed-out run, a missing shard, a file that could not be written. |
 
 A thresholds run ends with 0 or 3. When `outcome.json` is missing after the run, the reporter did
 not run (for example `playwright.config` does not use `withPerf()` or no test matched the
@@ -147,9 +149,28 @@ package warns instead, before the tests start:
 - [`RUN_PRUNE_SKIPPED`](troubleshooting.md#run_prune_skipped): `PW_PERF_PRUNE=1` with a test
   filter (see [Variables](#variables)).
 
-A sharded run (`--shard`) sees only part of the samples, so the statistics and the gate need the
-whole run in one job ([`RUN_SHARDED`](troubleshooting.md#run_sharded)). With `--list` Playwright
-only lists the tests; nothing is measured or written.
+With `--list` Playwright only lists the tests; nothing is measured or written.
+
+## Sharded runs
+
+`--shard=i/n` splits a perf-mode run across machines like a regular run. A shard does not evaluate:
+it measures its tests in all passes and writes `reports/pw-perf/shard-<i>-of-<n>.json` and
+`outcome.json` (0, or 3 when its data are incomplete); the start banner says `shard i/n`. When all
+shards are done, a merge job evaluates them as one run:
+
+```sh
+# the shard files of all shards in reports/pw-perf/, run from the root of the checkout
+PW_PERF_MODE=merge npx pw-perf
+```
+
+The merge starts no browser and no Playwright. It takes the config, mode, environment label and
+passes from the shard files, writes `report.json`, `report.html`, `junit.xml` (mode `test`), the
+thresholds files (mode `thresholds`) and `outcome.json` to `reports/pw-perf/`, and exits with the
+exit code of the run (0, 2 or 3) itself. With an argument (`npx pw-perf merge`) it stops with
+[`CLI_UNKNOWN_COMMAND`](troubleshooting.md#cli_unknown_command); `PW_PERF_MODE=merge` in front of
+the test command is [`MODE_INVALID_VALUE`](troubleshooting.md#mode_invalid_value). A check with
+`--shard` checks only the tests of that shard. CI recipes and rules:
+[Sharded runs](ci.md#sharded-runs); problems: [Shards and merge](troubleshooting.md#shards-and-merge).
 
 Without `--reporter`, the reporters of the config are used as `withPerf()` adjusted them (see
 [`run.keepReporters`](configuration.md#runkeepreporters)): a measurement run has hundreds of test

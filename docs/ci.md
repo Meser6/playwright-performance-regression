@@ -121,6 +121,64 @@ With your own [`report.dir`](configuration.md#reportdir), change the path in the
 turn the file off, set [`report.junit`](configuration.md#reportjunit) to `false` (and remove the
 step, or leave it: GitLab only warns about a missing file, Jenkins and Azure accept it).
 
+## Sharded runs
+
+A measurement run uses one worker and repeats the tests in passes, so a large suite can take
+hours. When it no longer fits the time limit of a job (or the night), split it across machines
+with Playwright's `--shard=i/n`, as you would a regular run, and add a merge job:
+
+1. **Shard jobs** run your usual test command with `PW_PERF_MODE` and `--shard=i/n`. Each shard
+   measures its part of the tests in all passes, does not evaluate and writes
+   `reports/pw-perf/shard-<i>-of-<n>.json` and `outcome.json` (0, or 3 when its data are
+   incomplete). The console ends with `Next: when all n shards are done, run PW_PERF_MODE=merge
+npx pw-perf in the merge job`.
+2. **The merge job** downloads the shard files of all shards to `reports/pw-perf/` and runs
+   `PW_PERF_MODE=merge npx pw-perf`. It needs no browsers, only the checkout (with the thresholds
+   files) and `npm ci`. It evaluates all samples as one run and writes one `report.json`,
+   `report.html`, `junit.xml` and `outcome.json`; in mode `thresholds` it writes one complete set of
+   thresholds files (copied to `reports/pw-perf/` for the artifact). It exits with 0, 2 or 3 like
+   a run without shards; the summary says `merged from 4 shards`.
+
+| Platform        | Recipe                                                                      |
+| --------------- | --------------------------------------------------------------------------- |
+| GitHub Actions  | [`sharded/github-actions.yml`](../examples/ci/sharded/github-actions.yml)   |
+| GitLab CI       | [`sharded/gitlab-ci.yml`](../examples/ci/sharded/gitlab-ci.yml)             |
+| Jenkins         | [`sharded/Jenkinsfile`](../examples/ci/sharded/Jenkinsfile)                 |
+| Azure Pipelines | [`sharded/azure-pipelines.yml`](../examples/ci/sharded/azure-pipelines.yml) |
+
+Each recipe has a shard job with a matrix of 4 machines, uploads only the `shard-*.json` files
+(`outcome.json` and `pass-*.json` have the same names on every machine), keeps them for 7 days and
+starts the merge job also when a shard failed, so that a missing shard is reported instead of
+silently evaluating part of the keys. On GitLab the mode comes from the pipeline variable
+`PERF_MODE`: a variable given when a pipeline is started overrides the job variables, so passing
+`PW_PERF_MODE=thresholds` directly would also override `merge` in the merge job.
+
+Rules for sharded runs:
+
+- **The number of shards is in two places**: the matrix (or `parallel:`) and `--shard=i/n`. Keep
+  them equal; shard files with different totals are rejected (`MERGE_SHARD_MISMATCH`).
+- **Same machines.** Run all shards on the same machine type: differences between machines add
+  noise (`MERGE_SHARDS_DIFFERENT_HOSTS`, with a table of the shards in the summary). Derive the
+  thresholds with the same number of shards and machine type as the measurement.
+- **Run the merge from the root of the checkout**, the directory where the shards ran the test
+  command: it finds the Playwright config and the thresholds files from there
+  (`MERGE_WRONG_DIRECTORY` otherwise). Use the same package version on every machine
+  (`npm ci` from one lock file).
+- **Every shard must upload its file, also when it failed.** A missing file is
+  `MERGE_SHARD_MISSING` (exit code 3): the report covers the other shards, no thresholds files are
+  written.
+- `PW_PERF_ENV`, `PW_PERF_PRUNE` and `PW_PERF_PASSES` belong to the shard jobs; the merge uses the
+  values of the shard files (`MERGE_ENV_IGNORED` when the merge job sets others).
+- **With your own [`report.dir`](configuration.md#reportdir)** the shards write their files there,
+  but the merge always reads and writes `reports/pw-perf/` of the working directory: download the
+  shard files there.
+- **Testing the merge locally:** run the shards one after another in separate copies of the
+  project (a shard run empties `reports/pw-perf/` of its directory first), copy their
+  `shard-*.json` files into `reports/pw-perf/` of one checkout and run
+  `PW_PERF_MODE=merge npx pw-perf` there.
+
+`PW_PERF_MODE=check` with `--shard` checks only the tests of that shard and writes no shard file.
+
 ## Isolation of the environment and the runner
 
 Response times reflect everything that runs at the same time. Shared runners or a shared QA

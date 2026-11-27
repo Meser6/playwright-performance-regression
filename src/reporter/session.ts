@@ -2,7 +2,7 @@
 // conditions, onTestEnd aggregates the sample batches, onEnd evaluates, writes the run report,
 // the thresholds files in thresholds mode and the outcome file, and prints the summary. Free of
 // Node and Playwright imports: files, clock and terminal come from the ReporterHost.
-import { resolveConfig } from '../core/config/index.ts';
+import { DEFAULT_CONFIG, resolveConfig } from '../core/config/index.ts';
 import type { ResolvedConfig, ResolvedConfigJson } from '../core/config/index.ts';
 import { assessRun, buildOutcome, evaluate } from '../core/evaluate/index.ts';
 import type { LoadedThresholds, RunSource } from '../core/evaluate/index.ts';
@@ -99,6 +99,13 @@ import { notInstrumentedWarning, workerCrashed } from './not-instrumented.ts';
 import { cleanReportDir } from './report-dir.ts';
 import type { TestFiles } from './not-instrumented.ts';
 import type { PassFile, TestCounts } from './pass-file.ts';
+import { shardFileName } from './shard-file.ts';
+import type { ShardFile } from './shard-file.ts';
+import {
+  formatShardSummary,
+  mergeOutcomeLine,
+  shardOutcomeLine,
+} from '../console/shard-summary.ts';
 import type { RunConditionsReport } from './begin.ts';
 import { hasTraceOrVideo, projectName, sampleAttachments, testMeta } from './samples.ts';
 import type {
@@ -114,6 +121,29 @@ import type {
 const PENDING_TOP_KEYS = 5;
 /** Terminal width without a terminal (09-REQ-22). */
 const DEFAULT_WIDTH = 120;
+/** A run estimated above this suggests --shard in the start banner (17-REQ-25). */
+const LONG_RUN_MS = 2 * 60 * 60 * 1000;
+/** The command of the merge job (17-REQ-12). */
+const MERGE_COMMAND = 'PW_PERF_MODE=merge npx pw-perf';
+/** Folder of the merge: the default report.dir, relative to the working directory (17-REQ-13). */
+export const MERGE_DIR = DEFAULT_CONFIG.report.dir;
+
+/** What a merge gives the session (17-REQ-15, 17-REQ-16): the valid shard files, sorted. */
+export interface MergeInput {
+  shards: readonly ShardFile[];
+  total: number;
+  missing: readonly number[];
+  /** Absolute paths.configDir in the checkout of the merge job. */
+  configDir: string;
+  /** Warnings and tool errors of the validation (17-REQ-14). */
+  warnings: readonly Issue[];
+  toolErrors: readonly Issue[];
+}
+
+interface MergeState {
+  input: MergeInput;
+  finishedAt: Date;
+}
 
 /** What the reporter runs with: the registered state of withPerf(), or the defaults. */
 export interface RunSettings {
@@ -270,6 +300,17 @@ export class RunSession {
   /** Measured projects with browser samples; the others with requests are request only (02-REQ-42). */
   private readonly projectsWithBrowserRequests = new Set<string>();
   private playwrightVersion = '';
+  /** FullConfig.shard of a perf-mode run (17-REQ-01); null without --shard. */
+  private shard: { current: number; total: number } | null = null;
+  /** FullConfig.configFile, for the shard file (17-REQ-10). */
+  private configFile: string | undefined;
+  /** Measured tests of one pass, for the shard summary (17-REQ-08). */
+  private passTests = 0;
+  /** Machine and CI of the report: this process, or the shards in a merge (17-REQ-16). */
+  private hostInfo: RunReport['host'];
+  private ciInfo: RunReport['ci'];
+  /** The shard merge this session finishes (17-REQ-15); null in a Playwright run. */
+  private merging: MergeState | null = null;
 
   constructor(host: ReporterHost, settings: RunSettings, options: SessionOptions = {}) {
     this.host = host;
@@ -286,6 +327,13 @@ export class RunSession {
     this.aggregator = this.createAggregator();
     this.keyOf = createKeyBuilder(keys, { baseOrigins: [] });
     this.steps = new StepRecorder(settings.config);
+    this.hostInfo = host.host;
+    this.ciInfo = host.ci;
+  }
+
+  /** A run of one shard writes a shard file instead of evaluating (17-REQ-05). */
+  private get sharded(): boolean {
+    return this.shard !== null && !this.check && this.merging === null;
   }
 
   /** Mode of the run report; a check aggregates like a measurement run (04-REQ-48). */
@@ -344,6 +392,9 @@ export class RunSession {
       projects: fullConfig.projects.filter((p) => inRun.has(p.name)),
     };
     this.configLike = config;
+    this.configFile = config.configFile;
+    // --shard: no evaluation in this process, the merge evaluates all shards (17-REQ-01).
+    this.shard = config.shard === null ? null : { ...config.shard };
     this.startedAt = this.host.now();
     if (this.settings.mode.runId === undefined) {
       this.runId = generateRunId(this.startedAt, this.host.random);
@@ -410,18 +461,11 @@ export class RunSession {
     if (this.settings.registered && this.measured.size === 0) {
       this.toolErrors.push(noMeasuredProjectError(inRun));
     }
-    if (config.shard !== null) {
-      // 04-REQ-34: each shard would evaluate part of the keys and write partial thresholds.
-      this.toolErrors.push({
-        code: 'RUN_SHARDED',
-        message: `The perf-mode run is sharded (--shard ${config.shard.current}/${config.shard.total}): each machine would evaluate only part of the keys.`,
-        hint: 'Run perf mode on one machine without --shard.',
-      });
-    }
-
     this.beginWarnings = this.warnings.length;
     this.beginToolErrors = this.toolErrors.length;
-    if (this.passes > 1) this.aggregator.journal = [];
+    this.passTests = measuredTestCount(suite.allTests(), this.measured);
+    // A shard keeps the inputs of all its passes for the shard file (17-REQ-10).
+    if (this.passes > 1 || this.sharded) this.aggregator.journal = [];
     if (this.passIndex > 1) {
       this.info(`pass ${String(this.passIndex)}/${String(this.passes)} (perf mode "${this.mode}")`);
       return;
@@ -434,6 +478,8 @@ export class RunSession {
   /** report.dir as an absolute path. */
   private reportDir(): string {
     const io = this.host.io;
+    // The merge reads and writes the default report folder of the working directory (17-REQ-13).
+    if (this.merging !== null) return io.resolvePath(this.host.cwd, MERGE_DIR);
     return io.resolvePath(this.configDir, this.settings.config.report.dir);
   }
 
@@ -465,8 +511,14 @@ export class RunSession {
     const cfg = this.settings.config;
     const io = this.host.io;
     const tests = measuredTestCount(suite.allTests(), this.measured);
-    const file = cfg.report.html ? 'report.html' : 'report.json';
+    const file =
+      this.shard !== null
+        ? shardFileName(this.shard)
+        : cfg.report.html
+          ? 'report.html'
+          : 'report.json';
     const { width, color } = this.terminal();
+    const lastMs = this.check ? null : this.lastMsPerTest();
     return formatStartBanner(
       {
         packageName: 'pw-perf',
@@ -480,7 +532,14 @@ export class RunSession {
         maxTests: this.settings.mode.maxTests ?? DEFAULT_MAX_TESTS,
         estimate: this.check
           ? null
-          : startEstimate({ tests, passes: this.passes, msPerTest: this.lastMsPerTest() }),
+          : startEstimate({ tests, passes: this.passes, msPerTest: lastMs }),
+        // 17-REQ-25: a run without shards estimated above 2 hours could be split.
+        long:
+          !this.check &&
+          this.shard === null &&
+          lastMs !== null &&
+          tests * this.passes * lastMs > LONG_RUN_MS,
+        shard: this.shard,
         report: this.check
           ? null
           : io.relativeSlashPath(this.host.cwd, io.resolvePath(this.reportDir(), file)),
@@ -688,7 +747,7 @@ export class RunSession {
     const browsers = this.conditions.projects
       .filter((p) => p.role === 'measured' && p.browserName !== null)
       .map((p) => p.browserName as string);
-    const { nodeVersion: _, ...host } = this.host.host;
+    const { nodeVersion: _, ...host } = this.hostInfo;
     return {
       browsers: [...new Set(browsers)].sort(),
       playwrightVersion: this.playwrightVersion,
@@ -717,8 +776,8 @@ export class RunSession {
         env: this.settings.config.run.env,
         configDir: this.configDir,
         ...(this.suite === null ? {} : { suite: this.suite }),
-        ci: this.host.ci,
-        host: this.host.host,
+        ci: this.ciInfo,
+        host: this.hostInfo,
         playwright: { version: this.playwrightVersion },
       },
       config: this.settings.snapshot,
@@ -736,10 +795,33 @@ export class RunSession {
         ),
       },
       tests: this.testsResult(status),
+      shards: this.shardsField(),
       aggregates,
       evaluation,
       warnings,
       toolErrors,
+    };
+  }
+
+  /** The shards field of the report (17-REQ-17): null without a merge. */
+  private shardsField(): RunReport['shards'] {
+    if (this.merging === null) return null;
+    const { input } = this.merging;
+    return {
+      total: input.total,
+      missing: [...input.missing],
+      list: input.shards.map((shard) => ({
+        index: shard.shard.current,
+        runId: shard.runId,
+        startedAt: shard.startedAt,
+        finishedAt: shard.finishedAt,
+        status: shard.status,
+        passes: { ...shard.passes, failed: [...shard.passes.failed] },
+        tests: { status: shard.status, ...shard.tests },
+        samples: shard.entries.filter((e) => e[0] !== 'e').length,
+        host: { ...shard.host },
+        buildUrl: shard.ci?.buildUrl ?? null,
+      })),
     };
   }
 
@@ -762,23 +844,28 @@ export class RunSession {
     // Passes 2…N only write their data for the first pass (04-REQ-64).
     if (this.passIndex > 1) return this.endLaterPass(result);
     // --list, or a filter that selected no test: no report, no outcome, no status (01-REQ-40).
-    if (this.testsStarted === 0) return undefined;
+    // A shard without tests still writes its file, so the merge does not miss it (17-REQ-06).
+    const emptyShard = this.sharded && !this.host.argv.includes('--list');
+    if (this.testsStarted === 0 && !emptyShard) return undefined;
     if (this.check) return this.endCheck(result);
     let status = result.status;
     let outcome: Outcome;
     try {
       if (this.passes > 1) status = await this.runPasses(result);
-      outcome = await this.finish({ status });
+      outcome = this.sharded ? await this.finishShard({ status }) : await this.finish({ status });
     } catch (error) {
       this.recordInternalError('onEnd', error);
       outcome = this.fallbackOutcome({ status });
+      if (this.sharded) outcome.evaluation.gateEnabled = false;
       for (const issue of outcome.toolErrors) {
         this.host.stderr.write(`${PACKAGE_NAME}: ${issue.code}: ${issue.message}\n`);
       }
     }
     const written = await this.writeOutcome(outcome);
     if (written !== null) {
-      this.host.stdout.write(outcomeLine(outcome, written));
+      this.host.stdout.write(
+        this.sharded ? shardOutcomeLine(outcome, written) : outcomeLine(outcome, written),
+      );
     }
     // The last line of the output (09-REQ-32).
     if (this.next !== null) {
@@ -854,7 +941,8 @@ export class RunSession {
     } catch {
       // The data of pass 1 stay in memory; the file is only for diagnosis.
     }
-    this.aggregator.journal = null;
+    // A shard keeps recording: the replayed passes go to the shard file too (17-REQ-10).
+    if (!this.sharded) this.aggregator.journal = null;
     const total = this.passes;
     const info = io.readPackageInfo(this.host.cwd);
     const passInput = {
@@ -932,6 +1020,14 @@ export class RunSession {
 
   /** Adds the data of a later pass to this run (04-REQ-64). */
   private mergePass(file: PassFile): void {
+    this.mergeData(file);
+    this.completedPasses += 1;
+  }
+
+  /** Adds the samples, counters and issues of a pass or shard file to this run. */
+  private mergeData(
+    file: Pick<PassFile, 'entries' | 'tests' | 'counters' | 'warnings' | 'toolErrors'>,
+  ): void {
     replayEntries(this.aggregator, file.entries);
     for (const name of ['expected', 'unexpected', 'flaky', 'skipped'] as const) {
       this.mergedTests[name] += file.tests[name];
@@ -949,13 +1045,13 @@ export class RunSession {
     }
     this.warnings.push(...file.warnings);
     this.toolErrors.push(...file.toolErrors);
-    this.completedPasses += 1;
   }
 
   private async finish(result: FullResultLike): Promise<Outcome> {
     const cfg = this.settings.config;
     const io = this.host.io;
-    const finishedAt = this.host.now();
+    // A merge ends when its last shard ended, not when the merge job runs (17-REQ-16).
+    const finishedAt = this.merging?.finishedAt ?? this.host.now();
     const warnings = [...this.warnings, ...this.runWarnings()];
     const toolErrors = [...this.toolErrors];
 
@@ -968,12 +1064,25 @@ export class RunSession {
     const pending = this.pendingWarning();
     if (pending !== null) warnings.push(pending);
     const tests = this.testsResult(result.status);
-    const assessment = assessRun(
-      { tests, maxFailures: this.maxFailures, sharded: false },
-      cfg.gate,
-    );
+    const assessment = assessRun({ tests, maxFailures: this.maxFailures }, cfg.gate);
     warnings.push(...assessment.warnings);
     toolErrors.push(...assessment.toolErrors);
+    // maxFailures stops each shard on its own, so it is compared per shard (17-REQ-15).
+    if (!toolErrors.some((issue) => issue.code === 'RUN_INCOMPLETE')) {
+      for (const shard of this.merging?.input.shards ?? []) {
+        const stopped = assessRun(
+          { tests: { status: shard.status, ...shard.tests }, maxFailures: shard.maxFailures },
+          { maxFailedTestShare: 1 },
+        ).toolErrors.find((issue) => issue.code === 'RUN_INCOMPLETE');
+        if (stopped !== undefined) {
+          toolErrors.push({
+            ...stopped,
+            message: `Shard ${String(shard.shard.current)}/${String(shard.shard.total)}: ${stopped.message}`,
+          });
+          break;
+        }
+      }
+    }
 
     const location = {
       configDir: this.configDir,
@@ -1001,7 +1110,7 @@ export class RunSession {
       );
     let report = build();
 
-    const reportDir = io.resolvePath(this.configDir, cfg.report.dir);
+    const reportDir = this.reportDir();
     const paths: Outcome['paths'] = {
       reportJson: null,
       reportHtml: null,
@@ -1072,6 +1181,7 @@ export class RunSession {
         color,
         ascii: asciiTerminal(this.host.env),
         html: paths.reportHtml !== null,
+        reportDir,
       }),
     );
     const noSteps = this.steps.noStepsLine(Object.keys(aggregates.steps));
@@ -1084,7 +1194,7 @@ export class RunSession {
           width,
           color,
           prune: this.pruned,
-          subset: testFilters(testArgsFromArgv(this.host.argv)).length > 0,
+          subset: this.testFilterArgs().length > 0,
           // Absolute, like the Report line of the summary (10, chapter 9.1; 09-REQ-30).
           diffPath: paths.thresholdsDiff,
           temporary,
@@ -1099,6 +1209,227 @@ export class RunSession {
       temporary,
     });
     return buildOutcome(report, paths);
+  }
+
+  /** Data of this shard for the merge (17-REQ-10). */
+  private shardFile(
+    status: FullResultLike['status'],
+    finishedAt: Date,
+    shard: { current: number; total: number },
+  ): ShardFile {
+    const io = this.host.io;
+    const cwd = this.host.cwd;
+    const { status: _, ...tests } = this.testsResult(status);
+    return {
+      format: 'pw-perf-shard',
+      schemaVersion: 1,
+      toolVersion: this.settings.packageVersion,
+      playwrightVersion: this.playwrightVersion,
+      shard: { ...shard },
+      runId: this.runId,
+      mode: this.mode,
+      env: this.settings.config.run.env,
+      prune: this.settings.mode.prune === true,
+      testFilter: testFilters(testArgsFromArgv(this.host.argv)).length > 0,
+      maxFailures: this.maxFailures,
+      paths: {
+        configDir: io.relativeSlashPath(cwd, this.configDir),
+        configFile:
+          this.configFile === undefined
+            ? ''
+            : io.relativeSlashPath(this.configDir, this.configFile),
+        reportDir: io.relativeSlashPath(cwd, this.reportDir()),
+      },
+      config: this.settings.snapshot,
+      normalization: this.normalization,
+      stepNormalization: this.steps.fingerprint(),
+      projects: {
+        measured: [...this.measured].sort(),
+        dependencies: [...this.dependencyOnly].sort(),
+      },
+      startedAt: this.startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      status,
+      passes: {
+        planned: this.passes,
+        completed: this.completedPasses,
+        failed: [...this.failedPasses].sort((a, b) => a - b),
+      },
+      host: this.hostInfo,
+      ci: this.ciInfo,
+      // Without requestOnly: the merge decides it from the counters of all shards (02-REQ-42).
+      runConditions: structuredClone(this.conditions),
+      tests,
+      counters: {
+        testsStarted: this.testsStarted,
+        notInstrumented: { ...this.notInstrumented },
+        crashedTests: { ...this.crashedTests },
+        withArtifacts: this.withArtifacts,
+        instrumentedProjects: [...this.instrumentedProjects].sort(),
+        projectsWithRequests: [...this.projectsWithRequests].sort(),
+        projectsWithBrowserRequests: [...this.projectsWithBrowserRequests].sort(),
+        pending: Object.fromEntries([...this.pending].sort((a, b) => (a[0] < b[0] ? -1 : 1))),
+      },
+      beginWarnings: this.warnings.slice(0, this.beginWarnings),
+      beginToolErrors: this.toolErrors.slice(0, this.beginToolErrors),
+      // The step redactions stay in this process; their warning travels with the file (06-REQ-37).
+      warnings: [...this.warnings.slice(this.beginWarnings), ...this.steps.issues([])],
+      toolErrors: this.toolErrors.slice(this.beginToolErrors),
+      entries: this.aggregator.journal ?? [],
+    };
+  }
+
+  /**
+   * End of a shard (17-REQ-05…08): the shard file and the shard summary, no evaluation, no report
+   * and no thresholds files. The outcome has exit code 0, or 3 with tool errors.
+   */
+  private async finishShard(result: FullResultLike): Promise<Outcome> {
+    const shard = this.shard as { current: number; total: number };
+    const io = this.host.io;
+    const finishedAt = this.host.now();
+    const file = this.shardFile(result.status, finishedAt, shard);
+    const toolErrors = [...this.toolErrors];
+    // The merge reports RUN_INCOMPLETE from the shard status; here it only sets exit code 3.
+    toolErrors.push(
+      ...assessRun(
+        { tests: this.testsResult(result.status), maxFailures: 0 },
+        { maxFailedTestShare: 1 },
+      ).toolErrors,
+    );
+    const path = io.resolvePath(this.reportDir(), shardFileName(shard));
+    try {
+      await io.writeJsonStable(path, file);
+    } catch (error) {
+      toolErrors.push({
+        code: 'SHARD_WRITE_FAILED',
+        message: `The shard file could not be written to ${path}: ${error instanceof Error ? error.message : String(error)}`,
+        hint: 'Check that report.dir is writable; the merge needs the file of every shard.',
+      });
+    }
+    const samples = { api: 0, step: 0 };
+    for (const entry of file.entries) {
+      if (entry[0] === 'r') samples.api += 1;
+      else if (entry[0] === 's') samples.step += 1;
+    }
+    const { width, color } = this.terminal();
+    const warnings = collapseIssues([...file.beginWarnings, ...file.warnings]).length;
+    this.host.stdout.write(
+      formatShardSummary(
+        {
+          packageName: 'pw-perf',
+          shard,
+          tests: this.passTests,
+          passes: this.passes,
+          samples,
+          data: io.relativeSlashPath(this.host.cwd, path),
+          warnings,
+          toolErrors: collapseIssues(toolErrors),
+        },
+        { width, color, ascii: asciiTerminal(this.host.env) },
+      ),
+    );
+    this.next =
+      toolErrors.length > 0
+        ? null
+        : `when all ${String(shard.total)} shards are done, run ${MERGE_COMMAND} in the merge job`;
+    return {
+      schemaVersion: SCHEMA_VERSIONS.outcome,
+      runId: this.runId,
+      mode: this.mode,
+      exitCode: toolErrors.length > 0 ? 3 : 0,
+      tests: { status: result.status },
+      evaluation: { status: toolErrors.length > 0 ? 'error' : 'passed', gateEnabled: false },
+      toolErrors: collapseIssues(toolErrors),
+      paths: { reportJson: null, reportHtml: null, thresholds: [], thresholdsDiff: null },
+    };
+  }
+
+  /**
+   * The shard merge (17-REQ-15…20): replays the shard files in one aggregator, each shard a new
+   * segment for the cold samples, and finishes like the first pass of a run without shards.
+   * Writes outcome.json and returns its exit code.
+   */
+  async merge(input: MergeInput): Promise<number> {
+    const first = input.shards[0];
+    if (first === undefined) throw new Error('merge without shard files');
+    const io = this.host.io;
+    const latest = input.shards.reduce(
+      (max, shard) => (shard.finishedAt > max ? shard.finishedAt : max),
+      first.finishedAt,
+    );
+    const earliest = input.shards.reduce(
+      (min, shard) => (shard.startedAt < min ? shard.startedAt : min),
+      first.startedAt,
+    );
+    this.merging = { input, finishedAt: new Date(latest) };
+    this.startedAt = new Date(earliest);
+    this.configDir = input.configDir;
+    this.configFile =
+      first.paths.configFile === ''
+        ? undefined
+        : io.resolvePath(input.configDir, first.paths.configFile);
+    this.suite = io.readSuite(this.configDir, this.configFile);
+    this.playwrightVersion = first.playwrightVersion;
+    this.normalization = first.normalization;
+    this.conditions = first.runConditions;
+    this.measured = new Set(first.projects.measured);
+    this.dependencyOnly = new Set(first.projects.dependencies);
+    // The machine that measured; the link of the merge job when it runs in CI (17-REQ-16).
+    this.hostInfo = first.host;
+    this.ciInfo = this.host.ci ?? first.ci;
+    this.aggregator = this.createAggregator();
+
+    // beginWarnings equal in several shards once, then the warnings of the shards (17-REQ-16).
+    const seen = new Set<string>();
+    for (const shard of input.shards) {
+      for (const issue of shard.beginWarnings) {
+        const id = `${issue.code}\u0000${issue.message}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        this.warnings.push(issue);
+      }
+    }
+    const seenErrors = new Set<string>();
+    for (const shard of input.shards) {
+      for (const issue of shard.beginToolErrors) {
+        const id = `${issue.code}\u0000${issue.message}`;
+        if (seenErrors.has(id)) continue;
+        seenErrors.add(id);
+        this.toolErrors.push(issue);
+      }
+    }
+    // passes.completed is the smallest of the shards, failed the union (17-REQ-16).
+    this.completedPasses = Math.min(...input.shards.map((shard) => shard.passes.completed));
+    let status: FullResultLike['status'] = 'passed';
+    const failed = new Set<number>();
+    for (const shard of input.shards) {
+      this.aggregator.startSegment();
+      this.mergeData(shard);
+      for (const n of shard.passes.failed) failed.add(n);
+      status = worseStatus(status, shard.status);
+    }
+    this.failedPasses.push(...[...failed].sort((a, b) => a - b));
+    this.warnings.push(...input.warnings);
+    this.toolErrors.push(...input.toolErrors);
+
+    let outcome: Outcome;
+    try {
+      outcome = await this.finish({ status });
+    } catch (error) {
+      this.toolErrors.push({
+        code: 'MERGE_INTERNAL_ERROR',
+        message: `Unexpected error in the merge: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        hint: 'This is a bug in the package; please report it with the message above.',
+      });
+      outcome = { ...this.fallbackOutcome({ status }) };
+      for (const issue of outcome.toolErrors) {
+        this.host.stderr.write(`${PACKAGE_NAME}: ${issue.code}: ${issue.message}\n`);
+      }
+    }
+    const written = await this.writeOutcome(outcome);
+    if (written !== null) this.host.stdout.write(mergeOutcomeLine(outcome, written));
+    if (this.next !== null) this.host.stdout.write(nextLine(this.next, this.terminal().color));
+    return outcome.exitCode;
   }
 
   private countCheck(test: TestLike, result: ResultLike, measured: boolean): void {
@@ -1157,7 +1488,7 @@ export class RunSession {
     const tests = this.testsResult(result.status);
     // With ten tests one failure is 10%: a check never has TESTS_FAILED_TOO_MANY (04-REQ-53).
     const assessment = assessRun(
-      { tests, maxFailures: this.maxFailures, sharded: false },
+      { tests, maxFailures: this.maxFailures },
       { maxFailedTestShare: 1 },
     );
     const toolErrors = [...this.toolErrors, ...assessment.toolErrors];
@@ -1336,6 +1667,7 @@ export class RunSession {
             meanMs,
             setupMs: c.setupMs,
           }),
+          shard: this.shard,
         },
         { width, color, ascii: asciiTerminal(this.host.env) },
       ),
@@ -1489,7 +1821,7 @@ export class RunSession {
     }
     warnings.push(...derived.value.warnings);
     const absolute = io.thresholdsFilePaths(location);
-    const reportDir = io.resolvePath(this.configDir, cfg.report.dir);
+    const reportDir = this.reportDir();
     let writeFailed = false;
     for (const file of derived.value.files) {
       if (file.content === null || !file.changed) continue;
@@ -1587,7 +1919,7 @@ export class RunSession {
    */
   private prune(warnings: Issue[]): boolean {
     if (this.settings.mode.prune !== true) return false;
-    const filters = testFilters(testArgsFromArgv(this.host.argv));
+    const filters = this.testFilterArgs();
     if (filters.length > 0) {
       warnings.push({
         code: 'RUN_PRUNE_SKIPPED',
@@ -1600,13 +1932,24 @@ export class RunSession {
     return true;
   }
 
+  /**
+   * Test filters of the run (04-REQ-35): from the arguments, or in a merge a marker when a shard
+   * had one (17-REQ-18); --shard is no filter.
+   */
+  private testFilterArgs(): string[] {
+    if (this.merging !== null) {
+      const filtered = this.merging.input.shards
+        .filter((shard) => shard.testFilter)
+        .map((shard) => `shard ${String(shard.shard.current)}`);
+      return filtered.length === 0 ? [] : [`a test filter in ${filtered.join(', ')}`];
+    }
+    return testFilters(testArgsFromArgv(this.host.argv));
+  }
+
   /** <report.dir>/outcome.json (02-REQ-27, 04-REQ-62). */
   private outcomePath(): string {
     const io = this.host.io;
-    return io.resolvePath(
-      io.resolvePath(this.configDir, this.settings.config.report.dir),
-      'outcome.json',
-    );
+    return io.resolvePath(this.reportDir(), 'outcome.json');
   }
 
   /** Last step of onEnd (02-REQ-27); returns the path written, or null. */

@@ -182,7 +182,9 @@ for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines read the exact exit c
   teardown projects. Chromium is supported; Firefox and WebKit are best effort, so select one engine
   with `--project`.
 - The measurement run is separate from your normal run, uses one worker and runs your test command
-  several times (passes), so it is slow: measure a subset (`run: { grep: '@perf' }`, `--project`).
+  several times (passes), so it is slow: measure a subset (`run: { grep: '@perf' }`, `--project`),
+  or split it across machines with `--shard` and merge the shards in one job
+  ([Sharded runs](docs/ci.md#sharded-runs)).
 - The test command, with its setup steps, runs once per pass; tests that create data without such
   a step can collide in the next pass; make the data unique.
 - A `--reporter` flag in the test command replaces the package reporter, so nothing is reported

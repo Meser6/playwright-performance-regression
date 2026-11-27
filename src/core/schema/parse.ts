@@ -546,7 +546,8 @@ function mapValues(map: unknown, f: (value: unknown) => unknown): unknown {
  * evaluation.workload null and limits.maxNonSuccessRate null; the config snapshot gets the new
  * options with coldSamples 0 (an old run did not set cold samples apart), the nonSuccess rule
  * with the margin of the errors rule (presets set both alike, 03-REQ-30), the default
- * workloadShift and keys.operations [] (an old run had no operation keys).
+ * workloadShift and keys.operations [] (an old run had no operation keys). The report gets
+ * shards null (17-REQ-26): a v4 run was never merged from shards.
  */
 export function migrateRunReportV4(document: JsonObject): JsonObject {
   const config = document.config;
@@ -586,6 +587,7 @@ export function migrateRunReportV4(document: JsonObject): JsonObject {
   return {
     ...document,
     config: snapshot,
+    shards: null,
     endpoints: mapValues(document.endpoints, (a) => withV5AggregateFields(a, isSuccess)),
     steps: mapValues(document.steps, (a) => withV5AggregateFields(a, null)),
   };

@@ -61,9 +61,10 @@ export interface Harness {
   server: DemoServer;
   /**
    * Copies `name` from `test/integration/projects` (or the directory `from`) and links the
-   * dependencies; returns the copy's directory.
+   * dependencies; returns the copy's directory. `as` names the copy (several copies of one
+   * project, e.g. one per shard); default "<name> copy".
    */
-  copy(name: string, from?: string): string;
+  copy(name: string, from?: string, as?: string): string;
   run(dir: string, options?: RunOptions): Promise<ProjectRun>;
   close(): Promise<void>;
 }
@@ -81,8 +82,8 @@ export async function startHarness(): Promise<Harness> {
   const server = await startDemoServer();
   return {
     server,
-    copy(name, from = PROJECTS) {
-      const dir = join(scratch, `${name} copy`);
+    copy(name, from = PROJECTS, as = `${name} copy`) {
+      const dir = join(scratch, as);
       cpSync(join(from, name), dir, {
         recursive: true,
         filter: (path) => !/[\\/](node_modules|reports|test-results|\.auth)$/u.test(path),

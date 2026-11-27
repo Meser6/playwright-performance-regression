@@ -58,6 +58,8 @@ export interface CheckSummary {
   warnings: Issue[];
   toolErrors: Issue[];
   estimate: string;
+  /** --shard=i/n of the check (17-REQ-09), or null. */
+  shard?: { current: number; total: number } | null;
 }
 
 const MAX_WARNINGS = 10;
@@ -72,9 +74,16 @@ export function formatCheckSummary(
   const lines: string[] = [];
   lines.push('─'.repeat(Math.max(20, opts.width)));
   const failed = s.failed > 0 ? `, ${String(s.failed)} failed` : '';
+  const shardText =
+    s.shard === undefined || s.shard === null
+      ? ''
+      : ` · shard ${String(s.shard.current)}/${String(s.shard.total)}`;
+  // 17-REQ-09: the last line says that only the tests of this shard were checked.
+  const reason =
+    shardText === '' ? CHECK_REASON : `${CHECK_REASON}; only the tests of this shard were checked`;
   lines.push(
     paint(
-      `${s.packageName} · check · ${String(s.ran)} of ${plural(s.selected, 'test')} run (${String(s.passed)} passed${failed}) · ${String(s.skippedByCheck)} skipped by check`,
+      `${s.packageName} · check${shardText} · ${String(s.ran)} of ${plural(s.selected, 'test')} run (${String(s.passed)} passed${failed}) · ${String(s.skippedByCheck)} skipped by check`,
       'bold',
     ),
     '',
@@ -138,8 +147,8 @@ export function formatCheckSummary(
   const m = marks(frame.ascii);
   lines.push(
     ...(s.toolErrors.length === 0
-      ? verdictBox(m.ok, 'CHECKED', CHECK_REASON, 'green', 'badge-green', frame)
-      : verdictBox(m.error, 'ERROR', CHECK_REASON, 'magenta', 'badge-magenta', frame)),
+      ? verdictBox(m.ok, 'CHECKED', reason, 'green', 'badge-green', frame)
+      : verdictBox(m.error, 'ERROR', reason, 'magenta', 'badge-magenta', frame)),
   );
   return `${lines.join('\n')}\n`;
 }

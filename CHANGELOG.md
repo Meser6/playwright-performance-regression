@@ -43,6 +43,20 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   operation cannot be read keeps its old key and gives the warning `COLLECTOR_OPERATION_UNKNOWN`.
   The HTML report suggests the option for keys that look like GraphQL or tRPC. See
   [Operations](docs/configuration.md#operations) for migrating the thresholds files.
+- **Sharded runs.** A perf-mode run with Playwright's `--shard=i/n` no longer stops with
+  `RUN_SHARDED`: each shard measures its tests in all passes and writes
+  `reports/pw-perf/shard-<i>-of-<n>.json` without evaluating, and `PW_PERF_MODE=merge npx pw-perf`
+  in a merge job (no browsers needed) evaluates all shards as one run, with one report,
+  `junit.xml`, `outcome.json` and, in a thresholds run, one complete set of thresholds files.
+  Cold samples are counted per shard. The run report has a `shards` field (`null` without shards),
+  the console and the HTML report say `merged from 4 shards` and list the shards. A check with
+  `--shard` checks the tests of that shard. New codes: `SHARD_WRITE_FAILED`, `MERGE_NO_SHARD_FILES`,
+  `MERGE_SHARD_INVALID`, `MERGE_SHARD_MISMATCH`, `MERGE_SHARD_DUPLICATE`, `MERGE_SHARD_MISSING`,
+  `MERGE_WRONG_DIRECTORY`, `MERGE_SHARDS_DIFFERENT_COMMIT`, `MERGE_SHARDS_DIFFERENT_HOSTS`,
+  `MERGE_ENV_IGNORED` and `MERGE_INTERNAL_ERROR`. Recipes with a shard matrix and a merge job for
+  GitHub Actions, GitLab CI, Jenkins and Azure Pipelines are in `examples/ci/sharded/`; see
+  [Sharded runs](docs/ci.md#sharded-runs). The start banner of a run estimated above two hours
+  suggests `--shard`.
 
 ### Changed
 
@@ -51,6 +65,11 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
   run rewrites it). The next thresholds run adds `maxNonSuccessRate` and `source` also to entries
   it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
 - Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.
+- The run report gets `shards: null` when a report of version 4 is migrated.
+
+### Removed
+
+- `RUN_SHARDED`: sharded perf-mode runs are supported (see "Sharded runs" above).
 
 ## [1.0.1] - 2026-11-25
 

@@ -36,6 +36,8 @@ const CASES: Record<string, () => RunReport> = {
   'tool-error': () => inputOf('console', 'tool-error.json'),
   empty: () => inputOf('run-report', 'valid', 'empty-run.json'),
   steps: stepsRun,
+  // A merge of two shards (17-REQ-17, 16-REQ-13: pw-perf.shards).
+  merged: () => inputOf('run-report', 'valid', 'merged.json'),
 };
 
 const xmllint = spawnSync('xmllint', ['--version']).status === 0;

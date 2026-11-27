@@ -9,74 +9,10 @@ import type {
   TestCase,
   TestResult,
 } from '@playwright/test/reporter';
-import {
-  directoryOf,
-  emptyDirSync,
-  homeDir,
-  isDirectorySync,
-  listDirSync,
-  readCiInfo,
-  readHostInfo,
-  readPackageInfo,
-  readSuite,
-  readTextFile,
-  readTextFileSync,
-  realPathSync,
-  relativeSlashPath,
-  removeFileSync,
-  resolvePath,
-  readProcessTable,
-  runPass,
-  scanDirSync,
-  tempPath,
-  writeJsonStable,
-  writeTextAtomic,
-} from '../io/index.ts';
-import { loadThresholds, thresholdsFilePaths } from '../io/index.ts';
 import { getRegistered } from '../registry/index.ts';
+import { processHost } from './process-host.ts';
 import { RunSession, runSettings } from './session.ts';
-import type { ReporterHost } from './types.ts';
 import { version } from '../../package.json';
-
-function processHost(): ReporterHost {
-  const env = process.env;
-  return {
-    env,
-    io: {
-      loadThresholds,
-      thresholdsFilePaths,
-      writeJsonStable,
-      writeTextAtomic,
-      resolvePath,
-      directoryOf,
-      relativeSlashPath,
-      removeFileSync,
-      readPackageInfo,
-      readSuite,
-      tempPath,
-      readTextFile,
-      readTextFileSync,
-      listDirSync,
-      isDirectorySync,
-      realPathSync,
-      homeDir,
-      scanDirSync,
-      emptyDirSync,
-    },
-    stdout: process.stdout,
-    stderr: process.stderr,
-    cwd: process.cwd(),
-    argv: process.argv,
-    now: () => new Date(),
-    random: Math.random,
-    ci: readCiInfo(env),
-    host: readHostInfo(env),
-    execPath: process.execPath,
-    pid: process.pid,
-    processTable: readProcessTable,
-    runPass: (command, passEnv) => runPass(command, passEnv, process.cwd()),
-  };
-}
 
 export class PerfReporter implements Reporter {
   /** Reporter options from the Playwright config; none are defined yet. */

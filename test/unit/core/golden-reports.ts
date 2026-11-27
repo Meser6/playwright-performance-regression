@@ -1,5 +1,6 @@
 // Run reports of 1.1.0 built through the whole pipeline (aggregator → evaluate → buildRunReport):
-// the golden reports `cold`, `fast-failure`, `workload-shift` and `operations` of 02-REQ-43, stored in
+// the golden reports `cold`, `fast-failure`, `workload-shift`, `operations` and `merged` of
+// 02-REQ-43 (`merged`: two shards replayed as segments, 17-REQ-15, 17-REQ-26), stored in
 // test/golden/run-report/valid/ and rendered by the HTML, console and junit golden tests.
 import { resolveConfig } from '../../../src/core/config/index.ts';
 import type { PerfConfigInput } from '../../../src/core/config/index.ts';
@@ -18,6 +19,7 @@ export const GOLDEN_REPORT_NAMES = [
   'fast-failure',
   'workload-shift',
   'operations',
+  'merged',
 ] as const;
 export type GoldenReportName = (typeof GOLDEN_REPORT_NAMES)[number];
 
@@ -101,6 +103,8 @@ interface Scenario {
   passes: number;
   results: Result[];
   thresholds: (source: RunSource) => LoadedThresholds;
+  /** A merge (17-REQ-15): the number of results of each shard, in shard order. */
+  shards?: number[];
 }
 
 /** Results of `passes` passes of one test calling the keys of `perPass(pass)`. */
@@ -129,7 +133,36 @@ function generatedFor(source: RunSource): ReturnType<typeof generated> {
   });
 }
 
+/** Results of `passes` passes of one test in shard `shard` (one cold first call per shard). */
+function shardResults(shard: number, title: string, file: string, line: number): Result[] {
+  return passesOf(
+    3,
+    title,
+    (pass) => [
+      ['GET /api/tickets', 200, pass === 0 ? 1200 + shard * 100 : around(120, pass + shard)],
+      [`GET /api/shard${String(shard)}`, 200, around(90 + shard * 20, pass)],
+    ],
+    file,
+    line,
+  );
+}
+
+const MERGED: Scenario = {
+  name: 'merged: two shards of 3 passes, a key called in both with one cold sample per shard (17-REQ-15…17)',
+  config: { run: { passes: { test: 3 } } },
+  passes: 3,
+  results: [
+    ...shardResults(1, 'tickets › opens the list', 'tests/tickets.spec.ts', 5),
+    ...shardResults(1, 'tickets › filters the list', 'tests/tickets.spec.ts', 18),
+    ...shardResults(2, 'admin › opens the tickets', 'tests/admin.spec.ts', 7),
+    ...shardResults(2, 'admin › exports the tickets', 'tests/admin.spec.ts', 21),
+  ],
+  shards: [6, 6],
+  thresholds: () => files(missing('api')),
+};
+
 const SCENARIOS: Record<GoldenReportName, Scenario> = {
+  merged: MERGED,
   // 08-REQ-41…44: a slow first call excluded (10 samples), one kept for too few samples (5).
   cold: {
     name: 'cold samples: a slow first call left out of the statistics, one kept with too few samples (08-REQ-41…44)',
@@ -301,6 +334,28 @@ const SCENARIOS: Record<GoldenReportName, Scenario> = {
   },
 };
 
+/** The shards field of a merged golden report (17-REQ-17). */
+function shardsOf(s: Scenario, meta: RunReport): RunReport['shards'] {
+  if (s.shards === undefined) return null;
+  const start = Date.parse(meta.startedAt);
+  return {
+    total: s.shards.length,
+    missing: [],
+    list: s.shards.map((count, i) => ({
+      index: i + 1,
+      runId: `2026-11-27T10-00-0${String(i)}-00a${String(i + 1)}`,
+      startedAt: new Date(start + i * 1000).toISOString(),
+      finishedAt: new Date(start + 600_000 + i * 45_000).toISOString(),
+      status: 'passed' as const,
+      passes: { planned: s.passes, completed: s.passes, failed: [] },
+      tests: { status: 'passed' as const, expected: count, unexpected: 0, flaky: 0, skipped: 0 },
+      samples: count * 2,
+      host: { ...meta.host },
+      buildUrl: `https://github.com/acme/shop/actions/runs/42/job/${String(i + 1)}`,
+    })),
+  };
+}
+
 /** The test results of a scenario in input order (08-REQ-41). */
 export function scenarioResults(name: GoldenReportName): readonly Result[] {
   return SCENARIOS[name].results;
@@ -327,7 +382,16 @@ export function goldenReportCase(name: GoldenReportName): {
     coldSamples: cfg.measure.coldSamples,
     minSamples: cfg.checks.time.median.minSamples,
   });
-  feed(agg, s.results);
+  if (s.shards === undefined) feed(agg, s.results);
+  else {
+    // Each shard is a segment: its first calls are cold again (17-REQ-15).
+    let offset = 0;
+    for (const count of s.shards) {
+      agg.startSegment();
+      feed(agg, s.results.slice(offset, offset + count));
+      offset += count;
+    }
+  }
   const aggregates = agg.finalize();
   const { nodeVersion: _, ...host } = meta.host;
   const source: RunSource = {
@@ -353,6 +417,7 @@ export function goldenReportCase(name: GoldenReportName): {
     normalization: meta.normalization,
     stepNormalization: null,
     passes: { planned: s.passes, completed: s.passes, failed: [] },
+    shards: shardsOf(s, meta),
     runConditions: {
       workers: 1,
       projects: [

@@ -497,8 +497,8 @@ export function buildJunitXml(report: RunReport): string {
         ['pw-perf.evaluation', report.evaluation.status],
         ['pw-perf.exitCode', String(exitCode)],
         ['pw-perf.passes', `${String(report.passes.completed)}/${String(report.passes.planned)}`],
-        // Number of merged shards (17-REQ-17); 0 until a merge writes the report.
-        ['pw-perf.shards', '0'],
+        // Number of merged shards (16-REQ-13, 17-REQ-17); 0 without a merge.
+        ['pw-perf.shards', String(report.shards?.list.length ?? 0)],
         ['pw-perf.commit', ci?.commit ?? ''],
         ['pw-perf.branch', ci?.branch ?? ''],
         ['pw-perf.buildUrl', ci?.buildUrl ?? ''],
