@@ -74,6 +74,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   it keeps by hysteresis, without changing their limits (`+new fields` in the diff).
 - Thresholds derived with another `measure.coldSamples` give `THRESHOLDS_SOURCE_MISMATCH`.
 - The run report gets `shards: null` when a report of version 4 is migrated.
+- The package's own tests run with `@playwright/test` 1.65.1 (development dependency only; the
+  supported Playwright range is unchanged).
 - README: GraphQL and tRPC are no longer listed as a limitation (`keys.operations`), and "How it
   works" names fast failures.
 
