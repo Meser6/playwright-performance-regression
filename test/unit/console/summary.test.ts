@@ -91,6 +91,18 @@ describe('09-AC-36 table of the keys on default thresholds (09-REQ-37)', () => {
     expect(dumb).toContain('| ✔ | api  | GET /api/new-00');
   });
 
+  test('no row for a key without successful samples (intentional 404s)', () => {
+    const r = withDefaults(2);
+    const missing = r.endpoints['GET /api/new-01'];
+    if (missing === undefined) throw new Error('no key');
+    missing.successCount = 0;
+    missing.nonSuccessCount = missing.count;
+    expect(rowsOf(formatSummary(r, { width: 120, color: false }))).toEqual([
+      '✅|api|GET /api/new-00|8|90 ms|90 ms|2000 / 2000 ms|pass',
+      '✅|api|GET /api/users/:id|8|90 ms|90 ms|2000 / 2000 ms|pass',
+    ]);
+  });
+
   test('no table in thresholds mode, with a missing file or a file without entries', () => {
     const title = 'On default thresholds';
     const thresholds = withDefaults(1);

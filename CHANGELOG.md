@@ -80,6 +80,12 @@ checks.time.median.minSamples` timed samples (6 by default), so keys with 5 samp
 
 - `RUN_SHARDED`: sharded perf-mode runs are supported (see "Sharded runs" above).
 
+### Fixed
+
+- `THRESHOLDS_KEYS_ON_DEFAULTS` and the "On default thresholds" console table no longer list keys
+  without successful samples (e.g. an endpoint a test calls on purpose for a 404): a thresholds
+  run never writes an entry for them, so the advice to derive thresholds did not help.
+
 ## [1.0.1] - 2026-11-25
 
 A hotfix release.

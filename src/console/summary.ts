@@ -245,7 +245,8 @@ interface DefaultKey {
 /**
  * Keys evaluated with default thresholds although the file of their kind has entries, as for
  * THRESHOLDS_KEYS_ON_DEFAULTS (09-REQ-36), taken from the report alone (09-REQ-37): test mode,
- * a loaded file with entries (a key from the file or unseen entries). Sorted for the table.
+ * a loaded file with entries (a key from the file or unseen entries), keys with successful
+ * samples only. Sorted for the table.
  */
 function keysOnDefaults(report: RunReport): DefaultKey[] {
   if (report.mode !== 'test') return [];
@@ -261,6 +262,8 @@ function keysOnDefaults(report: RunReport): DefaultKey[] {
     for (const [key, aggregate] of aggregates) {
       const e = aggregate.evaluation;
       if (e.thresholdSource !== 'default' || e.result === 'not-evaluated') continue;
+      // Without successful samples a thresholds run gives no entry (09-REQ-36, 10-REQ-02).
+      if (aggregate.successCount === 0) continue;
       const failed = e.checks.filter((c) => !c.passed);
       const rank = failed.some((c) => c.blocking) ? 2 : failed.length > 0 ? 1 : 0;
       list.push({ kind, key, aggregate, rank });
