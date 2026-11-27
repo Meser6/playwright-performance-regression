@@ -170,6 +170,21 @@ export interface NextHintInput {
   temporary?: boolean;
 }
 
+/** Every blocking check of the run is a nonSuccess or errors check (09-REQ-32, row 7). */
+function onlyStatusRulesBlock(report: NextHintInput['report']): boolean {
+  let blocking = 0;
+  for (const aggregates of [report.endpoints, report.steps]) {
+    for (const aggregate of Object.values(aggregates)) {
+      for (const check of aggregate.evaluation.checks) {
+        if (!check.blocking) continue;
+        if (check.rule !== 'nonSuccess' && check.rule !== 'errors') return false;
+        blocking += 1;
+      }
+    }
+  }
+  return blocking > 0;
+}
+
 /** Text after `Next: `, or null when there is no hint (09-REQ-32, rows 1–8). */
 export function nextHint(input: NextHintInput): string | null {
   const { report, commands, written } = input;
@@ -195,7 +210,9 @@ export function nextHint(input: NextHintInput): string | null {
     return `derive thresholds: ${commands.thresholds}`;
   }
   if (report.evaluation.status === 'failed') {
-    return `open the report; if the slowdown is intended, derive thresholds again: ${commands.thresholds}`;
+    // Only nonSuccess or errors checks block: the responses changed, not the timings.
+    const what = onlyStatusRulesBlock(report) ? 'the new response statuses are' : 'the slowdown is';
+    return `open the report; if ${what} intended, derive thresholds again: ${commands.thresholds}`;
   }
   return null;
 }

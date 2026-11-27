@@ -83,6 +83,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `Next:` after a run failed only by the `nonSuccess` or `errors` rule talks about the new response
+  statuses instead of a slowdown; after a shard merge it points to the thresholds run of the shard
+  jobs instead of `npx playwright test`.
+- `THRESHOLDS_WORKLOAD_SHIFT` says when shifted keys have samples from retries of failed tests;
+  `THRESHOLDS_SOURCE_MISMATCH` after a change of normalization suggests `PW_PERF_PRUNE=1`.
+- The HTML ranking of errors becomes "Highest failure rate" when keys have unsuccessful responses
+  that are not errors (e.g. fast 401s), instead of "No errors in this run".
+- The wizard imports `./pw-perf.config.ts` with its extension when `tsconfig.json` has
+  `allowImportingTsExtensions` (`tsc` with `module: "nodenext"` refused the import without it).
+- `check` shows an empty `baseURL` as `(empty)`; the `CONFIG_BASEURL_EMPTY` hint uses the package
+  manager of the project.
 - `THRESHOLDS_KEYS_ON_DEFAULTS` and the "On default thresholds" console table no longer list keys
   without successful samples (e.g. an endpoint a test calls on purpose for a 404): a thresholds
   run never writes an entry for them, so the advice to derive thresholds did not help.

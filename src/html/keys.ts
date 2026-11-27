@@ -34,7 +34,7 @@ export { KEY_COLUMN_MAX } from './context.ts';
 export const NEAR_LIMIT = 0.9;
 
 /** Error statuses when the config snapshot omits them: the schema default (03). */
-const DEFAULT_ERROR_STATUSES = ['5xx', 'FAILED', 'PENDING'];
+export const DEFAULT_ERROR_STATUSES = ['5xx', 'FAILED', 'PENDING'];
 
 const TIME_RULES: ReadonlySet<Check['rule']> = new Set<Check['rule']>([
   'median',
@@ -389,7 +389,7 @@ function ttfbSplit(agg: HtmlAggregate): SafeHtml | null {
 }
 
 /** Whether a status label counts as an error (`checks.errors.statuses`, 08). */
-function isErrorStatus(label: string, statuses: readonly string[]): boolean {
+export function isErrorStatus(label: string, statuses: readonly string[]): boolean {
   return statuses.some(
     (s) => s === label || (/^\dxx$/u.test(s) && /^\d{3}$/u.test(label) && s[0] === label[0]),
   );

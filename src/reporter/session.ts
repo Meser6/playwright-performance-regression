@@ -22,6 +22,7 @@ import {
   collapseIssues,
   nextHint,
   packageManager,
+  scriptCommand,
   suggestCommand,
   userCommand,
 } from '../core/report/index.ts';
@@ -452,7 +453,7 @@ export class RunSession {
     }
     const duplicate = duplicateBaseUrlLabels(this.conditions, config, keys);
     if (duplicate !== null) this.warnings.push(duplicate);
-    const empty = emptyBaseUrlWarning(this.conditions, config);
+    const empty = emptyBaseUrlWarning(this.conditions, config, this.baseUrlHint('test'));
     if (empty !== null) this.warnings.push(empty);
     if (this.settings.registered && this.settings.perfConfigPassed === false) {
       const notPassed = configFileNotPassedWarning(io.listDirSync(this.configDir));
@@ -1517,7 +1518,7 @@ export class RunSession {
       warnings.push({
         code: 'CONFIG_BASEURL_EMPTY',
         message: `Measured ${unset.length === 1 ? 'project' : 'projects'} ${unset.join(', ')} ${unset.length === 1 ? 'has' : 'have'} no use.baseURL.`,
-        hint: 'If baseURL comes from environment variables, run the tests through the script that sets them (e.g. PW_PERF_MODE=check npm run e2e:qa, see docs/dynamic-environments.md).',
+        hint: this.baseUrlHint('check'),
       });
     }
     const keys = cfg.keys;
@@ -1741,6 +1742,18 @@ export class RunSession {
       : dir;
   }
 
+  /**
+   * Hint of CONFIG_BASEURL_EMPTY (03-REQ-21): the example script run with the package manager of
+   * the project, as in the Next: hint (09-REQ-32).
+   */
+  private baseUrlHint(mode: PerfMode): string {
+    const pm = packageManager({
+      userAgent: this.host.env['npm_config_user_agent'] ?? null,
+      lockFiles: this.host.io.readPackageInfo(this.configDir).lockFiles,
+    });
+    return `If baseURL comes from environment variables, run the tests through the script that sets them (e.g. PW_PERF_MODE=${mode} ${scriptCommand(pm, 'e2e:qa')}, see docs/dynamic-environments.md).`;
+  }
+
   /** Commands of the project for each mode, for the Next: hint (09-REQ-32). */
   private commands(): Record<PerfMode, string> {
     const info = this.host.io.readPackageInfo(this.configDir);
@@ -1758,7 +1771,9 @@ export class RunSession {
     };
     return {
       test: suggestCommand('test', ctx),
-      thresholds: suggestCommand('thresholds', ctx),
+      // The merge does not know the test command of the shard jobs (17-REQ-19).
+      thresholds:
+        this.merging === null ? suggestCommand('thresholds', ctx) : MERGE_THRESHOLDS_COMMAND,
       check: suggestCommand('check', ctx),
     };
   }
@@ -1987,6 +2002,10 @@ export function configFileNotPassedWarning(entries: readonly string[]): Issue | 
   };
 }
 
+/** `<thresholds>` of the Next: hint after a shard merge (17-REQ-19). */
+export const MERGE_THRESHOLDS_COMMAND =
+  'PW_PERF_MODE=thresholds in the shard jobs, then PW_PERF_MODE=merge npx pw-perf';
+
 /**
  * CONFIG_BASEURL_EMPTY (03-REQ-21): a measured project whose use.baseURL is blank or has a host
  * label "undefined" or "null", the result of joining an unset variable. An unset baseURL is not
@@ -1995,6 +2014,7 @@ export function configFileNotPassedWarning(entries: readonly string[]): Issue | 
 function emptyBaseUrlWarning(
   conditions: RunReport['runConditions'],
   config: ConfigLike,
+  hint: string,
 ): Issue | null {
   const names = conditions.projects.flatMap((p, i) => {
     if (p.role !== 'measured') return [];
@@ -2015,6 +2035,6 @@ function emptyBaseUrlWarning(
   return {
     code: 'CONFIG_BASEURL_EMPTY',
     message: `Measured ${names.length === 1 ? 'project' : 'projects'} ${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} an empty use.baseURL.`,
-    hint: 'If baseURL comes from environment variables, run the tests through the script that sets them (e.g. PW_PERF_MODE=test npm run e2e:qa, see docs/dynamic-environments.md).',
+    hint,
   };
 }

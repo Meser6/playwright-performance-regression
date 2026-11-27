@@ -81,11 +81,13 @@ function changeSize(ratio: number | null): number {
 /**
  * THRESHOLDS_WORKLOAD_SHIFT (09-REQ-41): one warning per kind with the keys whose samples per
  * pass changed by thresholds.workloadShift.factor or more; the keys with the largest change
- * first. Null when no key shifted.
+ * first. Null when no key shifted. The hint starts with the retries of failed tests when shifted
+ * keys have samples from failed tests (F3 decision 4).
  */
 export function workloadShiftWarning(
   kind: Kind,
   perKey: Record<string, EvaluatedKey>,
+  aggregates: Record<string, Pick<AggregateStats, 'fromFailedTests'>> = {},
 ): Issue | null {
   const shifted = Object.entries(perKey)
     .flatMap(([key, e]) => (e.workload?.shifted === true ? [{ key, workload: e.workload }] : []))
@@ -101,10 +103,15 @@ export function workloadShiftWarning(
   });
   const rest = shifted.length - named.length;
   const one = shifted.length === 1;
+  const retried = shifted.filter(({ key }) => (aggregates[key]?.fromFailedTests ?? 0) > 0).length;
+  const retries =
+    retried === 0
+      ? ''
+      : `Retries of failed tests add samples: ${String(retried)} of these keys ${retried === 1 ? 'has' : 'have'} samples from failed tests; fix the failures first. `;
   return {
     code: 'THRESHOLDS_WORKLOAD_SHIFT',
     message: `${plural(shifted.length, `${KIND_NOUN[kind]} key`)} ${one ? 'gets' : 'get'} a different share of the traffic than in the thresholds run: ${named.join(', ')}${rest > 0 ? ` and ${plural(rest, 'other key')}` : ''}.`,
-    hint: `A change of the tests or fixtures changes the number of samples and the percentiles; after an intended change, derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
+    hint: `${retries}A change of the tests or fixtures changes the number of samples and the percentiles; after an intended change, derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
   };
 }
 

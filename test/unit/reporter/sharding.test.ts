@@ -337,7 +337,7 @@ describe('the shard merge (17, chapter 7)', () => {
     expect(report.endpoints['GET /api/b']?.cold?.count).toBe(1);
   });
 
-  test('17-AC-04 17-REQ-16 17-REQ-17 the merged report: shards, times, host, passes and exit code 2 for a slow key', async () => {
+  test('17-AC-04 17-REQ-16 17-REQ-17 17-REQ-19 the merged report: shards, times, host, passes and exit code 2 for a slow key', async () => {
     // Thresholds from a merged thresholds run, then a slower key in shard 1.
     const t1 = await runShard('t1', { current: 1, total: 2 }, [A], { mode: 'thresholds' });
     const t2 = await runShard('t2', { current: 2, total: 2 }, [B], { mode: 'thresholds' });
@@ -408,6 +408,11 @@ describe('the shard merge (17, chapter 7)', () => {
     expect(out).toMatch(/│ shard │ tests │ samples │/u);
     expect(out).toContain('Outcome: performance failed (code 2) in');
     expect(out).not.toContain('Playwright exit code');
+    // The merge does not know the shard command: the thresholds run of the shard jobs (17-REQ-19).
+    expect(out).toContain(
+      'derive thresholds again: PW_PERF_MODE=thresholds in the shard jobs, then PW_PERF_MODE=merge npx pw-perf',
+    );
+    expect(out).not.toContain('npx playwright test');
   });
 
   test('17-AC-05 a merged thresholds run writes the keys of both shards; a missing shard writes none', async () => {

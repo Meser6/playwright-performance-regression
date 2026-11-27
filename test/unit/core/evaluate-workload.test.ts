@@ -144,6 +144,21 @@ describe('workload (09-REQ-40, 09-REQ-41)', () => {
     expect(run({ durations: [[2, 100]] }, null).perKey.api[KEY]?.workload).toBeNull();
   });
 
+  test('09-AC-43 a shifted key with samples from failed tests names the retries in the hint', () => {
+    const plain = run({ durations: [[2, 100]] }, sourced, { passes: 5 });
+    const hint = plain.warnings.find((w) => w.code === 'THRESHOLDS_WORKLOAD_SHIFT')?.hint ?? '';
+    expect(hint).toMatch(/^A change of the tests or fixtures/u);
+    const retried = run(
+      { ...aggregate({ durations: [[60, 100]] }), fromFailedTests: 40 },
+      sourced,
+      { passes: 5 },
+    );
+    const warning = retried.warnings.find((w) => w.code === 'THRESHOLDS_WORKLOAD_SHIFT');
+    expect(warning?.hint).toMatch(
+      /^Retries of failed tests add samples: 1 of these keys has samples from failed tests; fix the failures first\. A change of the tests/u,
+    );
+  });
+
   test('the factor comes from thresholds.workloadShift.factor; null turns it off; thresholds mode does not warn', () => {
     const off = run(
       { durations: [[2, 100]] },

@@ -40,6 +40,10 @@ import perfConfig from './pw-perf.config';
 export default withPerf(defineConfig({/* unchanged */}), perfConfig);
 ```
 
+With `"allowImportingTsExtensions": true` in `tsconfig.json` (TypeScript run by Node without a
+build, `module: "nodenext"`), the wizard writes the import with its extension,
+`import perfConfig from './pw-perf.config.ts'`, which `tsc` then accepts.
+
 ```ts
 // fixtures.ts
 import { test as base } from '@playwright/test';

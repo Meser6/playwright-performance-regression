@@ -189,7 +189,7 @@ export function generatedWarnings(
     }
     if (keys) {
       hints.push(
-        `Another normalization changes the keys: derive thresholds again with \`${THRESHOLDS_COMMAND}\`.`,
+        'Another normalization (keys.* options or the baseURL origins) changes the keys: derive thresholds again with `PW_PERF_MODE=thresholds PW_PERF_PRUNE=1 <your test command>` to drop the entries of the old keys, then review the diff.',
       );
     }
     if (cold) hints.push(COLD_SAMPLES_HINT);
