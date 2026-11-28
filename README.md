@@ -2,6 +2,15 @@
 
 Catch backend performance regressions from the Playwright tests you already have.
 
+`playwright-performance-regression` is a Playwright Test reporter and fixture for **performance
+regression testing in CI**. While your existing end-to-end (e2e) and API tests run, it measures
+the **response time (latency) of every backend API endpoint** the browser calls, and the duration
+of your `test.step` blocks. It computes median, p95 and p99 per endpoint, derives
+**performance budgets (thresholds)** that you commit as JSON files, and fails the CI run when an
+endpoint gets slower, returns more errors or starts failing fast. No new test scripts, no separate
+performance suite, no network calls. It is not a load testing tool: it times the traffic your
+functional tests already create.
+
 ![HTML report of a measurement run](.github/assets/report.png)
 
 Live demo reports of an example project: [a slow endpoint and a fast failure](https://meser6.github.io/playwright-performance-regression/).
@@ -21,6 +30,44 @@ Live demo reports of an example project: [a slow endpoint and a fast failure](ht
    and a self-contained HTML report.
 
 Your normal `npx playwright test` runs are not changed.
+
+## Features
+
+- **API response time per endpoint**: requests are grouped into keys such as
+  `GET /api/orders/:id` (ids, UUIDs and e-mails normalized), with median, p95, p99 and error rate
+  per key; Playwright's `request` fixture is measured too ([Adoption](docs/adoption.md)).
+- **`test.step` timings**: every step becomes a key like `login › submit`, with its own thresholds
+  ([Step timings](docs/steps.md)).
+- **Thresholds from a real run**: a thresholds run writes `pw-perf-thresholds*.json` with headroom
+  (`strict`, `normal`, `loose`), a diff to review, locking and muting of single keys
+  ([Thresholds](docs/thresholds.md)).
+- **Regression gate**: rules for slower p95 and median, more errors and more non-success
+  responses, with exit code 2 for a performance regression ([Running](docs/cli.md#exit-codes)).
+- **Fast failures**: an endpoint that answers 401, 403, 404 or 5xx in a few milliseconds instead
+  of 200 fails the `nonSuccess` rule instead of looking faster
+  ([Fast failures](docs/thresholds.md#fast-failures-and-workload-changes)).
+- **Cold start handling**: the first call of each endpoint per pass (cold cache, container
+  spin-up) stays out of p95 ([`measure.coldSamples`](docs/configuration.md#measurecoldsamples)).
+- **Workload context**: each result is compared with the number of samples of the thresholds run,
+  so a test that now calls an endpoint less often is flagged, not mistaken for a speed-up.
+- **GraphQL and tRPC**: a key per GraphQL operation (`POST /graphql#GetTickets`) or tRPC procedure
+  ([Operations](docs/configuration.md#operations)).
+- **Sharding**: measure with Playwright's `--shard` on several CI machines and merge the shards
+  into one report ([Sharded runs](docs/ci.md#sharded-runs)).
+- **Reports**: console summary, self-contained HTML report, `report.json` and `junit.xml` for CI
+  test views ([CI](docs/ci.md#test-results-in-the-ci-junit)).
+- **CI recipes** for GitHub Actions, GitLab CI, Jenkins and Azure Pipelines ([CI](docs/ci.md)).
+- **Private by default**: no telemetry, no network requests, normalized URLs ([Privacy](#privacy)).
+
+## When to use it
+
+Use it when you want to know that a backend change made the API slower, and you already have
+Playwright tests that exercise that API: it turns them into a performance check without writing a
+second test suite.
+
+Use something else for load or stress testing (many concurrent users), for frontend metrics such
+as Core Web Vitals or Lighthouse scores, and for monitoring production traffic. See
+[Is this a load test?](docs/faq.md#is-this-a-load-test)
 
 ## Install
 
@@ -224,6 +271,15 @@ that Playwright's HTML report and traces contain the full URLs.
 | Operating systems | Linux, macOS, Windows                                                         |
 | Browsers          | Chromium (including Chrome and Edge channels); Firefox and WebKit best effort |
 | Module formats    | ESM and CommonJS configs; TypeScript configs loaded by Playwright             |
+
+## Upgrading
+
+Since `1.0.0`, a newer version reads and migrates the files of older versions, so upgrading
+changes nothing you have to fix by hand. The other direction does not work: an older version refuses files written by
+a newer one with `SCHEMA_VERSION_TOO_NEW` (for example, `1.0.x` refuses the thresholds files that
+`1.1.0` writes). Upgrade every machine and CI job that reads the thresholds files at the same time,
+before you commit new thresholds files. Steps per release:
+[Upgrading](docs/upgrading.md#from-10x-to-110).
 
 ## Documentation
 

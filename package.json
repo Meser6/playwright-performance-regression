@@ -13,7 +13,15 @@
     "e2e",
     "thresholds",
     "performance-budget",
-    "ci"
+    "ci",
+    "playwright-reporter",
+    "performance-testing",
+    "api-performance",
+    "p95",
+    "percentiles",
+    "graphql",
+    "trpc",
+    "github-actions"
   ],
   "homepage": "https://github.com/Meser6/playwright-performance-regression#readme",
   "bugs": {
