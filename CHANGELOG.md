@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-28
+
 ### Added
 
 - **Cold and warm samples.** The first timed sample of every key in each pass is cold
